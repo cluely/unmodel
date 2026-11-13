@@ -197,8 +197,9 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * cross-field checks, a four-row hand catalog and a credit table. 46.4 KiB
    * measured — comparable to pixverse and vidu, and for the same reason: a
    * hand-written provider's weight is its prose and its checks, not a roster.
+   * 56.7 measured, 2026-11-12: P2, the texture-version check and its params.
    */
-  tripo3d: 55,
+  tripo3d: 62,
   /**
    * The native sync. provider: two validators on ONE url, a shared module of
    * enums, cross-field checks and two long hand catalogs (62 error codes, 93
@@ -1234,8 +1235,10 @@ const UPSCALE_PACK_PROVIDERS: string[] = ["fal", "topaz"];
  * and the credit table. Nothing structural: two adapter leaves, no merged
  * catalog, no retarget layer, and the same ~200 KiB kernel floor every media
  * pack pays.
+ *
+ * 388.0 measured, 2026-11-12: Tripo P2, the texture-version check and its params.
  */
-const THREE_D_PACK_BUDGET_KIB = 385;
+const THREE_D_PACK_BUDGET_KIB = 425;
 
 /** The two providers `unmodel/3d`'s ready-made pack is allowed to reach. */
 const THREE_D_PACK_PROVIDERS: string[] = ["fal", "tripo3d"];

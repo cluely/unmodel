@@ -529,7 +529,7 @@ routes return one object per request.
 
 Two things about the wire are worth knowing before your first call. Tripo's
 `input` is one polymorphic string that accepts a `file_…` token, a public URL or
-a prior `task_…` id and **never inline bytes**, so a `{ data }` ref is refused
+a prior task's id (a bare UUID) and **never inline bytes**, so a `{ data }` ref is refused
 here naming `POST /v3/files` rather than compiled into a `data:` URI Tripo would
 reject. And seven of Tripo's parameters are gated on the model version —
 `v2.5-20250123` takes none of them — which is a compile error rather than a 4xx.

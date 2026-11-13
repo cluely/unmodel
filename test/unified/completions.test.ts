@@ -907,11 +907,11 @@ threeD({ model: "tripo3d/v3.1-20260211", image: { url: "https://x/a.png" } });`)
    * version gate that makes one vendor's own roster disagree with itself.
    */
   test("probe 8 — the 3D extras complete from each route's own wire interface", () => {
-    // Tripo's `texture_quality` is a three-value ladder, and the editor offers
+    // Tripo's `texture_quality` is a four-value ladder, and the editor offers
     // exactly it — through the UNIFIED surface, where the ref carries the model.
     const quality = completionsAt(`import { threeD } from "./src/unified/3d";
 threeD({ model: "tripo3d/v3.1-20260211", prompt: "a chair", texture_quality: "¦" });`);
-    expect(quality.sort()).toEqual(["detailed", "extreme", "standard"]);
+    expect(quality.sort()).toEqual(["detailed", "extreme", "fast", "standard"]);
 
     // The legacy generation takes NONE of the version-gated seven, and that is
     // a compile squiggle rather than a 4xx — the sharpest per-model narrowing

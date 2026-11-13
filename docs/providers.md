@@ -588,31 +588,32 @@ schemas in, `texture` already had five spellings and the output container four m
 `https://openapi.tripo3d.ai/v3`, flat JSON, `Authorization: Bearer <TRIPO_API_KEY>`, one endpoint
 per operation. Models `v3.1-20260211`, `v3.0-20250812`, `v2.5-20250123`, the low-poly
 `P1-20260311` and its quad-capable successor `P2-20260801` — the DATED ids every endpoint
-reference page and every `curl` example publishes.
-(Tripo's `models-and-versions` page names the same four `tripo-v3.1`, `tripo-v3.0`, `tripo-v2.5`
-and `tripo-p1`; the endpoint page is the per-route spec and is what the parameter's own enum is
-written on, so it wins. The aliases are plausibly accepted and that is not verified.) Two
+reference page, every `curl` example and the `models-and-versions` roster publish. Two
 routes, both qualified the way `vidu.videoFromImage` is, because they are two URLs with
 different required fields. Not served: the mesh-processing surface (texture, convert, segment,
 decimate, rig, retarget) — mesh in, mesh out is a question no unmodel verb asks — and the
 text-to-image routes, which resell seedream, gemini and gpt-image that unmodel already carries
 from the vendors themselves.
 
-Three cross-field rules Tripo documents and unmodel checks, each of them a 4xx otherwise:
+Four cross-field rules Tripo documents and unmodel checks, each of them a 4xx otherwise:
 seven parameters are gated on the model version — `v2.5-20250123` takes none of them, P1 three
-and P2 four; `generate_parts: true` requires `texture`, `pbr` and `quad` all false, and the
-first two DEFAULT to true; and the polycount ceiling moves with the model, with Ultra mode and
-with `quad` (150,000 quads on the H series, 25,000 on P2). A fourth is a heuristic: `input` is
-one polymorphic string that accepts a `file_…` token, a public URL or a prior `task_…` id,
-disambiguated by prefix and never inline bytes.
+and P2 four; `generate_parts: true` requires `texture` and `pbr` both false, and both DEFAULT
+to true (`quad` with it is ignored and `smart_low_poly` suppresses the parts — both warnings);
+`texture_quality: "fast"` requires `texture_version: "v3.5-20260815"`, which no model derives
+by default; and the polycount ceiling moves with the model, with Ultra mode and with `quad`
+(150,000 quads on the H series, 25,000 on P2). A fifth is a heuristic: `input` is one
+polymorphic string that accepts a `file_…` token, a public URL or a prior task's id (a bare
+UUID), and never inline bytes. `texture_version`, `delight` and `export_orientation` sit
+outside the version gate and every model takes them.
 
 Pricing is per task in credits at $0.01 each, and this is the rare media provider whose estimate
 is EXACT: the price is a pure function of the request body (base task type plus the add-ons the
-body switched on), with no duration to guess and no output pixel count to infer. Two
-exceptions: P1, whose credit table Tripo's pricing page renders client-side only and no served
-doc page states — `undefined` rather than borrowing the H-series numbers, which are demonstrably
-different; and P2 with `quad: true`, whose surcharge the P-Series tab does not publish. P2's own
-figures (100 credits bare, 110/120/130 by texture tier) are stated in Tripo's changelog.
+body switched on), with no duration to guess and no output pixel count to infer. The P-Series
+figures (P1 30/40 text and 40/50 image, P2 100/110 on both, texture tiers +10/+20 on each) are
+read from the JS chunk that renders the pricing page's client-side P tab, whose H rows match
+the server-rendered ones exactly; P2's are also stated in Tripo's changelog. The one exception
+is P2 with `quad: true`, whose surcharge the P-Series tab does not publish — `undefined` rather
+than borrowing the H series' +5.
 
 **fal — `fal.threeD`, 19 endpoints.** Tripo H3.1 text/image, Tripo P1 text/image, Tripo v2.5
 image and multiview, Hunyuan3D 2.0 and turbo, Hunyuan 3D 3.1 Pro text/image and Rapid image,

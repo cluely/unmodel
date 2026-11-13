@@ -33,10 +33,12 @@ import { EXTRA } from "../../core/unified/derive";
 import type { ThreeDModelParamTable } from "../../core/unified/vocabulary/3d";
 import type {
   Tripo3dCompression,
+  Tripo3dExportOrientation,
   Tripo3dGeometryQuality,
   Tripo3dOrientation,
   Tripo3dTextureAlignment,
   Tripo3dTextureQuality,
+  Tripo3dTextureVersion,
 } from "./shared";
 
 /** Every id both generation routes accept — the `tripo3d/…` ref union. */
@@ -65,6 +67,13 @@ const COMMON_EXTRAS = {
   texture: EXTRA as boolean,
   pbr: EXTRA as boolean,
   export_uv: EXTRA as boolean,
+  /**
+   * Outside the version gate, on every model: the changelog documents
+   * `texture_version` on every generation endpoint "including P1 / P2".
+   */
+  texture_version: EXTRA as Tripo3dTextureVersion | (string & {}),
+  delight: EXTRA as boolean,
+  export_orientation: EXTRA as Tripo3dExportOrientation,
   /** Text route only; ignored by the image route, which has no such stage. */
   image_seed: EXTRA as number,
   /** Image route only. */

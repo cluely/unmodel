@@ -3,12 +3,12 @@
  * routes, and the cross-field rules that make Tripo worth validating rather
  * than passing through.
  *
- * Four of those rules are stated in Tripo's own documentation and every one of
+ * Five of those rules are stated in Tripo's own documentation and every one of
  * them produces a 4xx if broken: the version gate on seven parameters, the
- * `generate_parts` exclusion (whose trap is that two of the three fields it
- * forbids DEFAULT to true), the polycount ceiling that moves with three
- * switches, and the polymorphic `input` string that accepts three shapes and
- * refuses everything else.
+ * `generate_parts` exclusion (whose trap is that both fields it forbids DEFAULT
+ * to true), the texture version `texture_quality: "fast"` needs, the polycount
+ * ceiling that moves with three switches, and the polymorphic `input` string
+ * that accepts three shapes and refuses everything else.
  */
 
 import { describe, expect, test } from "bun:test";
@@ -146,16 +146,155 @@ describe("generate_parts and the defaults that trap it", () => {
     expect(issue?.message).toContain("defaults to true");
   });
 
-  test("with all three explicitly false it is accepted", () => {
+  test("an explicit `texture: true` is refused too, naming it without the default note", () => {
+    const bad = threeD.safe({
+      model: "v3.1-20260211",
+      prompt: PROMPT,
+      generate_parts: true,
+      texture: true,
+      pbr: false,
+    });
+    expect(bad.ok).toBe(false);
+    if (bad.ok) return;
+    const issue = bad.errors.find((i) => i.path?.[0] === "generate_parts");
+    expect(issue?.meta?.conflicts).toEqual(["texture"]);
+  });
+
+  test("with texture and pbr explicitly false it is accepted, with no warning", () => {
     const ok = threeD.safe({
       model: "v3.1-20260211",
       prompt: PROMPT,
       generate_parts: true,
       texture: false,
       pbr: false,
-      quad: false,
     });
     expect(ok.ok).toBe(true);
+    if (!ok.ok) return;
+    expect(ok.warnings).toEqual([]);
+  });
+
+  test("`quad: true` is accepted and warned about: Tripo ignores it and returns triangle parts", () => {
+    const result = threeD.safe({
+      model: "v3.1-20260211",
+      prompt: PROMPT,
+      generate_parts: true,
+      texture: false,
+      pbr: false,
+      quad: true,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const warning = result.warnings.find((i) => i.path?.[0] === "quad");
+    expect(warning?.message).toContain("triangle");
+  });
+
+  test("`smart_low_poly: true` is accepted and warned about: it suppresses the parts", () => {
+    const result = threeDFromImage.safe({
+      model: "v3.0-20250812",
+      input: PHOTO,
+      generate_parts: true,
+      texture: false,
+      pbr: false,
+      smart_low_poly: true,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const warning = result.warnings.find((i) => i.path?.[0] === "generate_parts");
+    expect(warning?.message).toContain("NOT produced");
+  });
+});
+
+describe("texture_version, and the two parameters only v3.5 reads", () => {
+  const V3_5 = "v3.5-20260815";
+
+  test("`texture_quality: \"fast\"` is accepted with texture v3.5, and bills as standard", () => {
+    const result = threeD.safe({
+      model: "v3.1-20260211",
+      prompt: PROMPT,
+      texture_quality: "fast",
+      texture_version: V3_5,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toEqual([]);
+    expect(result.estimate?.costUSD).toBeCloseTo(0.2, 8);
+    expect(
+      tripo3dCredits({ task: "image_to_model", model: "P2-20260801", textureQuality: "fast" }),
+    ).toBe(110);
+  });
+
+  test("`fast` with `texture_version` omitted is refused, naming the derived default", () => {
+    const bad = threeDFromImage.safe({ model: "P1-20260311", input: PHOTO, texture_quality: "fast" });
+    expect(bad.ok).toBe(false);
+    if (bad.ok) return;
+    const issue = bad.errors.find((i) => i.path?.[0] === "texture_quality");
+    expect(issue?.code).toBe("unsupported_capability");
+    expect(issue?.message).toContain("v3.0-20250812");
+    expect(issue?.message).toContain(V3_5);
+  });
+
+  test("`fast` with another documented texture version is refused", () => {
+    const bad = threeD.safe({
+      model: "v3.1-20260211",
+      prompt: PROMPT,
+      texture_quality: "fast",
+      texture_version: "v3.0-20250812",
+    });
+    expect(bad.ok).toBe(false);
+  });
+
+  test("`fast` stands down for a texture version newer than the documented three", () => {
+    const result = threeD.safe({
+      model: "v3.1-20260211",
+      prompt: PROMPT,
+      texture_quality: "fast",
+      texture_version: "v4.0-20270101",
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  test("`delight` warns when the texture version ignores it, and is silent on v3.5", () => {
+    const ignored = threeD.safe({ model: "v2.5-20250123", prompt: PROMPT, delight: false });
+    expect(ignored.ok).toBe(true);
+    if (!ignored.ok) return;
+    const warning = ignored.warnings.find((i) => i.path?.[0] === "delight");
+    expect(warning?.message).toContain("v2.5-20250123");
+
+    const read = threeD.safe({
+      model: "v2.5-20250123",
+      prompt: PROMPT,
+      delight: false,
+      texture_version: V3_5,
+    });
+    expect(read.ok).toBe(true);
+    if (!read.ok) return;
+    expect(read.warnings).toEqual([]);
+  });
+
+  test("all three sit outside the version gate: v2.5 and P1 take them", () => {
+    for (const model of ["v2.5-20250123", "P1-20260311"] as const) {
+      const result = threeDFromImage.safe({
+        model,
+        input: PHOTO,
+        texture_version: V3_5,
+        delight: true,
+        export_orientation: "-y",
+      });
+      expect(result.ok, model).toBe(true);
+      if (!result.ok) continue;
+      expect(result.warnings, model).toEqual([]);
+    }
+  });
+
+  test("`export_orientation` takes the four documented axes and nothing else", () => {
+    for (const export_orientation of ["+x", "-x", "+y", "-y"] as const) {
+      expect(threeD.safe({ model: "v3.1-20260211", prompt: PROMPT, export_orientation }).ok).toBe(
+        true,
+      );
+    }
+    expect(
+      threeD.safe({ model: "v3.1-20260211", prompt: PROMPT, export_orientation: "+z" as never }).ok,
+    ).toBe(false);
   });
 });
 
@@ -268,7 +407,8 @@ describe("the polycount ceiling", () => {
 
 describe("the polymorphic `input`", () => {
   test("accepts a token, a URL and a prior task id", () => {
-    for (const input of ["file_abc123", PHOTO, "task_abc123"]) {
+    // Task ids are bare UUIDs; this one is the endpoint page's own example.
+    for (const input of ["file_abc123", PHOTO, "550e8400-e29b-41d4-a716-446655440000"]) {
       expect(threeDFromImage.safe({ model: "v3.1-20260211", input }).ok, input).toBe(true);
     }
   });
@@ -279,7 +419,7 @@ describe("the polymorphic `input`", () => {
     if (bad.ok) return;
     const issue = bad.errors.find((i) => i.path?.[0] === "input");
     expect(issue?.message).toContain("file_");
-    expect(issue?.message).toContain("task_");
+    expect(issue?.message).toContain("task id");
     expect(issue?.message).toContain("URL");
   });
 });
@@ -348,15 +488,25 @@ describe("catalog and pricing", () => {
     expect(result.estimate?.costUSD).toBeUndefined();
   });
 
-  test("P1 declines rather than borrowing the H numbers", () => {
-    // Its credit table is rendered client-side on Tripo's pricing page and is
-    // not in the served HTML. fal resells P1 at roughly twice the H rate, so a
-    // borrowed number would be visibly wrong.
-    expect(tripo3dCostUSD({ task: "text_to_model", model: "P1-20260311" })).toBeUndefined();
-    const result = threeD.safe({ model: "P1-20260311", prompt: PROMPT });
+  test("P1 is 30/40 credits text and 40/50 image, with the same texture add-ons", () => {
+    // The P-Series tab's figures, read from the pricing page's JS chunk.
+    const p1 = { model: "P1-20260311" } as const;
+    expect(tripo3dCredits({ ...p1, task: "text_to_model", texture: false, pbr: false })).toBe(30);
+    expect(tripo3dCredits({ ...p1, task: "text_to_model" })).toBe(40);
+    expect(tripo3dCredits({ ...p1, task: "image_to_model", texture: false, pbr: false })).toBe(40);
+    expect(tripo3dCredits({ ...p1, task: "image_to_model" })).toBe(50);
+    expect(tripo3dCredits({ ...p1, task: "text_to_model", textureQuality: "extreme" })).toBe(60);
+
+    const result = threeD.safe({ ...p1, prompt: PROMPT });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.estimate?.costUSD).toBeUndefined();
+    expect(result.estimate?.costUSD).toBeCloseTo(0.4, 8);
+  });
+
+  test("P1 declines an add-on its table does not publish", () => {
+    // `quad` on P1 is a 400 and has no P-Series rate; the estimate does not
+    // borrow the H series' +5.
+    expect(tripo3dCostUSD({ task: "text_to_model", model: "P1-20260311", quad: true })).toBeUndefined();
   });
 });
 

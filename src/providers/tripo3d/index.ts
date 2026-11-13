@@ -44,6 +44,7 @@ export {
   BALANCE_URL,
   COMPRESSIONS,
   DOCS_BASE,
+  EXPORT_ORIENTATIONS,
   FACE_LIMITS,
   FILES_URL,
   GATED_PARAMS_BY_MODEL,
@@ -56,6 +57,7 @@ export {
   SMART_LOW_POLY_QUAD_FACE_LIMIT,
   TEXTURE_ALIGNMENTS,
   TEXTURE_QUALITIES,
+  TEXTURE_VERSIONS,
   TRIPO3D_BASE_URL,
   TRIPO3D_MODELS,
   TRIPO3D_TASK_STATUSES,
@@ -64,12 +66,14 @@ export {
 } from "./shared";
 export type {
   Tripo3dCompression,
+  Tripo3dExportOrientation,
   Tripo3dGeometryQuality,
   Tripo3dModelId,
   Tripo3dOrientation,
   Tripo3dTaskStatus,
   Tripo3dTextureAlignment,
   Tripo3dTextureQuality,
+  Tripo3dTextureVersion,
 } from "./shared";
 
 export { ADD_ON_CREDITS, CREDIT_TABLES, tripo3dCostUSD, tripo3dCredits } from "./pricing";

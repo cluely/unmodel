@@ -50,12 +50,14 @@ export type { ImageToModelParams } from "./three-d-from-image";
 
 export type {
   Tripo3dCompression,
+  Tripo3dExportOrientation,
   Tripo3dGeometryQuality,
   Tripo3dModelId,
   Tripo3dOrientation,
   Tripo3dTaskStatus,
   Tripo3dTextureAlignment,
   Tripo3dTextureQuality,
+  Tripo3dTextureVersion,
 } from "./shared";
 
 export type {

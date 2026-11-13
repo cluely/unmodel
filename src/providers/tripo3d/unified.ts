@@ -29,7 +29,7 @@
  *
  * `input` is one polymorphic string and none of its three shapes is inline
  * data: a `file_…` token minted by `POST /v3/files` (a multipart upload unmodel
- * does not make), a public http(s) URL, or a `task_…` id from a prior
+ * does not make), a public http(s) URL, or the task id (a bare UUID) of a prior
  * image-generation task. So a `{ data }` ref is refused here naming the upload
  * endpoint, rather than compiled into a `data:` URI Tripo would reject.
  *

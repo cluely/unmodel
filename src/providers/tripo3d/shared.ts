@@ -4,18 +4,20 @@
  * `/en/docs/generation-text-to-model/standard` and `/p`,
  * `/en/docs/generation-image-to-model/standard` and `/p`,
  * `/en/docs/introduction`, `/en/docs/authentication`, `/en/docs/billing` —
- * verified 2026-08-25. Those pages also serve raw Markdown at `<route>.md`,
- * which is what was read.
+ * verified 2026-08-25, and re-read with `/en/docs/changelog`, `/en/docs/sdk`
+ * and `/en/docs/models-and-versions` on 2026-11-12. Those pages also serve raw
+ * Markdown at `<route>.md`, which is what was read.
  *
  * ## v3, not v2
  *
- * Tripo runs two API generations side by side. v2 (`api.tripo3d.ai/v2/openapi`)
- * multiplexes everything through a single `POST /task` with a `type`
- * discriminator; v3 gives each operation its own path. unmodel models v3 only,
- * because one endpoint per operation is the shape the rest of this library is
- * built on and because Tripo publishes a v2→v3 migration guide rather than the
- * other way round. Note that the MODEL id `v2.5-20250123` is a v3-API model
- * version, not the v2 API — the two version numbers are unrelated.
+ * Tripo's v2 API (`api.tripo3d.ai/v2/openapi`) multiplexes everything through
+ * a single `POST /task` with a `type` discriminator, and is on its way out:
+ * "The v2 API is scheduled to shut down on 2026-10-31, after which Python SDK
+ * 0.x will stop working." (/en/docs/sdk, read 2026-11-12). v3 gives each
+ * operation its own path, which is the shape the rest of this library is built
+ * on, and it is the only generation unmodel models. Note that the MODEL id
+ * `v2.5-20250123` is a v3-API model version, not the v2 API — the two version
+ * numbers are unrelated.
  *
  * ## Auth is a bearer token
  *
@@ -78,15 +80,11 @@ export const TRIPO3D_TASK_STATUSES = ["queued", "running", "success", "failed", 
 export type Tripo3dTaskStatus = (typeof TRIPO3D_TASK_STATUSES)[number];
 
 /**
- * The `model` values Tripo's ENDPOINT pages publish.
- *
- * ⚠️ Tripo's docs disagree with themselves here, and this list picks a side.
- * `/en/docs/models-and-versions` names the models `tripo-v3.1`, `tripo-v3.0`,
- * `tripo-v2.5` and `tripo-p1`; every endpoint reference page and every `curl`
- * example on them uses the DATED form below. The endpoint page is the per-route
- * specification and is what the parameter's own enum is written on, so it wins.
- * The short aliases are plausibly accepted too — that is not verified, and
- * unmodel does not type what it has not read.
+ * The `model` values Tripo publishes — the DATED ids that every endpoint
+ * reference page, every `curl` example and the `/en/docs/models-and-versions`
+ * roster use (read 2026-11-12: "| `v3.1-20260211` | H3.1, latest
+ * high-precision model | …"). No page publishes a short alias such as
+ * `tripo-v3.1`, so none is typed.
  */
 export const TRIPO3D_MODELS = [
   "v3.1-20260211",
@@ -100,9 +98,44 @@ export const TRIPO3D_MODELS = [
 ] as const;
 export type Tripo3dModelId = (typeof TRIPO3D_MODELS)[number];
 
-/** `texture_quality` — `extreme` is 8K and costs extra credits. */
-export const TEXTURE_QUALITIES = ["standard", "detailed", "extreme"] as const;
+/**
+ * `texture_quality` — `extreme` is 8K and costs extra credits; `fast` needs
+ * `texture_version: "v3.5-20260815"` and costs the same as `standard`.
+ *
+ * /en/docs/generation-text-to-model/standard.md, read 2026-11-12: "`fast` —
+ * the fastest generation, trading texture detail for speed. Output texture
+ * size is identical to `standard`. Requires texture `v3.5-20260815`; costs the
+ * same as `standard`."
+ */
+export const TEXTURE_QUALITIES = ["fast", "standard", "detailed", "extreme"] as const;
 export type Tripo3dTextureQuality = (typeof TEXTURE_QUALITIES)[number];
+
+/**
+ * `texture_version` — pins the texture model independently of the geometry
+ * `model`. Typed open, like `model`, so a texture version newer than this list
+ * is not refused.
+ *
+ * /en/docs/changelog.md, read 2026-11-12: "Supported values are
+ * `v3.5-20260815`, `v3.0-20250812`, and `v2.5-20250123`; if omitted it is
+ * derived from the geometry version (v2.5 geometry → `v2.5-20250123`,
+ * otherwise `v3.0-20250812`)."
+ */
+export const TEXTURE_VERSIONS = ["v3.5-20260815", "v3.0-20250812", "v2.5-20250123"] as const;
+export type Tripo3dTextureVersion = (typeof TEXTURE_VERSIONS)[number];
+
+/** The one texture version that reads `texture_quality: "fast"` and `delight`. */
+const TEXTURE_V3_5 = "v3.5-20260815";
+
+/**
+ * `export_orientation` — the forward axis of the exported mesh; `+x` is the
+ * default. /en/docs/generation-image-to-model/standard.md, read 2026-11-12:
+ * "Export orientation (forward axis). - `+x` — default, X-forward. - `-x` —
+ * negative X-forward. - `-y` — negative Y-forward. - `+y` — Y-forward." It
+ * applies to this generation only: "post-processing the model may produce a
+ * wrongly-oriented result while the task still reports `status: success`".
+ */
+export const EXPORT_ORIENTATIONS = ["+x", "-x", "+y", "-y"] as const;
+export type Tripo3dExportOrientation = (typeof EXPORT_ORIENTATIONS)[number];
 
 /** `geometry_quality` — `detailed` is Ultra mode. H series ≥ v3.0 only. */
 export const GEOMETRY_QUALITIES = ["standard", "detailed"] as const;
@@ -147,6 +180,11 @@ export const NEGATIVE_PROMPT_MAX_CHARS = 255;
  * `400`; switch to P2 or remove the field." `compress` is not on the P pages as
  * read 2026-11-12 and no page documents a refusal of it, so P2 keeps it for
  * parity with P1 rather than refusing a request the API may fulfil.
+ *
+ * `texture_version`, `delight` and `export_orientation` are not in the gate:
+ * the sentence names exactly the seven below, and the changelog documents
+ * `texture_version` on every generation endpoint "including P1 / P2". Every
+ * model takes all three.
  */
 export const VERSION_GATED_PARAMS = [
   "texture_quality",
@@ -215,6 +253,9 @@ export const generationCommonSchema = {
   generate_parts: z.boolean().optional(),
   compress: z.enum(COMPRESSIONS).optional(),
   export_uv: z.boolean().optional(),
+  texture_version: z.string().optional(),
+  delight: z.boolean().optional(),
+  export_orientation: z.enum(EXPORT_ORIENTATIONS).optional(),
 };
 
 /**
@@ -241,6 +282,8 @@ interface GenerationParams {
   smart_low_poly?: boolean;
   generate_parts?: boolean;
   compress?: string;
+  texture_version?: string;
+  delight?: boolean;
 }
 
 /**
@@ -275,36 +318,132 @@ export function checkVersionGatedParams(source: string) {
 }
 
 /**
- * `generate_parts` and the three switches it forbids.
+ * `generate_parts` and the four switches it does not combine with.
  *
- * Verbatim from the endpoint page: "Not compatible with `texture=true`,
- * `pbr=true`, or `quad=true`. To use this, set all three to `false`." The trap
- * is that `texture` and `pbr` both DEFAULT to true, so `generate_parts: true`
- * alone is already an invalid request — which is why the message names the
- * defaults rather than only the fields the caller set.
+ * The endpoint page (/en/docs/generation-text-to-model/standard.md, read
+ * 2026-11-12) gives each its own outcome, and only two of them are a refusal:
+ *
+ * > - `texture=true` or `pbr=true` — including omitting `texture`, which
+ * >   defaults to `true` — the request is rejected with error code `1004`.
+ * > - `quad=true` — quad is ignored; the returned parts are triangle meshes.
+ * > - `smart_low_poly=true` — smart_low_poly takes precedence and parts are
+ * >   NOT produced.
+ *
+ * So `texture` and `pbr` are errors, and the trap is that both DEFAULT to
+ * true: `generate_parts: true` alone is already an invalid request, which is
+ * why the message names the defaults rather than only the fields the caller
+ * set. `quad` and `smart_low_poly` are warnings — Tripo accepts the body, but
+ * one of the two switches will not do what was asked.
  */
 export function checkGenerateParts(source: string) {
   return (params: GenerationParams, _info: unknown, ctx: PipelineContext): void => {
     if (params.generate_parts !== true) return;
     const conflicts: string[] = [];
-    for (const name of ["texture", "pbr", "quad"] as const) {
+    for (const name of ["texture", "pbr"] as const) {
       const value = params[name];
-      // `texture` and `pbr` default to `true`, so ABSENT is a conflict for
-      // those two and only `quad` is safe when unset.
-      const on = value === undefined ? name !== "quad" : value === true;
-      if (on) conflicts.push(value === undefined ? `${name} (defaults to true)` : name);
+      // Both default to `true`, so ABSENT is a conflict.
+      if (value === undefined) conflicts.push(`${name} (defaults to true)`);
+      else if (value) conflicts.push(name);
     }
-    if (conflicts.length === 0) return;
-    ctx.report({
-      code: "unsupported_capability",
-      path: ["generate_parts"],
-      model: params.model,
-      message:
-        "`generate_parts: true` returns editable segmented parts and is not compatible with " +
-        `${conflicts.join(", ")} — set texture, pbr and quad all to false, explicitly.`,
-      meta: { source, conflicts },
-    });
+    if (conflicts.length > 0) {
+      ctx.report({
+        code: "unsupported_capability",
+        path: ["generate_parts"],
+        model: params.model,
+        message:
+          "`generate_parts: true` returns editable segmented parts, and Tripo rejects it (code 1004) " +
+          `with ${conflicts.join(", ")} — set texture and pbr both to false, explicitly.`,
+        meta: { source, conflicts },
+      });
+    }
+    if (params.quad === true) {
+      ctx.report({
+        code: "unknown_param",
+        path: ["quad"],
+        model: params.model,
+        message:
+          "`quad: true` is ignored with `generate_parts: true` — Tripo returns the parts as triangle " +
+          "meshes. Drop `quad`, or drop `generate_parts` for a quad mesh in one piece.",
+        meta: { source },
+      });
+    }
+    if (params.smart_low_poly === true) {
+      ctx.report({
+        code: "unknown_param",
+        path: ["generate_parts"],
+        model: params.model,
+        message:
+          "`smart_low_poly: true` takes precedence over `generate_parts: true` at Tripo, and parts " +
+          "are NOT produced. Drop `smart_low_poly` to get segmented parts.",
+        meta: { source },
+      });
+    }
   };
+}
+
+/**
+ * The two parameters only texture `v3.5-20260815` reads.
+ *
+ * `texture_quality: "fast"` on any other texture version is a `1004` — "Any
+ * other texture version returns `1004` rather than silently falling back to
+ * `standard`" (/en/docs/generation-text-to-model/standard.md, read
+ * 2026-11-12). `delight` on any other is ignored — "Only the `v3.5-20260815`
+ * texture model reads this; older texture versions ignore it"
+ * (/en/docs/generation-image-to-model/standard.md) — so that one is a warning.
+ *
+ * The trap is the default: omitting `texture_version` derives `v2.5-20250123`
+ * from v2.5 geometry and `v3.0-20250812` from everything else, never v3.5, so
+ * `fast` needs `texture_version` set explicitly. The check stands down when the
+ * texture version is not one it can name — a value newer than
+ * {@link TEXTURE_VERSIONS}, or an omitted one on a model this catalog does not
+ * know — rather than refusing what a newer texture model may take.
+ */
+export function checkTextureVersion(source: string) {
+  return (params: GenerationParams, _info: unknown, ctx: PipelineContext): void => {
+    if (params.texture_quality !== "fast" && params.delight === undefined) return;
+    const version = effectiveTextureVersion(params);
+    if (version === undefined || version === TEXTURE_V3_5) return;
+    const why =
+      params.texture_version === undefined
+        ? `\`texture_version\` is omitted, so "${params.model}" derives "${version}"`
+        : `\`texture_version\` is "${version}"`;
+    if (params.texture_quality === "fast") {
+      ctx.report({
+        code: "unsupported_capability",
+        path: ["texture_quality"],
+        model: params.model,
+        message:
+          `\`texture_quality: "fast"\` needs \`texture_version: "${TEXTURE_V3_5}"\`, and ${why} — ` +
+          "Tripo rejects that with code 1004 rather than falling back to `standard`.",
+        meta: { source, textureVersion: version },
+      });
+    }
+    if (params.delight !== undefined) {
+      ctx.report({
+        code: "unknown_param",
+        path: ["delight"],
+        model: params.model,
+        message:
+          `\`delight\` is read only by \`texture_version: "${TEXTURE_V3_5}"\`, and ${why}, which ` +
+          "ignores it.",
+        meta: { source, textureVersion: version },
+      });
+    }
+  };
+}
+
+/**
+ * The texture version a request will run, or `undefined` when it cannot be
+ * named: an explicit value outside {@link TEXTURE_VERSIONS}, or an omitted one
+ * on a model outside {@link TRIPO3D_MODELS}.
+ */
+function effectiveTextureVersion(params: GenerationParams): string | undefined {
+  const explicit = params.texture_version;
+  if (explicit !== undefined) {
+    return (TEXTURE_VERSIONS as readonly string[]).includes(explicit) ? explicit : undefined;
+  }
+  if (!(TRIPO3D_MODELS as readonly string[]).includes(params.model)) return undefined;
+  return params.model === "v2.5-20250123" ? "v2.5-20250123" : "v3.0-20250812";
 }
 
 /**
@@ -380,26 +519,36 @@ export function checkFaceLimit(source: string) {
  * The three things `input` can be, and how to tell them apart.
  *
  * `POST /v3/generation/image-to-model` takes ONE polymorphic string: a
- * `file_...` token from `POST /v3/files`, a public https URL, or a `task_...`
- * id from an earlier image-generation task. The API disambiguates by prefix and
- * the docs say "choose exactly one", so validation here can only be heuristic —
- * a string matching none of the three shapes is almost certainly a local path
- * or a bare filename, and saying so beats a 4xx.
+ * `file_...` token from `POST /v3/files`, a public https URL, or the task id of
+ * an earlier image-generation task — a bare UUID, per the endpoint page
+ * (/en/docs/generation-image-to-model/standard.md, read 2026-11-12): "task_id —
+ * The task ID from a previous image generation task (`text_to_image` or
+ * `image_to_image`). … Example: `550e8400-e29b-41d4-a716-446655440000`". The
+ * docs say "choose exactly one", so validation here can only be heuristic — a
+ * string matching none of the three shapes is almost certainly a local path or
+ * a bare filename, and saying so beats a 4xx.
+ *
+ * A `task_` prefix appears on no Tripo page; it is let through because this
+ * heuristic exists to catch local paths, not to police id formats.
  */
 export function checkImageInput(source: string) {
   return (params: GenerationParams, _info: unknown, ctx: PipelineContext): void => {
     const value = params.input;
     if (typeof value !== "string") return;
-    if (/^(file_|task_)/.test(value) || /^https?:\/\//i.test(value)) return;
+    if (/^(file_|task_)/.test(value) || /^https?:\/\//i.test(value) || TASK_ID.test(value)) return;
     ctx.report({
       code: "invalid_shape",
       path: ["input"],
       model: params.model,
       message:
         "`input` must be exactly one of: a `file_…` token from POST /v3/files, a public http(s) URL, " +
-        `or a \`task_…\` id from an earlier image-generation task. Got ${JSON.stringify(value.slice(0, 40))}, ` +
-        "which is none of the three — Tripo does not accept local paths or raw bytes here.",
+        "or the task id (a UUID such as `550e8400-e29b-41d4-a716-446655440000`) of an earlier " +
+        `image-generation task. Got ${JSON.stringify(value.slice(0, 40))}, which is none of the ` +
+        "three — Tripo does not accept local paths or raw bytes here.",
       meta: { source },
     });
   };
 }
+
+/** A Tripo task id: a bare 8-4-4-4-12 hex UUID, as every example in the docs shows. */
+const TASK_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

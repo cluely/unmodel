@@ -49,11 +49,6 @@ import { queueUrl } from "./urls";
 import type { RevanaMediaModelId } from "./generation-wire";
 import type { QueueBody, QueueRequest } from "./queue-wire";
 
-/** The header a webhook delivery is signed in: `t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>">`. */
-export const REVANA_SIGNATURE_HEADER = "Revana-Signature";
-/** `wh_<request id>` — "the same on every retry"; deduplicate on it. */
-export const REVANA_WEBHOOK_ID_HEADER = "Revana-Webhook-Id";
-
 const queueSchema = inputSchema.extend({
   model: z.string().min(1),
   fal_webhook: z.string().optional(),

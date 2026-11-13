@@ -34,7 +34,14 @@
  * may be included alongside model input").
  */
 
-import type { InputFor, ModelInput, NemesisInput, RevanaErrorBody, SeedanceInput } from "./generation-wire";
+import type {
+  GenerationErrorCode,
+  InputFor,
+  ModelInput,
+  NemesisInput,
+  RevanaErrorBody,
+  SeedanceInput,
+} from "./generation-wire";
 
 /**
  * `duration` on the queue route: the model's own seconds, as a number or as
@@ -136,8 +143,10 @@ export type QueueStatus = "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED";
  * `cancel_url` is there for fal clients and does nothing: "Cancellation
  * returns 405 and never cancels billing."
  */
-export interface QueueEnvelope {
-  status: QueueStatus;
+export type QueueEnvelope = QueuePending | QueueSucceeded | QueueFailed;
+
+/** What every {@link QueueEnvelope} carries. */
+interface QueueEnvelopeBase {
   /** A generation id (`gen_…`): `GET /v1/generations/{request_id}` answers the same job, with its `cost_usd`. */
   request_id: string;
   gateway_request_id?: string;
@@ -147,12 +156,37 @@ export interface QueueEnvelope {
   status_url: string;
   /** `405 cancellation_not_supported`. */
   cancel_url?: string;
-  /** On a `COMPLETED` request that failed. */
-  error?: string;
-  /** On a `COMPLETED` request that failed. */
-  error_type?: string;
   /** With `?logs=1`: always empty — "internal provider logs are private". */
   logs?: unknown[];
+}
+
+/** Accepted and not finished. */
+export interface QueuePending extends QueueEnvelopeBase {
+  status: "IN_QUEUE" | "IN_PROGRESS";
+  error?: never;
+  error_type?: never;
+}
+
+/** Finished, and it worked: `response_url` answers a {@link QueueResult}. */
+export interface QueueSucceeded extends QueueEnvelopeBase {
+  status: "COMPLETED";
+  error?: never;
+  error_type?: never;
+}
+
+/**
+ * Finished, and it did not — under the SAME `status` as {@link QueueSucceeded}.
+ * What tells the two apart is `error`, which is why the envelope is a union:
+ * `envelope.status === "COMPLETED" && envelope.error === undefined` is a
+ * request that succeeded, and TypeScript narrows on it. `response_url` answers
+ * `422` with the same sentence. Nothing was charged.
+ */
+export interface QueueFailed extends QueueEnvelopeBase {
+  status: "COMPLETED";
+  /** The failed generation's `error.message`, "written to show the person who asked". */
+  error: string;
+  /** The failed generation's `error.code`. */
+  error_type: GenerationErrorCode | (string & {});
 }
 
 /**
@@ -172,28 +206,42 @@ export interface QueueFile {
   height?: number;
 }
 
-/** The result of a picture model: `{ "images": [ … ] }`. */
+/** A result of pictures: `{ "images": [ … ] }`. */
 export interface QueueImageResult {
   images: QueueFile[];
   /** fal's field, kept for its clients: "a placeholder empty `description`, not generated text". */
   description?: string;
+  video?: never;
+  audio?: never;
+  audios?: never;
 }
 
-/** The result of a video model: `{ "video": { "url", … } }`. */
+/** A result that is a video: `{ "video": { "url", … } }`. */
 export interface QueueVideoResult {
   video: QueueFile;
+  images?: never;
+  audio?: never;
+  audios?: never;
 }
 
-/** The result of a speech or music model: `{ "audio": { "url", … }, "audios": [ … ] }`. */
+/** A result that is sound, from a speech or music model: `{ "audio": { "url", … }, "audios": [ … ] }`. */
 export interface QueueAudioResult {
   audio: QueueFile;
   audios?: QueueFile[];
+  images?: never;
+  video?: never;
 }
 
 /**
  * What `response_url` answers once the request is `COMPLETED` and succeeded.
  * Before that it is `409 not_ready`; for a request that failed, `422` — both
  * a {@link QueueErrorBody}.
+ *
+ * One of three documents, told apart by the key it has; each arm rules the
+ * other two's keys out, so `if (result.images)` narrows. It is not typed from
+ * the model id: which one a request answers is the kind of FILE it made, and a
+ * model's kind does not settle that (the upscaler is a picture model that
+ * also takes a clip).
  */
 export type QueueResult = QueueImageResult | QueueVideoResult | QueueAudioResult;
 
@@ -206,34 +254,47 @@ export interface QueueErrorBody extends RevanaErrorBody {
 }
 
 /**
- * What Revana POSTs to a `fal_webhook`.
+ * What Revana POSTs to a `fal_webhook` — one real delivery of each kind is
+ * recorded in `test/fixtures/revana/queue.webhook.*.json`.
  *
  * "Return any 2xx promptly. Delivery is at least once: deduplicate on
  * `request_id`. Failed deliveries retry up to 30 attempts over 24 hours."
  * Each delivery carries `Revana-Signature: t=<unix seconds>,v1=<hex
  * HMAC-SHA256 of "<t>.<raw body>">` and `Revana-Webhook-Id: wh_<request id>`;
  * the key is the account's signing secret ({@link WebhookSecret}). "Do not use
- * fal's JWKS to verify a Revana callback."
+ * fal's JWKS to verify a Revana callback." `verifyWebhook` (`./webhook.ts`)
+ * checks all of that and returns this type.
  */
-export type QueueWebhookDelivery =
-  | {
-      request_id: string;
-      gateway_request_id: string;
-      status: "OK";
-      payload: QueueResult;
-    }
-  | {
-      request_id: string;
-      gateway_request_id: string;
-      status: "ERROR";
-      /** "a safe `error` message". */
-      error: string;
-      payload: { detail: string; error_type: string };
-    };
+export type QueueWebhookDelivery = QueueWebhookSuccess | QueueWebhookFailure;
+
+/** The request succeeded; `payload` is the document `response_url` answers. */
+export interface QueueWebhookSuccess {
+  request_id: string;
+  gateway_request_id: string;
+  status: "OK";
+  payload: QueueResult;
+  error?: never;
+}
+
+/** The request failed for good. Nothing was charged. */
+export interface QueueWebhookFailure {
+  request_id: string;
+  gateway_request_id: string;
+  status: "ERROR";
+  /** "a safe `error` message" — the failed generation's `error.message`. */
+  error: string;
+  payload: {
+    /** The same sentence as `error`. */
+    detail: string;
+    /** The failed generation's `error.code`. */
+    error_type: GenerationErrorCode | (string & {});
+  };
+}
 
 /** What `GET /v1/webhooks/secret` answers (recorded 2026-11-12, the secret aside). */
 export interface WebhookSecret {
   object: "webhook_secret";
+  /** The HMAC key, used as the text it is — its UTF-8 bytes, not decoded from hex or base64. */
   secret: string;
   version: number;
   algorithm: "HMAC-SHA256";

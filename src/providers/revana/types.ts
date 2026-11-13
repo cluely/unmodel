@@ -65,12 +65,14 @@ import type { GenerationRequest, RevanaMediaModelId } from "./generation-wire";
 import type { QueueBody } from "./queue-wire";
 
 export type {
+  FailedGeneration,
   Generation,
   GenerationError,
   GenerationErrorCode,
   GenerationOutput,
   GenerationProgress,
   GenerationRequest,
+  GenerationStatus,
   GenerationTask,
   ImageModelInput,
   InputFor,
@@ -78,13 +80,16 @@ export type {
   MusicModelInput,
   NemesisInput,
   NemesisRole,
+  PendingGeneration,
   Quote,
   RevanaErrorBody,
+  RevanaErrorCode,
   RevanaMediaModelId,
   RevanaMediaUrl,
   SeedanceInput,
   SpeechDialogueLine,
   SpeechModelInput,
+  SucceededGeneration,
   UnknownModelRequest,
   VideoModelInput,
 } from "./generation-wire";
@@ -98,18 +103,26 @@ export type {
   QueueEnvelope,
   QueueErrorBody,
   QueueExtensions,
+  QueueFailed,
   QueueFile,
   QueueImageResult,
   QueueInput,
+  QueuePending,
   QueueRequest,
   QueueResult,
   QueueStatus,
+  QueueSucceeded,
   QueueVideoResult,
   QueueWebhookDelivery,
+  QueueWebhookFailure,
+  QueueWebhookSuccess,
   WebhookSecret,
 } from "./queue-wire";
 
 export type { QueueBodyFor, QueueRequestFor, QueueValidator } from "./queue";
+
+export type { GenerationLike, QueueEnvelopeLike, QueueOutcome, RevanaGenerationStatus } from "./check";
+export type { VerifyWebhookInput, WebhookForgeryReason, WebhookHeaders, WebhookVerification } from "./webhook";
 
 export type {
   RevanaAvatarModelId,

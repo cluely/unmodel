@@ -587,28 +587,67 @@ export interface GenerationProgress {
   estimated_finish_at: string | null;
 }
 
-/** What a create (`202`), a poll and each row of a list answer. */
-export interface Generation {
+/** What every `Generation` carries, whatever its `status`. */
+interface GenerationBase {
   /** `gen_` + 20 hex digits. */
   id: string;
   object: "generation";
   model: string;
-  status: "queued" | "running" | "succeeded" | "failed";
-  /** "A generation still being confirmed shows running with a message." */
-  message?: string;
-  output: GenerationOutput | null;
   /** "the first route's price". */
   quoted_usd: number;
   /** "held while it runs: the most it can cost, if a dearer backup route makes it". */
   reserved_usd?: number | null;
-  /** "the charge once succeeded, 0 once failed"; `null` while it runs. */
-  cost_usd: number | null;
   attempts: number;
   progress?: GenerationProgress;
-  error: GenerationError | null;
   created_at: string;
-  completed_at: string | null;
 }
+
+/** A generation that has not finished: nothing made, nothing charged, no verdict. */
+export interface PendingGeneration extends GenerationBase {
+  status: "queued" | "running";
+  /** "Only while a result is being confirmed with a provider" — on `running`. */
+  message?: string;
+  output: null;
+  cost_usd: null;
+  error: null;
+  completed_at: null;
+}
+
+/** A generation that made its files. `cost_usd` is the charge. */
+export interface SucceededGeneration extends GenerationBase {
+  status: "succeeded";
+  output: GenerationOutput;
+  /** "The charge once succeeded" — the route that made it, which can be dearer than `quoted_usd`. */
+  cost_usd: number;
+  error: null;
+  completed_at: string;
+}
+
+/** A generation that did not. Nothing was charged: "0 once failed". */
+export interface FailedGeneration extends GenerationBase {
+  status: "failed";
+  output: null;
+  cost_usd: 0;
+  /** "message is written to show the person who asked; retryable says whether the same request can work later." */
+  error: GenerationError;
+  completed_at: string;
+}
+
+/**
+ * What a create (`202`), a poll and each row of a list answer.
+ *
+ * A union on `status`, because the document's other fields move with it
+ * ("output: null until succeeded"; "cost_usd: the charge once succeeded, 0
+ * once failed, else null"; "error: when failed") and each arm is a recorded
+ * response (`test/fixtures/revana/generation.*.json`). So
+ * `generation.status === "succeeded"` is the only test a caller writes:
+ * `output.urls` and a numeric `cost_usd` follow from it, and `error.retryable`
+ * from `"failed"`.
+ */
+export type Generation = PendingGeneration | SucceededGeneration | FailedGeneration;
+
+/** The four values of {@link Generation}'s `status`. */
+export type GenerationStatus = Generation["status"];
 
 /** What `POST /v1/generations/quote` answers. "Nothing is created, held or charged." */
 export interface Quote {
@@ -626,13 +665,50 @@ export interface Quote {
 }
 
 /**
+ * `error.code` on a non-2xx: "Stable and machine-readable; the message is for
+ * people and may change." The docs' table (https://revana.si/docs, "Errors",
+ * read 2026-11-12) with the status each arrives on, and one the queue route
+ * adds that the table does not have:
+ *
+ * - `400 invalid_request` · `401 unauthorized` · `402 insufficient_credits`
+ * - `403 account_disabled | generation_not_enabled | card_required`
+ * - `404 not_found` · `409 idempotency_conflict | not_ready` · `413 body_too_large`
+ * - `422 invalid_input | max_cost_exceeded | model_not_available`
+ * - `429 rate_limited | concurrency_limit` — with `Retry-After`
+ * - `503 busy | model_unavailable` — with `Retry-After` · `500 server_error`
+ * - `405 cancellation_not_supported` — a queue `cancel_url`
+ *
+ * Tail-open: it is a table on a page, not an enum in the OpenAPI document.
+ */
+export type RevanaErrorCode =
+  | "invalid_request"
+  | "unauthorized"
+  | "insufficient_credits"
+  | "account_disabled"
+  | "generation_not_enabled"
+  | "card_required"
+  | "not_found"
+  | "idempotency_conflict"
+  | "not_ready"
+  | "body_too_large"
+  | "invalid_input"
+  | "max_cost_exceeded"
+  | "model_not_available"
+  | "rate_limited"
+  | "concurrency_limit"
+  | "busy"
+  | "model_unavailable"
+  | "server_error"
+  | "cancellation_not_supported"
+  | (string & {});
+
+/**
  * The error body of every non-2xx on the generation routes. Every response
  * also carries `X-Request-Id`.
  */
 export interface RevanaErrorBody {
   error: {
-    /** e.g. `invalid_input`, `max_cost_exceeded`, `model_not_available`, `insufficient_credits`. */
-    code: string;
+    code: RevanaErrorCode;
     message: string;
     /** `req_` + 20 hex digits. */
     request_id: string;

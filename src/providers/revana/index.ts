@@ -33,6 +33,10 @@
  * body is the input with no wrapper, and `fal_webhook` has Revana POST the
  * outcome instead of being polled for it. Same battery, same tables.
  *
+ * What comes back: `checkGeneration` and `checkQueueStatus` report a job the
+ * way every provider's checker does, and `verifyWebhook` is the receiving end
+ * of `fal_webhook` — it checks a delivery's signature and returns it typed.
+ *
  * Revana resells weights unmodel already reaches natively — `veo-3.1` is also
  * `google.video`, `seedance-2.5` also `bytedance.video`, `elevenlabs-v3` also
  * `elevenlabs.tts` — through a different body each time, and unmodel keeps
@@ -64,8 +68,18 @@ export {
 } from "./chat";
 
 export type { GenerationValidator, RequestFor } from "./generation";
-export { REVANA_SIGNATURE_HEADER, REVANA_WEBHOOK_ID_HEADER } from "./queue";
 export type { QueueBodyFor, QueueRequestFor, QueueValidator } from "./queue";
+
+export { checkGeneration, checkQueueStatus } from "./check";
+export type { GenerationLike, QueueEnvelopeLike, QueueOutcome, RevanaGenerationStatus } from "./check";
+
+export {
+  REVANA_SIGNATURE_HEADER,
+  REVANA_WEBHOOK_ID_HEADER,
+  REVANA_WEBHOOK_TOLERANCE_SECONDS,
+  verifyWebhook,
+} from "./webhook";
+export type { VerifyWebhookInput, WebhookForgeryReason, WebhookHeaders, WebhookVerification } from "./webhook";
 
 export type {
   QueueAudioResult,
@@ -74,24 +88,31 @@ export type {
   QueueEnvelope,
   QueueErrorBody,
   QueueExtensions,
+  QueueFailed,
   QueueFile,
   QueueImageResult,
   QueueInput,
+  QueuePending,
   QueueRequest,
   QueueResult,
   QueueStatus,
+  QueueSucceeded,
   QueueVideoResult,
   QueueWebhookDelivery,
+  QueueWebhookFailure,
+  QueueWebhookSuccess,
   WebhookSecret,
 } from "./queue-wire";
 
 export type {
+  FailedGeneration,
   Generation,
   GenerationError,
   GenerationErrorCode,
   GenerationOutput,
   GenerationProgress,
   GenerationRequest,
+  GenerationStatus,
   GenerationTask,
   ImageModelInput,
   InputFor,
@@ -99,13 +120,16 @@ export type {
   MusicModelInput,
   NemesisInput,
   NemesisRole,
+  PendingGeneration,
   Quote,
   RevanaErrorBody,
+  RevanaErrorCode,
   RevanaMediaModelId,
   RevanaMediaUrl,
   SeedanceInput,
   SpeechDialogueLine,
   SpeechModelInput,
+  SucceededGeneration,
   UnknownModelRequest,
   VideoModelInput,
 } from "./generation-wire";
@@ -171,15 +195,6 @@ export type {
   RevanaSpeechField,
   RevanaTask,
 } from "./shape-types";
-
-// No response checker for the generation route. The POST answers a QUEUED
-// `Generation` — a created job, not a result — and reading the finished one is
-// polling, which is transport. The document it eventually answers is typed
-// (`Generation`), and it carries its own verdict and its own exact charge
-// (`status`, `error.retryable`, `cost_usd`), so there is nothing for a checker
-// to compute that the wire does not already say. The same holds for the queue
-// route, whose result states no cost at all: its `request_id` is a generation
-// id, and `generationUrl(request_id)` is where the charge is read.
 
 export { models, provider } from "./models";
 export type { RevanaModelId } from "./models";

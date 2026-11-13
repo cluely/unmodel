@@ -1,7 +1,9 @@
 # Revana fixtures
 
-Real responses from `https://api.revana.si/v1`, recorded 2026-11-12. Each file
-is `{ status, body }`: the HTTP status and the JSON body exactly as answered.
+Real responses from `https://api.revana.si/v1`, recorded 2026-11-12 and
+2026-11-13. Each file is `{ status, body }`: the HTTP status and the JSON body
+exactly as answered. The two `queue.webhook.*` files are the other direction —
+what Revana POSTed — and are `{ headers, body }`, see below.
 
 | File | Request |
 | --- | --- |
@@ -11,6 +13,9 @@ is `{ status, body }`: the HTTP status and the JSON body exactly as answered.
 | `generation.tts.succeeded.json` | `GET /v1/generations/{id}` — `elevenlabs-turbo-2.5`, finished |
 | `generation.error.invalid_input.json` | `POST /v1/generations` — `veo-3.1` with `resolution: "480p"` |
 | `generation.error.not_found.json` | `GET /v1/generations/gen_does_not_exist` |
+| `generation.error.model_unavailable.json` | `POST /v1/generations` — `z-image` with `max_wait_s: 1` (`503`, nothing created) |
+| `generation.upscale.created.json` | `POST /v1/generations` — `recraft-crisp-upscale` on a link to 64 random bytes (`202`) |
+| `generation.upscale.failed.json` | `GET /v1/generations/{id}` — the same job, failed, `cost_usd: 0` |
 | `chat.completion.json` | `POST /v1/chat/completions` — `gpt-6-luna`, `max_tokens: 5` |
 | `chat.error.unsupported_parameter.json` | the same, with `web_search_options: {}` |
 | `quote-oracle.json` | `POST /v1/generations/quote`, once per body — see below |
@@ -23,7 +28,21 @@ is `{ status, body }`: the HTTP status and the JSON body exactly as answered.
 | `queue.image.result.json` | `GET {response_url}`, finished |
 | `queue.image.content.json` | `GET` the result's file URL, not followed (`302`; `location` cut to its origin) |
 | `queue.error.not_found.json` | `GET` the status of a request id that does not exist |
+| `queue.error.model_unavailable.json` | `POST /v1/queue/revana/z-image` with `max_wait_s: 1` (`503`) |
+| `queue.upscale.status.failed.json` | `GET {status_url}` — `recraft-crisp-upscale` on the same 64 bytes: `COMPLETED`, with `error` |
+| `queue.upscale.result.failed.json` | `GET {response_url}` of that request (`422`) |
+| `queue.webhook.ok.json` | the delivery to `fal_webhook` for a `z-image` request that succeeded |
+| `queue.webhook.error.json` | the delivery for the upscale that failed |
 | `queue-oracle.json` | `POST /v1/queue/revana/{model_id}`, once per body — see below |
+
+## `queue.webhook.*.json`
+
+`headers` are the ones Revana set (the receiver's own `host` left out), and
+`body` is the request body as one string, byte for byte — the signature is
+over those bytes, so it is not stored parsed. The `revana-signature` values
+are Revana's real ones. They verify only with the recording account's signing
+secret, which is not here; `src/providers/revana/webhook.test.ts` signs the
+same bodies with a stand-in instead.
 
 ## `quote-oracle.json`
 

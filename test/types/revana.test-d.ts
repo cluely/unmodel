@@ -23,20 +23,31 @@ import {
   upscale,
   video,
   videoQueue,
+  checkGeneration,
+  checkQueueStatus,
+  verifyWebhook,
   type GenerationRequest,
   type InputFor,
   type RevanaMediaUrl,
 } from "../../src/providers/revana";
 import type {
+  Generation,
+  GenerationOutput,
   ImageBody,
   ImageQueueBody,
   QueueEnvelope,
+  QueueFile,
+  QueueOutcome,
   QueueResult,
+  QueueWebhookDelivery,
+  RevanaErrorBody,
+  RevanaGenerationStatus,
   TtsBody,
   VideoBody,
   VideoQueueBody,
+  WebhookForgeryReason,
 } from "../../src/providers/revana/types";
-import { expectAssignable } from "./helpers";
+import { expectAssignable, expectTrue, type HasLiteralMember, type IsNever } from "./helpers";
 
 const IMG = "https://example.com/a.png";
 const VID = "https://example.com/a.mp4";
@@ -255,8 +266,101 @@ function queueTypeTests(): void {
   expectAssignable<ImageQueueBody<"z-image">>({ prompt: "a", max_cost_usd: 0.05 });
   const envelope = { status: "IN_QUEUE", request_id: "gen_1", response_url: "u", status_url: "u" } satisfies QueueEnvelope;
   expectAssignable<QueueEnvelope["status"]>(envelope.status);
-  const result = { images: [{ url: "u" }] } as QueueResult;
-  if ("images" in result) expectAssignable<string | undefined>(result.images[0]?.url);
+}
+
+/**
+ * The response documents narrow on their own verdict, so a caller cannot read
+ * a field the state they are in does not have.
+ */
+function responseTypeTests(generation: Generation, envelope: QueueEnvelope, result: QueueResult): void {
+  // Generation: `status` decides `output`, `cost_usd` and `error`.
+  if (generation.status === "succeeded") {
+    expectAssignable<GenerationOutput>(generation.output);
+    expectAssignable<number>(generation.cost_usd);
+    expectAssignable<null>(generation.error);
+  } else if (generation.status === "failed") {
+    expectAssignable<0>(generation.cost_usd);
+    expectAssignable<string>(generation.error.message);
+    expectAssignable<null>(generation.output);
+  } else {
+    expectAssignable<"queued" | "running">(generation.status);
+    expectAssignable<null>(generation.cost_usd);
+    expectAssignable<null>(generation.completed_at);
+  }
+  // @ts-expect-error — before narrowing, `output` may be null.
+  generation.output.urls;
+
+  // The queue envelope: `COMPLETED` alone does not say which, `error` does.
+  if (envelope.status === "COMPLETED") {
+    // @ts-expect-error — a COMPLETED request may have succeeded, and then there is no `error`.
+    expectAssignable<string>(envelope.error);
+    if (envelope.error === undefined) {
+      expectAssignable<undefined>(envelope.error_type);
+    } else {
+      expectAssignable<string>(envelope.error);
+      expectAssignable<string>(envelope.error_type);
+    }
+  } else {
+    expectAssignable<"IN_QUEUE" | "IN_PROGRESS">(envelope.status);
+    expectAssignable<undefined>(envelope.error);
+  }
+  expectAssignable<QueueEnvelope>({ status: "IN_QUEUE", request_id: "gen_1", response_url: "u", status_url: "u" });
+  // @ts-expect-error — a request still in the queue has not failed.
+  expectAssignable<QueueEnvelope>({ status: "IN_QUEUE", request_id: "g", response_url: "u", status_url: "u", error: "no" });
+  // @ts-expect-error — a failure carries its `error_type` too.
+  expectAssignable<QueueEnvelope>({ status: "COMPLETED", request_id: "g", response_url: "u", status_url: "u", error: "no" });
+
+  // The result: one of three documents, told apart by the key it has.
+  if (result.images) {
+    expectAssignable<QueueFile[]>(result.images);
+    expectAssignable<undefined>(result.video);
+  } else if (result.video) {
+    expectAssignable<QueueFile>(result.video);
+    expectAssignable<undefined>(result.audio);
+  } else {
+    expectAssignable<QueueFile>(result.audio);
+    expectAssignable<QueueFile[] | undefined>(result.audios);
+  }
+  // @ts-expect-error — a result is pictures or a video, never both.
+  expectAssignable<QueueResult>({ images: [{ url: "u" }], video: { url: "u" } });
+
+  // The error body's code completes, and stays open.
+  expectTrue<HasLiteralMember<RevanaErrorBody["error"]["code"], "not_ready">>();
+  expectAssignable<RevanaErrorBody["error"]["code"]>("a_code_from_next_week");
+
+  // The checkers report each route's own vocabulary on `finishReason`.
+  expectAssignable<RevanaGenerationStatus | undefined>(checkGeneration(generation).finishReason);
+  expectTrue<HasLiteralMember<RevanaGenerationStatus, "succeeded">>();
+  expectAssignable<QueueOutcome | undefined>(checkQueueStatus(envelope).finishReason);
+  expectTrue<HasLiteralMember<QueueOutcome, "ERROR">>();
+}
+
+/** A verified delivery is typed only where it was understood, and a forgery carries no body at all. */
+async function webhookTypeTests(headers: Headers): Promise<void> {
+  const verdict = await verifyWebhook({ body: "{}", headers, secret: "s" });
+  if (verdict.ok) {
+    expectAssignable<QueueWebhookDelivery>(verdict.delivery);
+    expectAssignable<true>(verdict.authentic);
+    if (verdict.delivery.status === "OK") {
+      expectAssignable<QueueResult>(verdict.delivery.payload);
+      expectAssignable<undefined>(verdict.delivery.error);
+    } else {
+      expectAssignable<string>(verdict.delivery.error);
+      expectAssignable<string>(verdict.delivery.payload.error_type);
+    }
+  } else if (verdict.authentic) {
+    expectAssignable<"unrecognized_body">(verdict.reason);
+    expectAssignable<unknown>(verdict.json);
+  } else {
+    expectAssignable<WebhookForgeryReason>(verdict.reason);
+    expectTrue<IsNever<Extract<keyof typeof verdict, "json" | "delivery">>>();
+  }
+  // @ts-expect-error — the delivery is not there until `ok` says so.
+  verdict.delivery;
+  // Node's `req.headers` and a raw `Buffer`/`Uint8Array` body are taken as they are.
+  await verifyWebhook({ body: new Uint8Array(), headers: { "revana-signature": "t=1,v1=00", "x-list": ["a", "b"] }, secret: "s" });
+  // @ts-expect-error — a parsed object is not the raw body the signature is over.
+  await verifyWebhook({ body: { status: "OK" }, headers, secret: "s" });
 }
 
 function typesEntryTypeTests(): void {
@@ -278,4 +382,6 @@ void avatarAndLipsyncTypeTests;
 void audioTypeTests;
 void chatTypeTests;
 void queueTypeTests;
+void responseTypeTests;
+void webhookTypeTests;
 void typesEntryTypeTests;

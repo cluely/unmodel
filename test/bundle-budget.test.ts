@@ -244,9 +244,17 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * what the per-address split in `scripts/codegen-revana.ts` is for.
    *
    * It grows with Revana's roster, by design: the weekly refresh adds rows.
-   * 345 is 312.5 × 1.1, the same multiple as every row above.
+   *
+   * 351.0 KiB with the second route and the response side on the barrel, and
+   * every byte of the difference is hand-written: the four `*Queue` addresses
+   * and their factory (11.0), the battery's growth to 34.2 (the queue's two
+   * fields, the second names, three rules the oracle added), `admitted.ts`
+   * (2.9), the two response checkers (3.5) and `verifyWebhook` (4.8). None of
+   * it reaches a single address's graph except `admitted.ts` and the battery.
+   *
+   * 386 is 351.0 × 1.1, the same multiple as every row above.
    */
-  revana: 345,
+  revana: 386,
 
   /**
    * The six entries that carry the **media retarget seam** — `.toApi("fal")`.

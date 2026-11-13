@@ -1336,6 +1336,10 @@ describe("cross-provider imports", () => {
       "src/providers/nvidia/index.ts", // → gemini
       "src/providers/scaleway/index.ts", // → gemini
       "src/providers/siliconflow/index.ts", // → gemini
+      // Its own dialect's codec, which every fleet graph already holds through
+      // chat-completions.ts: `.toSdk("ai-sdk")` maps DeepSeek's content parts
+      // onto the dialect and then calls it, so the edge costs no bytes.
+      "src/providers/deepseek/index.ts", // → openai-chat
     ]);
     const actual = new Set(
       FILES.filter((file) => under(file, "src/providers") && !isInterop(file)).filter((file) =>

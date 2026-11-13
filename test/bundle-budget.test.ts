@@ -1782,6 +1782,10 @@ describe("unmodel/chat", () => {
    * id lists the anthropic codec spells reasoning by, split out of
    * `anthropic/constraints.ts` (which re-exports them) so the factory entry
    * can carry them without the constraint tables. A move, not new data.
+   * **+1 (→ 62) with `deepseek/wire.ts`** (2026-11-13): the wire leaf that
+   * types and validates DeepSeek's own content parts and top-level params, so
+   * `deepseek.chat` stops refusing documented image shapes. It imports zod and
+   * the dialect's wire leaf only; no catalog came with it.
    */
   test("its provider graph is exactly the enumerated 62 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
@@ -1796,6 +1800,7 @@ describe("unmodel/chat", () => {
       "src/providers/cerebras/index.ts",
       "src/providers/deepinfra/index.ts",
       "src/providers/deepseek/index.ts",
+      "src/providers/deepseek/wire.ts",
       "src/providers/fireworks-ai/index.ts",
       "src/providers/friendli/index.ts",
       "src/providers/google/audio-constraints.ts",

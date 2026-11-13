@@ -263,11 +263,17 @@ const toolCallSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-const messageSchema = z.discriminatedUnion("role", [
-  z.looseObject({ role: z.literal("system"), content: textContentSchema, name: z.string().optional() }),
-  z.looseObject({ role: z.literal("developer"), content: textContentSchema, name: z.string().optional() }),
-  z.looseObject({ role: z.literal("user"), content: userContentSchema, name: z.string().optional() }),
-  z.looseObject({
+/**
+ * One schema per message role. Exported for an overlay whose provider documents
+ * other content for some roles: it unions its own arms with the rest of these
+ * and refines the array with {@link refineMessageSequence} — deepseek, whose
+ * system, user and tool messages take its own image parts.
+ */
+export const messageRoleSchemas = {
+  system: z.looseObject({ role: z.literal("system"), content: textContentSchema, name: z.string().optional() }),
+  developer: z.looseObject({ role: z.literal("developer"), content: textContentSchema, name: z.string().optional() }),
+  user: z.looseObject({ role: z.literal("user"), content: userContentSchema, name: z.string().optional() }),
+  assistant: z.looseObject({
     role: z.literal("assistant"),
     content: z
       .union([z.string(), z.array(z.discriminatedUnion("type", [textPartSchema, refusalPartSchema]))])
@@ -279,16 +285,36 @@ const messageSchema = z.discriminatedUnion("role", [
     tool_calls: z.array(toolCallSchema).optional(),
     function_call: z.looseObject({ name: z.string(), arguments: z.string() }).nullable().optional(),
   }),
-  z.looseObject({ role: z.literal("tool"), content: textContentSchema, tool_call_id: z.string() }),
-  z.looseObject({ role: z.literal("function"), name: z.string(), content: z.string().nullable() }),
+  tool: z.looseObject({ role: z.literal("tool"), content: textContentSchema, tool_call_id: z.string() }),
+  function: z.looseObject({ role: z.literal("function"), name: z.string(), content: z.string().nullable() }),
+};
+
+const messageSchema = z.discriminatedUnion("role", [
+  messageRoleSchemas.system,
+  messageRoleSchemas.developer,
+  messageRoleSchemas.user,
+  messageRoleSchemas.assistant,
+  messageRoleSchemas.tool,
+  messageRoleSchemas.function,
 ]);
+
+export const messagesSchema = z.array(messageSchema).superRefine(refineMessageSequence);
+
+/** The fields {@link refineMessageSequence} reads, for any dialect's message union. */
+type SequencedMessage =
+  | { role: "assistant"; tool_calls?: ReadonlyArray<{ id: string }> | undefined }
+  | { role: "tool"; tool_call_id: string }
+  | { role: "system" | "developer" | "user" | "function" };
 
 /**
  * Structural rules zod's shape can't express: the array must be non-empty,
  * and every tool message must answer a tool_call id declared by a preceding
  * assistant message.
  */
-export const messagesSchema = z.array(messageSchema).superRefine((msgs, ctx) => {
+export function refineMessageSequence(
+  msgs: readonly SequencedMessage[],
+  ctx: z.core.$RefinementCtx,
+): void {
   if (msgs.length === 0) {
     ctx.addIssue({ code: "custom", message: "messages must contain at least one message." });
     return;
@@ -306,7 +332,7 @@ export const messagesSchema = z.array(messageSchema).superRefine((msgs, ctx) => 
       });
     }
   });
-});
+}
 
 /** Top-level shape of the common dialect; providers spread extras on top. */
 const chatCompletionsBaseShape = {

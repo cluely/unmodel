@@ -39,7 +39,7 @@
  * - `deepseek.chat` → `ChatBody`
  */
 
-import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
+import type { ChatCompletionsBody } from "./wire";
 import type { DeepseekTextModelId } from "../../catalog/deepseek.gen";
 
 export type {
@@ -50,23 +50,27 @@ export type {
   DeepseekVideoModelId,
 } from "../../catalog/deepseek.gen";
 
-// The OpenAI-compatible chat dialect this overlay speaks. The wire leaf is the
-// same one `deepseek.chat` validates against, so what type-checks here is
-// what that validator accepts.
+// DeepSeek's wire leaf: its body, messages and content parts. It is the same
+// leaf `deepseek.chat` validates against, so what type-checks here is what
+// that validator accepts.
 export type {
-  ChatCompletionsBodyBase,
+  ChatCompletionsBody,
   ChatMessage,
   ChatSystemMessage,
-  ChatDeveloperMessage,
   ChatUserMessage,
-  ChatAssistantMessage,
   ChatToolMessage,
-  ChatFunctionMessage,
   ChatUserContentPart,
-  ChatTextPart,
   ChatImagePart,
-  ChatAudioPart,
   ChatFilePart,
+} from "./wire";
+
+// The rest of the body is the OpenAI-compatible dialect's, verbatim.
+export type {
+  ChatCompletionsBodyBase,
+  ChatDeveloperMessage,
+  ChatAssistantMessage,
+  ChatFunctionMessage,
+  ChatTextPart,
   ChatRefusalPart,
   ChatPromptCacheBreakpoint,
   ChatTool,
@@ -79,15 +83,12 @@ export type {
   ChatResponseFormat,
 } from "../openai-compatible/wire";
 
-export type {
-  ChatChoiceLike,
-  ChatCompletionLike,
-  ChatFinishReason,
-} from "../openai-compatible/check";
+export type { ChatChoiceLike, ChatCompletionLike } from "../openai-compatible/check";
+export type { ChatFinishReason } from "./index";
 
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.
 // Pure type aliases: no rename, no runtime, no cost.
 // ---------------------------------------------------------------------------
 
-export type ChatBody<ModelId extends string = DeepseekTextModelId> = ChatCompletionsBodyBase<ModelId>;
+export type ChatBody<ModelId extends string = DeepseekTextModelId> = ChatCompletionsBody<ModelId>;

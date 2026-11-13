@@ -1,8 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { ChatCompletionsBodyBase } from "../openai-compatible";
 import { chat, CHAT_COMPLETIONS_URL, checkChat, type DeepseekTextModelId } from "./index";
-
-type Body = ChatCompletionsBodyBase<DeepseekTextModelId>;
+import type { ChatBody as Body } from "./types";
 
 const hi = [{ role: "user" as const, content: "hi" }];
 const weatherTool = {
@@ -10,12 +8,8 @@ const weatherTool = {
   function: { name: "get_weather", parameters: { type: "object" } },
 };
 
-/**
- * DeepSeek's `thinking` object is not part of the shared dialect's type, so a
- * literal carrying it is widened here; the runtime schema passes it through.
- */
 function withThinking(body: Body, type: "enabled" | "disabled"): Body {
-  return { ...body, thinking: { type } } as Body;
+  return { ...body, thinking: { type } };
 }
 
 /** A syntactically valid PNG header of the given dimensions, as a base64 data URL. */
@@ -136,7 +130,9 @@ describe("deepseek.chat thinking-mode rules", () => {
       tool_choice: "required",
     } satisfies Body;
     expect(chat.safe({ ...base, reasoning_effort: "none" }).ok).toBe(true);
-    expect(chat.safe(withThinking(base, "disabled")).ok).toBe(true);
+    const off = chat.safe(withThinking(base, "disabled"));
+    expect(off.ok).toBe(true);
+    if (off.ok) expect(off.warnings).toEqual([]);
   });
 
   test("an explicit thinking object takes precedence over reasoning_effort", () => {
@@ -170,6 +166,11 @@ describe("deepseek.chat thinking-mode rules", () => {
     });
     expect(off.ok).toBe(true);
     if (off.ok) expect(off.warnings).toEqual([]);
+    const offByObject = chat.safe(
+      withThinking({ model: "deepseek-flash", messages: hi, temperature: 0.7 }, "disabled"),
+    );
+    expect(offByObject.ok).toBe(true);
+    if (offByObject.ok) expect(offByObject.warnings).toEqual([]);
   });
 
   test("top_p follows each model's documented thinking-mode behaviour", () => {
@@ -206,10 +207,12 @@ describe("deepseek.chat endpoint rules", () => {
   });
 
   test("reasoning_effort takes DeepSeek's documented values and compatibility aliases", () => {
-    for (const effort of ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]) {
+    const efforts = ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"] as const;
+    for (const effort of efforts) {
       const r = chat.safe({ model: "deepseek-flash", messages: hi, reasoning_effort: effort });
       expect(r.ok).toBe(true);
     }
+    // @ts-expect-error — "maximum" is not one of DeepSeek's values
     const r = chat.safe({ model: "deepseek-flash", messages: hi, reasoning_effort: "maximum" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
@@ -268,5 +271,219 @@ describe("deepseek.chat endpoint rules", () => {
     expect(hasImageRule("deepseek-flash")).toBe(true);
     expect(hasImageRule("deepseek-v4-pro")).toBe(false);
     expect(hasImageRule("constructor")).toBe(false);
+  });
+});
+
+describe("deepseek.chat top-level extensions", () => {
+  test("thinking, user_id, safety_check and title validate clean", () => {
+    const r = chat.safe({
+      model: "deepseek-flash",
+      messages: hi,
+      thinking: { type: "enabled" },
+      user_id: "user_123",
+      safety_check: { level: "high" },
+      title: { enabled: true },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("a thinking type outside enabled/disabled is refused", () => {
+    // @ts-expect-error — `type` is "enabled" | "disabled"
+    const r = chat.safe({ model: "deepseek-flash", messages: hi, thinking: { type: "off" } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["thinking", "type"]);
+  });
+
+  test("response_format json_schema warns and names what DeepSeek offers", () => {
+    for (const model of ["deepseek-flash", "deepseek-v4-pro"] as const) {
+      const r = chat.safe({
+        model,
+        messages: hi,
+        response_format: { type: "json_schema", json_schema: { name: "x", schema: { type: "object" } } },
+      });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings.map((w) => [w.code, w.path])).toEqual([
+          ["unsupported_capability", ["response_format"]],
+        ]);
+        expect(r.warnings[0]?.message).toContain('type: "json_object"');
+        expect(r.warnings[0]?.message).toContain("strict: true");
+      }
+    }
+    const json = chat.safe({ model: "deepseek-flash", messages: hi, response_format: { type: "json_object" } });
+    expect(json.ok).toBe(true);
+    if (json.ok) expect(json.warnings).toEqual([]);
+  });
+});
+
+describe("deepseek.chat content parts", () => {
+  const imageUrl = "https://example.com/a.png";
+  const toolCall = { id: "call_1", type: "function" as const, function: { name: "f", arguments: "{}" } };
+
+  function withToolImage(model: DeepseekTextModelId): Body {
+    return {
+      model,
+      messages: [
+        ...hi,
+        { role: "assistant", tool_calls: [toolCall] },
+        { role: "tool", tool_call_id: "call_1", content: [{ type: "image_url", image_url: { url: imageUrl } }] },
+      ],
+    };
+  }
+
+  test("DeepSeek's documented image shapes validate clean on deepseek-flash", () => {
+    const bodies: Body[] = [
+      {
+        model: "deepseek-flash",
+        messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: imageUrl, detail: "original" } }] }],
+      },
+      { model: "deepseek-flash", messages: [{ role: "user", content: [{ type: "file", file_id: "file-api-1" }] }] },
+      {
+        model: "deepseek-flash",
+        messages: [
+          { role: "user", content: [{ type: "file", file_data: pngDataUrl(64, 64), filename: "a.png" }] },
+        ],
+      },
+      withToolImage("deepseek-flash"),
+      {
+        model: "deepseek-flash",
+        messages: [
+          { role: "system", content: [{ type: "text", text: "s" }, { type: "image_url", image_url: { url: imageUrl } }] },
+          ...hi,
+        ],
+      },
+    ];
+    for (const body of bodies) {
+      const r = chat.safe(body);
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("a file part needs exactly one of file_id and file_data", () => {
+    function filePart(part: Record<string, unknown>) {
+      return chat.safe({
+        model: "deepseek-flash",
+        messages: [{ role: "user", content: [{ type: "file", ...part }] }],
+      });
+    }
+    const both = filePart({ file_id: "file-api-1", file_data: pngDataUrl(64, 64) });
+    expect(both.ok).toBe(false);
+    if (!both.ok) {
+      expect(both.errors.map((e) => [e.code, e.path])).toEqual([["invalid_shape", ["messages", 0, "content", 0]]]);
+      expect(both.errors[0]?.message).toContain("file cannot have both file_id and file_data");
+    }
+    const neither = filePart({ filename: "a.png" });
+    expect(neither.ok).toBe(false);
+    if (!neither.ok) expect(neither.errors[0]?.message).toContain("file must have a file_id or file_data");
+    // The dialect's nested form carries neither on the part itself.
+    const nested = filePart({ file: { file_id: "file-api-1" } });
+    expect(nested.ok).toBe(false);
+    if (!nested.ok) expect(nested.errors[0]?.message).toContain("nested `file: {…}` object");
+  });
+
+  test("an image in an assistant message is refused", () => {
+    const r = chat.safe({
+      model: "deepseek-flash",
+      // @ts-expect-error — assistant content takes text and refusal parts only
+      messages: [...hi, { role: "assistant", content: [{ type: "image_url", image_url: { url: imageUrl } }] }],
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["messages", 1, "content"]);
+  });
+
+  test("text-only deepseek-v4-pro refuses images in any role", () => {
+    const tool = chat.safe(withToolImage("deepseek-v4-pro"));
+    expect(tool.ok).toBe(false);
+    if (!tool.ok) {
+      expect(tool.errors.map((e) => [e.code, e.path])).toEqual([
+        ["unsupported_capability", ["messages", 2, "content", 0]],
+      ]);
+    }
+    const inline = chat.safe({
+      model: "deepseek-v4-pro",
+      messages: [{ role: "user", content: [{ type: "file", file_data: pngDataUrl(64, 64) }] }],
+    });
+    expect(inline.ok).toBe(false);
+    if (!inline.ok) expect(inline.errors[0]?.message).toContain("does not accept image input");
+  });
+
+  test("a file_id part is not taken for an image, so no model refuses it", () => {
+    // The id may name a document the Files API parsed.
+    const r = chat.safe({
+      model: "deepseek-v4-pro",
+      messages: [{ role: "user", content: [{ type: "file", file_id: "file-api-1" }] }],
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  test("the vision limits reach file_data and tool-message images", () => {
+    const fileData = chat.safe({
+      model: "deepseek-flash",
+      messages: [{ role: "user", content: [{ type: "file", file_data: pngDataUrl(8193, 64) }] }],
+    });
+    expect(fileData.ok).toBe(false);
+    if (!fileData.ok) expect(fileData.errors[0]?.code).toBe("media_dimensions_exceeded");
+
+    const path = ["messages", 2, "content", 0] as const;
+    const r = chat.safe(withToolImage("deepseek-flash"), { media: [{ path, bytes: 32 * 1024 * 1024 + 1 }] });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("media_too_large");
+  });
+
+  test("a declared file_id image is not held to the 32 MiB inline cap", () => {
+    const path = ["messages", 0, "content", 0] as const;
+    const r = chat.safe(
+      { model: "deepseek-flash", messages: [{ role: "user", content: [{ type: "file", file_id: "file-api-1" }] }] },
+      { media: [{ path, bytes: 48 * 1024 * 1024 }] },
+    );
+    expect(r.ok).toBe(true);
+  });
+
+  test("toSdk(ai-sdk) maps DeepSeek's parts onto the dialect", () => {
+    const v = chat({
+      model: "deepseek-flash",
+      messages: [
+        { role: "system", content: [{ type: "text", text: "sys" }, { type: "image_url", image_url: { url: imageUrl } }] },
+        { role: "user", content: [{ type: "file", file_data: pngDataUrl(64, 64), filename: "a.png" }] },
+      ],
+    });
+    const options = v.toSdk("ai-sdk");
+    expect(options.messages[0]).toEqual({ role: "system", content: "sys" });
+    expect(options.messages[1]).toMatchObject({
+      role: "user",
+      content: [{ type: "file", mediaType: "image/png", filename: "a.png" }],
+    });
+    expect(options.warnings.map((w) => [w.code, w.path])).toEqual([
+      ["dropped_content", ["messages", 0, "content", 1]],
+    ]);
+  });
+});
+
+describe("deepseek checkChat interruptions", () => {
+  function report(finishReason: string) {
+    return checkChat({
+      model: "deepseek-flash",
+      choices: [{ finish_reason: finishReason }],
+      usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+    });
+  }
+
+  test("insufficient_system_resource and aborted each warn", () => {
+    for (const finishReason of ["insufficient_system_resource", "aborted"]) {
+      const r = report(finishReason);
+      expect(r.finishReason).toBe(finishReason);
+      expect(r.warnings.map((w) => [w.code, w.path, w.meta])).toEqual([
+        ["unsupported_capability", ["choices", 0, "finish_reason"], { kind: "interrupted", finishReason }],
+      ]);
+      expect(r.warnings[0]?.model).toBe("deepseek-flash");
+    }
+    expect(report("insufficient_system_resource").warnings[0]?.message).toContain("retry the request");
+  });
+
+  test("stop stays clean and length still warns once", () => {
+    expect(report("stop").warnings).toEqual([]);
+    expect(report("length").warnings.map((w) => w.code)).toEqual(["over_output_limit"]);
   });
 });

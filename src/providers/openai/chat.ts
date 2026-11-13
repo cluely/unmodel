@@ -311,7 +311,7 @@ function exemptAtEffortNone(check: ChatCompletionsCheck): ChatCompletionsCheck {
 
 /** The shared battery, order preserved, with its sampling slot wrapped in the GPT-6 `none` exemption. */
 function openaiChatChecks(spec: ChatConstraintSpec): readonly ChatCheck[] {
-  return chatCompletionsChecks(spec, exemptAtEffortNone(createSamplingParamsCheck(spec)));
+  return chatCompletionsChecks(spec, { sampling: exemptAtEffortNone(createSamplingParamsCheck(spec)) });
 }
 
 // ---------------------------------------------------------------------------

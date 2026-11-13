@@ -200,18 +200,26 @@ export interface OpenAICompatibleChatResultKind<
     : never;
 }
 
+/**
+ * `Body` is the endpoint's own request type, and defaults to the dialect's. A
+ * provider that documents more than the dialect — DeepSeek's `thinking`, its
+ * own content parts — composes its validator from the shared pieces and names
+ * its body here, so the params it documents type-check. The result kind stays
+ * on the dialect body: that is what `unmodel/chat` compiles for every provider.
+ */
 export interface OpenAICompatibleChat<
   ModelId extends string = string,
   Avail extends AvailabilityMap = never,
   Provider extends string = string,
+  Body extends { model: string } = ChatCompletionsBodyBase<ModelId>,
 > extends ValidatorResultKindCarrier<OpenAICompatibleChatResultKind<ModelId, Avail>>,
     ValidatorProviderCarrier<Provider> {
-  <T extends ChatCompletionsBodyBase<ModelId>>(
-    params: T & ExactKeys<T, ChatCompletionsBodyBase<ModelId>>,
+  <T extends Body>(
+    params: T & ExactKeys<T, Body>,
     options?: ValidateOptions<T>,
   ): Validated<T, ChatSdkTargets<T>, Avail, T["model"] & string>;
-  safe<T extends ChatCompletionsBodyBase<ModelId>>(
-    params: T & ExactKeys<T, ChatCompletionsBodyBase<ModelId>>,
+  safe<T extends Body>(
+    params: T & ExactKeys<T, Body>,
     options?: ValidateOptions<T>,
   ): ValidateResult<Validated<T, ChatSdkTargets<T>, Avail, T["model"] & string>>;
   constraintsFor(modelId: string): EndpointConstraints[];
@@ -365,8 +373,10 @@ export type {
   ChatAudioPart,
   ChatCompletionsBodyBase,
   ChatCompletionsCheck,
+  ChatCompletionsCheckSlots,
   ChatConstraintSpec,
   ChatFinalizeSpec,
+  ChatImageRef,
   ChatSdkTargets,
   FixedSampling,
   ChatCustomTool,

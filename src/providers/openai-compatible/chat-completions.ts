@@ -6,6 +6,7 @@ import { createAiSdkChat } from "../../core/translate/ai-sdk";
 import type { DialectId } from "../../core/translate/endpoints";
 import type { ChatIR } from "../../core/translate/ir";
 import { createToApi, type Decoder } from "../../core/translate/retarget";
+import type { Warn } from "../../core/translate/warnings";
 import { targetValidationFor } from "../../retarget/target-constraints";
 import { encodeOpenAIChat } from "./interop";
 import type { EndpointConstraints, FamilyRule } from "../../core/constraint-types";
@@ -346,9 +347,21 @@ export function checkOutputLimit(
   }
 }
 
-/** Inline (data:-URL) + declared media enforcement against the spec's image rules. */
+/** An image a request carries — a `data:` URL or a remote one — and where it sits. */
+export interface ChatImageRef {
+  path: Array<string | number>;
+  url: string;
+}
+
+/**
+ * Inline (data:-URL) + declared media enforcement against the spec's image
+ * rules. `imagesOf` says where the body carries images: the dialect's are the
+ * `image_url` parts of user messages, and a provider whose parts differ passes
+ * its own locator.
+ */
 export function createInlineImagesCheck(
   spec: ChatConstraintSpec,
+  imagesOf: (params: ChatCompletionsBodyBase) => readonly ChatImageRef[] = userImageParts,
 ): (params: ChatCompletionsBodyBase, info: ModelInfo | undefined, ctx: PipelineContext) => void {
   return function checkInlineImages(params, _info, ctx) {
     const rules = constraintsFor(spec, params.model)
@@ -356,51 +369,72 @@ export function createInlineImagesCheck(
       .filter((rule) => rule !== undefined);
     if (rules.length === 0) return;
 
-    params.messages.forEach((message, messageIndex) => {
-      if (message.role !== "user" || !Array.isArray(message.content)) return;
-      message.content.forEach((part, partIndex) => {
-        if (part.type !== "image_url") return;
-        const path = ["messages", messageIndex, "content", partIndex];
-        // Inline data: URLs are sniffed from bytes; URL-referenced images can
-        // only be checked against the user's out-of-band declaration.
-        const bytes = part.image_url.url.startsWith("data:") ? toBytes(part.image_url.url) : undefined;
-        const sniffed = bytes === undefined ? undefined : sniffImage(bytes);
-        const declaration = findMediaDeclaration(ctx.options.media, path);
-        if (sniffed === undefined && declaration === undefined) return;
-        for (const rule of rules) {
-          reportMediaIssues(ctx, {
-            kind: "image",
-            rule,
-            path,
-            model: params.model,
-            ...(sniffed !== undefined && { sniffed }),
-            ...(declaration !== undefined && { declaration }),
-          });
-        }
-      });
-    });
+    for (const { path, url } of imagesOf(params)) {
+      // Inline data: URLs are sniffed from bytes; URL-referenced images can
+      // only be checked against the user's out-of-band declaration.
+      const bytes = url.startsWith("data:") ? toBytes(url) : undefined;
+      const sniffed = bytes === undefined ? undefined : sniffImage(bytes);
+      const declaration = findMediaDeclaration(ctx.options.media, path);
+      if (sniffed === undefined && declaration === undefined) continue;
+      for (const rule of rules) {
+        reportMediaIssues(ctx, {
+          kind: "image",
+          rule,
+          path,
+          model: params.model,
+          ...(sniffed !== undefined && { sniffed }),
+          ...(declaration !== undefined && { declaration }),
+        });
+      }
+    }
   };
+}
+
+/** The dialect's images: the `image_url` parts of user messages. */
+function userImageParts(params: ChatCompletionsBodyBase): ChatImageRef[] {
+  const images: ChatImageRef[] = [];
+  params.messages.forEach((message, messageIndex) => {
+    if (message.role !== "user" || !Array.isArray(message.content)) return;
+    message.content.forEach((part, partIndex) => {
+      if (part.type !== "image_url") return;
+      images.push({ path: ["messages", messageIndex, "content", partIndex], url: part.image_url.url });
+    });
+  });
+  return images;
+}
+
+/**
+ * The slots of {@link chatCompletionsChecks} a provider may fill with its own
+ * policy. Each defaults to the shared check for the same spec.
+ */
+export interface ChatCompletionsCheckSlots {
+  /** Fixed sampling — {@link createSamplingParamsCheck}. */
+  sampling?: ChatCompletionsCheck;
+  /** Which content parts each model accepts — {@link checkInputModalities}. */
+  inputModalities?: ChatCompletionsCheck;
+  /** Inline and declared image media — {@link createInlineImagesCheck}. */
+  inlineImages?: ChatCompletionsCheck;
 }
 
 /**
  * The standard Chat Completions check battery, wired to a provider's
- * constraint tables. `sampling` fills the fixed-sampling slot; it defaults to
- * {@link createSamplingParamsCheck} for the same spec, and a dialect that
- * needs a different policy passes its own (usually a wrapper of the default)
- * rather than swapping an element of the returned array.
+ * constraint tables. A provider that needs a different policy for one slot —
+ * OpenAI's GPT-6 sampling exemption, DeepSeek's own content parts — passes its
+ * own check (often a wrapper of the default) rather than swapping an element
+ * of the returned array, so the battery's members and order stay shared.
  */
 export function chatCompletionsChecks(
   spec: ChatConstraintSpec,
-  sampling: ChatCompletionsCheck = createSamplingParamsCheck(spec),
+  slots: ChatCompletionsCheckSlots = {},
 ): ReadonlyArray<ChatCompletionsCheck> {
   return [
     checkToolSupport,
-    checkInputModalities,
+    slots.inputModalities ?? checkInputModalities,
     checkStructuredOutput,
     checkReasoningCapability,
-    sampling,
+    slots.sampling ?? createSamplingParamsCheck(spec),
     checkOutputLimit,
-    createInlineImagesCheck(spec),
+    slots.inlineImages ?? createInlineImagesCheck(spec),
   ];
 }
 
@@ -557,6 +591,15 @@ export interface ChatFinalizeSpec {
    * producing a wrong body.
    */
   decoders?: Readonly<Partial<Record<DialectId, Decoder<ChatIR>>>>;
+  /**
+   * The body → IR encoder behind `.toSdk("ai-sdk")` and every cross-dialect
+   * `.toApi` hop; {@link encodeOpenAIChat} when omitted. A provider whose
+   * validator admits content parts the dialect does not have (DeepSeek's flat
+   * `file` part, its images in system and tool messages) passes one that maps
+   * them onto the dialect first, so the codec never reads a part it was not
+   * written for.
+   */
+  encode?: (body: ChatCompletionsBodyBase, warn: Warn) => ChatIR;
 }
 
 /**
@@ -595,6 +638,7 @@ export function createChatFinalize(
 ): (params: ChatCompletionsBodyBase) => unknown {
   const { availability, request } = spec;
   const provider = spec.provider ?? (spec.endpoint.split(".")[0] as string);
+  const encode = spec.encode ?? encodeOpenAIChat;
   const toApi =
     availability === undefined
       ? undefined
@@ -603,14 +647,14 @@ export function createChatFinalize(
           endpoint: spec.endpoint,
           modelId: (body) => body.model,
           availability,
-          encode: encodeOpenAIChat,
+          encode,
           ...(spec.decoders !== undefined && { decoders: spec.decoders }),
           targetValidation: targetValidationFor,
         });
   const toAiSdk = createAiSdkChat<ChatCompletionsBodyBase>({
     endpoint: spec.endpoint,
     provider,
-    encode: encodeOpenAIChat,
+    encode,
   });
   return (params) => {
     const body = { ...params };

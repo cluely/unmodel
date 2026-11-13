@@ -57,7 +57,7 @@
 
 - `createSamplingParamsCheck(spec)` and the `ChatCompletionsCheck` type are
   exported. The first is the default for `chatCompletionsChecks(spec,
-  sampling)`'s `sampling` slot and is what a dialect should wrap: it honours
+  slots)`'s `sampling` slot and is what a dialect should wrap: it honours
   the spec's `enums` pins (Kimi's `top_p: 0.95`) and its `fixedSampling:
   "overridden"` reading. `checkSamplingParams` is the unpinned,
   `"rejected"`-only reading, and wrapping it for an overlay with pinned or

@@ -154,11 +154,16 @@ export type HeygenEngineType = (typeof HEYGEN_ENGINES)[number];
 export const HEYGEN_DEFAULT_ENGINE: HeygenEngineType = "avatar_iv";
 
 /**
- * The engine that renders a RAW IMAGE (`type: "image"`): Avatar IV, alone.
+ * The engine that renders a RAW IMAGE (`type: "image"`): Avatar IV, alone —
+ * and fixed by the arm, which declares no `engine` field to choose it with.
  *
- * HeyGen's engine comparison, https://developers.heygen.com/models (read
- * 2026-11-12), across Avatar 6 | Avatar V | Avatar IV | Avatar III: "| Arbitrary
- * image input | Through the Model API | ✗ | ✓ | ✗ |". The Talking Photo page,
+ * `CreateVideoFromImage` in https://developers.heygen.com/openapi/external-api.json
+ * (read 2026-11-13) has no `engine` property and is `"additionalProperties":
+ * false`, so the field is refused there whatever it names (see
+ * `checkEngineArm`). Which engine renders it instead: HeyGen's engine
+ * comparison, https://developers.heygen.com/models (read 2026-11-12), across
+ * Avatar 6 | Avatar V | Avatar IV | Avatar III: "| Arbitrary image input |
+ * Through the Model API | ✗ | ✓ | ✗ |". The Talking Photo page,
  * https://developers.heygen.com/image-to-video: "| Engine | Avatar IV |". And
  * `AvatarIIIEngineConfig`'s own description: "Not supported for raw image input
  * (`type: "image"`)." Avatar V and Avatar III serve the `avatar` arm only.
@@ -895,31 +900,32 @@ export function checkVisualSource(source: string) {
 }
 
 /**
- * The raw-image arm renders on Avatar IV, and nowhere else.
+ * The raw-image arm declares no `engine`, so naming one — any one — is a 400.
  *
- * HeyGen's engine comparison marks "Arbitrary image input" ✗ for Avatar V and
- * Avatar III, and Avatar III's own engine config says "Not supported for raw
- * image input (`type: "image"`)" — see {@link HEYGEN_IMAGE_ENGINES}. A hard
- * refusal because the fix is to change the engine (or the arm) rather than to
- * drop a field — and because both engines serve photo avatars on the `avatar`
- * arm, so a caller who lands here usually wants that engine on purpose.
+ * `CreateVideoFromImage` in https://developers.heygen.com/openapi/external-api.json
+ * (read 2026-11-13) is `"additionalProperties": false` with 23 properties, and
+ * of `CreateVideoFromAvatar`'s fields it lacks exactly `avatar_id` and
+ * `engine`. The engine is fixed by the arm instead — the Talking Photo page,
+ * https://developers.heygen.com/image-to-video: "| Engine | Avatar IV |" (see
+ * {@link HEYGEN_IMAGE_ENGINES}). So this is {@link checkVisualSource}'s rule
+ * for the other field the arms do not share, and it fires on presence:
+ * `{ type: "avatar_iv" }` and `null` are refused with the rest, because the
+ * field itself is what HeyGen rejects.
  */
 export function checkEngineArm(source: string) {
   return (params: VideoParams, _info: unknown, ctx: PipelineContext): void => {
-    if (params.type !== "image") return;
-    const engine = engineOf(params);
-    if ((HEYGEN_IMAGE_ENGINES as readonly string[]).includes(engine)) return;
+    if (params.type !== "image" || params.engine === undefined) return;
     ctx.report({
-      code: "unsupported_capability",
-      path: ["engine", "type"],
-      model: engine,
+      code: "unsupported_param",
+      path: ["engine"],
+      model: HEYGEN_IMAGE_ENGINES[0],
       message:
-        `"${engine}" does not render raw image input (\`type: "image"\`) — HeyGen's engine comparison ` +
-        `marks "Arbitrary image input" ✗ for it. Talking Photo runs on ` +
-        `${HEYGEN_IMAGE_ENGINES.map((id) => `"${id}"`).join(" and ")}, which is also what an omitted ` +
-        `\`engine\` means; to keep "${engine}", train the picture into a photo avatar and name it with ` +
-        "`avatar_id` on the `avatar` arm.",
-      meta: { source, allowed: [...HEYGEN_IMAGE_ENGINES] },
+        '`engine` is not a field the `type: "image"` arm declares — `CreateVideoFromImage` is ' +
+        "`additionalProperties: false`, so HeyGen answers 400 rather than ignoring it. Talking Photo " +
+        `renders on "${HEYGEN_IMAGE_ENGINES[0]}"; drop \`engine\`. Avatar V and Avatar III render the ` +
+        "catalogued-look arm instead — train the picture into a photo avatar and name it: " +
+        '`heygen.avatar({ type: "avatar", avatar_id, engine: { type } })`.',
+      meta: { source, type: "image" },
     });
   };
 }

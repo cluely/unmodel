@@ -11,13 +11,15 @@
  *   `CreateVideoV3RequestBody` is a `oneOf` on `type` with four arms; unmodel
  *   serves two of them. `"avatar"` requires `avatar_id` (a look from your
  *   workspace) and declares no `image`; `"image"` requires `image` (url, asset
- *   id or inline base64) and declares no `avatar_id`. Both are
+ *   id or inline base64) and declares no `avatar_id` and no `engine`. Both are
  *   `additionalProperties: false`, so the wrong field for the arm is a 400 —
- *   {@link checkVisualSource} is the guard, and HeyGen's own documented example
- *   error is exactly that mistake.
+ *   {@link checkVisualSource} and {@link checkEngineArm} are the guards, and
+ *   HeyGen's own documented example error is exactly that mistake.
  * - **There is no `model` field.** `engine` is a second discriminated union
- *   (`avatar_iii`, `avatar_iv`, `avatar_v`) and it is OPTIONAL, defaulting to
- *   `avatar_iv`. Those three are what unmodel catalogs, because they are three
+ *   (`avatar_iii`, `avatar_iv`, `avatar_v`), declared on the `"avatar"` arm
+ *   only and OPTIONAL there, defaulting to `avatar_iv`; the `"image"` arm
+ *   renders on Avatar IV and refuses the field, `null` and `avatar_iv`
+ *   included. Those three are what unmodel catalogs, because they are three
  *   products with three pages and a twelve-fold price spread — so `modelId` reads
  *   `engine.type` and falls back to the documented default rather than to
  *   `unknown_model`.
@@ -132,8 +134,10 @@ export interface HeygenAvatarParams {
   image?: HeygenAssetRef;
   /**
    * Which engine renders. **Optional, and omitting it means `avatar_iv`** —
-   * which is also a price decision. The `"avatar"` arm declares it; the
-   * `"image"` arm runs on Avatar IV.
+   * which is also a price decision. Declared on the `"avatar"` arm only;
+   * refused on `"image"`, which renders on Avatar IV — every value, `null`
+   * included. This interface is flat across the two arms, so the refusal is a
+   * run-time issue at `engine` rather than a compile error.
    */
   engine?: HeygenEngineConfig | null;
   /** Text for the avatar to speak. Mutually exclusive with the audio fields. */
@@ -214,11 +218,12 @@ const avatarSchema = z.looseObject({
  * are declared once on the arm rather than per engine.
  *
  * The per-ENGINE narrowing that does exist — `expressiveness` at Avatar IV
- * only, `motion_prompt` not at Avatar III, raw image input at Avatar IV only —
- * is a `deny`-shaped rule whose useful message is "which engines DO take this",
- * which a deny table has nowhere to put. So it lives in
- * {@link checkEngineGatedFields} and {@link checkEngineArm}, and this table
- * declares the roster to the pipeline and the enums to `constraintsFor`.
+ * only, `motion_prompt` not at Avatar III — is a `deny`-shaped rule whose
+ * useful message is "which engines DO take this", which a deny table has
+ * nowhere to put. So it lives in {@link checkEngineGatedFields}; the raw-image
+ * arm's refusal of `engine` itself is keyed by arm, not engine, and lives in
+ * {@link checkEngineArm}. This table declares the roster to the pipeline and
+ * the enums to `constraintsFor`.
  */
 const ENGINE_ENUMS = {
   resolution: HEYGEN_RESOLUTIONS,
@@ -279,7 +284,7 @@ const validator = createValidator<HeygenAvatarParams, unknown>({
   constraints: avatarConstraints,
   checks: [
     checkVisualSource(SOURCE),
-    checkEngineArm(`${DOCS_BASE}/models`),
+    checkEngineArm(SOURCE),
     checkEngineGatedFields(SOURCE),
     checkSpeechSource(SOURCE),
     checkTransparentOutput(SOURCE),

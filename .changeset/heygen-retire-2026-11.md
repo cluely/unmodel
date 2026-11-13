@@ -10,12 +10,13 @@ heygen: retire Avatar V on the raw-image arm and two voice-engine models HeyGen'
   input" ✗ for Avatar V and Avatar III, and the Talking Photo page
   (https://developers.heygen.com/image-to-video) lists its engine as Avatar IV.
   `heygen.avatar({ type: "image", engine: { type: "avatar_v" }, … })` is now
-  refused with `unsupported_capability` naming `"avatar_iv"`. Replacement:
-  `heygen/avatar_iv` for a picture you supply, or Avatar V on the
-  catalogued-look arm — `heygen.avatar({ type: "avatar", avatar_id, engine: {
-  type: "avatar_v" } })`, which is unchanged. `AVATAR_MODELS` /
-  `AVATAR_MODEL_PARAMS` on `unmodel/heygen/values` drop the `avatar_v` row and
-  its `reference_look_id` extra.
+  refused with `unsupported_param` at `engine`, because the raw-image arm
+  declares no `engine` at all. Replacement: `heygen/avatar_iv` (or
+  `heygen.avatar({ type: "image", … })` with no `engine`) for a picture you
+  supply, or Avatar V on the catalogued-look arm — `heygen.avatar({ type:
+  "avatar", avatar_id, engine: { type: "avatar_v" } })`, which is unchanged.
+  `AVATAR_MODELS` / `AVATAR_MODEL_PARAMS` on `unmodel/heygen/values` drop the
+  `avatar_v` row and its `reference_look_id` extra.
 - `voice_settings.engine_settings.model` no longer accepts
   `"eleven_flash_v2_5"` (ElevenLabs) or `"s1"` (Fish Audio). The OpenAPI
   document (https://developers.heygen.com/openapi/external-api.json,

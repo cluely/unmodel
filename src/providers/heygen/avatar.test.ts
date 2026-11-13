@@ -10,7 +10,8 @@
  *
  * - `type` decides which visual source is REQUIRED and which is refused —
  *   HeyGen's own documented example error is exactly that mistake.
- * - Only Avatar IV renders raw image input.
+ * - The raw-image arm declares no `engine` (it renders on Avatar IV), so any
+ *   `engine` there is a 400.
  * - `expressiveness` is Avatar IV only and `motion_prompt` is not Avatar III;
  *   both are REJECTED rather than ignored.
  * - `script` and the audio fields are mutually exclusive; `voice_id` is
@@ -160,24 +161,29 @@ describe("the engine is the model, and an omitted one is a price decision", () =
     expect(HEYGEN_DEFAULT_ENGINE).toBe("avatar_iv");
   });
 
-  test("only Avatar IV renders raw image input, and the refusal names it", () => {
-    // https://developers.heygen.com/models: "| Arbitrary image input | … | ✗ |
-    // ✓ | ✗ |" across Avatar V, Avatar IV and Avatar III.
+  test("the raw-image arm declares no `engine`, so every value is refused", () => {
+    // `CreateVideoFromImage` (https://developers.heygen.com/openapi/external-api.json,
+    // 2026-11-13) is `additionalProperties: false` with no `engine` property;
+    // https://developers.heygen.com/image-to-video: "| Engine | Avatar IV |".
     expect([...HEYGEN_IMAGE_ENGINES]).toEqual(["avatar_iv"]);
-    for (const type of ["avatar_iii", "avatar_v"] as const) {
-      const result = avatar.safe({
-        type: "image",
-        image: STILL,
-        audio_url: VOICE,
-        engine: { type },
-      });
-      expect(result.ok, type).toBe(false);
+    expect(avatar.safe({ type: "image", image: STILL, audio_url: VOICE }).ok).toBe(true);
+    for (const engine of [
+      { type: "avatar_iii" },
+      { type: "avatar_iv" },
+      { type: "avatar_v" },
+      null,
+    ] as const) {
+      const label = JSON.stringify(engine);
+      const result = avatar.safe({ type: "image", image: STILL, audio_url: VOICE, engine });
+      expect(result.ok, label).toBe(false);
       if (result.ok) continue;
-      const issue = result.errors.find((error) => error.path.join(".") === "engine.type");
-      expect(issue?.code, type).toBe("unsupported_capability");
-      expect(issue?.message, type).toContain('"avatar_iv"');
-      expect(issue?.meta?.["allowed"], type).toEqual(["avatar_iv"]);
-      // …and both are perfectly happy on the catalogued-look arm.
+      const issue = result.errors.find((error) => error.path.join(".") === "engine");
+      expect(issue?.code, label).toBe("unsupported_param");
+      expect(issue?.message, label).toContain("additionalProperties: false");
+      expect(issue?.message, label).toContain('type: "avatar", avatar_id');
+    }
+    // …and all three engines are perfectly happy on the catalogued-look arm.
+    for (const type of HEYGEN_ENGINES) {
       const ok = avatar.safe({
         type: "avatar",
         avatar_id: "abc123",
@@ -186,13 +192,6 @@ describe("the engine is the model, and an omitted one is a price decision", () =
       });
       expect(ok.ok, type).toBe(true);
     }
-    const iv = avatar.safe({
-      type: "image",
-      image: STILL,
-      audio_url: VOICE,
-      engine: { type: "avatar_iv" },
-    });
-    expect(iv.ok).toBe(true);
   });
 
   test("`expressiveness` and `motion_prompt` are REJECTED, not ignored", () => {
@@ -225,7 +224,6 @@ describe("the engine is the model, and an omitted one is a price decision", () =
       type: "image",
       image: STILL,
       audio_url: VOICE,
-      engine: { type: "avatar_iv" },
       expressiveness: "medium",
       motion_prompt: "gestures while speaking",
     });

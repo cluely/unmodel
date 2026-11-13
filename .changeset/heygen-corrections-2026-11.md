@@ -9,15 +9,15 @@ https://developers.heygen.com/openapi/external-api.json, accepts on 2026-11-12
 and `heygen.avatar` / `heygen.lipsync` refused):
 
 - `null` on every optional the spec types `anyOf: [T, {"type": "null"}]`. On
-  `heygen.avatar`: `engine`, `script`, `voice_id`, `audio_url`,
-  `audio_asset_id`, `voice_settings`, `title`, `folder_id`, `resolution`,
-  `aspect_ratio`, `fit`, `background`, `remove_background`, `callback_url`,
-  `callback_id`, `watermark`, `caption`, `brand_glossary_id`, `motion_prompt`,
-  `expressiveness`. On `heygen.lipsync`: `title`, `callback_url`,
-  `callback_id`, `keep_the_same_format`, `start_time`, `end_time`, `fps_mode`,
-  `folder_id`. Every cross-field check reads `null` as absent. `output_format`,
-  `type`, `mode` and the defaulted lipsync booleans stay non-nullable, as in the
-  spec.
+  `heygen.avatar`: `engine` (on the `avatar` arm, the one that declares it),
+  `script`, `voice_id`, `audio_url`, `audio_asset_id`, `voice_settings`,
+  `title`, `folder_id`, `resolution`, `aspect_ratio`, `fit`, `background`,
+  `remove_background`, `callback_url`, `callback_id`, `watermark`, `caption`,
+  `brand_glossary_id`, `motion_prompt`, `expressiveness`. On `heygen.lipsync`:
+  `title`, `callback_url`, `callback_id`, `keep_the_same_format`, `start_time`,
+  `end_time`, `fps_mode`, `folder_id`. Every cross-field check reads `null` as
+  absent. `output_format`, `type`, `mode` and the defaulted lipsync booleans
+  stay non-nullable, as in the spec.
 - `voice_settings.engine_settings` takes all seven discriminator values the
   spec maps: `cartesia` (`model`: `"sonic-3.6" | "sonic-3.5"`), `heygen_voice`
   and its legacy alias `orca` (`model: "heygen-voice-1"`, `similarity`,

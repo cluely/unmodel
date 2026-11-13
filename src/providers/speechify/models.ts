@@ -25,10 +25,13 @@
 // the worst case a budget check should assume — a launch price that ends on a
 // published date does not lower it.
 //
-// LIMITS: the character cap is per ROUTE, not per model — 2,000 on
-// /v1/audio/speech and 20,000 on /v1/audio/stream. `limit.characters` carries
-// the larger of the two (the most any route accepts) and each endpoint
-// validator additionally enforces its own documented cap.
+// LIMITS: the character cap is per ROUTE, not per model — "2,000 spoken
+// characters" on /v1/audio/speech and "20,000 spoken characters" on
+// /v1/audio/stream, where "SSML tags do not count", plus a ceiling on "The
+// input as sent, markup included" of 20,000 and 32,000 (API Limits,
+// 2026-11-12). `limit.characters` carries the larger spoken cap (the most any
+// route speaks) and each endpoint validator additionally enforces its own two
+// documented caps.
 // `limit.context: 0` disables token-window checks — these are not token models.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
@@ -94,10 +97,18 @@ const ttsModels = {
     limit: { context: 0, characters: 20000 },
     cost: { perMillionCharacters: 10 },
   },
-  // `deprecated: true` in GET /v1/audio/models. Removal is now scheduled
-  // (docs.speechify.ai/tts/guides/concepts/models, 2026-08-24): both legacy
-  // ids are "Retired from API version 2026-09-21" and "switched off on
-  // 2026-11-21" — unreachable on EVERY API version after that date.
+  // The legacy Simba 1.6 pair: "No longer selectable. Naming either returns
+  // `400` `model_retired`, and neither appears in `GET /v1/audio/models`." on
+  // API version 2026-09-21 and later; a workspace pinned below it keeps the
+  // Simba 1.6 training until 2026-11-21, and from then "Both ids are served by
+  // Simba 3.5, in every language, and billed as `simba-3.5`. Nothing breaks;
+  // the audio changes." (docs.speechify.ai/build/guides/concepts/models,
+  // 2026-11-12). Still served, so still catalogued — deprecated.
+  // Rate: "A request naming either id is billed at the `simba-3.5` rate on
+  // your plan" (changelog 2026/11/10) — simba-3.5's $15 Starter list rate,
+  // which it bills "From 22 November" (changelog 2026/11/9; the $10 launch
+  // rate runs "Until 21 November 2026"). The list rate is the worst case, per
+  // the PRICING note.
   "simba-multilingual": {
     id: "simba-multilingual",
     name: "Simba Multilingual",
@@ -109,7 +120,7 @@ const ttsModels = {
     status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0, characters: 20000 },
-    cost: { perMillionCharacters: 10 },
+    cost: { perMillionCharacters: 15 },
   },
   "simba-english": {
     id: "simba-english",
@@ -122,7 +133,7 @@ const ttsModels = {
     status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0, characters: 20000 },
-    cost: { perMillionCharacters: 10 },
+    cost: { perMillionCharacters: 15 },
   },
 } as const satisfies Record<string, ModelInfo>;
 

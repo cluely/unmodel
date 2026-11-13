@@ -39,7 +39,7 @@ export const FORMAT: AudioFormatSpec = {
     pcm_mulaw: [8000],
     aac: [24000],
   },
-  bitrates: { mp3: [32000, 64000, 96000, 128000, 192000] },
+  bitrates: { mp3: [32000, 64000, 96000, 128000, 160000, 192000] },
   unavailable: { pcm_s16le: ["bitrate"], pcm_mulaw: ["bitrate"], aac: ["bitrate"] },
   defaultsByCodec: { pcm_mulaw: { sampleRate: 8000 } },
   source: SPEC_URL,

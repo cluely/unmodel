@@ -7,12 +7,16 @@
  * https://docs.speechify.ai/build/text-to-speech-api,
  * https://docs.speechify.ai/build/guides/concepts/models and
  * https://docs.speechify.ai/build/guides/concepts/api-limits
- * (all verified 2026-08-13). Params mirror the wire body exactly.
+ * (all verified 2026-11-12). Params mirror the wire body exactly.
  *
  * HOST: `https://api.speechify.ai` is the documented API base URL. The docs
  * site is explicit that this is the canonical host ("use exactly, do not
- * invent variants"); the older `api.sws.speechify.com` spelling appears
- * nowhere in the current reference, so unmodel does not emit it.
+ * invent variants"). `eu.api.speechify.ai` and `us.api.speechify.ai` are
+ * regional variants of it ("Only the base URL changes."), and
+ * `api.sws.speechify.com` "is a legacy host, not a region: it stops serving on
+ * 19 January 2027" (docs.speechify.ai/build/guides/get-started/regions,
+ * 2026-11-12), so unmodel emits only the canonical host; swap the origin
+ * yourself to pin a region.
  *
  * THE TWO ROUTES ARE NOT THE SAME SHAPE — this is the whole reason both are
  * validated separately:
@@ -24,17 +28,19 @@
  *   /v1/audio/speech, which always answers JSON). It rides in the params
  *   object as `accept` for ergonomics but is STRIPPED from the wire body onto
  *   `.request.headers`. `output_format` "takes precedence over this header".
- * - The 2,000-character cap applies to /v1/audio/speech; /v1/audio/stream
- *   accepts 20,000. Both counts "include SSML tags".
+ * - /v1/audio/speech takes 2,000 spoken characters and 20,000 as sent;
+ *   /v1/audio/stream takes 20,000 spoken and 32,000 as sent.
  *
  * CHARACTER CAPS: an over-long `input` is reported as `over_output_limit` —
  * unmodel has no character-specific issue code, so the message and meta
- * ({ limitCharacters, actualCharacters }) spell out that the limit is in
- * characters, not tokens.
+ * ({ limitCharacters, actualCharacters, counted }) spell out that the limit is
+ * in characters, not tokens, and which of the two counts it is.
  *
- * COST: billing counts "the number of characters sent to the API (whitespace
- * and SSML tags are not counted)", so `input.length` is an upper bound —
- * exactly what `estimate.costUSD` is documented to be.
+ * COST: "Text to speech is billed by the characters of text that are spoken.
+ * SSML tags are not counted, and neither is whitespace at the very start or
+ * end of the input; the spaces between words are." (speechify.ai/pricing,
+ * 2026-11-12), so `input.length` is an upper bound — exactly what
+ * `estimate.costUSD` is documented to be.
  *
  * NOT VALIDATED HERE: POST /v1/audio/stream/with-timestamps (an SSE route
  * whose body matches `stream`, but which rejects the two legacy Simba 1.6
@@ -53,8 +59,8 @@
  *
  * `.toSdk("speechify")` is the identity on `tts`: @speechify/api's
  * `GetSpeechRequest` is snake_case with exactly the wire keys. On `stream` it
- * re-attaches the stripped header as `Accept`, matching that SDK's
- * `GetStreamRequest`.
+ * builds that SDK's `StreamAudioRequest` — the stripped header as `Accept`
+ * beside the wire body as `body`.
  */
 
 import { z } from "zod";
@@ -79,10 +85,25 @@ export const AUDIO_STREAM_WITH_TIMESTAMPS_URL =
 /** Server-side default when `model` is omitted (OpenAPI `default: simba-3.0`). */
 export const DEFAULT_MODEL_ID = "simba-3.0";
 
-/** "2,000 characters" on /v1/audio/speech — API Limits. */
+/**
+ * "2,000 spoken characters" on /v1/audio/speech — API Limits (2026-11-12):
+ * "Every limit counts the characters that are spoken, which are the
+ * characters the request is billed for. SSML tags do not count".
+ */
 export const SPEECH_MAX_CHARACTERS = 2000;
-/** "20,000 characters" on /v1/audio/stream — API Limits. */
+/** "20,000 spoken characters" on /v1/audio/stream — API Limits. */
 export const STREAM_MAX_CHARACTERS = 20000;
+/**
+ * "The input as sent, markup included, has its own ceiling: 20,000 characters
+ * on `/v1/audio/speech`, and 32,000 on `/v1/audio/stream`" — API Limits;
+ * OpenAPI `"maxLength":20000` on GetSpeechRequest.input.
+ */
+export const SPEECH_MAX_SENT_CHARACTERS = 20000;
+/**
+ * The as-sent ceiling on /v1/audio/stream — API Limits, above; OpenAPI
+ * `"maxLength":32000` on GetStreamRequest.input.
+ */
+export const STREAM_MAX_SENT_CHARACTERS = 32000;
 
 const SPEC_URL = "https://docs.speechify.ai/openapi/api-reference.json";
 const LIMITS_DOCS = "https://docs.speechify.ai/build/guides/concepts/api-limits";
@@ -124,7 +145,11 @@ export const PRONUNCIATION_LANGUAGES = {
 export const AUDIO_FORMATS = ["wav", "mp3", "ogg", "aac", "pcm"] as const;
 export type SpeechifyAudioFormat = (typeof AUDIO_FORMATS)[number];
 
-/** `output_format` on /v1/audio/speech: `codec_sampleRate_bitrate` strings. */
+/**
+ * `output_format` on /v1/audio/speech: `codec_sampleRate_bitrate` strings —
+ * OpenAPI `AudioOutputFormat`, "All 23 values, as the API accepts them."
+ * (docs.speechify.ai/build/guides/concepts/audio-formats, 2026-11-12).
+ */
 export const SPEECH_OUTPUT_FORMATS = [
   "pcm_8000",
   "pcm_16000",
@@ -136,11 +161,13 @@ export const SPEECH_OUTPUT_FORMATS = [
   "mp3_22050_64",
   "mp3_22050_96",
   "mp3_22050_128",
+  "mp3_22050_160",
   "mp3_22050_192",
   "mp3_24000_32",
   "mp3_24000_64",
   "mp3_24000_96",
   "mp3_24000_128",
+  "mp3_24000_160",
   "mp3_24000_192",
   "wav_24000",
   "wav_48000",
@@ -215,7 +242,7 @@ export interface SpeechifyPronunciationAlias {
 export type SpeechifyPronunciation = SpeechifyPronunciationIpa | SpeechifyPronunciationAlias;
 
 export interface AudioSpeechBody {
-  /** Plain text or SSML. Capped at 2,000 characters on this route. */
+  /** Plain text or SSML: up to 2,000 spoken characters (SSML tags excluded), 20,000 as sent. */
   input: string;
   /** Voice id from GET /v1/voices. */
   voice_id: string;
@@ -233,10 +260,16 @@ export interface AudioSpeechBody {
    * ({@link PRONUNCIATION_LANGUAGES}). An empty array is accepted by every model.
    */
   pronunciations?: SpeechifyPronunciation[];
+  /**
+   * A stable, opaque id for the end user this request is made for — a hash of
+   * your own user id, never an email address: 1-64 letters, digits and
+   * `. _ - : | + / =`.
+   */
+  safety_identifier?: string;
 }
 
 export interface AudioStreamParams {
-  /** Plain text or SSML. Capped at 20,000 characters on this route. */
+  /** Plain text or SSML: up to 20,000 spoken characters (SSML tags excluded), 32,000 as sent. */
   input: string;
   voice_id: string;
   model?: SpeechifyTtsModelId | (string & {});
@@ -246,6 +279,8 @@ export interface AudioStreamParams {
   options?: SpeechifyOptions;
   /** The same field and rules as {@link AudioSpeechBody.pronunciations}. */
   pronunciations?: SpeechifyPronunciation[];
+  /** The same field and pattern as {@link AudioSpeechBody.safety_identifier}. */
+  safety_identifier?: string;
   /**
    * HEADER param — stripped from the wire body onto `.request.headers.accept`.
    * Selects the container when `output_format` is unset.
@@ -257,10 +292,12 @@ export interface AudioStreamParams {
 export type AudioStreamBody = Omit<AudioStreamParams, "accept">;
 
 /**
- * @speechify/api's `GetStreamRequest` carries the header inside the same
- * object, capitalised as `Accept`.
+ * @speechify/api's `StreamAudioRequest`, what `client.audio.stream()` takes
+ * from 4.0.0 (2026-08-19) through 5.0.0: "Accept?:
+ * Speechify.StreamAudioRequestAccept; body: Speechify.GetStreamRequest;"
+ * (registry.npmjs.org/@speechify/api, 5.0.0 tarball, 2026-11-12).
  */
-export type AudioStreamSdkParams = AudioStreamBody & { Accept?: SpeechifyStreamAccept };
+export type AudioStreamSdkParams = { Accept?: SpeechifyStreamAccept; body: AudioStreamBody };
 
 // ---------------------------------------------------------------------------
 // Schemas (loose: unknown keys pass through with a warning).
@@ -270,6 +307,19 @@ const optionsSchema = z.looseObject({
   loudness_normalization: z.boolean().optional(),
   text_normalization: z.boolean().optional(),
 });
+
+/**
+ * OpenAPI `SafetyIdentifier` "^[A-Za-z0-9._:|+/=-]{1,64}$" — "The value must
+ * be 1 to 64 characters of letters, digits and `. _ - : | + / =`."
+ * (docs.speechify.ai/build/guides/concepts/safety-identifiers, 2026-11-12).
+ * ASCII only, so a UTF-16 count is the code-point count.
+ */
+const safetyIdentifierSchema = z
+  .string()
+  .regex(
+    /^[A-Za-z0-9._:|+/=-]{1,64}$/,
+    "safety_identifier must be 1 to 64 letters, digits or `. _ - : | + / =` — a hash or opaque id for your end user, never an email address.",
+  );
 
 /** Types only: the bounds, patterns and `ipa`/`alias` exclusivity are `checkPronunciationEntries`. */
 const pronunciationsSchema = z.array(
@@ -290,6 +340,7 @@ const ttsSchema = z.looseObject({
   output_format: z.string().optional(),
   options: optionsSchema.optional(),
   pronunciations: pronunciationsSchema.optional(),
+  safety_identifier: safetyIdentifierSchema.optional(),
 });
 
 const streamSchema = z.looseObject({
@@ -300,6 +351,7 @@ const streamSchema = z.looseObject({
   output_format: z.string().optional(),
   options: optionsSchema.optional(),
   pronunciations: pronunciationsSchema.optional(),
+  safety_identifier: safetyIdentifierSchema.optional(),
   accept: z.string().optional(),
 });
 
@@ -314,22 +366,67 @@ const ACCEPT_SET = new Set<string>(STREAM_ACCEPT_VALUES);
 type AnyParams = AudioSpeechBody | AudioStreamParams;
 
 /**
- * Per-route `input` cap. The cap is documented on the endpoint, not the
- * model, so it applies even when the model id is unknown to the catalog; the
- * catalog's `limit.characters` only ever narrows it further.
+ * Text that may carry SSML or an entity — "SSML tags do not count, an entity
+ * such as `&amp;` is one character, and a `<sub>` counts its `alias`." (API
+ * Limits) — so its spoken count is not its length.
  */
-function checkInputLength(route: "speech" | "stream", cap: number) {
+const MARKUP = /<|&#?\w+;/;
+
+/**
+ * Per-route `input` caps, both in code points ("A character is one Unicode
+ * code point, so an emoji is one character even where JavaScript's `length`
+ * counts two." — API Limits):
+ *
+ * - the as-sent ceiling, "markup included", always;
+ * - the spoken cap, on input with no markup, counted without the leading and
+ *   trailing whitespace billing skips ("Every limit counts the characters that
+ *   are spoken, which are the characters the request is billed for."). The
+ *   spoken count of SSML takes an SSML parser, so markup input gets only the
+ *   ceiling: over-accepting is recoverable, refusing a request the API
+ *   fulfils is not.
+ *
+ * Both caps are documented on the endpoint, not the model, so they apply even
+ * when the model id is unknown to the catalog; the catalog's (spoken)
+ * `limit.characters` only ever narrows the spoken cap.
+ */
+function checkInputLength(route: "speech" | "stream", spokenCap: number, sentCap: number) {
   return (params: AnyParams, info: ModelInfo | undefined, ctx: PipelineContext): void => {
+    const model = params.model ?? DEFAULT_MODEL_ID;
+    const sent = [...params.input].length;
+    if (sent > sentCap) {
+      ctx.report({
+        code: "over_output_limit",
+        path: ["input"],
+        model,
+        message: `\`input\` is ${sent} characters as sent; POST /v1/audio/${route} caps the input as sent, markup included, at ${sentCap} characters, and its spoken text at ${spokenCap} (these limits are in characters, not tokens). Split the input.`,
+        meta: {
+          limitCharacters: sentCap,
+          actualCharacters: sent,
+          counted: "sent",
+          source: LIMITS_DOCS,
+        },
+      });
+      return;
+    }
+    if (MARKUP.test(params.input)) return;
     const catalogCap = info?.limit.characters;
-    const limit = catalogCap !== undefined && catalogCap > 0 ? Math.min(cap, catalogCap) : cap;
-    const actual = params.input.length;
-    if (actual <= limit) return;
+    const limit =
+      catalogCap !== undefined && catalogCap > 0 ? Math.min(spokenCap, catalogCap) : spokenCap;
+    const spoken = [...params.input.trim()].length;
+    if (spoken <= limit) return;
+    const longer =
+      route === "speech" ? `, or use POST /v1/audio/stream for up to ${STREAM_MAX_CHARACTERS}` : "";
     ctx.report({
       code: "over_output_limit",
       path: ["input"],
-      model: params.model ?? DEFAULT_MODEL_ID,
-      message: `\`input\` is ${actual} characters; POST /v1/audio/${route} caps a request at ${limit} characters (this limit is in characters, not tokens, and SSML tags count toward it). Split the input, or use POST /v1/audio/stream for up to ${STREAM_MAX_CHARACTERS}.`,
-      meta: { limitCharacters: limit, actualCharacters: actual, source: LIMITS_DOCS },
+      model,
+      message: `\`input\` is ${spoken} characters; POST /v1/audio/${route} caps a request at ${limit} spoken characters (this limit is in characters, not tokens; SSML tags do not count toward it). Split the input${longer}.`,
+      meta: {
+        limitCharacters: limit,
+        actualCharacters: spoken,
+        counted: "spoken",
+        source: LIMITS_DOCS,
+      },
     });
   };
 }
@@ -621,7 +718,7 @@ function estimate(
  */
 type TtsSdkTargets<B> = { speechify: () => B };
 
-/** SDK targets for `speechify.ttsStream` — @speechify/api's `GetStreamRequest`. */
+/** SDK targets for `speechify.ttsStream` — @speechify/api's `StreamAudioRequest`. */
 type TtsStreamSdkTargets<B> = { speechify: () => B };
 
 function finalizeTts(
@@ -648,7 +745,7 @@ const ttsValidator = createValidator<
   modelId: (params) => params.model ?? DEFAULT_MODEL_ID,
   catalog: models,
   checks: [
-    checkInputLength("speech", SPEECH_MAX_CHARACTERS),
+    checkInputLength("speech", SPEECH_MAX_CHARACTERS, SPEECH_MAX_SENT_CHARACTERS),
     checkOutputFormat(SPEECH_OUTPUT_FORMATS, SPEECH_OUTPUT_FORMAT_SET, "speech"),
     checkModelLanguage,
     checkPronunciationEntries,
@@ -667,7 +764,7 @@ function finalizeStream(params: AudioStreamParams): unknown {
       method: "POST",
       headers: { ...JSON_HEADERS, ...(accept !== undefined && { accept }) },
     },
-    { sdk: { speechify: () => ({ ...body, ...(accept !== undefined && { Accept: accept }) }) } },
+    { sdk: { speechify: () => ({ ...(accept !== undefined && { Accept: accept }), body }) } },
   );
 }
 
@@ -677,7 +774,7 @@ const streamValidator = createValidator<AudioStreamParams, unknown>({
   modelId: (params) => params.model ?? DEFAULT_MODEL_ID,
   catalog: models,
   checks: [
-    checkInputLength("stream", STREAM_MAX_CHARACTERS),
+    checkInputLength("stream", STREAM_MAX_CHARACTERS, STREAM_MAX_SENT_CHARACTERS),
     checkOutputFormat(STREAM_OUTPUT_FORMATS, STREAM_OUTPUT_FORMAT_SET, "stream"),
     checkModelLanguage,
     checkPronunciationEntries,
@@ -692,7 +789,7 @@ const streamValidator = createValidator<AudioStreamParams, unknown>({
 /**
  * Validates raw wire params for `POST /v1/audio/speech` — the non-streaming
  * route, which answers JSON (`audio_data` base64 + `billable_characters_count`
- * + `speech_marks`) and caps `input` at 2,000 characters.
+ * + `speech_marks`) and caps `input` at 2,000 spoken characters.
  *
  * The returned object's enumerable props are the exact fetch JSON body;
  * `.toSdk("speechify")` returns it unchanged (@speechify/api's `GetSpeechRequest` is
@@ -727,12 +824,12 @@ export const tts = ttsValidator as unknown as {
 
 /**
  * Validates raw wire params for `POST /v1/audio/stream` — chunked raw audio
- * bytes, `input` up to 20,000 characters, no `audio_format` and no `wav_*`
- * `output_format`.
+ * bytes, `input` up to 20,000 spoken characters, no `audio_format` and no
+ * `wav_*` `output_format`.
  *
  * `accept` is stripped from the body onto `.request.headers.accept`;
- * `.toSdk("speechify")` re-attaches it as `Accept` for @speechify/api's
- * `GetStreamRequest`.
+ * `.toSdk("speechify")` returns `{ Accept, body }`, the `StreamAudioRequest`
+ * that @speechify/api's `client.audio.stream()` takes.
  *
  * ```ts
  * const params = speechify.ttsStream({

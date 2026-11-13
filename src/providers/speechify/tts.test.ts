@@ -6,6 +6,8 @@ import {
   AUDIO_STREAM_URL,
   SPEECH_MAX_CHARACTERS,
   STREAM_MAX_CHARACTERS,
+  SPEECH_MAX_SENT_CHARACTERS,
+  STREAM_MAX_SENT_CHARACTERS,
   SPEECH_OUTPUT_FORMATS,
   STREAM_OUTPUT_FORMATS,
   MAX_PRONUNCIATIONS,
@@ -55,6 +57,8 @@ describe("speechify.tts happy path", () => {
       audio_format: "wav",
       output_format: "wav_48000",
       options: { loudness_normalization: true, text_normalization: false },
+      pronunciations: [],
+      safety_identifier: "u_9f86d081884c7d65",
     });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
@@ -102,7 +106,7 @@ describe("speechify.tts happy path", () => {
   });
 });
 
-describe("speechify character caps (2,000 speech / 20,000 stream)", () => {
+describe("speechify character caps (2,000 / 20,000 spoken; 20,000 / 32,000 as sent)", () => {
   test("speech over 2,000 characters is over_output_limit with character meta", () => {
     const input = "a".repeat(SPEECH_MAX_CHARACTERS + 1);
     const r = tts.safe({ input, voice_id: "v", model: "simba-3.2" });
@@ -113,7 +117,54 @@ describe("speechify character caps (2,000 speech / 20,000 stream)", () => {
       expect(r.errors[0]?.message).toContain("characters, not tokens");
       expect(r.errors[0]?.meta?.limitCharacters).toBe(2000);
       expect(r.errors[0]?.meta?.actualCharacters).toBe(2001);
+      expect(r.errors[0]?.meta?.counted).toBe("spoken");
     }
+  });
+
+  test("characters are code points: 2,000 emoji pass speech, 2,001 do not", () => {
+    // JavaScript's `length` counts each of these as two.
+    expect(tts.safe({ input: "😀".repeat(SPEECH_MAX_CHARACTERS), voice_id: "v" }).ok).toBe(true);
+    const r = tts.safe({ input: "😀".repeat(SPEECH_MAX_CHARACTERS + 1), voice_id: "v" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.actualCharacters).toBe(2001);
+  });
+
+  test("leading and trailing whitespace is not spoken, so it does not count", () => {
+    const input = `\n${"a".repeat(SPEECH_MAX_CHARACTERS)}\n`;
+    expect(tts.safe({ input, voice_id: "v" }).ok).toBe(true);
+  });
+
+  test("SSML tags do not count toward the spoken cap", () => {
+    // 2,000 spoken characters inside ~2,600 characters of markup.
+    const breaks = '<break time="1s"/>'.repeat(30);
+    const input = `<speak>${breaks}${"a".repeat(SPEECH_MAX_CHARACTERS)}</speak>`;
+    expect(input.length).toBeGreaterThan(SPEECH_MAX_CHARACTERS);
+    const r = tts.safe({ input, voice_id: "v", model: "simba-3.2" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+
+    const entities = "&amp;".repeat(SPEECH_MAX_CHARACTERS);
+    expect(tts.safe({ input: entities, voice_id: "v" }).ok).toBe(true);
+  });
+
+  test("the input as sent, markup included, caps at 20,000 on speech, 32,000 on stream", () => {
+    const tag = "<break/>";
+    const input = tag.repeat(SPEECH_MAX_SENT_CHARACTERS / tag.length + 1);
+    const speech = tts.safe({ input, voice_id: "v" });
+    expect(speech.ok).toBe(false);
+    if (!speech.ok) {
+      expect(speech.errors[0]?.code).toBe("over_output_limit");
+      expect(speech.errors[0]?.meta?.limitCharacters).toBe(20000);
+      expect(speech.errors[0]?.meta?.counted).toBe("sent");
+    }
+
+    // Over the speech ceiling, inside the stream one.
+    const long = `<speak>${"a".repeat(25000)}</speak>`;
+    expect(ttsStream.safe({ input: long, voice_id: "v" }).ok).toBe(true);
+    const overInput = `<speak>${"a".repeat(STREAM_MAX_SENT_CHARACTERS)}</speak>`;
+    const over = ttsStream.safe({ input: overInput, voice_id: "v" });
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.meta?.limitCharacters).toBe(32000);
   });
 
   test("speech at exactly 2,000 passes; the same text passes on stream", () => {
@@ -171,6 +222,17 @@ describe("speechify format rules (the two routes differ)", () => {
     }
   });
 
+  test("the 23 speech / 21 stream output formats include the two 160 kbps mp3s", () => {
+    expect(SPEECH_OUTPUT_FORMATS).toHaveLength(23);
+    expect(STREAM_OUTPUT_FORMATS).toHaveLength(21);
+    for (const output_format of ["mp3_22050_160", "mp3_24000_160"] as const) {
+      for (const model of ["simba-3.0", "simba-3.2", "simba-3.5"] as const) {
+        expect(tts.safe({ input: "x", voice_id: "v", model, output_format }).ok).toBe(true);
+        expect(ttsStream.safe({ input: "x", voice_id: "v", model, output_format }).ok).toBe(true);
+      }
+    }
+  });
+
   test("an unknown output_format is invalid_enum_value on both routes", () => {
     for (const run of [ttsUnchecked, streamUnchecked]) {
       const r = run({ input: "x", voice_id: "v", output_format: "flac_44100" });
@@ -214,13 +276,17 @@ describe("speechify.ttsStream Accept header", () => {
     expect((v as Record<string, unknown>).accept).toBeUndefined();
     expect(v.request.url).toBe(AUDIO_STREAM_URL);
     expect(v.request.headers.accept).toBe("audio/mpeg");
-    expect(v.toSdk("speechify")).toEqual({ input: "Hello", voice_id: "geffen_32", Accept: "audio/mpeg" });
+    // @speechify/api >= 4.0.0: client.audio.stream({ Accept?, body }).
+    expect(v.toSdk("speechify")).toEqual({
+      Accept: "audio/mpeg",
+      body: { input: "Hello", voice_id: "geffen_32" },
+    });
   });
 
   test("no accept means no accept header", () => {
     const v = ttsStream({ input: "Hello", voice_id: "v" });
     expect(v.request.headers.accept).toBeUndefined();
-    expect(v.toSdk("speechify")).toEqual({ input: "Hello", voice_id: "v" });
+    expect(v.toSdk("speechify")).toEqual({ body: { input: "Hello", voice_id: "v" } });
   });
 
   test("an undocumented accept value is invalid_enum_value", () => {
@@ -237,6 +303,29 @@ describe("speechify.ttsStream Accept header", () => {
     const b = ttsStream({ input: "b", voice_id: "v", accept: "audio/aac" });
     a.request.headers.authorization = "Bearer leak";
     expect(b.request.headers.authorization).toBeUndefined();
+  });
+});
+
+describe("speechify safety_identifier", () => {
+  test("a hash or opaque id passes on both routes", () => {
+    for (const safety_identifier of ["u_9f86d081884c7d65", "tenant:42|user/7+x=", "a".repeat(64)]) {
+      expect(tts.safe({ input: "x", voice_id: "v", safety_identifier }).ok).toBe(true);
+      expect(ttsStream.safe({ input: "x", voice_id: "v", safety_identifier }).ok).toBe(true);
+    }
+  });
+
+  test("an email address, a space or a 65th character is invalid_shape", () => {
+    for (const safety_identifier of ["ada@example.com", "user 7", "", "a".repeat(65)]) {
+      for (const run of [ttsUnchecked, streamUnchecked]) {
+        const r = run({ input: "x", voice_id: "v", safety_identifier });
+        expect(r.ok).toBe(false);
+        if (!r.ok) {
+          expect(r.errors[0]?.code).toBe("invalid_shape");
+          expect(r.errors[0]?.path).toEqual(["safety_identifier"]);
+          expect(r.errors[0]?.message).toContain("never an email address");
+        }
+      }
+    }
   });
 });
 
@@ -272,18 +361,20 @@ describe("speechify per-model gates (doc audit 2026-08-13)", () => {
 });
 
 describe("speechify cost estimation (Starter list rate)", () => {
-  test("simba-3.0, simba-3.2 and the legacy pair price at $10/1M characters", () => {
-    for (const id of ["simba-3.2", "simba-3.0", "simba-multilingual", "simba-english"] as const) {
+  test("simba-3.0 and simba-3.2 price at $10/1M characters", () => {
+    for (const id of ["simba-3.2", "simba-3.0"] as const) {
       const r = tts.safe({ input: "a".repeat(1000), voice_id: "v", model: id });
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.01, 10);
     }
   });
 
-  test("simba-3.5 prices at its $15/1M Starter list rate, not the launch price", () => {
-    const r = ttsStream.safe({ input: "a".repeat(1000), voice_id: "v", model: "simba-3.5" });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.015, 10);
+  test("simba-3.5 and the legacy pair it serves price at its $15/1M Starter list rate", () => {
+    for (const id of ["simba-3.5", "simba-multilingual", "simba-english"] as const) {
+      const r = ttsStream.safe({ input: "a".repeat(1000), voice_id: "v", model: id });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.015, 10);
+    }
   });
 
   test("maxCostUSD enforces over_budget", () => {
@@ -309,7 +400,8 @@ describe("speechify catalog", () => {
       expect(info.limit.characters).toBe(20000);
       expect(info.modalities.input).toEqual(["text"]);
       expect(info.modalities.output).toEqual(["audio"]);
-      expect(info.cost?.perMillionCharacters).toBe(id === "simba-3.5" ? 15 : 10);
+      const rate = id === "simba-3.0" || id === "simba-3.2" ? 10 : 15;
+      expect(info.cost?.perMillionCharacters).toBe(rate);
     }
   });
 

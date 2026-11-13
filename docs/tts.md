@@ -192,8 +192,9 @@ provider where the voice *is* the model, so the model id is the voice picker.
 **Speechify — two routes that are not the same shape.** `audio_format` exists only on
 `/v1/audio/speech`; `output_format` is on both, but the streaming enum drops the `wav_*`
 values; `Accept` is a header on `/v1/audio/stream` and does not exist on `/v1/audio/speech`.
-The character cap differs too: 2,000 on speech, 20,000 on stream. Both counts include
-SSML tags.
+The character cap differs too: 2,000 spoken characters on speech, 20,000 on stream, counted
+in code points with SSML tags excluded, under a ceiling on the input as sent, markup
+included, of 20,000 and 32,000.
 
 **Cartesia — a dormant cap.** Cartesia documents no per-request `transcript` cap, so the
 `over_output_limit` check exists and never fires against the shipped catalog. It is

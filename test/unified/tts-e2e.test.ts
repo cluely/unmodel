@@ -489,3 +489,18 @@ describe("stepfun", () => {
     expect(result.errors.map((e) => e.path.join("."))).toEqual(["language"]);
   });
 });
+
+describe("speechify", () => {
+  test("a 160 kbps mp3 compiles to the `mp3_*_160` composite", () => {
+    // "160 kbps is the ceiling an MP3 carries at 22.05 and 24 kHz"
+    // (docs.speechify.ai/build/guides/concepts/audio-formats, 2026-11-12).
+    const params = tts({
+      model: "speechify/simba-3.5",
+      text: "The lamp is lit.",
+      voice: "geffen_32",
+      outputFormat: { format: "mp3", sampleRate: 24000, bitrate: 160_000 },
+    });
+    expect(params.output_format).toBe("mp3_24000_160");
+    expect(params.model).toBe("simba-3.5");
+  });
+});

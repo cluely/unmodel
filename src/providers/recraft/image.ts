@@ -63,25 +63,30 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type RecraftModelId } from "./models";
 import {
   ASPECT_RATIOS,
+  IMAGE_FORMATS,
   UNATTRIBUTED_SIZE_VALUES,
   V2_V3_SIZES,
   V4_PRO_SIZES,
   V4_STANDARD_SIZES,
   imageFamilyRules,
   isV4StylesModel,
+  type RecraftImageFormat,
 } from "./constraints";
 import { STYLE_NAMES_BY_MODEL, type StyleFor } from "./styles";
 
-// Declared in `./constraints` — an import-free leaf — so that `unmodel/recraft/values`
-// and the `*-params` table can read these without this validator, its zod schema
-// and its catalog. Re-exported here so every existing caller is unchanged.
+// Declared in `./constraints` — an import-free leaf — so that `unmodel/recraft/values`,
+// the `*-params` table and the editing validator can read these without this
+// validator, its zod schema and its catalog. Re-exported here so every existing
+// caller is unchanged.
 export {
   ASPECT_RATIOS,
+  IMAGE_FORMATS,
   UNATTRIBUTED_SIZE_VALUES,
   V2_V3_SIZES,
   V4_PRO_SIZES,
   V4_STANDARD_SIZES,
 } from "./constraints";
+export type { RecraftImageFormat } from "./constraints";
 
 export const IMAGES_GENERATIONS_URL = "https://external.api.recraft.ai/v1/images/generations";
 
@@ -227,14 +232,6 @@ export const SUBSTYLES = [
   "emblem_stamp", "emblem_vintage",
 ] as const;
 export type RecraftSubstyle = (typeof SUBSTYLES)[number];
-
-/**
- * `image_format` values — endpoints doc (2026-11-12): "The file format of the
- * returned raster images. Must be one of `webp` or `png`" (OpenAPI
- * `ImageFormat`). No jpeg.
- */
-export const IMAGE_FORMATS = ["webp", "png"] as const;
-export type RecraftImageFormat = (typeof IMAGE_FORMATS)[number];
 
 /**
  * `style_match` values — endpoints doc (2026-11-12): "Must be one of

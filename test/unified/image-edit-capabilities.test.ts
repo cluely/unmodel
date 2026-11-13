@@ -195,12 +195,13 @@ const TABLE: Readonly<Record<string, Capability>> = {
     base: { strength: 0.5 },
     size: null,
     sizeString: null,
-    extra: { style_id: "1e0c0f1a" },
+    // `style_id` is V3-only on imageToImage; `controls` is the V4.1 row's extra.
+    extra: { controls: { colors: [{ rgb: [255, 102, 0] }] } },
     // The one route whose dial already means what the canonical one means.
     strength: { at: "strength", atZero: 0, atOne: 1 },
     n: "native",
     seed: "native",
-    outputFormat: "declared",
+    outputFormat: "native",
     aspectRatio: "declared",
     dimensions: "declared",
   },

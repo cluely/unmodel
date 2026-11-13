@@ -117,6 +117,16 @@ export const imageFamilyRules: readonly FamilyRule[] = [
   },
 ];
 
+/**
+ * `image_format` values — endpoints doc (2026-11-12): "The file format of the
+ * returned raster images. Must be one of `webp` or `png`" (OpenAPI
+ * `ImageFormat`); each editing route's page lists the same pair: "`webp`
+ * (lossless) or `png`." No jpeg. Declared in this leaf so the editing
+ * validator reads it without the generations validator.
+ */
+export const IMAGE_FORMATS = ["webp", "png"] as const;
+export type RecraftImageFormat = (typeof IMAGE_FORMATS)[number];
+
 // ---------------------------------------------------------------------------
 // Size tables — appendix "List of supported image sizes" (2026-08-13). The
 // same 14 aspect ratios apply to every model; explicit WxH values depend on

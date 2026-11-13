@@ -22,6 +22,15 @@
  *   are documented "available with Recraft V3, Recraft V3 Vector models only"
  *   and default to `recraftv3` (the generations route defaults to
  *   `recraftv4_1`).
+ * - imageToImage marks `style`, `style_id`, `style_match`, `negative_prompt`
+ *   and `text_layout` "**V3 only.**" ("Image to image doesn't take V4 / V4.1
+ *   styles"), and the endpoints Controls table marks `artistic_level` /
+ *   `no_text` "V3 models only", so the V4 / V4.1 models refuse all seven
+ *   (`imageToImageFamilyRules`, `checkImageToImageControls`). With no
+ *   `model`, a curated V3 `style` resolves to the V3 model whose list holds
+ *   it, as on the generations route.
+ * - `image_format` ("`webp` (lossless) or `png`") and `style_match` ("Only
+ *   `regular` for V3") are on every route page.
  * - `strength` is REQUIRED on imageToImage (0 = almost identical to the input,
  *   1 = minimal similarity) and does not exist on the other four routes.
  * - Outpainting takes EITHER per-side margins (`expand_*`, 0–4096 each) OR a
@@ -47,10 +56,16 @@ import { toValidated, JSON_HEADERS, type ExactKeys, type Validated } from "../..
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
-import type { EndpointConstraints } from "../../core/constraint-types";
+import type { DenyRule, EndpointConstraints, FamilyRule } from "../../core/constraint-types";
+import { IMAGE_FORMATS, type RecraftImageFormat } from "./constraints";
 import { models, IMAGE_TO_IMAGE_MODELS, V3_ONLY_MODELS, type RecraftModelId } from "./models";
 import { STYLE_NAMES_BY_MODEL, type StyleFor } from "./styles";
-import type { RecraftControls, RecraftSize, RecraftTextLayoutElement } from "./image";
+import type {
+  RecraftControls,
+  RecraftSize,
+  RecraftStyleMatch,
+  RecraftTextLayoutElement,
+} from "./image";
 
 const IMAGES_BASE_URL = "https://external.api.recraft.ai/v1/images";
 
@@ -62,6 +77,10 @@ export const GENERATE_BACKGROUND_URL = `${IMAGES_BASE_URL}/generateBackground`;
 
 const ENDPOINTS_DOCS_URL = "https://www.recraft.ai/docs/api-reference/endpoints";
 const APPENDIX_DOCS_URL = "https://www.recraft.ai/docs/api-reference/appendix";
+const IMAGE_TO_IMAGE_DOCS_URL = "https://www.recraft.ai/docs/api-reference/tools/image-to-image";
+const INPAINTING_DOCS_URL = "https://www.recraft.ai/docs/api-reference/tools/inpainting";
+const OUTPAINTING_DOCS_URL = "https://www.recraft.ai/docs/api-reference/tools/outpainting";
+const BACKGROUND_DOCS_URL = "https://www.recraft.ai/docs/api-reference/tools/background";
 
 /** Default `model` on imageToImage — same as the generations route. */
 export const DEFAULT_IMAGE_TO_IMAGE_MODEL_ID = "recraftv4_1";
@@ -104,17 +123,33 @@ interface RecraftTransformCommon<M extends string = string> {
   prompt: string;
   /** Number of images, 1–6. Default 1. Billed per image. */
   n?: number | null;
-  /** Curated style name; per-route model compatibility applies. */
+  /** Curated style name; per-route model compatibility applies. V3 only on imageToImage. */
   style?: StyleFor<M> | null;
-  /** Style UUID used as a visual reference. Cannot be combined with `style`. */
+  /**
+   * Style UUID used as a visual reference. Cannot be combined with `style`.
+   * V3 only on imageToImage.
+   */
   style_id?: string | null;
-  /** Undesired elements. */
+  /**
+   * How closely the result matches the style. One value on these routes:
+   * image-to-image page (2026-11-12) "**V3 only**, with `style_id`. Must be
+   * `regular`."; inpainting / outpainting / background pages "Only `regular`
+   * for V3."
+   */
+  style_match?: Extract<RecraftStyleMatch, "regular"> | null;
+  /** Undesired elements. V3 only on imageToImage. */
   negative_prompt?: string | null;
   /** Seed for reproducible generation. */
   random_seed?: number | null;
   /** "url" (default), "b64_json" or "multipart". */
   response_format?: "url" | "b64_json" | "multipart" | null;
-  /** Spatial/textual attributes for text elements. */
+  /**
+   * Raster output container — every route page (2026-11-12): "`webp`
+   * (lossless) or `png`." Default `webp`; image-to-image adds "Applies to
+   * raster output only."
+   */
+  image_format?: RecraftImageFormat | null;
+  /** Spatial/textual attributes for text elements. V3 only on imageToImage. */
   text_layout?: RecraftTextLayoutElement[] | null;
   /** Generation tweaks; artistic_level / no_text are V3-only. */
   controls?: RecraftControls | null;
@@ -122,7 +157,11 @@ interface RecraftTransformCommon<M extends string = string> {
 
 export interface ImageToImageParams<M extends ImageToImageModelInput = ImageToImageModelInput>
   extends RecraftTransformCommon<M> {
-  /** Defaults to "recraftv4_1" server-side. V3 and V4 models only (no V2). */
+  /**
+   * Defaults to "recraftv4_1" server-side; checks run against the V3 model
+   * whose curated list holds `style` when one is given. V3 and V4 models only
+   * (no V2).
+   */
   model?: M | null;
   /** REQUIRED. 0 = almost identical to the input, 1 = minimal similarity. */
   strength: number;
@@ -191,9 +230,11 @@ const commonShape = {
   model: z.string().nullable().optional(),
   style: z.string().nullable().optional(),
   style_id: z.string().nullable().optional(),
+  style_match: z.string().nullable().optional(),
   negative_prompt: z.string().nullable().optional(),
   random_seed: z.number().int().nullable().optional(),
   response_format: z.string().nullable().optional(),
+  image_format: z.string().nullable().optional(),
   text_layout: z
     .array(
       z.looseObject({
@@ -265,8 +306,47 @@ const replaceBackgroundSchema = z.looseObject(commonShape);
 
 const RESPONSE_FORMATS = ["url", "b64_json", "multipart"] as const;
 
-function makeResolveModel(fallback: string) {
-  return (params: { model?: string | null }): string => params.model ?? fallback;
+/**
+ * `style_match` on the editing routes — one value on every page (2026-11-12):
+ * image-to-image "**V3 only**, with `style_id`. Must be `regular`.";
+ * inpainting / outpainting / background "Only `regular` for V3."
+ */
+const EDIT_STYLE_MATCHES = ["regular"] as const satisfies readonly RecraftStyleMatch[];
+
+const EDIT_ENUMS: ReadonlyArray<
+  readonly [param: "image_format" | "style_match", allowed: readonly string[]]
+> = [
+  ["image_format", IMAGE_FORMATS],
+  ["style_match", EDIT_STYLE_MATCHES],
+];
+
+/** The model a request runs on — what every model-dependent check keys on. */
+type ResolveModel = (params: RecraftTransformCommon & { model?: string | null }) => string;
+
+function makeResolveModel(fallback: string): ResolveModel {
+  return (params) => params.model ?? fallback;
+}
+
+/**
+ * The V3 models a curated `style` resolves to when imageToImage's `model` is
+ * omitted, in the generations route's order — styles doc (2026-11-12): "If a
+ * style name is supported by multiple models, the API defaults to Recraft
+ * V3". The image-to-image page documents only the `recraftv4_1` default and
+ * that `style` is "**V3 only.**"; resolving the name as generations does keeps
+ * `{ image_url, prompt, strength, style: "Illustration" }` from being refused
+ * against a V4.1 default the page never pairs with a style. The raster and
+ * vector lists are disjoint, so the first list holding the name is the model.
+ */
+const IMAGE_TO_IMAGE_STYLE_MODELS = ["recraftv3", "recraftv3_vector"] as const;
+
+function resolveImageToImageModel(params: RecraftTransformCommon & { model?: string | null }): string {
+  if (params.model != null) return params.model;
+  const style = params.style;
+  if (style != null) {
+    const styled = IMAGE_TO_IMAGE_STYLE_MODELS.find((id) => STYLE_NAMES[id]?.includes(style));
+    if (styled !== undefined) return styled;
+  }
+  return DEFAULT_IMAGE_TO_IMAGE_MODEL_ID;
 }
 
 /** Exactly one of a multipart Blob field and its `_url` JSON counterpart. */
@@ -364,18 +444,38 @@ function checkStyleExclusivity(
   }
 }
 
+/** `image_format` and `style_match` values, sourced to the route's own page. */
+function makeEditEnumCheck(source: string) {
+  return (
+    params: RecraftTransformCommon,
+    _info: ModelInfo | undefined,
+    ctx: PipelineContext,
+  ): void => {
+    for (const [param, allowed] of EDIT_ENUMS) {
+      const value: unknown = params[param];
+      if (value == null || (typeof value === "string" && allowed.includes(value))) continue;
+      ctx.report({
+        code: "invalid_enum_value",
+        path: [param],
+        message: `\`${param}\` must be one of ${allowed.map((v) => JSON.stringify(v)).join(", ")} on ${ctx.endpoint}; got ${JSON.stringify(value)}.`,
+        meta: { allowed: [...allowed], value, source },
+      });
+    }
+  };
+}
+
 /**
  * Per-route `model` allow-list. Every editing route documents an explicit
  * compatibility list that is narrower than the generations route's.
  */
-function makeModelCheck(allowed: readonly string[], fallback: string) {
+function makeModelCheck(allowed: readonly string[], resolve: ResolveModel) {
   const set = new Set<string>(allowed);
   return (
-    params: { model?: string | null },
+    params: RecraftTransformCommon & { model?: string | null },
     _info: ModelInfo | undefined,
     ctx: PipelineContext,
   ): void => {
-    const model = params.model ?? fallback;
+    const model = resolve(params);
     if (set.has(model)) return;
     ctx.report({
       code: "invalid_enum_value",
@@ -403,7 +503,7 @@ const STYLE_NAMES: Readonly<Record<string, readonly string[]>> = STYLE_NAMES_BY_
  * stays the enforcement for JS callers and for runtime-built model ids, where
  * the type degrades to the pooled union.
  */
-function makeStyleCheck(fallback: string) {
+function makeStyleCheck(resolve: ResolveModel) {
   return (
     params: RecraftTransformCommon & { model?: string | null },
     info: ModelInfo | undefined,
@@ -411,7 +511,7 @@ function makeStyleCheck(fallback: string) {
   ): void => {
     const style = params.style;
     if (style == null || info === undefined) return;
-    const model = params.model ?? fallback;
+    const model = resolve(params);
     const allowed = STYLE_NAMES[model];
     if (allowed === undefined || allowed.includes(style)) return;
     ctx.report({
@@ -428,7 +528,7 @@ function makeStyleCheck(fallback: string) {
   };
 }
 
-function makePromptLengthCheck(fallback: string) {
+function makePromptLengthCheck(resolve: ResolveModel) {
   return (
     params: RecraftTransformCommon & { model?: string | null },
     info: ModelInfo | undefined,
@@ -438,7 +538,7 @@ function makePromptLengthCheck(fallback: string) {
     if (limit === undefined) return;
     const actual = params.prompt.length;
     if (actual <= limit) return;
-    const model = params.model ?? fallback;
+    const model = resolve(params);
     ctx.report({
       code: "over_output_limit",
       path: ["prompt"],
@@ -479,6 +579,66 @@ function checkOutpaintGeometry(
       path: ["size"],
       message:
         "at least one of `size`, `expand_left`/`expand_right`/`expand_top`/`expand_bottom`, or `zoom_out_percentage` must be specified.",
+      meta: { source: ENDPOINTS_DOCS_URL },
+    });
+  }
+}
+
+const V3_MODEL_SET = new Set<string>(V3_ONLY_MODELS);
+const IMAGE_TO_IMAGE_MODEL_SET = new Set<string>(IMAGE_TO_IMAGE_MODELS);
+
+/**
+ * One reason for the five params the image-to-image page (2026-11-12) marks
+ * "**V3 only.**" — `style`, `style_id`, `style_match` ("Image to image doesn't
+ * take V4 / V4.1 styles"), `negative_prompt` and `text_layout`.
+ */
+const IMAGE_TO_IMAGE_V3_ONLY: DenyRule = {
+  reason:
+    'imageToImage takes it on Recraft V3 models only (the image-to-image page marks it "V3 only") — use `recraftv3`, `recraftv3_raster` or `recraftv3_vector`',
+  source: IMAGE_TO_IMAGE_DOCS_URL,
+};
+
+/**
+ * The V4 / V4.1 models imageToImage accepts, and the params they refuse. The
+ * match is the route's own allow-list minus V3, so an id the route refuses
+ * draws the `model` error alone.
+ */
+const imageToImageFamilyRules: readonly FamilyRule[] = [
+  {
+    family: "Recraft V4 / V4.1 models on imageToImage",
+    match: (modelId) => IMAGE_TO_IMAGE_MODEL_SET.has(modelId) && !V3_MODEL_SET.has(modelId),
+    deny: {
+      style: IMAGE_TO_IMAGE_V3_ONLY,
+      style_id: IMAGE_TO_IMAGE_V3_ONLY,
+      style_match: IMAGE_TO_IMAGE_V3_ONLY,
+      negative_prompt: IMAGE_TO_IMAGE_V3_ONLY,
+      text_layout: IMAGE_TO_IMAGE_V3_ONLY,
+    },
+  },
+];
+
+/**
+ * `controls.artistic_level` and `controls.no_text` are V3-only — endpoints doc
+ * Controls table (2026-11-12): "| V3 models only |" — and nested, so the
+ * family deny table cannot express them. imageToImage is the one editing
+ * route that also takes the V4 line, so it is the one that needs this.
+ */
+function checkImageToImageControls(
+  params: ImageToImageParams,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const controls = params.controls;
+  if (controls == null || info === undefined) return;
+  const model = resolveImageToImageModel(params);
+  if (V3_MODEL_SET.has(model)) return;
+  for (const field of ["artistic_level", "no_text"] as const) {
+    if (controls[field] == null) continue;
+    ctx.report({
+      code: "unsupported_param",
+      path: ["controls", field],
+      model,
+      message: `\`controls.${field}\` is supported by Recraft V3 models only; "${model}" rejects it.`,
       meta: { source: ENDPOINTS_DOCS_URL },
     });
   }
@@ -556,20 +716,25 @@ export function toFormData(params: object): FormData {
 const imageToImageValidator = createValidator<ImageToImageParams, unknown>({
   endpoint: "recraft.imageEdit",
   schema: imageToImageSchema,
-  modelId: makeResolveModel(DEFAULT_IMAGE_TO_IMAGE_MODEL_ID),
+  modelId: resolveImageToImageModel,
   catalog: models,
+  familyRules: imageToImageFamilyRules,
   checks: [
     checkImageSource,
     checkImageBytes,
     checkResponseFormat,
+    makeEditEnumCheck(IMAGE_TO_IMAGE_DOCS_URL),
     checkStyleExclusivity,
-    makeModelCheck(IMAGE_TO_IMAGE_MODELS, DEFAULT_IMAGE_TO_IMAGE_MODEL_ID),
-    makeStyleCheck(DEFAULT_IMAGE_TO_IMAGE_MODEL_ID),
-    makePromptLengthCheck(DEFAULT_IMAGE_TO_IMAGE_MODEL_ID),
+    makeModelCheck(IMAGE_TO_IMAGE_MODELS, resolveImageToImageModel),
+    makeStyleCheck(resolveImageToImageModel),
+    makePromptLengthCheck(resolveImageToImageModel),
+    checkImageToImageControls,
   ],
   estimate,
   finalize: finalizeTo(IMAGE_TO_IMAGE_URL),
 });
+
+const resolveV3EditModel = makeResolveModel(DEFAULT_V3_EDIT_MODEL_ID);
 
 /** Checks shared by the four `recraftv3`-only editing routes. */
 const V3_EDIT_CHECKS: ReadonlyArray<
@@ -583,17 +748,17 @@ const V3_EDIT_CHECKS: ReadonlyArray<
   checkImageBytes,
   checkResponseFormat,
   checkStyleExclusivity,
-  makeModelCheck(V3_ONLY_MODELS, DEFAULT_V3_EDIT_MODEL_ID),
-  makeStyleCheck(DEFAULT_V3_EDIT_MODEL_ID),
-  makePromptLengthCheck(DEFAULT_V3_EDIT_MODEL_ID),
+  makeModelCheck(V3_ONLY_MODELS, resolveV3EditModel),
+  makeStyleCheck(resolveV3EditModel),
+  makePromptLengthCheck(resolveV3EditModel),
 ];
 
 const inpaintValidator = createValidator<InpaintParams, unknown>({
   endpoint: "recraft.imageEditInpaint",
   schema: inpaintSchema,
-  modelId: makeResolveModel(DEFAULT_V3_EDIT_MODEL_ID),
+  modelId: resolveV3EditModel,
   catalog: models,
-  checks: [...V3_EDIT_CHECKS, checkMaskSource],
+  checks: [...V3_EDIT_CHECKS, makeEditEnumCheck(INPAINTING_DOCS_URL), checkMaskSource],
   estimate,
   finalize: finalizeTo(INPAINT_URL),
 });
@@ -601,9 +766,9 @@ const inpaintValidator = createValidator<InpaintParams, unknown>({
 const generateBackgroundValidator = createValidator<GenerateBackgroundParams, unknown>({
   endpoint: "recraft.imageEditGenerateBackground",
   schema: inpaintSchema,
-  modelId: makeResolveModel(DEFAULT_V3_EDIT_MODEL_ID),
+  modelId: resolveV3EditModel,
   catalog: models,
-  checks: [...V3_EDIT_CHECKS, checkMaskSource],
+  checks: [...V3_EDIT_CHECKS, makeEditEnumCheck(BACKGROUND_DOCS_URL), checkMaskSource],
   estimate,
   finalize: finalizeTo(GENERATE_BACKGROUND_URL),
 });
@@ -611,9 +776,9 @@ const generateBackgroundValidator = createValidator<GenerateBackgroundParams, un
 const outpaintValidator = createValidator<OutpaintParams, unknown>({
   endpoint: "recraft.imageEditOutpaint",
   schema: outpaintSchema,
-  modelId: makeResolveModel(DEFAULT_V3_EDIT_MODEL_ID),
+  modelId: resolveV3EditModel,
   catalog: models,
-  checks: [...V3_EDIT_CHECKS, checkOutpaintGeometry],
+  checks: [...V3_EDIT_CHECKS, makeEditEnumCheck(OUTPAINTING_DOCS_URL), checkOutpaintGeometry],
   estimate,
   finalize: finalizeTo(OUTPAINT_URL),
 });
@@ -621,9 +786,9 @@ const outpaintValidator = createValidator<OutpaintParams, unknown>({
 const replaceBackgroundValidator = createValidator<ReplaceBackgroundParams, unknown>({
   endpoint: "recraft.imageEditReplaceBackground",
   schema: replaceBackgroundSchema,
-  modelId: makeResolveModel(DEFAULT_V3_EDIT_MODEL_ID),
+  modelId: resolveV3EditModel,
   catalog: models,
-  checks: V3_EDIT_CHECKS,
+  checks: [...V3_EDIT_CHECKS, makeEditEnumCheck(BACKGROUND_DOCS_URL)],
   estimate,
   finalize: finalizeTo(REPLACE_BACKGROUND_URL),
 });
@@ -669,7 +834,9 @@ interface RecraftTransformValidator<Route extends string> {
  * Validates params for Recraft `POST /v1/images/imageToImage` — creates an
  * image similar to the input, with `strength` (REQUIRED, 0–1) setting how far
  * it may drift. Accepts the V3 **and** V4 model lines; defaults to
- * `recraftv4_1`.
+ * `recraftv4_1`. `style`, `style_id`, `style_match`, `negative_prompt`,
+ * `text_layout` and `controls.artistic_level` / `no_text` are V3-only here,
+ * and refused on the V4 / V4.1 models.
  *
  * Pass `image` (a Blob) and post `recraft.toFormData(validated)`, or pass
  * `image_url` and post `JSON.stringify(validated)` — `.request.headers`

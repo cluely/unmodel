@@ -334,7 +334,13 @@ function modelNarrowingTests(): void {
   imageEdit({ ...base, model: "recraft/recraftv3", image: { file }, style: "Watercolor" });
   // @ts-expect-error — styles are not supported for the V4 / V4.1 line.
   imageEdit({ ...base, model: "recraft/recraftv4_1", image: { file }, style: "Watercolor" });
+  // @ts-expect-error — image to image takes `style_id` on V3 only ("V3 only.").
   imageEdit({ ...base, model: "recraft/recraftv4_1", image: { file }, style_id: "abc" });
+  imageEdit({ ...base, model: "recraft/recraftv3", image: { file }, style_id: "abc", style_match: "regular" });
+  // @ts-expect-error — `regular` is the one `style_match` image to image takes.
+  imageEdit({ ...base, model: "recraft/recraftv3_vector", image: { file }, style_id: "abc", style_match: "precise" });
+  // `outputFormat` compiles to imageToImage's `image_format`.
+  imageEdit({ ...base, model: "recraft/recraftv4_1", image: { file }, outputFormat: "png" });
 
   // Ideogram's remix form.
   imageEdit({ ...base, model: "ideogram/ideogram-3.0-quality", image: { file }, magic_prompt: "ON" });

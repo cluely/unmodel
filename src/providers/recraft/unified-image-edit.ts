@@ -57,7 +57,8 @@ import type {
   ImageEditAdapterFor,
   ImageEditParamsFor,
 } from "../../core/unified/vocabulary/image-edit";
-import type { RecraftControls, RecraftTextLayoutElement } from "./image";
+import { IMAGE_FORMATS, type RecraftImageFormat } from "./constraints";
+import type { RecraftControls, RecraftStyleMatch, RecraftTextLayoutElement } from "./image";
 import { imageEdit as imageToImage } from "./image-edit";
 import { MODELS, RECRAFT_IMAGE_EDIT_MODEL_PARAMS } from "./image-edit-params";
 
@@ -65,6 +66,7 @@ import { MODELS, RECRAFT_IMAGE_EDIT_MODEL_PARAMS } from "./image-edit-params";
 const EDIT_ONLY = ["edit"] as const;
 
 const ENDPOINTS_DOCS = "https://www.recraft.ai/docs/api-reference/endpoints";
+const IMAGE_TO_IMAGE_DOCS = "https://www.recraft.ai/docs/api-reference/tools/image-to-image";
 
 /** "0 = almost identical to the input, 1 = minimal similarity" — the identity map. */
 const STRENGTH: StrengthRules = { atZero: 0, atOne: 1, source: ENDPOINTS_DOCS };
@@ -76,9 +78,9 @@ const STRENGTH: StrengthRules = { atZero: 0, atOne: 1, source: ENDPOINTS_DOCS };
  * No `[key: string]: unknown` tail: `ImageToImageParams` has no index
  * signature, so an open tail would make `ExactKeys` demand `never` for every
  * extra key and `recraft.imageEdit.safe` would stop being assignable. The rest
- * of the surface — `style`, `style_id`, `negative_prompt`, `controls`,
- * `text_layout`, `response_format` — arrives through `providerOptions.recraft`,
- * which the kernel merges *before* validation.
+ * of the surface — `style`, `style_id`, `style_match`, `negative_prompt`,
+ * `controls`, `text_layout`, `response_format` — arrives through
+ * `providerOptions.recraft`, which the kernel merges *before* validation.
  */
 export interface RecraftImageEditWire {
   model: string;
@@ -88,10 +90,12 @@ export interface RecraftImageEditWire {
   image_url?: string;
   n?: number;
   random_seed?: number;
+  image_format?: RecraftImageFormat;
   // The per-model extras, named for the same reason the generation wire names
   // its own: `ImageToImageParams` has no index signature.
   style?: string | null;
   style_id?: string | null;
+  style_match?: Extract<RecraftStyleMatch, "regular"> | null;
   negative_prompt?: string | null;
   text_layout?: RecraftTextLayoutElement[] | null;
   controls?: RecraftControls | null;
@@ -119,10 +123,6 @@ export const imageEdit = {
       "POST /v1/images/imageToImage publishes no size or aspect field — the result takes the " +
       "input image's shape. `recraft.imageEditOutpaint` is the route with a `size`, and it is " +
       "reachable at `unmodel/recraft`.",
-    outputFormat:
-      "Recraft's editing routes publish no output-encoding field; `response_format` chooses " +
-      'between a URL and base64 ("url" / "b64_json"), which is delivery rather than encoding. ' +
-      "Set it via `providerOptions.recraft`.",
   },
   compile(
     input: ImageEditParamsFor<"file" | "url">,
@@ -182,6 +182,24 @@ export const imageEdit = {
     if (input.seed !== undefined) {
       ctx.from(["random_seed"], "seed");
       body.random_seed = input.seed;
+    }
+
+    // image-to-image page (2026-11-12): "`webp` (lossless) or `png`. Applies to
+    // raster output only." — the same pair the generation adapter compiles to.
+    if (input.outputFormat !== undefined) {
+      ctx.from(["image_format"], "outputFormat");
+      if (input.outputFormat === "jpeg") {
+        ctx.fail({
+          code: "invalid_enum_value",
+          path: ["outputFormat"],
+          message:
+            "`image_format` encodes \"webp\" or \"png\" on this route; Recraft publishes no JPEG " +
+            "output, so `outputFormat: \"jpeg\"` could only be dropped.",
+          meta: { allowed: [...IMAGE_FORMATS], value: input.outputFormat, source: IMAGE_TO_IMAGE_DOCS },
+        });
+      } else {
+        body.image_format = input.outputFormat;
+      }
     }
 
     applyExtras(input, RECRAFT_IMAGE_EDIT_MODEL_PARAMS, body, ctx);

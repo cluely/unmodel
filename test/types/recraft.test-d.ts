@@ -20,6 +20,7 @@ import {
   imageEditInpaint,
   imageEditOutpaint,
   imageEditReplaceBackground,
+  imageEditGenerateBackground,
 } from "../../src/providers/recraft";
 import { expectAssignable } from "./helpers";
 
@@ -159,6 +160,40 @@ function editStyleTypeTests(): void {
 }
 
 /**
+ * `image_format` and `style_match` are on every editing route's page — both
+ * used to type as `never` here and draw `unknown_param` at run time.
+ */
+function editFormatAndStyleMatchTypeTests(): void {
+  const edited = imageEdit({ image: imageBlob, prompt: "x", strength: 0.2, image_format: "png" });
+  expectAssignable<"png">(edited.image_format);
+  imageEdit({
+    image: imageBlob,
+    prompt: "x",
+    strength: 0.2,
+    model: "recraftv3",
+    style_id: "abc",
+    style_match: "regular",
+  });
+  imageEditInpaint({ image: imageBlob, mask: imageBlob, prompt: "x", image_format: "webp", style_match: "regular" });
+  imageEditOutpaint({ image: imageBlob, prompt: "x", size: "3:2", image_format: "png", style_match: "regular" });
+  imageEditReplaceBackground({ image: imageBlob, prompt: "x", image_format: "png", style_match: "regular" });
+  imageEditGenerateBackground({
+    image: imageBlob,
+    mask: imageBlob,
+    prompt: "x",
+    image_format: "png",
+    style_match: "regular",
+  });
+  // `null` still means "the provider default".
+  imageEditInpaint({ image: imageBlob, mask: imageBlob, prompt: "x", image_format: null, style_match: null });
+
+  // @ts-expect-error — no JPEG container on the editing routes either.
+  imageEdit({ image: imageBlob, prompt: "x", strength: 0.2, image_format: "jpeg" });
+  // @ts-expect-error — `regular` is the one `style_match` these routes take.
+  imageEditInpaint({ image: imageBlob, mask: imageBlob, prompt: "x", style_match: "precise" });
+}
+
+/**
  * The four `SPEC_ENUM_CHECKS` params. Each is refused at run time by
  * `checkSpecEnums` with `invalid_enum_value` at error severity, naming the
  * exact list — so an open `(string & {})` tail bought nothing except moving a
@@ -198,5 +233,6 @@ export {
   outpaintSizeTypeTests,
   generationsStyleTypeTests,
   editStyleTypeTests,
+  editFormatAndStyleMatchTypeTests,
   generationsSpecEnumTypeTests,
 };

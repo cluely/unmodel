@@ -130,8 +130,13 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * the one adapter ride in every pipeline-bearing graph (~1 KiB). groq was
    * already within a kilobyte of its pin, so the seam is what tipped it, not
    * what filled it.
+   *
+   * Bumped 138 → 152 at the 2026-11-12 model wave (138.5 measured): the shared
+   * Chat Completions battery every overlay carries grew (the sampling and
+   * image-locator slots, the role schemas, the per-model effort ladders) and
+   * groq added its Whisper route signpost on `groq.chat`. No module joined.
    */
-  groq: 138,
+  groq: 152,
   /**
    * Bumped 345 → 385 (348.0 measured, macOS, 2026-11-13). The tree was
    * already at 343.5 after the 2026-11-12 wave — the Gemini 4 rules and the

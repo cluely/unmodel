@@ -304,6 +304,7 @@ describe("codegen: chat tables", () => {
     // pro ×6, Daybreak ×2, embeddings ×3, image ×3, realtime ×1; two mistral
     // rows: mistral-embed, voxtral-mini-latest; inception's mercury-edit-2
     // (FIM/edit only); and stepfun's stepaudio-2.5-asr (POST /v1/audio/asr/sse).
-    expect(removed).toBe(21);
+    // Plus two groq Whisper rows (speech-to-text routes only).
+    expect(removed).toBe(23);
   });
 });

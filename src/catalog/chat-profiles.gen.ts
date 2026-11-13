@@ -349,8 +349,6 @@ export const chatProfiles: ChatCatalog = {
     "openai/gpt-oss-safeguard-20b": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, status: "beta", modalities: M_TEXT__TEXT, limit: { context: 131072, output: 65536 }, cost: { input: 0.075, output: 0.3, cacheRead: 0.0375 } },
     "qwen/qwen3.6-27b": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, status: "deprecated", modalities: M_TEXT_IMAGE__TEXT, limit: { context: 131072, output: 16384 }, cost: { input: 0.6, output: 3, cacheRead: 0.3 } },
     "qwen/qwen3.8-27b": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, status: "beta", modalities: M_TEXT_IMAGE__TEXT, limit: { context: 131072, output: 16384 }, cost: { input: 0.8, output: 4 } },
-    "whisper-large-v3": { attachment: true, reasoning: false, toolCall: false, temperature: true, modalities: M_AUDIO__TEXT, limit: { context: 448, output: 448 } },
-    "whisper-large-v3-turbo": { attachment: true, reasoning: false, toolCall: false, temperature: true, modalities: M_AUDIO__TEXT, limit: { context: 448, output: 448 } },
   },
   "huggingface": {
     "MiniMaxAI/MiniMax-M1-80k": { attachment: false, reasoning: true, toolCall: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 1000000, output: 80000 }, cost: { input: 0.55, output: 2.2 } },

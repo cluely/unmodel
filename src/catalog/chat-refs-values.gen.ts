@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1433 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1431 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -261,8 +261,6 @@ export const CHAT_MODEL_REFS = [
   "groq/openai/gpt-oss-safeguard-20b",
   "groq/qwen/qwen3.6-27b",
   "groq/qwen/qwen3.8-27b",
-  "groq/whisper-large-v3",
-  "groq/whisper-large-v3-turbo",
   "huggingface/MiniMaxAI/MiniMax-M1-80k",
   "huggingface/MiniMaxAI/MiniMax-M2",
   "huggingface/MiniMaxAI/MiniMax-M2.1",

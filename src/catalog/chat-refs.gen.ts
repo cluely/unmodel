@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1433 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1431 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -299,8 +299,6 @@ export type ChatModelRef =
   | "groq/openai/gpt-oss-safeguard-20b"
   | "groq/qwen/qwen3.6-27b"
   | "groq/qwen/qwen3.8-27b"
-  | "groq/whisper-large-v3"
-  | "groq/whisper-large-v3-turbo"
   | "huggingface/MiniMaxAI/MiniMax-M1-80k"
   | "huggingface/MiniMaxAI/MiniMax-M2"
   | "huggingface/MiniMaxAI/MiniMax-M2.1"

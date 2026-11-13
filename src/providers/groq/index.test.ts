@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { chat, checkChat, CHAT_COMPLETIONS_URL } from "./index";
+import { chat, checkChat, CHAT_COMPLETIONS_URL, models } from "./index";
 
 describe("unmodel/groq", () => {
   test("chat URL is the documented OpenAI-compatible endpoint", () => {
@@ -109,5 +109,74 @@ describe("unmodel/groq", () => {
     expect(report.usage).toEqual({ inputTokens: 10, outputTokens: 5, totalTokens: 15 });
     expect(report.finishReason).toBe("stop");
     expect(report.warnings).toEqual([]);
+  });
+});
+
+/**
+ * The Whisper signpost. models.dev files both Whisper rows as text-out, so
+ * they are in `GroqTextModelId`; Groq serves them on its speech-to-text routes
+ * only (https://console.groq.com/docs/speech-to-text, checked 2026-11-12). The
+ * fact is stated twice: `NON_CHAT_ROUTES` (./index.ts) for the substrate
+ * warning, and `chatScopeExclude` (data/availability-overrides.json) for the
+ * unified refs, because codegen cannot import `src/`. The last test pins the
+ * two together.
+ */
+describe("groq.chat non-chat route signpost", () => {
+  const WHISPER_ROUTES = {
+    "whisper-large-v3":
+      "POST https://api.groq.com/openai/v1/audio/transcriptions and POST https://api.groq.com/openai/v1/audio/translations",
+    // "Translation Support | No" in the doc's model table.
+    "whisper-large-v3-turbo":
+      'POST https://api.groq.com/openai/v1/audio/transcriptions only (Groq marks its translation support "No")',
+  } as const;
+
+  test("each Whisper id warns once, names its route, and still builds the request", () => {
+    for (const [id, route] of Object.entries(WHISPER_ROUTES)) {
+      expect(models[id as keyof typeof models], id).toBeDefined();
+      const r = chat.safe({ model: id, messages: [{ role: "user", content: "hi" }] });
+      // A warning, not an error: the substrate never refuses on routing.
+      expect(r.ok, id).toBe(true);
+      if (!r.ok) continue;
+      expect(r.warnings.map((w) => w.code), id).toEqual(["unsupported_capability"]);
+      const signpost = r.warnings[0];
+      expect(signpost?.path).toEqual(["model"]);
+      expect(signpost?.model).toBe(id);
+      expect(signpost?.meta?.route).toBe(route);
+      expect(signpost?.message).toContain(route);
+      expect(signpost?.message).toContain(`not POST ${CHAT_COMPLETIONS_URL}`);
+      expect(signpost?.message).toContain("unmodel ships no validator for Groq's audio routes");
+      expect(signpost?.meta?.source).toContain("https://console.groq.com/docs/speech-to-text");
+      expect(r.params.request.url).toBe(CHAT_COMPLETIONS_URL);
+    }
+  });
+
+  test("the runtime table and `chatScopeExclude` name the same groq rows", async () => {
+    const overrides = (await Bun.file(
+      new URL("../../../data/availability-overrides.json", import.meta.url).pathname,
+    ).json()) as { chatScopeExclude: string[] };
+    const globs = overrides.chatScopeExclude
+      .filter((ref) => ref.startsWith("groq:"))
+      .map((ref) => {
+        const body = ref
+          .slice("groq:".length)
+          .split("*")
+          .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+          .join(".*");
+        return new RegExp(`^${body}$`);
+      });
+    // Drift in either direction is a silent hole: a ref that compiles to a
+    // request Groq does not serve, or a warning on a model that works.
+    const textOut: string[] = Object.values(models)
+      .filter((model) => (model.modalities.output as readonly string[]).includes("text"))
+      .map((model) => model.id);
+    const excludedByData = textOut.filter((id) => globs.some((re) => re.test(id))).sort();
+    const warnedByCheck = textOut
+      .filter((id) => {
+        const r = chat.safe({ model: id, messages: [{ role: "user", content: "hi" }] });
+        return r.warnings.some((w) => w.code === "unsupported_capability" && w.path[0] === "model");
+      })
+      .sort();
+    expect(warnedByCheck).toEqual(excludedByData);
+    expect(warnedByCheck).toEqual(Object.keys(WHISPER_ROUTES).sort());
   });
 });

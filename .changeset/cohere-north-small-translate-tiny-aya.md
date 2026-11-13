@@ -23,10 +23,6 @@ cohere: `north-small-translate-1.0` and the four Tiny Aya models validate on `co
   `c4ai-aya-expanse-32b` / `c4ai-aya-vision-32b`, or Cohere's recommended chat
   alternatives `command-r7b-12-2024`, `command-a-03-2025` and
   `command-a-reasoning-08-2025` (https://docs.cohere.com/docs/deprecations).
-- `north-mini-code-1-0` keeps accepting `response_format: json_object`:
-  models.dev now marks it without structured outputs, but its model page
-  renders Structured Outputs as supported
-  (https://docs.cohere.com/docs/north-mini-code-1.0).
 - `c4ai-aya-expanse-32b`, `c4ai-aya-vision-32b` and the Tiny Aya models now
   refuse `response_format: json_object` (models.dev marks them without
   structured outputs; Cohere's structured-outputs guide lists only Command

@@ -15,7 +15,9 @@ import { chat } from "../../src/providers/cohere";
 import type {
   ChatBody,
   CohereChatModelId,
+  CohereModelId,
   CohereSdkMessage,
+  CohereTextModelId,
   CohereV2ChatRequest,
 } from "../../src/providers/cohere";
 import { expectAssignable, expectTrue } from "./helpers";
@@ -90,5 +92,16 @@ expectTrue<
   >
 >();
 expectTrue<Equals<ChatBody["model"], CohereChatModelId | (string & {})>>();
+
+// The models.dev unions stay exported beside `CohereChatModelId`, and their
+// JSDoc names every id in them that `cohere.chat` does not know. Pinned
+// exactly, so an id joining or leaving that set fails here before the doc
+// goes stale.
+expectTrue<
+  Equals<Exclude<CohereTextModelId, CohereChatModelId>, "north-mini-code-1-0" | "north-small-translate-09-2026">
+>();
+expectTrue<
+  Equals<Exclude<CohereModelId, CohereChatModelId>, "north-mini-code-1-0" | "north-small-translate-09-2026">
+>();
 
 export { cohereSdkTypeTests };

@@ -25,6 +25,10 @@
 
 import type { ModelInfo } from "../../core/catalog-types";
 import { models } from "../../catalog/cohere.gen";
+import type {
+  CohereModelId as GeneratedCohereModelId,
+  CohereTextModelId as GeneratedCohereTextModelId,
+} from "../../catalog/cohere.gen";
 
 /**
  * "Context Window: 16K tokens Max Output Tokens: 16K tokens" —
@@ -104,6 +108,29 @@ export const chatModels = {
 
 /** Every model id `cohere.chat` knows — the keys of {@link chatModels}. */
 export type CohereChatModelId = keyof typeof chatModels;
+
+// Declared here rather than re-exported from cohere.gen: a JSDoc on a
+// re-export never reaches a hover, and these two unions need the caveat.
+
+/**
+ * models.dev's cohere model ids — the keys of the generated `models` table,
+ * not the ids `cohere.chat` validates (those are {@link CohereChatModelId}).
+ * `north-mini-code-1-0` and `north-small-translate-09-2026` are models.dev
+ * spellings no Cohere page uses: `cohere.chat` knows those models as
+ * `north-mini-code-1.0` and `north-small-translate-1.0`, and validates the
+ * models.dev spellings with an `unknown_model` warning.
+ */
+export type CohereModelId = GeneratedCohereModelId;
+
+/**
+ * models.dev's cohere text-model ids — not the ids `cohere.chat` validates
+ * (those are {@link CohereChatModelId}). `north-mini-code-1-0` and
+ * `north-small-translate-09-2026` are models.dev spellings no Cohere page
+ * uses: `cohere.chat` knows those models as `north-mini-code-1.0` and
+ * `north-small-translate-1.0`, and validates the models.dev spellings with an
+ * `unknown_model` warning.
+ */
+export type CohereTextModelId = GeneratedCohereTextModelId;
 
 /** A generated row without its `cost` — for rates Cohere's own pages contradict. */
 function withoutCost<Row extends ModelInfo>(row: Row): Omit<Row, "cost"> {

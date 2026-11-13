@@ -237,8 +237,8 @@ describe("the recorded queue oracle", () => {
   const ok = (row: OracleRow): boolean => queueFor(row.model)({ model: row.model, ...row.input }).ok;
 
   test("is the sample the README describes", () => {
-    expect(rows.length).toBe(85);
-    expect(new Set(rows.map((row) => row.model)).size).toBe(9);
+    expect(rows.length).toBe(176);
+    expect(new Set(rows.map((row) => row.model)).size).toBe(24);
     expect(rows.every((row) => row.status === 422)).toBe(true);
   });
 

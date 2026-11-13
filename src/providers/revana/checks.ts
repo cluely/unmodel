@@ -41,7 +41,7 @@
  */
 
 import type { PipelineContext } from "../../core/pipeline";
-import { admittedInput, admittedQueueInput, QUEUE_DURATION } from "./admitted";
+import { admittedInput, admittedQueueInput, DOCUMENTED_SECOND_NAMES, QUEUE_DURATION, SECOND_NAMES } from "./admitted";
 import type { RevanaMediaField, RevanaModelShape, RevanaSpeechField } from "./shape-types";
 
 /** The generation API reference; `meta.source` on every finding below. */
@@ -243,19 +243,32 @@ function quoted(values: readonly (string | number)[]): string {
 // ---------------------------------------------------------------------------
 
 /**
- * A key the model's input schema does not have.
+ * A key the model's input schema does not have. Two cases, and they are not
+ * the same finding:
  *
- * A warning, like every `unknown_param` in this library — Revana adds fields
- * faster than a snapshot tracks them — but the message says what the API does
- * today, which is refuse it.
+ * - a key of ANOTHER Revana schema (`video_urls` on a `ModelInput` model,
+ *   `seed` on `seedance-2.5`). All three schemas are closed and unmodel has
+ *   all three, so this one is certain, and an error;
+ * - a key no schema has. A warning, like every `unknown_param` in this
+ *   library — Revana adds fields faster than a snapshot tracks them — but the
+ *   message says what the API does today, which is refuse it.
  */
-function reportUnknownKeys(scope: Scope, input: Input, known: readonly string[]): void {
+function reportUnknownKeys(scope: Scope, input: Input, known: readonly string[], schema: string): void {
   for (const key of Object.keys(input)) {
     if (known.includes(key)) continue;
+    if (WIRE_FIELDS.includes(key)) {
+      fail(
+        scope,
+        "unsupported_param",
+        key,
+        `"${scope.model}" takes \`${schema}\`, which has no \`${key}\` — the API answers 'Unrecognized key: "${key}"'.`,
+        { source: REVANA_API_SOURCE },
+      );
+      continue;
+    }
     // On the queue route the input IS the top of the body, where the pipeline
-    // already reports a key no input schema has. Only a key that belongs to
-    // another schema (`roles` on a `ModelInput` model) is left to say here.
-    if (scope.flat && !WIRE_FIELDS.includes(key)) continue;
+    // already reports a key no input schema has.
+    if (scope.flat) continue;
     emit(scope, {
       code: "unknown_param",
       path: ["input", key],
@@ -378,7 +391,7 @@ function checkVisualFields(scope: Scope, input: Input, shape: RevanaModelShape):
       fail(scope, "unsupported_param", field, `\`input.${field}\` is for music models; "${scope.model}" does not take it.`);
     }
   }
-  reportUnknownKeys(scope, input, MODEL_INPUT_FIELDS);
+  reportUnknownKeys(scope, input, MODEL_INPUT_FIELDS, "ModelInput");
   checkPrompt(scope, input, shape);
 }
 
@@ -421,10 +434,12 @@ type InputMode = "video_url" | "end_image_url" | "image_url" | "image_urls" | "p
  * of the combinations the model lists ("a prompt alone; input.image_url;
  * input.image_url with input.end_image_url; input.image_urls") and refuses
  * the request when that one is not offered. A clip outranks a first frame, a
- * first frame outranks references — so `image_urls` beside an `image_url`, or
- * an `image_url` beside a `video_url` (the character picture of a
- * motion-control model), rides along rather than being refused. Established
- * against the quote endpoint for every model; see docs/research/revana.md.
+ * first frame outranks references — so an `image_url` beside a `video_url`
+ * (the character picture of a motion-control model) rides along rather than
+ * being refused, and so does `image_urls` beside an `image_url` on a picture
+ * model. A video model is stricter about that last pair
+ * ({@link checkFrameBesideReferences}). Established against the quote endpoint
+ * for every model; see docs/research/revana.md.
  */
 function inputMode(input: Input): InputMode {
   if (has(input, "video_url")) return "video_url";
@@ -456,6 +471,8 @@ function checkVisualMedia(scope: Scope, input: Input, shape: RevanaModelShape): 
     );
   }
 
+  checkFrameBesideReferences(scope, input, shape);
+
   if (has(input, "audio_url") && !shape.media.includes("audio_url")) {
     fail(
       scope,
@@ -472,22 +489,58 @@ function checkVisualMedia(scope: Scope, input: Input, shape: RevanaModelShape): 
   // FROM references; beside a first frame or a clip a video model was seen to
   // take more, so it is not claimed there.
   const references = input["image_urls"];
+  const limit = referenceLimit(shape);
   if (
     Array.isArray(references) &&
-    shape.maxInputImages !== undefined &&
-    references.length > shape.maxInputImages &&
+    limit !== undefined &&
+    references.length > limit &&
     (shape.kind === "image" || mode === "image_urls")
   ) {
     fail(
       scope,
       "unsupported_capability",
       "image_urls",
-      `"${scope.model}" takes at most ${shape.maxInputImages} pictures in \`input.image_urls\`; got ${references.length}.`,
-      { count: references.length, limit: shape.maxInputImages },
+      `"${scope.model}" takes at most ${limit} ${limit === 1 ? "picture" : "pictures"} in \`input.image_urls\`; got ${references.length}.`,
+      { count: references.length, limit },
     );
   }
 
   checkMediaUrls(scope, input, MEDIA_FIELDS);
+}
+
+/**
+ * How many pictures `image_urls` may hold: the row's `max_input_images`, and
+ * ONE where a model that takes references lists no number — "qwen-image takes
+ * at most 1 picture in input.image_urls." All eight such models answered that
+ * to two pictures on 2026-11-12: the seven `ideogram`, `qwen` and `midjourney`
+ * picture models without a figure, and `kling-o1`.
+ */
+function referenceLimit(shape: RevanaModelShape): number | undefined {
+  return shape.maxInputImages ?? (shape.media.includes("image_urls") ? 1 : undefined);
+}
+
+/**
+ * A video model reads `image_url` as the first frame and `image_urls` as
+ * references, and takes one or the other: "Send input.image_url (the first
+ * frame) or input.image_urls (references), not both." What it lets through is
+ * a list that only repeats the frames — every entry the `image_url` or the
+ * `end_image_url` — and it refuses the pair whatever else the request carries,
+ * a `video_url` included (2026-11-12: `veo-3.1`, `gemini-omni-1.2-flash`,
+ * `kling-3.0-motion-control` and four more in the oracle). A picture model
+ * takes both.
+ */
+function checkFrameBesideReferences(scope: Scope, input: Input, shape: RevanaModelShape): void {
+  const references = input["image_urls"];
+  if (shape.kind !== "video" || !has(input, "image_url") || !Array.isArray(references)) return;
+  const frames = [input["image_url"], input["end_image_url"]];
+  if (references.every((reference) => frames.includes(reference))) return;
+  fail(
+    scope,
+    "invalid_shape",
+    "image_urls",
+    "Send `input.image_url` (the first frame) or `input.image_urls` (references), not both. To start on one picture and end on another, send `input.image_url` and `input.end_image_url`.",
+    { source: REVANA_API_SOURCE },
+  );
 }
 
 function checkResolution(scope: Scope, input: Input, shape: RevanaModelShape): void {
@@ -702,7 +755,7 @@ function checkSpeech(scope: Scope, input: Input, shape: RevanaModelShape): void 
       { source: "data/revana/overlays.json" },
     );
   }
-  reportUnknownKeys(scope, input, MODEL_INPUT_FIELDS);
+  reportUnknownKeys(scope, input, MODEL_INPUT_FIELDS, "ModelInput");
   checkImageCount(scope, input, shape);
 
   const dialogue = takes.includes("dialogue") ? input["dialogue"] : undefined;
@@ -778,7 +831,7 @@ function checkMusic(scope: Scope, input: Input, shape: RevanaModelShape): void {
       { source: REVANA_API_SOURCE },
     );
   }
-  reportUnknownKeys(scope, input, MODEL_INPUT_FIELDS);
+  reportUnknownKeys(scope, input, MODEL_INPUT_FIELDS, "ModelInput");
   checkImageCount(scope, input, shape);
   refusesEmptyPrompt(scope, input);
 
@@ -825,20 +878,6 @@ function checkExactEnum(scope: Scope, input: Input, field: string, allowed: read
   );
 }
 
-function reportForeignKeys(scope: Scope, input: Input, known: readonly string[], schema: string): void {
-  for (const key of Object.keys(input)) {
-    if (known.includes(key) || !MODEL_INPUT_FIELDS.includes(key)) continue;
-    fail(
-      scope,
-      "unsupported_param",
-      key,
-      `"${scope.model}" takes \`${schema}\`, which has no \`${key}\` — the API answers 'Unrecognized key: "${key}"'.`,
-      { source: REVANA_API_SOURCE },
-    );
-  }
-  reportUnknownKeys(scope, input, [...known, ...MODEL_INPUT_FIELDS]);
-}
-
 function checkArrayCap(scope: Scope, input: Input, field: string, limit: number | undefined): void {
   const value = input[field];
   if (!Array.isArray(value) || limit === undefined || value.length <= limit) return;
@@ -852,7 +891,7 @@ function checkArrayCap(scope: Scope, input: Input, field: string, limit: number 
 }
 
 function checkSeedance(scope: Scope, input: Input, shape: RevanaModelShape): void {
-  reportForeignKeys(scope, input, SEEDANCE_FIELDS, "SeedanceInput");
+  reportUnknownKeys(scope, input, SEEDANCE_FIELDS, "SeedanceInput");
 
   if (!refusesEmptyPrompt(scope, input) && !has(input, "prompt")) {
     fail(scope, "invalid_shape", "prompt", `\`input.prompt\` is required by "${scope.model}".`, { source: REVANA_API_SOURCE });
@@ -891,7 +930,7 @@ function checkSeedance(scope: Scope, input: Input, shape: RevanaModelShape): voi
 }
 
 function checkNemesis(scope: Scope, input: Input, shape: RevanaModelShape): void {
-  reportForeignKeys(scope, input, NEMESIS_FIELDS, "NemesisInput");
+  reportUnknownKeys(scope, input, NEMESIS_FIELDS, "NemesisInput");
 
   for (const field of ["video_url", "image_urls"] as const) {
     if (!has(input, field)) {
@@ -1000,12 +1039,8 @@ export function runGenerationChecks(
   const sent = params["input"] as Input;
   const flat = spec.flat === true;
   const input = flat ? admittedQueueInput(sent) : admittedInput(sent);
-  const scope: Scope = {
-    model,
-    ctx,
-    flat,
-    spelled: has(sent, "generate_audio") && !has(sent, "audio") ? { audio: "generate_audio" } : {},
-  };
+  const { spelled, twice } = secondNames(sent);
+  const scope: Scope = { model, ctx, flat, spelled };
 
   const shape = Object.hasOwn(spec.shapes, model) ? spec.shapes[model] : undefined;
   if (shape === undefined) {
@@ -1014,11 +1049,12 @@ export function runGenerationChecks(
   }
   if (spec.view !== undefined && !checkView(scope, input, spec.view, ctx.endpoint)) return;
 
-  if (has(sent, "generate_audio") && has(sent, "audio")) {
-    fail(scope, "invalid_shape", "generate_audio", "`input.generate_audio` and `input.audio` are the same field; send one.", {
+  for (const [second, other] of twice) {
+    fail(scope, "invalid_shape", second, `\`input.${second}\` and \`input.${other}\` are the same field; send one.`, {
       source: REVANA_API_SOURCE,
     });
   }
+  reportUndocumentedNames(scope, sent);
   if (flat) checkQueueLeniencies(scope, sent);
   checkTask(scope, params, input, shape.kind);
   if (model === SEEDANCE_25) checkSeedance(scope, input, shape);
@@ -1026,6 +1062,47 @@ export function runGenerationChecks(
   else if (shape.kind !== "audio") checkVisual(scope, input, shape);
   else if (shape.tasks.includes("text_to_speech")) checkSpeech(scope, input, shape);
   else checkMusic(scope, input, shape);
+}
+
+/**
+ * Which fields the caller sent under a second name (`./admitted.ts`), and
+ * which they sent twice.
+ *
+ * `spelled` is first name → the name sent, for {@link emit}. `twice` pairs a
+ * second name with the other spelling of the same field that is also there —
+ * the first name, or an earlier second name.
+ */
+function secondNames(sent: Input): { spelled: Record<string, string>; twice: [second: string, other: string][] } {
+  const spelled: Record<string, string> = {};
+  const twice: [string, string][] = [];
+  for (const [second, first] of Object.entries(SECOND_NAMES)) {
+    if (!has(sent, second)) continue;
+    const other = has(sent, first) ? first : spelled[first];
+    if (other === undefined) spelled[first] = second;
+    else twice.push([second, other]);
+  }
+  return { spelled, twice };
+}
+
+/**
+ * A second name no Revana schema or page has. The API takes it, so this is not
+ * a refusal and the field is checked like the one it is; but nothing published
+ * says it will go on being taken, and the caller should know which name is the
+ * documented one.
+ */
+function reportUndocumentedNames(scope: Scope, sent: Input): void {
+  for (const [second, first] of Object.entries(SECOND_NAMES)) {
+    if (!has(sent, second) || DOCUMENTED_SECOND_NAMES.includes(second)) continue;
+    scope.ctx.report({
+      code: "unknown_param",
+      path: scope.flat ? [second] : ["input", second],
+      model: scope.model,
+      message:
+        `\`${scope.flat ? "" : "input."}${second}\` is \`${first}\` under a name in no Revana schema or page. The API reads it as ` +
+        `\`${first}\` today, and unmodel checked it as that; \`${first}\` is the documented spelling.`,
+      meta: { kind: "undocumented_second_name", field: first, source: REVANA_API_SOURCE },
+    });
+  }
 }
 
 /**

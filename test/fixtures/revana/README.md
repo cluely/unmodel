@@ -42,7 +42,7 @@ Each row is one body and what the API said about it:
 - `quoted_usd` — on a `200`.
 
 `src/providers/revana/oracle.test.ts` replays every row through unmodel's
-validators. It is a sample — twenty-five models out of 138, chosen to cover each
+validators. It is a sample — thirty-four models out of 138, chosen to cover each
 rule — of a run that asked the same questions of all of them
 (`docs/research/revana.md`, "Verification").
 
@@ -59,8 +59,9 @@ run this generation within max_cost_usd"), and nothing is created or charged.
 So here `passes` is that answer or a media-download failure, and every other
 field means what it does above. `input` is the body without the cap.
 
-Eighty-five bodies over nine models: a sample of ordinary ones, to show the
-route answers the generation route's own sentences, and the cases where the
-two routes part — `num_images`, and a string `duration`. The same bodies are in
+176 bodies over twenty-four models: a sample of ordinary ones, to show the
+route answers the generation route's own sentences; the cases where the two
+routes part — `num_images`, and a string `duration`; and the undocumented
+second names, which both routes read alike. The same bodies are in
 `quote-oracle.json`, so the difference between the routes is the difference
 between the two files. `src/providers/revana/queue.test.ts` replays it.

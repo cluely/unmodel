@@ -33,6 +33,12 @@ const SHAPES = {
     maxInputImages: 2,
   },
   "i2v-only": { kind: "video", tasks: ["image_to_video"], media: ["image_url"] },
+  "frames-refs": {
+    kind: "video",
+    tasks: ["text_to_video", "image_to_video", "first_last_frame", "reference_to_video"],
+    media: ["image_url", "end_image_url", "image_urls"],
+    maxInputImages: 4,
+  },
   "refs-only": { kind: "video", tasks: ["reference_to_video"], media: ["image_urls"], maxInputImages: 3 },
   "v2v-only": { kind: "video", tasks: ["video_to_video"], media: ["video_url"] },
   "talking-head": { kind: "video", tasks: ["image_to_video"], media: ["image_url", "audio_url"] },
@@ -365,6 +371,137 @@ describe("`generate_audio` — `audio` under its second name", () => {
 
   test("a non-boolean is the wire schema's to refuse", () => {
     expect(errors("t2v-i2v", { prompt: "a", generate_audio: "true" })).toEqual(["invalid_shape@input.generate_audio"]);
+  });
+});
+
+describe("the eight second names no Revana page has", () => {
+  const IMG2 = "https://example.com/b.png";
+
+  test("each is checked as the field it is renamed to", () => {
+    for (const first of ["start_image_url", "first_frame_url"]) {
+      expect(errors("t2v-i2v", { prompt: "a", [first]: IMG })).toEqual([]);
+      expect(errors("t2i-only", { prompt: "a", [first]: IMG })).toEqual([`unsupported_capability@input.${first}`]);
+      for (const last of ["last_image_url", "last_frame_url", "tail_image_url"]) {
+        expect(errors("t2v-i2v", { prompt: "a", [first]: IMG, [last]: IMG2 })).toEqual([]);
+      }
+    }
+    for (const last of ["last_image_url", "last_frame_url", "tail_image_url"]) {
+      expect(errors("t2v-i2v", { prompt: "a", [last]: IMG })).toEqual([`invalid_shape@input.${last}`]);
+      expect(messages("t2v-i2v", { prompt: "a", [last]: IMG })[0]).toBe(
+        `\`input.${last}\` needs \`input.image_url\` (the first frame).`,
+      );
+    }
+    for (const references of ["reference_images", "reference_image_urls"]) {
+      expect(errors("refs-only", { prompt: "a", [references]: [IMG] })).toEqual([]);
+      expect(errors("t2v-i2v", { prompt: "a", [references]: [IMG] })).toEqual([`unsupported_capability@input.${references}`]);
+      expect(errors("refs-only", { prompt: "a", [references]: [IMG, IMG, IMG, IMG] })).toEqual([
+        `unsupported_capability@input.${references}`,
+      ]);
+    }
+  });
+
+  test("a view is satisfied by one", () => {
+    const edit = validatorFor({ view: { ids: ["edit-only"], does: "edit a picture", wide: "revana.image", needsOneOf: ["image_url", "image_urls"] } });
+    expect(edit({ model: "edit-only", input: { prompt: "a", start_image_url: IMG } }).ok).toBe(true);
+    expect(edit({ model: "edit-only", input: { prompt: "a", reference_images: [IMG] } }).ok).toBe(true);
+  });
+
+  test("`reference_videos` is `video_urls`, which only SeedanceInput has", () => {
+    expect(errors("seedance-2.5", { prompt: "a", reference_videos: [VID] })).toEqual([]);
+    expect(errors("t2v-i2v", { prompt: "a", reference_videos: [VID] })).toEqual(["unsupported_param@input.reference_videos"]);
+    expect(messages("t2v-i2v", { prompt: "a", reference_videos: [VID] })[0]).toContain("`ModelInput`, which has no `video_urls`");
+    expect(errors("nemesis", { video_url: VID, image_urls: [IMG], reference_videos: [VID] })).toEqual([
+      "unsupported_param@input.reference_videos",
+    ]);
+  });
+
+  test("NemesisInput takes the two spellings of `image_urls`, and has no first frame", () => {
+    expect(errors("nemesis", { video_url: VID, reference_images: [IMG] })).toEqual([]);
+    expect(errors("nemesis", { video_url: VID, image_urls: [IMG], start_image_url: IMG })).toEqual([
+      "unsupported_param@input.start_image_url",
+    ]);
+  });
+
+  test("one field under two names is refused, whichever two", () => {
+    expect(errors("t2v-i2v", { prompt: "a", start_image_url: IMG, image_url: IMG })).toEqual(["invalid_shape@input.start_image_url"]);
+    expect(errors("t2v-i2v", { prompt: "a", start_image_url: IMG, first_frame_url: IMG })).toEqual([
+      "invalid_shape@input.first_frame_url",
+    ]);
+    expect(messages("t2v-i2v", { prompt: "a", start_image_url: IMG, first_frame_url: IMG })[0]).toBe(
+      "`input.first_frame_url` and `input.start_image_url` are the same field; send one.",
+    );
+    expect(errors("t2v-i2v", { prompt: "a", image_url: IMG, last_image_url: IMG, tail_image_url: IMG })).toEqual([
+      "invalid_shape@input.tail_image_url",
+    ]);
+    expect(errors("refs-only", { prompt: "a", reference_images: [IMG], image_urls: [IMG] })).toEqual([
+      "invalid_shape@input.reference_images",
+    ]);
+  });
+
+  test("each is named as undocumented, once, with the spelling that is not", () => {
+    const input = { prompt: "a", start_image_url: IMG, last_frame_url: IMG2 };
+    const result = safe({ model: "t2v-i2v", input });
+    expect(result.ok).toBe(true);
+    expect(warnings("t2v-i2v", input)).toEqual(["unknown_param@input.start_image_url", "unknown_param@input.last_frame_url"]);
+    const named = result.warnings.filter((issue) => issue.code === "unknown_param");
+    expect(named[0]?.message).toBe(
+      "`input.start_image_url` is `image_url` under a name in no Revana schema or page. The API reads it as " +
+        "`image_url` today, and unmodel checked it as that; `image_url` is the documented spelling.",
+    );
+    expect(named[0]?.meta).toMatchObject({ kind: "undocumented_second_name", field: "image_url" });
+  });
+
+  test("a wrong type is the wire schema's to refuse", () => {
+    expect(errors("t2v-i2v", { prompt: "a", start_image_url: 5 })).toEqual(["invalid_shape@input.start_image_url"]);
+    expect(errors("t2v-i2v", { prompt: "a", reference_images: IMG })).toEqual(["invalid_shape@input.reference_images"]);
+    expect(errors("t2v-i2v", { prompt: "a", start_image_url: "http://example.com/a.png" })).toEqual([
+      "invalid_shape@input.start_image_url",
+    ]);
+  });
+});
+
+describe("a key of another Revana schema", () => {
+  test("is certain to be refused, so it is an error and not an unknown key", () => {
+    expect(errors("t2v-i2v", { prompt: "a", video_urls: [VID] })).toEqual(["unsupported_param@input.video_urls"]);
+    expect(errors("t2i-only", { prompt: "a", guide: "people" })).toEqual(["unsupported_param@input.guide"]);
+    expect(errors("narrator", { text: "hi", audio_urls: [IMG] })).toEqual(["unsupported_param@input.audio_urls"]);
+    expect(errors("songwriter", { style: "folk", sound: "none" })).toEqual(["unsupported_param@input.sound"]);
+    expect(errors("seedance-2.5", { prompt: "a", roles: ["person"] })).toEqual(["unsupported_param@input.roles"]);
+    expect(errors("nemesis", { video_url: VID, image_urls: [IMG], video_urls: [VID] })).toEqual(["unsupported_param@input.video_urls"]);
+    expect(messages("t2v-i2v", { prompt: "a", roles: ["person"] })[0]).toBe(
+      "\"t2v-i2v\" takes `ModelInput`, which has no `roles` — the API answers 'Unrecognized key: \"roles\"'.",
+    );
+  });
+});
+
+describe("a first frame beside references", () => {
+  const IMG2 = "https://example.com/b.png";
+
+  test("a video model takes one or the other", () => {
+    expect(errors("frames-refs", { prompt: "a", image_url: IMG, image_urls: [IMG2] })).toEqual(["invalid_shape@input.image_urls"]);
+    expect(errors("frames-refs", { prompt: "a", image_url: IMG, image_urls: [IMG, IMG2] })).toEqual(["invalid_shape@input.image_urls"]);
+    // Beside a clip too — which this row does not take, so that is said as well.
+    expect(errors("frames-refs", { prompt: "a", video_url: VID, image_url: IMG, image_urls: [IMG2] })).toContain(
+      "invalid_shape@input.image_urls",
+    );
+  });
+
+  test("a list that only repeats the frames rides along", () => {
+    expect(errors("frames-refs", { prompt: "a", image_url: IMG, image_urls: [IMG] })).toEqual([]);
+    expect(errors("frames-refs", { prompt: "a", image_url: IMG, image_urls: [IMG, IMG] })).toEqual([]);
+    expect(errors("frames-refs", { prompt: "a", image_url: IMG, end_image_url: IMG2, image_urls: [IMG2] })).toEqual([]);
+  });
+
+  test("a picture model takes both", () => {
+    expect(errors("t2i-edit", { prompt: "a", image_url: IMG, image_urls: [IMG2] })).toEqual([]);
+  });
+});
+
+describe("references on a model that lists no cap", () => {
+  test("are capped at one", () => {
+    expect(errors("edit-only", { prompt: "a", image_urls: [IMG] })).toEqual([]);
+    expect(errors("edit-only", { prompt: "a", image_urls: [IMG, IMG] })).toEqual(["unsupported_capability@input.image_urls"]);
+    expect(messages("edit-only", { prompt: "a", image_urls: [IMG, IMG] })[0]).toContain("at most 1 picture in");
   });
 });
 

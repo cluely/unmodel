@@ -65,6 +65,16 @@ export const inputSchema = z.looseObject({
   audio: z.boolean().optional(),
   // `audio` under fal's name — taken by the API's validator, in no published schema.
   generate_audio: z.boolean().optional(),
+  // The eight undocumented second names (`./admitted.ts`), each typed as the
+  // field it is renamed to — the API reports a wrong type under that field.
+  start_image_url: url.optional(),
+  first_frame_url: url.optional(),
+  last_image_url: url.optional(),
+  last_frame_url: url.optional(),
+  tail_image_url: url.optional(),
+  reference_images: urls.optional(),
+  reference_image_urls: urls.optional(),
+  reference_videos: urls.optional(),
   quality: z.string().optional(),
   seed: z.number().int().min(0).max(MAX_SEED).optional(),
   num_images: z.number().int().min(1).max(10).optional(),

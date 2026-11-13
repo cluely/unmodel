@@ -101,11 +101,27 @@ The published `ModelInput` has seventeen properties and
   (`veo-3.1`, 720p, 8 s: $1.60 without, $3.20 with either spelling), refused
   with `audio`'s own sentence where the model has none, and a 422 beside
   `audio` even when the two agree. unmodel types it and checks it as `audio`.
-- **Undocumented aliases**, recognised but described nowhere:
-  `start_image_url`, `first_frame_url`, `last_image_url`, `last_frame_url`,
-  `tail_image_url`, `reference_images`, `reference_image_urls`,
-  `reference_videos`. unmodel does not type them: a caller who sends one gets
-  an `unknown_param` warning and the request goes through.
+- **Undocumented aliases**, in no schema and on no page. The API renames
+  each before it validates anything, on both routes and for every model, so
+  what it is renamed to can be read off its answers (`start_image_url: 5` →
+  `input.image_url: Invalid input: expected string, received number`):
+
+  | Sent | Read as |
+  | --- | --- |
+  | `start_image_url`, `first_frame_url` | `image_url` |
+  | `last_image_url`, `last_frame_url`, `tail_image_url` | `end_image_url` |
+  | `reference_images`, `reference_image_urls` | `image_urls` |
+  | `reference_videos` | `video_urls` |
+
+  The renamed key is then held to the model's schema like any other:
+  `reference_videos` is `Unrecognized key: "video_urls"` on every model but
+  `seedance-2.5`, and `start_image_url` is `Unrecognized key: "image_url"` on
+  Nemesis. A field under two of its names is refused even when the values
+  agree (`… are the same field; send one.`). unmodel does not TYPE these —
+  nothing published says they will go on being taken — but it reads them as
+  the API does: each is checked and priced as the field it becomes, and comes
+  back with one `unknown_param` warning (`meta.kind:
+  "undocumented_second_name"`) naming the documented spelling.
 
 ## Per-model rules, and where each comes from
 
@@ -120,7 +136,7 @@ catalog row alone.
 | `audio` | `options.audio` | `true` only where the option is `true` → else `does not make sound; leave input.audio out.` (`false` passes validation everywhere) |
 | `quality` | `options.qualities` | a list is an enum; absent → accepted, any value |
 | `num_images` / `n` | `options.max_images` | a count of ONE is taken by every `ModelInput` model (video, upscaler, speech and music included); above one, picture models only, up to the max, and not an upscaler; both at once is refused |
-| `image_urls` | `options.max_input_images` | `<id> takes at most N pictures in input.image_urls.` |
+| `image_urls` | `options.max_input_images` | `<id> takes at most N pictures in input.image_urls.`; ABSENT on a model that takes references → at most 1 |
 | `voice` | `options.voices` | must be a listed id |
 | `language_code` | `options.languages` | list → enum; `[]` → `picks the language from the text; leave input.language_code out.`; absent → any code |
 | `text` length | `options.max_characters` | 5000 passes, 5001 is refused |
@@ -144,12 +160,16 @@ That list is the model's `tasks`:
 
 and the combination a request is in is decided by its highest-ranking field:
 a clip, then a first frame (with or without a last one), then references. A
-lower-ranking field beside it rides along — `image_urls` next to an
-`image_url` on a model that lists only `input.image_url`, or an `image_url`
-next to a `video_url` (the character picture of a motion-control model, which
-its routes in fact require). The first draft of the check tested each field
-for membership and refused all of those; the differential run is what caught
-it.
+lower-ranking field beside it rides along — an `image_url` next to a
+`video_url` (the character picture of a motion-control model, which its
+routes in fact require), or `image_urls` next to an `image_url` on a picture
+model. The first draft of the check tested each field for membership and
+refused all of those; the differential run is what caught it.
+
+A VIDEO model is stricter about that last pair: `Send input.image_url (the
+first frame) or input.image_urls (references), not both.` It lets the list
+through only when every entry repeats the `image_url` or the `end_image_url`,
+and refuses the pair whatever else is sent, a clip included.
 
 Three footnotes to that, each from the same run: `end_image_url` always needs
 `image_url`, whatever else is sent; the `image_urls` cap is enforced on every
@@ -344,6 +364,17 @@ Both are fixed, and 56 rows asking exactly those questions joined the fixture
 (714 rows, twenty-five models). The queue route has its own:
 `test/fixtures/revana/queue-oracle.json`, 85 bodies over nine models, none
 refused by unmodel and accepted by the API.
+
+**And what it could not have caught.** That run reused one placeholder URL for
+every media field, which hid two rules that only show when the URLs differ or
+the list is longer than one, both found while mapping the undocumented
+aliases: a video model refuses `image_url` beside `image_urls` unless the list
+only repeats the frames, and a model that takes references but lists no
+`max_input_images` takes one. A third was a severity: a key of another Revana
+schema (`video_urls` on a `ModelInput` model) was a warning, and since all
+three schemas are closed it is an error. Ninety rows asking those questions and
+the alias ones joined the generation fixture (804 rows, thirty-four models)
+and ninety-one the queue's (176 bodies, twenty-four models).
 
 The harness is not committed: it needs a key, and it spends nothing but should
 not run in CI against someone's account. Re-running it is the right first step

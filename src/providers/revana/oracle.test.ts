@@ -11,7 +11,7 @@ import type { ValidateResult } from "../../core/result";
 /**
  * unmodel's validators, replayed against what the API itself answered.
  *
- * `test/fixtures/revana/quote-oracle.json` is 714 request bodies and the
+ * `test/fixtures/revana/quote-oracle.json` is 804 request bodies and the
  * verbatim answer `POST /v1/generations/quote` gave each one on 2026-11-12
  * (the fixture's README explains why a quote is a validation oracle). The
  * three promises this file holds the validators to are the three the provider
@@ -67,8 +67,8 @@ const label = (row: OracleRow): string => `${row.model} [${row.case}] ${JSON.str
 
 describe("the recorded quote oracle", () => {
   test("is the sample the README describes", () => {
-    expect(rows.length).toBe(714);
-    expect(new Set(rows.map((row) => row.model)).size).toBe(25);
+    expect(rows.length).toBe(804);
+    expect(new Set(rows.map((row) => row.model)).size).toBe(34);
     expect(rows.every((row) => row.status === 200 || row.status === 422)).toBe(true);
   });
 

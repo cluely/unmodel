@@ -10,8 +10,10 @@
  * `data/atlascloud/openapi/`, one file per curated id, and
  * `scripts/atlascloud-audit.ts` is what notices when they drift.
  *
- * Ground truth: the 23 snapshots in `data/atlascloud/openapi/`, fetched and
- * transcribed 2026-08-26. Route and auth prose: ./urls.ts.
+ * Ground truth: the 31 snapshots in `data/atlascloud/openapi/`, one per
+ * catalogued id — 23 fetched and transcribed 2026-08-26, and the eight Veo 3.1
+ * Fast / Lite, Seedance 2.5 draft-complete and Wan 3.0 reference documents
+ * 2026-11-12. Route and auth prose: ./urls.ts.
  *
  * ## RESTATED, never imported
  *
@@ -155,6 +157,32 @@ export const WAN_RESOLUTIONS = [
 /** Veo 3.1 `resolution`. */
 export const VEO_RESOLUTIONS = ["720p", "1080p", "4k"] as const;
 
+/**
+ * Veo 3.1 Lite `resolution` — "Output resolution. 1080p only supports 8s
+ * duration. Veo 3.1 Lite does not support 4K." (all three Lite schemas, read
+ * 2026-11-12).
+ */
+export const VEO_LITE_RESOLUTIONS = ["720p", "1080p"] as const;
+
+/**
+ * `resolution` on `bytedance/seedance-2.5/draft-complete` — "Video resolution.
+ * 1080p or 4k are native Seedance outputs." (its schema, read 2026-11-12).
+ *
+ * `4k` is contested: the model page's header says "Render the 1080p final of a
+ * completed Seedance 2.5 draft" and Atlas's own cost test
+ * (https://www.atlascloud.ai/blog/tips/seedance-2-5-draft-mode-cost-test, read
+ * 2026-11-12) says "upgrades currently top out at 1080p". It stays accepted
+ * because the schema is the wire document, and refusing a value it lists is
+ * the one failure this library must not have.
+ */
+export const DRAFT_COMPLETE_RESOLUTIONS = ["1080p", "4k"] as const;
+
+/**
+ * `refers[].type` on the two Wan 3.0 reference routes — "Image:
+ * jpeg/jpg/png/bmp/webp; video: mp4/mov; audio: wav/mp3." (read 2026-11-12).
+ */
+export const REFER_TYPES = ["image", "video", "audio"] as const;
+
 /** `output_format` — Seedance 2.5 only. */
 export const VIDEO_OUTPUT_FORMATS = ["mp4", "mov"] as const;
 
@@ -199,6 +227,10 @@ export interface VideoShapeRule {
    * The exact `duration` enum, when the schema publishes one, with `-1`
    * filtered out (it is {@link allowsAutoDuration}'s job). Seedance v1.5 pro
    * publishes a `[minimum, maximum]` range instead and gets `undefined`.
+   *
+   * EMPTY means the route has no `duration` field at all —
+   * `bytedance/seedance-2.5/draft-complete` inherits it from the draft — so
+   * the deny table answers for it and `checkDuration` stays silent.
    */
   readonly durations?: readonly number[];
   /** Whether `duration: -1` ("the model picks") is an enum member. */
@@ -217,6 +249,32 @@ export interface VideoShapeRule {
   readonly forcesAdaptiveRatio: boolean;
   /** `resolution ∈ {1080p, 4k}` ⇒ `duration` must be 8 (Veo 3.1's `allOf`). */
   readonly durationLockedAtHighResolution?: readonly number[];
+  /**
+   * The resolutions that trigger {@link durationLockedAtHighResolution}, as
+   * the schema's `allOf` `if` lists them: `1080p` and `4k` on Veo 3.1 / 3.1
+   * Fast, `1080p` alone on Veo 3.1 Lite (which has no 4K).
+   */
+  readonly lockingResolutions?: readonly string[];
+  /** The `refers` array — the two Wan 3.0 reference routes only. */
+  readonly refers?: RefersRule;
+  /**
+   * `enable_thinking`'s schema default, on the routes that declare the field:
+   * `false` on `alibaba/wan-3.0/reference-to-video`, `true` on the prime one.
+   */
+  readonly enableThinkingDefault?: boolean;
+}
+
+/**
+ * Wan 3.0's reference input: ONE array of typed items (`{ url, type }`), where
+ * every Seedance reference route takes three flat string arrays.
+ */
+export interface RefersRule {
+  /** The array's `maxItems`. */
+  readonly maxItems: number;
+  /** Whether `type` is in `items.required` (plain Wan 3.0) or inferred (prime). */
+  readonly typeRequired: boolean;
+  /** Per-kind caps from the schema's `x-media-limits`, where it publishes them. */
+  readonly maxPerType?: Readonly<Record<(typeof REFER_TYPES)[number], number>>;
 }
 
 const SEEDANCE_25_DURATIONS = [
@@ -296,7 +354,40 @@ const VEO_BASE = {
   allowsAutoDuration: false,
   forcesAdaptiveRatio: false,
   durationLockedAtHighResolution: [8],
+  // "When resolution is 1080p or 4k, duration must be 8 (seconds)."
+  lockingResolutions: ["1080p", "4k"],
 } as const;
+
+/**
+ * Veo 3.1 Lite: `[4, 6, 8]` as its three schemas order it, and the same
+ * `allOf` on one resolution — "When resolution is 1080p, duration must be 8
+ * (seconds)." (read 2026-11-12).
+ */
+const VEO_LITE_BASE = {
+  minDuration: 4,
+  maxDuration: 8,
+  durations: [4, 6, 8],
+  allowsAutoDuration: false,
+  forcesAdaptiveRatio: false,
+  durationLockedAtHighResolution: [8],
+  lockingResolutions: ["1080p"],
+  ...NO_REFERENCES,
+} as const;
+
+/**
+ * The Wan 3.0 reference routes' `refers` caps (both schemas, read 2026-11-12):
+ * `maxItems: 20` on each; plain Wan 3.0 lists `type` in `items.required`
+ * ("Each item requires a public URL and explicit media type."), the prime one
+ * does not ("'type' is optional — inferred from the URL when omitted") and
+ * publishes per-kind caps — "Any mix of reference images (<=10), reference
+ * videos (<=5, total <=15s), and reference audio (<=5, total <=15s)".
+ */
+const WAN_REFERS: RefersRule = { maxItems: 20, typeRequired: true };
+const WAN_PRIME_REFERS: RefersRule = {
+  maxItems: 20,
+  typeRequired: false,
+  maxPerType: { image: 10, video: 5, audio: 5 },
+};
 
 export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> = {
   "bytedance/seedance-2.5/text-to-video": {
@@ -386,6 +477,24 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
   "alibaba/wan-3.0-prime/image-to-video": { ...WAN_BASE, required: ["prompt", "image"] },
   "alibaba/wan-3.0/text-to-video": { ...WAN_BASE, required: ["prompt"] },
   "alibaba/wan-3.0/image-to-video": { ...WAN_BASE, required: ["prompt", "image"] },
+
+  "alibaba/wan-3.0/reference-to-video": {
+    ...WAN_BASE,
+    required: ["prompt"],
+    refers: WAN_REFERS,
+    // "default": false — "Enable deep thinking mode. Required when providing a
+    // file or link input (document / webpage parsing)."
+    enableThinkingDefault: false,
+  },
+  "alibaba/wan-3.0-prime/reference-to-video": {
+    ...WAN_BASE,
+    required: ["prompt"],
+    refers: WAN_PRIME_REFERS,
+    // The schema says `"default": true`; the same page's vendor table says
+    // "false (default)". The schema is the wire document, so a request that
+    // omits the field is taken to have thinking on.
+    enableThinkingDefault: true,
+  },
   "google/veo3.1/text-to-video": { ...VEO_BASE, ...NO_REFERENCES, required: ["prompt"] },
   "google/veo3.1/image-to-video": {
     ...VEO_BASE,
@@ -403,6 +512,44 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
     maxReferenceVideos: 0,
     maxReferenceAudios: 0,
     supportsAudioOnlyReference: false,
+  },
+
+  // Veo 3.1 Fast: each schema is its Veo 3.1 sibling's with only `model`'s
+  // default changed (canonical diff, read 2026-11-12).
+  "google/veo3.1-fast/text-to-video": { ...VEO_BASE, ...NO_REFERENCES, required: ["prompt"] },
+  "google/veo3.1-fast/image-to-video": {
+    ...VEO_BASE,
+    ...NO_REFERENCES,
+    required: ["prompt", "image"],
+  },
+  "google/veo3.1-lite/text-to-video": { ...VEO_LITE_BASE, required: ["prompt"] },
+  "google/veo3.1-lite/image-to-video": { ...VEO_LITE_BASE, required: ["prompt", "image"] },
+  // "First frame of the video (instance image). Must be used together with
+  // last_image (lastFrame in the API)." — both frames are in `required`.
+  "google/veo3.1-lite/start-end-frame-to-video": {
+    ...VEO_LITE_BASE,
+    required: ["prompt", "image", "last_image"],
+  },
+
+  /**
+   * The second step of Seedance 2.5's draft mode: no prompt, no media, no
+   * `duration` — "The final is rendered at 1080p or 4k from the draft's own
+   * prompt, inputs, duration, aspect ratio, seed and audio settings; do not
+   * send those fields again." (schema, read 2026-11-12).
+   *
+   * `required` is `draft_id` alone. The schema's own `required` also lists
+   * `resolution`, but gives it a default (`"1080p"`) and the model page names
+   * only "draft_id, return_last_frame, output_format and watermark" as the
+   * accepted fields, so a request without it is not refused here.
+   */
+  "bytedance/seedance-2.5/draft-complete": {
+    required: ["draft_id"],
+    minDuration: 0,
+    maxDuration: 0,
+    durations: [],
+    allowsAutoDuration: false,
+    forcesAdaptiveRatio: false,
+    ...NO_REFERENCES,
   },
 };
 
@@ -483,6 +630,83 @@ const IMAGES_ONLY = {
     "`images` is Veo 3.1 reference-to-video's reference array; the Seedance reference routes spell theirs `reference_images`",
 } as const;
 
+/** The Wan 3.0 reference routes' own fields, named on every other arm. */
+const WAN_REFERENCE_ONLY = {
+  refers:
+    "`refers` (typed `{ url, type }` items) exists on the Wan 3.0 reference routes only; at Atlas the ROUTE is the model, so pick `alibaba/wan-3.0/reference-to-video` or `alibaba/wan-3.0-prime/reference-to-video`",
+  enable_thinking:
+    "`enable_thinking` (deep thinking for `file` / `link` parsing) is a Wan 3.0 reference-to-video parameter",
+  file: "`file` (a document to parse) is a Wan 3.0 reference-to-video parameter",
+  link: "`link` (a webpage to parse) is a Wan 3.0 reference-to-video parameter",
+} as const;
+
+const DRAFT_COMPLETE_ONLY = {
+  draft_id:
+    "`draft_id` belongs to `bytedance/seedance-2.5/draft-complete`, the route that renders a Seedance 2.5 draft's final",
+} as const;
+
+/** The Seedance flat arrays, refused on the route whose references are `refers`. */
+const WAN_FLAT_REFERENCES_ABSENT = {
+  reference_images:
+    "Wan 3.0 reference-to-video takes its references as `refers: [{ url, type: \"image\" }]`, not as Seedance's flat `reference_images`",
+  reference_videos:
+    "Wan 3.0 reference-to-video takes its references as `refers: [{ url, type: \"video\" }]`, not as Seedance's flat `reference_videos`",
+  reference_audios:
+    "Wan 3.0 reference-to-video takes its references as `refers: [{ url, type: \"audio\" }]`, not as Seedance's flat `reference_audios`",
+} as const;
+
+/**
+ * Veo 3.1 Lite's three schemas declare neither audio field nor
+ * `negative_prompt`, and the model page says why for the first: "Audio is
+ * always generated" (https://www.atlascloud.ai/models/google/veo3.1-lite/text-to-video,
+ * read 2026-11-12).
+ */
+const VEO_LITE_ABSENT = {
+  generate_audio: "Veo 3.1 Lite has no audio toggle: \"Audio is always generated\"",
+  audio: "Veo 3.1 Lite has no audio toggle: \"Audio is always generated\"",
+  negative_prompt:
+    "`negative_prompt` is a Veo 3.1 / 3.1 Fast parameter; the Veo 3.1 Lite schemas declare none",
+} as const;
+
+const VEO_LITE_NO_LAST_IMAGE = {
+  last_image:
+    "`google/veo3.1-lite/image-to-video` has no `last_image`; first+last-frame interpolation is `google/veo3.1-lite/start-end-frame-to-video`",
+} as const;
+
+/**
+ * Everything `bytedance/seedance-2.5/draft-complete` does not take, said once:
+ * "only draft_id, return_last_frame, output_format and watermark are accepted"
+ * (https://www.atlascloud.ai/models/bytedance/seedance-2.5/draft-complete,
+ * read 2026-11-12), plus the `resolution` its schema adds.
+ */
+const DRAFT_COMPLETE_REASON =
+  "this route takes `draft_id`, `resolution`, `output_format`, `watermark` and `return_last_frame` only; the prompt, inputs, duration, ratio, seed and audio come from the draft (\"do not send those fields again\"), so set them on the Seedance 2.5 request that made it";
+
+const DRAFT_COMPLETE_ABSENT = [
+  "prompt",
+  "image",
+  "last_image",
+  "images",
+  "reference_images",
+  "reference_videos",
+  "reference_audios",
+  "duration",
+  "ratio",
+  "aspect_ratio",
+  "generate_audio",
+  "audio",
+  "seed",
+  "draft",
+  "negative_prompt",
+  "camera_fixed",
+  "bitrate_mode",
+  "omni_reference_task_type",
+  "refers",
+  "enable_thinking",
+  "file",
+  "link",
+] as const;
+
 /**
  * Two combinators, because at Atlas the ROUTE IS THE MODEL: a family's fields
  * split three ways across its text / image / reference ids, and the two
@@ -506,6 +730,8 @@ const seedance2xDeny: Record<string, DenyRule> = {
   ...denyTable(AUDIO_FIELD_ABSENT, VIDEO_API_SOURCE),
   ...denyTable(CAMERA_FIXED_ONLY, VIDEO_API_SOURCE),
   ...denyTable(IMAGES_ONLY, VIDEO_API_SOURCE),
+  ...denyTable(WAN_REFERENCE_ONLY, VIDEO_API_SOURCE),
+  ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
 };
 
 const seedance25Base: Record<string, DenyRule> = {
@@ -520,7 +746,8 @@ const seedance20Base: Record<string, DenyRule> = {
   ...denyTable(OMNI_ONLY, VIDEO_API_SOURCE),
 };
 
-const wanDeny: Record<string, DenyRule> = denyReferences({
+/** Every Wan 3.0 route's deny, before the `refers` group splits them. */
+const wanFamilyDeny: Record<string, DenyRule> = denyReferences({
   ...denyTable(OMNI_ONLY, VIDEO_API_SOURCE),
   ...denyTable(VEO_ONLY, VIDEO_API_SOURCE),
   ...denyTable(ASPECT_RATIO_ABSENT, VIDEO_API_SOURCE),
@@ -530,7 +757,24 @@ const wanDeny: Record<string, DenyRule> = denyReferences({
   ...denyTable(SEEDANCE_2X_ONLY, VIDEO_API_SOURCE),
   ...denyTable(CAMERA_FIXED_ONLY, VIDEO_API_SOURCE),
   ...denyTable(IMAGES_ONLY, VIDEO_API_SOURCE),
+  ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
 });
+
+/** Wan 3.0 text and image routes: `refers` is their reference sibling's. */
+const wanDeny: Record<string, DenyRule> = {
+  ...wanFamilyDeny,
+  ...denyTable(WAN_REFERENCE_ONLY, VIDEO_API_SOURCE),
+};
+
+/**
+ * Wan 3.0 reference routes: "Reference mode is mutually exclusive with
+ * first/last-frame mode", and the references are `refers`, not the flat
+ * Seedance arrays.
+ */
+const wanReferenceDeny: Record<string, DenyRule> = {
+  ...denyFrames(wanFamilyDeny),
+  ...denyTable(WAN_FLAT_REFERENCES_ABSENT, VIDEO_API_SOURCE),
+};
 
 const seedance15Deny: Record<string, DenyRule> = denyReferences({
   ...denyTable(OMNI_ONLY, VIDEO_API_SOURCE),
@@ -541,6 +785,8 @@ const seedance15Deny: Record<string, DenyRule> = denyReferences({
   ...denyTable(SEEDANCE_20_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_2X_ONLY, VIDEO_API_SOURCE),
   ...denyTable(IMAGES_ONLY, VIDEO_API_SOURCE),
+  ...denyTable(WAN_REFERENCE_ONLY, VIDEO_API_SOURCE),
+  ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
 });
 
 /** Everything Veo 3.1 rejects *except* `images`, which its reference arm owns. */
@@ -552,12 +798,25 @@ const veoCommonDeny: Record<string, DenyRule> = denyReferences({
   ...denyTable(SEEDANCE_20_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_2X_ONLY, VIDEO_API_SOURCE),
   ...denyTable(CAMERA_FIXED_ONLY, VIDEO_API_SOURCE),
+  ...denyTable(WAN_REFERENCE_ONLY, VIDEO_API_SOURCE),
+  ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
 });
 
 const veoDeny: Record<string, DenyRule> = {
   ...veoCommonDeny,
   ...denyTable(IMAGES_ONLY, VIDEO_API_SOURCE),
 };
+
+/** Veo 3.1 Lite: Veo's deny plus the audio and negative-prompt fields it lacks. */
+const veoLiteDeny: Record<string, DenyRule> = {
+  ...veoDeny,
+  ...denyTable(VEO_LITE_ABSENT, "https://www.atlascloud.ai/models/google/veo3.1-lite/text-to-video"),
+};
+
+const draftCompleteDeny: Record<string, DenyRule> = denyTable(
+  Object.fromEntries(DRAFT_COMPLETE_ABSENT.map((param) => [param, DRAFT_COMPLETE_REASON])),
+  "https://www.atlascloud.ai/models/bytedance/seedance-2.5/draft-complete",
+);
 
 const WAN_NO_RATIO = {
   ratio:
@@ -654,6 +913,16 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
     deny: { ...wanDeny, ...denyTable(WAN_NO_RATIO, VIDEO_API_SOURCE) },
     enums: { resolution: WAN_RESOLUTIONS },
   },
+  // Both reference schemas publish the lower-case Wan 3.0 ladder and the
+  // text route's six ratios (read 2026-11-12).
+  "alibaba/wan-3.0/reference-to-video": {
+    deny: wanReferenceDeny,
+    enums: { resolution: WAN_RESOLUTIONS, ratio: WAN_RATIOS },
+  },
+  "alibaba/wan-3.0-prime/reference-to-video": {
+    deny: wanReferenceDeny,
+    enums: { resolution: WAN_RESOLUTIONS, ratio: WAN_RATIOS },
+  },
   "google/veo3.1/text-to-video": {
     deny: denyFrames(veoDeny),
     // `duration` is NOT in this table: `checkDuration` in ./video.ts answers for
@@ -684,5 +953,29 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
       ),
     },
     enums: { resolution: VEO_RESOLUTIONS },
+  },
+  "google/veo3.1-fast/text-to-video": {
+    deny: denyFrames(veoDeny),
+    enums: { resolution: VEO_RESOLUTIONS, aspect_ratio: VEO_ASPECT_RATIOS },
+  },
+  "google/veo3.1-fast/image-to-video": {
+    deny: veoDeny,
+    enums: { resolution: VEO_RESOLUTIONS, aspect_ratio: VEO_ASPECT_RATIOS },
+  },
+  "google/veo3.1-lite/text-to-video": {
+    deny: denyFrames(veoLiteDeny),
+    enums: { resolution: VEO_LITE_RESOLUTIONS, aspect_ratio: VEO_ASPECT_RATIOS },
+  },
+  "google/veo3.1-lite/image-to-video": {
+    deny: { ...veoLiteDeny, ...denyTable(VEO_LITE_NO_LAST_IMAGE, VIDEO_API_SOURCE) },
+    enums: { resolution: VEO_LITE_RESOLUTIONS, aspect_ratio: VEO_ASPECT_RATIOS },
+  },
+  "google/veo3.1-lite/start-end-frame-to-video": {
+    deny: veoLiteDeny,
+    enums: { resolution: VEO_LITE_RESOLUTIONS, aspect_ratio: VEO_ASPECT_RATIOS },
+  },
+  "bytedance/seedance-2.5/draft-complete": {
+    deny: draftCompleteDeny,
+    enums: { resolution: DRAFT_COMPLETE_RESOLUTIONS, output_format: VIDEO_OUTPUT_FORMATS },
   },
 };

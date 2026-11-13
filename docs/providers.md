@@ -207,8 +207,10 @@ on DashScope video-synthesis, async create-then-poll), xai (Grok Imagine `video`
 2.0/2.5, Kling v2.5-turbo/v2.6/v3, v3 motion-control and the o1/o3 video edits, MiniMax H3 +
 Hailuo-02 + Hailuo-2.3, Veo 3.1 and its fast / i2v / first-last / extend / reference arms, Wan
 v2.2/v2.7, LTX-2.5, PixVerse v6, Grok Imagine, Gemini Omni Flash, Light-X relight),
-atlascloud (`video`, 23 curated models on ONE url — Seedance 2.5 / 2.0 / 2.0-mini / 2.0-fast /
-v1.5-pro, Wan 3.0 + 3.0-prime, Veo 3.1; async create-then-poll, `ATLASCLOUD_API_KEY`).
+atlascloud (`video`, 31 curated models on ONE url — Seedance 2.5 (incl. the wire-only
+`draft-complete`) / 2.0 / 2.0-mini / 2.0-fast / v1.5-pro, Wan 3.0 + 3.0-prime (incl. their
+`refers` reference routes), Veo 3.1 / 3.1 Fast / 3.1 Lite; async create-then-poll,
+`ATLASCLOUD_API_KEY`).
 All fourteen are reachable
 through one canonical `video()` at `unmodel/video`.
 fal and atlascloud are the two providers here with **no** `videoFromImage`, for opposite

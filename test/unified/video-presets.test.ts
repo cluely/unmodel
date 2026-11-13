@@ -144,6 +144,7 @@ const FAL_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Object.from
  *
  * `images` is Veo 3.1's reference array and `image` is a first frame — the same
  * split `resolveImageSlots` reads, which is why the two map to different roles.
+ * A required `last_image` (Veo 3.1 Lite's start-end-frame route) is the pair.
  */
 const ATLASCLOUD_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Object.fromEntries(
   Object.entries(videoShapeRules).flatMap(([id, rule]) => {
@@ -151,6 +152,11 @@ const ATLASCLOUD_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Obje
     const params: Partial<VideoParams> = {};
     if (need.includes("images")) {
       (params as { image?: VideoParams["image"] }).image = [{ url: IMAGE_URL, role: "reference" }];
+    } else if (need.includes("last_image")) {
+      (params as { image?: VideoParams["image"] }).image = [
+        { url: IMAGE_URL },
+        { url: IMAGE_URL, role: "last" },
+      ];
     } else if (need.includes("image")) {
       (params as { image?: VideoParams["image"] }).image = { url: IMAGE_URL };
     }

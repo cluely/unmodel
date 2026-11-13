@@ -235,9 +235,11 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * a `cost` — which also keeps `pricing.ts` out of the video PACK entirely
    * (asserted below), since the validator declares no `estimate` to reach it.
    *
-   * 80 is 72.2 × 1.1, the same multiple as every row above.
+   * 89.0 measured, 2026-11-12: eight more per-model surfaces (Veo 3.1 Fast /
+   * Lite, Seedance 2.5 draft-complete, the Wan 3.0 reference routes); 98 is
+   * 89.0 × 1.1, the same multiple as every row above.
    */
-  atlascloud: 80,
+  atlascloud: 98,
 
   /**
    * The six entries that carry the **media retarget seam** — `.toApi("fal")`.

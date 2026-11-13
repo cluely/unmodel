@@ -100,7 +100,8 @@ export interface AtlascloudListedPrice {
 }
 
 /**
- * The figures Atlas listed for the 23 curated ids on 2026-08-26.
+ * The figures Atlas listed for the curated ids — the original 23 on
+ * 2026-08-26, the eight added on 2026-11-12.
  *
  * Transcribed rather than derived, and carried as data rather than as `cost`,
  * for the reason in this module's docstring: these are numbers without units.
@@ -133,6 +134,20 @@ export const ATLASCLOUD_LISTED_BASE_PRICE_USD: Readonly<
   "google/veo3.1/text-to-video": { actual: 0.2, origin: 0.2, discount: 100 },
   "google/veo3.1/image-to-video": { actual: 0.2, origin: 0.2, discount: 100 },
   "google/veo3.1/reference-to-video": { actual: 0.2, origin: 0.2, discount: 100 },
+  // The eight ids catalogued 2026-11-12, read from the same keyless catalog
+  // that day — e.g. `"price":{"discount":"100","actual":{"base_price":"0.08"},
+  // "origin":{"base_price":"0.08"}}` on google/veo3.1-fast/text-to-video and
+  // `"price":{"discount":"80","actual":{"base_price":"0.263"},"origin":
+  // {"base_price":"0.329"}}` on bytedance/seedance-2.5/draft-complete. No row
+  // carries a `unit`.
+  "google/veo3.1-fast/text-to-video": { actual: 0.08, origin: 0.08, discount: 100 },
+  "google/veo3.1-fast/image-to-video": { actual: 0.08, origin: 0.08, discount: 100 },
+  "google/veo3.1-lite/text-to-video": { actual: 0.05, origin: 0.05, discount: 100 },
+  "google/veo3.1-lite/image-to-video": { actual: 0.05, origin: 0.05, discount: 100 },
+  "google/veo3.1-lite/start-end-frame-to-video": { actual: 0.05, origin: 0.05, discount: 100 },
+  "bytedance/seedance-2.5/draft-complete": { actual: 0.263, origin: 0.329, discount: 80 },
+  "alibaba/wan-3.0/reference-to-video": { actual: 0.04, origin: 0.05, discount: 80 },
+  "alibaba/wan-3.0-prime/reference-to-video": { actual: 0.061, origin: 0.068, discount: 90 },
 };
 
 /**

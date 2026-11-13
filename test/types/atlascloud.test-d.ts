@@ -3,8 +3,8 @@
  * `bun test` — this file is only type-checked (`bun run check` / tsc
  * --noEmit). Atlas ships no typed client SDK, so these tests exercise the
  * per-model arms, which is where this provider's whole compile-time story is:
- * `model` names the ROUTE as well as the model, so the twenty-three ids are
- * twenty-three param surfaces rather than one narrowed twenty-three ways.
+ * `model` names the ROUTE as well as the model, so the thirty-one ids are
+ * thirty-one param surfaces rather than one narrowed thirty-one ways.
  */
 import {
   video,
@@ -118,6 +118,52 @@ function resolutionEnumTypeTests(): void {
   video({ model: "bytedance/seedance-v1.5-pro/text-to-video-fast", prompt: "hi", resolution: "480p" });
 }
 
+function inFamilyRouteTypeTests(): void {
+  // Veo 3.1 Fast is Veo 3.1's surface; Lite drops 4K, the audio toggle and
+  // negative_prompt, and splits first+last frames onto their own route.
+  video({ model: "google/veo3.1-fast/text-to-video", prompt: "hi", resolution: "4k", duration: 8, generate_audio: true });
+  video({ model: "google/veo3.1-lite/text-to-video", prompt: "hi", resolution: "1080p", duration: 8 });
+  video({
+    model: "google/veo3.1-lite/start-end-frame-to-video",
+    prompt: "hi",
+    image: "https://example.com/a.png",
+    last_image: "https://example.com/b.png",
+  });
+  // @ts-expect-error: "Veo 3.1 Lite does not support 4K."
+  video({ model: "google/veo3.1-lite/text-to-video", prompt: "hi", resolution: "4k" });
+  // @ts-expect-error: Lite has no audio toggle ("Audio is always generated")
+  video({ model: "google/veo3.1-lite/text-to-video", prompt: "hi", generate_audio: true });
+  // @ts-expect-error: the Lite image route has no last frame
+  video({ model: "google/veo3.1-lite/image-to-video", prompt: "hi", image: "u", last_image: "u" });
+  // @ts-expect-error: the start-end-frame route requires both frames
+  video({ model: "google/veo3.1-lite/start-end-frame-to-video", prompt: "hi", image: "u" });
+
+  // Seedance 2.5 draft-complete: a draft id and delivery options.
+  video({ model: "bytedance/seedance-2.5/draft-complete", draft_id: "pred_1", resolution: "4k", output_format: "mov" });
+  // @ts-expect-error: `draft_id` is required
+  video({ model: "bytedance/seedance-2.5/draft-complete" });
+  // @ts-expect-error: the prompt comes from the draft
+  video({ model: "bytedance/seedance-2.5/draft-complete", draft_id: "pred_1", prompt: "hi" });
+  // @ts-expect-error: `draft_id` belongs to draft-complete
+  video({ model: "bytedance/seedance-2.5/text-to-video", prompt: "hi", draft_id: "pred_1" });
+
+  // Wan 3.0 reference routes: one typed `refers` list.
+  video({
+    model: "alibaba/wan-3.0/reference-to-video",
+    prompt: "hi",
+    refers: [{ url: "https://example.com/a.png", type: "image" }],
+    enable_thinking: true,
+    file: "https://example.com/brief.pdf",
+  });
+  video({ model: "alibaba/wan-3.0-prime/reference-to-video", prompt: "hi", refers: [{ url: "u" }] });
+  // @ts-expect-error: plain Wan 3.0 requires `type` on every item
+  video({ model: "alibaba/wan-3.0/reference-to-video", prompt: "hi", refers: [{ url: "u" }] });
+  // @ts-expect-error: `refers` is the Wan reference routes' alone
+  video({ model: "bytedance/seedance-2.5/reference-to-video", refers: [{ url: "u", type: "image" }] });
+  // @ts-expect-error: the Wan reference routes take `refers`, not the flat arrays
+  video({ model: "alibaba/wan-3.0/reference-to-video", prompt: "hi", reference_images: ["u"] });
+}
+
 function mediaRefTypeTests(): void {
   // The three documented forms, and the open tail that keeps bare Base64 legal.
   expectAssignable<AtlasMediaRef>("https://example.com/a.png");
@@ -214,6 +260,7 @@ export {
   routeIsTheModelTypeTests,
   crossFamilyFieldTypeTests,
   resolutionEnumTypeTests,
+  inFamilyRouteTypeTests,
   mediaRefTypeTests,
   videoBodyAliasTypeTests,
   hoistedBranchTypeTests,

@@ -62,6 +62,16 @@
       "source": "https://www.atlascloud.ai/models/alibaba/wan-3.0-prime/image-to-video",
       "verified": "2026-08-26"
     },
+    "alibaba/wan-3.0-prime/reference-to-video": {
+      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
+      "listed": {
+        "actual": 0.061,
+        "origin": 0.068,
+        "discount": 90
+      },
+      "source": "https://www.atlascloud.ai/models/alibaba/wan-3.0-prime/reference-to-video",
+      "verified": "2026-11-12"
+    },
     "alibaba/wan-3.0-prime/text-to-video": {
       "unpriced": "Atlas publishes no unit for this rate. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and its model page renders the same figure as a per-run price, a per-second rate and a per-1000-token rate from three templates in one bundle. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
       "listed": {
@@ -81,6 +91,16 @@
       },
       "source": "https://www.atlascloud.ai/models/alibaba/wan-3.0/image-to-video",
       "verified": "2026-08-26"
+    },
+    "alibaba/wan-3.0/reference-to-video": {
+      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
+      "listed": {
+        "actual": 0.04,
+        "origin": 0.05,
+        "discount": 80
+      },
+      "source": "https://www.atlascloud.ai/models/alibaba/wan-3.0/reference-to-video",
+      "verified": "2026-11-12"
     },
     "alibaba/wan-3.0/text-to-video": {
       "unpriced": "Atlas publishes no unit for this rate. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and its model page renders the same figure as a per-run price, a per-second rate and a per-1000-token rate from three templates in one bundle. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
@@ -182,6 +202,16 @@
       "source": "https://www.atlascloud.ai/models/bytedance/seedance-2.0/text-to-video",
       "verified": "2026-08-26"
     },
+    "bytedance/seedance-2.5/draft-complete": {
+      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
+      "listed": {
+        "actual": 0.263,
+        "origin": 0.329,
+        "discount": 80
+      },
+      "source": "https://www.atlascloud.ai/models/bytedance/seedance-2.5/draft-complete",
+      "verified": "2026-11-12"
+    },
     "bytedance/seedance-2.5/image-to-video": {
       "unpriced": "Atlas publishes no unit for this rate. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and its model page renders the same figure as a per-run price, a per-second rate and a per-1000-token rate from three templates in one bundle. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
       "listed": {
@@ -251,6 +281,56 @@
       },
       "source": "https://www.atlascloud.ai/models/bytedance/seedance-v1.5-pro/text-to-video-fast",
       "verified": "2026-08-26"
+    },
+    "google/veo3.1-fast/image-to-video": {
+      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
+      "listed": {
+        "actual": 0.08,
+        "origin": 0.08,
+        "discount": 100
+      },
+      "source": "https://www.atlascloud.ai/models/google/veo3.1-fast/image-to-video",
+      "verified": "2026-11-12"
+    },
+    "google/veo3.1-fast/text-to-video": {
+      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
+      "listed": {
+        "actual": 0.08,
+        "origin": 0.08,
+        "discount": 100
+      },
+      "source": "https://www.atlascloud.ai/models/google/veo3.1-fast/text-to-video",
+      "verified": "2026-11-12"
+    },
+    "google/veo3.1-lite/image-to-video": {
+      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
+      "listed": {
+        "actual": 0.05,
+        "origin": 0.05,
+        "discount": 100
+      },
+      "source": "https://www.atlascloud.ai/models/google/veo3.1-lite/image-to-video",
+      "verified": "2026-11-12"
+    },
+    "google/veo3.1-lite/start-end-frame-to-video": {
+      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
+      "listed": {
+        "actual": 0.05,
+        "origin": 0.05,
+        "discount": 100
+      },
+      "source": "https://www.atlascloud.ai/models/google/veo3.1-lite/start-end-frame-to-video",
+      "verified": "2026-11-12"
+    },
+    "google/veo3.1-lite/text-to-video": {
+      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
+      "listed": {
+        "actual": 0.05,
+        "origin": 0.05,
+        "discount": 100
+      },
+      "source": "https://www.atlascloud.ai/models/google/veo3.1-lite/text-to-video",
+      "verified": "2026-11-12"
     },
     "google/veo3.1/image-to-video": {
       "unpriced": "Atlas publishes no unit for this rate. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and its model page renders the same figure as a per-run price, a per-second rate and a per-1000-token rate from three templates in one bundle. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",

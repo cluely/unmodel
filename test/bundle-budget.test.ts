@@ -635,6 +635,9 @@ const TTS_PACK_BUDGET_KIB = 940;
  * GPT-Image-2.5/2.6, the FLUX.2 [klein] `-finetuned` routes, Seedream 5.5 /
  * 5.0 flash, Leonardo's Elements models). Catalog rows and their per-model
  * gates; no module joined the pack.
+ *
+ * Runway's text_to_image arms then grew from 9 to 23 (their ratio enums, deny
+ * lists and rule tables): 1242.0 measured with everything, under the 1280 pin.
  */
 const IMAGE_PACK_BUDGET_KIB = 1280;
 
@@ -707,8 +710,15 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  * id to pick instead of a 400 from Atlas.
  *
  * 1170 restores ~10% headroom, the same multiple every row in this file uses.
+ *
+ * **Bumped 1170 → 1335 at the 2026-11-12 model wave**: 1212.6 KiB measured
+ * once runway's 29 models landed (Kling 2.5–4.0, WAN 3.0, H3 Max, Gemini Omni
+ * and Grok Imagine Lite arms across `video` / `videoFromImage` /
+ * `videoFromVideo`, with their duration/ratio tables) on top of Kling 4.0,
+ * MiniMax H3, Vidu Q4, PixVerse v6-max and Atlas's Veo 3.1 rows. Hand rows
+ * and their gates; no module joined the pack.
  */
-const VIDEO_PACK_BUDGET_KIB = 1170;
+const VIDEO_PACK_BUDGET_KIB = 1335;
 
 /**
  * The two generated catalogs this pack legitimately reaches.

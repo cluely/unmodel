@@ -236,7 +236,8 @@ unpublished ladder), so the caveat ships instead — `ATLASCLOUD_PRICING_CAVEAT`
 `unmodel/atlascloud`.
 Remaining (first-party APIs): tencent (HunyuanVideo).
 Several are also reachable as hosted routes on `unmodel/runway`
-(`hailuo3`, `seedance2*`, `gemini_omni_flash`, `grok_imagine_1_5`, `happyhorse_1_0`).
+(`hailuo3`, `h3_max`, `seedance2*`, `gemini_omni_flash*`, `grok_imagine_1_5*`,
+`happyhorse_1_0`, the Kling 2.5 / 3.0 / O3 / 4.0 arms, `wan3*`).
 **Excluded:** pika, genmo/haiper, sand-ai (MAGI-2 Preview is open weights on HF, no hosted
 API), skywork, sapiens-ai (no public API).
 **Music / audio — live:** elevenlabs (Eleven Music, `music`), stability (Stable Audio 2.x:

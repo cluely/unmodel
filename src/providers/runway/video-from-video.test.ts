@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { videoFromVideo, VIDEO_TO_VIDEO_URL } from "./video-from-video";
 import { RUNWAY_VERSION } from "./shared";
-import { videoFromVideoConstraints } from "./constraints";
+import { videoFromVideoConstraints, videoFromVideoRequired } from "./constraints";
 import { models } from "./models";
 import { videoCreditsPerSecond } from "./pricing";
 import type { ValidateOptions } from "../../core/options";
@@ -342,10 +342,11 @@ describe("runway.videoFromVideo documented enum coverage", () => {
     for (const [model, constraints] of Object.entries(videoFromVideoConstraints)) {
       const enums = constraints?.enums;
       if (enums === undefined) continue;
-      const base =
-        model === "aleph2"
-          ? { model, videoUri: VIDEO }
-          : { model, promptVideo: VIDEO, promptText: "hi" };
+      // Each arm's own input field, read off its required-params row.
+      const input = videoFromVideoRequired[model]?.includes("promptVideo")
+        ? { promptVideo: VIDEO }
+        : { videoUri: VIDEO };
+      const base = model === "aleph2" ? { model, ...input } : { model, ...input, promptText: "hi" };
       for (const param of ["ratio", "resolution", "targetAspectRatio"] as const) {
         for (const value of enums[param] ?? []) {
           const r = safeUnchecked({ ...base, [param]: value });
@@ -356,5 +357,118 @@ describe("runway.videoFromVideo documented enum coverage", () => {
         }
       }
     }
+  });
+});
+
+describe("runway.videoFromVideo — Kling O3 / 4.0 and Gemini Omni Flash 1.x arms", () => {
+  const TEXT = "make it snow";
+
+  test("Kling O3 edits a promptVideo; no duration, ratio or estimate", () => {
+    const r = safeUnchecked({
+      model: "klingO3_pro",
+      promptVideo: VIDEO,
+      promptText: TEXT,
+      references: IMAGE,
+      providerSettings: { keepOriginalSound: false },
+    });
+    expect(r.ok).toBe(true);
+    // "Kling O3 video-to-video is billed per second of the input video."
+    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+    const wrongField = safeUnchecked({ model: "klingO3_pro", videoUri: VIDEO, promptText: TEXT });
+    expect(wrongField.ok).toBe(false);
+    const duration = safeUnchecked({ model: "klingO3_pro", promptVideo: VIDEO, promptText: TEXT, duration: 5 });
+    expect(duration.ok).toBe(false);
+    if (!duration.ok) expect(duration.errors[0]).toMatchObject({ code: "unsupported_param", path: ["duration"] });
+  });
+
+  test("Kling O3 takes up to 4 reference images here", () => {
+    const five = safeUnchecked({
+      model: "klingO3_standard",
+      promptVideo: VIDEO,
+      promptText: TEXT,
+      references: Array(5).fill({ uri: IMAGE }),
+    });
+    expect(five.ok).toBe(false);
+    if (!five.ok) expect(five.errors[0]?.meta?.max).toBe(4);
+  });
+
+  test("kling_4 edits a videoUri with no duration; kling_4_flash takes one and prices", () => {
+    expect(safeUnchecked({ model: "kling_4", videoUri: VIDEO, promptText: TEXT, ratio: "auto_1080p" }).ok).toBe(true);
+    const k4 = safeUnchecked({ model: "kling_4", videoUri: VIDEO, promptText: TEXT, duration: 5 });
+    expect(k4.ok).toBe(false);
+    // 6.3 × 5 + 6.3 × max(input, 5) — the input term floored at the output:
+    // 63 credits, guides/pricing.md's own 5 s / 3 s example.
+    const flash = safeUnchecked({ model: "kling_4_flash", videoUri: VIDEO, promptText: TEXT, duration: 5 });
+    expect(flash.ok).toBe(true);
+    if (flash.ok) expect(flash.estimate.costUSD).toBeCloseTo(0.63, 10);
+  });
+
+  test('gemini_omni_flash_1.x take mode "edit", which needs duration "auto" on 1.2', () => {
+    const edit = safeUnchecked({
+      model: "gemini_omni_flash_1.2",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      mode: "edit",
+      duration: "auto",
+      resolution: "1080p",
+    });
+    expect(edit.ok).toBe(true);
+    // An edit bills the input's duration, which a URI does not carry.
+    if (edit.ok) expect(edit.estimate.costUSD).toBeUndefined();
+    const numeric = safeUnchecked({
+      model: "gemini_omni_flash_1.2",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      mode: "edit",
+      duration: 5,
+    });
+    expect(numeric.ok).toBe(false);
+    if (!numeric.ok) expect(numeric.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["duration"] });
+    expect(
+      safeUnchecked({ model: "gemini_omni_flash_1.1", videoUri: VIDEO, promptText: TEXT, mode: "edit" }).ok,
+    ).toBe(true);
+  });
+
+  test("gemini_omni_flash_1.2: extend and edit take no ratio, extend no references", () => {
+    const ratio = safeUnchecked({
+      model: "gemini_omni_flash_1.2",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      mode: "extend",
+      ratio: "1280:720",
+    });
+    expect(ratio.ok).toBe(false);
+    if (!ratio.ok) expect(ratio.errors[0]).toMatchObject({ code: "unsupported_param", path: ["ratio"] });
+    const refs = safeUnchecked({
+      model: "gemini_omni_flash_1.2",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      mode: "extend",
+      references: [{ uri: IMAGE }],
+    });
+    expect(refs.ok).toBe(false);
+    if (!refs.ok) expect(refs.errors[0]?.path).toEqual(["references"]);
+    // Reference mode (the default) takes both, and prices: 7 × 5 + 1 image.
+    const reference = safeUnchecked({
+      model: "gemini_omni_flash_1.2",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      ratio: "1280:720",
+      duration: 5,
+      references: [{ uri: IMAGE }],
+    });
+    expect(reference.ok).toBe(true);
+    if (reference.ok) expect(reference.estimate.costUSD).toBeCloseTo(0.36, 10);
+  });
+
+  test("gemini_omni_flash_1.1 has no resolution field", () => {
+    const r = safeUnchecked({
+      model: "gemini_omni_flash_1.1",
+      videoUri: VIDEO,
+      promptText: TEXT,
+      resolution: "720p",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]).toMatchObject({ code: "unsupported_param", path: ["resolution"] });
   });
 });

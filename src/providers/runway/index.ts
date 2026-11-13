@@ -26,8 +26,11 @@ export type {
   RunwayAudioReference,
   RunwayVideoReference,
   RunwayImageReference,
+  RunwayPositionedReference,
+  RunwayProviderSettings,
   RunwayContentModeration,
   ModelShapeRules,
+  PairingRule,
 } from "./shared";
 
 export {
@@ -43,11 +46,13 @@ export {
   TEXT_TO_VIDEO_MODELS,
   VIDEO_TO_VIDEO_MODELS,
   ALEPH2_TARGET_ASPECT_RATIOS,
+  RATIO_TIERS,
   IMAGE_TO_VIDEO_SOURCE,
   TEXT_TO_VIDEO_SOURCE,
   VIDEO_TO_VIDEO_SOURCE,
   TEXT_TO_IMAGE_SOURCE,
   MODELS_SOURCE,
+  INPUTS_SOURCE,
 } from "./constraints";
 export type {
   RunwayVideoRatio,
@@ -56,6 +61,7 @@ export type {
   RunwayImageRatio,
   RunwayImageQuality,
   RunwayImageOutputFormat,
+  RunwayRatioTier,
 } from "./constraints";
 
 export {

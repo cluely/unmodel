@@ -572,6 +572,55 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     expect(result.errors[0]!.message).toContain("Pass `aspectRatio` alongside `resolution`");
   });
 
+  test("a tier with no shape compiles to the model's own auto_<tier> token, exactly", () => {
+    const result = video.safe({
+      model: "runway/wan3",
+      prompt: "a fox",
+      resolution: "720p",
+      image: { url: "https://example.com/a.png" },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.params as unknown as Record<string, unknown>)["ratio"]).toBe("auto_720p");
+    expect(result.params.warnings).toEqual([]);
+  });
+
+  test("Runway's documented tiers pick the pair: kling_4's 1080p square is 1440:1440", () => {
+    const params = video({
+      model: "runway/kling_4",
+      prompt: "a fox",
+      resolution: "1080p",
+      aspectRatio: "1:1",
+    }) as unknown as Record<string, unknown>;
+    expect(params["ratio"]).toBe("1440:1440");
+  });
+
+  test("Gemini Omni Flash 1.x's 360p sizes have no canonical tier and are never picked", () => {
+    const plain = video({
+      model: "runway/gemini_omni_flash_1.2",
+      prompt: "a fox",
+      aspectRatio: "16:9",
+    }) as unknown as Record<string, unknown>;
+    expect(plain["ratio"]).toBe("1280:720");
+    const low = video.safe({
+      model: "runway/gemini_omni_flash_1.2",
+      prompt: "a fox",
+      resolution: "480p",
+      aspectRatio: "16:9",
+    } as never);
+    expect(low.ok).toBe(false);
+    if (low.ok) return;
+    expect(low.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["resolution"] });
+  });
+
+  test("h3_max's 768p answers a 720p request, and says so", () => {
+    const result = video.safe({ model: "runway/h3_max", prompt: "a fox", resolution: "720p" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.params as unknown as Record<string, unknown>)["resolution"]).toBe("768p");
+    expect(result.params.warnings.map((issue) => issue.code)).toEqual(["approximated_param"]);
+  });
+
   test("a canonical-space failure stops before the provider validator runs", () => {
     const result = video.safe({
       model: "pixverse/v6",

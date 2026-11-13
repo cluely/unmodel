@@ -6,9 +6,10 @@
  * Runway calls the field `ratio` and every value in it is a **pixel pair**:
  * `"1920:1080"`, `"1344:768"`, `"4096:4096"`. One field therefore carries both
  * halves of the canonical size decision, and the list is closed and **per
- * model** — 16 values for the gen4 pair, 55 for `gemini_image3.1_flash`, with
- * `"auto"` (gpt_image_2) and `"auto_1k"` / `"auto_2k"` (seedream5_pro,
- * grok_imagine_image_2) mixed in among the pairs.
+ * model** — 16 values for the gen4 pair, 56 for `gemini_image3.1_flash`, with
+ * `"auto"` (the GPT Image arms, muse_image, ideogram_4_5) and `"auto_1k"` /
+ * `"auto_2k"` (seedream5_pro, seedream5_flash, grok_imagine_image_2) mixed in
+ * among the pairs.
  *
  * That has three consequences, and they are the whole design of this adapter:
  *
@@ -29,7 +30,7 @@
  *    shape (gen4 has both `1280:720` and `1920:1080` at `1k`) the one nearer
  *    the tier wins.
  *
- * 3. **A shape that is not in the list snaps, and says so.** Three of the nine
+ * 3. **A shape that is not in the list snaps, and says so.** Several of the
  *    models have no exact 16:9 anywhere: what Google calls 16:9 is
  *    `"1344:768"`, which is 7:4. Refusing those requests outright would be
  *    defensible and useless — the model plainly makes widescreen images — so
@@ -60,20 +61,23 @@
  *
  * ## When the caller names no shape at all
  *
- * `ratio` is required by every model's arm, so something must be sent. If the
- * model has an `auto` value for the requested tier — `"auto_1k"`, `"auto_2k"`,
- * or gpt_image_2's bare `"auto"` — that is exact: the caller expressed no
- * shape and `auto` expresses no shape. Otherwise a concrete shape has to be
- * invented, so the squarest entry in the tier's bucket is sent **with an
- * `approximated_param` warning naming it**, which is the difference between a
- * request you can reproduce and one you cannot.
+ * Where the arm makes `ratio` optional (the Ideogram arms) and no tier was
+ * named either, nothing is sent — the model's own default is exact. Every
+ * other arm requires `ratio`, so something must be sent. If the model has an
+ * `auto` value for the requested tier — `"auto_1k"`, `"auto_2k"`, or a bare
+ * `"auto"` — that is exact: the caller expressed no shape and `auto`
+ * expresses no shape. Otherwise a concrete shape has to be invented, so the
+ * squarest entry in the tier's bucket is sent **with an `approximated_param`
+ * warning naming it**, which is the difference between a request you can
+ * reproduce and one you cannot.
  *
  * # The params that are one model's and not another's
  *
- * `seed` (gen4 only), `outputCount` (denied on gen4 and gemini_2.5_flash,
- * `1–10` on gpt_image_2, exactly `1` or `4` on the gemini_image3 family,
- * `1–4` elsewhere) and `outputFormat` (seedream5 only) are all narrowed
- * per model by `imageConstraints`, transcribed from Runway's OpenAPI document.
+ * `seed` (gen4, FIBO, ideogram_vector), `outputCount` (denied on gen4,
+ * gemini_2.5_flash, FIBO and ideogram_vector, `1–10` on the GPT Image arms
+ * and muse_image, exactly `1` or `4` on the gemini_image3 family, `1–4` or
+ * `1–8` elsewhere) and `outputFormat` are all narrowed per model by
+ * `imageConstraints`, transcribed from Runway's OpenAPI document.
  * This adapter sends them and lets those tables answer, because a copy of the
  * table here would be a second opinion about the same OpenAPI document, and the
  * error a caller gets — "`outputCount` must be one of 1, 4 for
@@ -85,8 +89,9 @@
  * exact and must not fail. That case is handled here, reading the deny table
  * rather than a second list of model ids.
  *
- * Canonical `"webp"` has no `outputFormat` value anywhere on this route, so it
- * is an `invalid_enum_value` from here rather than a substitution.
+ * `outputFormat` is sent as given, `"webp"` included: muse_image and the
+ * gpt_image_2_6 pair return WebP, and every other arm's own enum (or deny)
+ * answers for itself.
  *
  * # The declared gaps
  *
@@ -111,7 +116,12 @@ import {
 import type { CompileContext, CompiledCall } from "../../core/unified/types";
 import type { ResolutionTier } from "../../core/unified/vocabulary/common";
 import type { ImageAdapterFor, ImageParams } from "../../core/unified/vocabulary/image";
-import { imageConstraints, TEXT_TO_IMAGE_SOURCE, type RunwayImageRatio } from "./constraints";
+import {
+  imageConstraints,
+  imageRequired,
+  TEXT_TO_IMAGE_SOURCE,
+  type RunwayImageRatio,
+} from "./constraints";
 import { image as imageValidator, type TextToImageParams } from "./image";
 import { MODELS, RUNWAY_IMAGE_MODEL_PARAMS } from "./image-params";
 
@@ -147,7 +157,7 @@ interface RunwaySizing {
   squarest: Readonly<Partial<Record<ResolutionTier, string>>>;
   /** `"auto_1k"` / `"auto_2k"`, keyed by the tier they name. */
   autoByTier: Readonly<Partial<Record<ResolutionTier, string>>>;
-  /** A bare `"auto"` (gpt_image_2 only), which names a shape but no tier. */
+  /** A bare `"auto"`, which names neither a shape nor a tier. */
   autoAny?: string;
 }
 
@@ -253,6 +263,16 @@ function deniesOutputCount(model: string): boolean {
   return imageConstraints[model]?.deny?.["outputCount"] !== undefined;
 }
 
+/**
+ * True unless the endpoint's own required-params table says this arm may
+ * omit `ratio`. A model with no row is treated as requiring it — the
+ * conservative reading for an id this snapshot has not seen.
+ */
+function requiresRatio(model: string): boolean {
+  const required = imageRequired[model];
+  return required === undefined || required.includes("ratio");
+}
+
 export const image = {
   category: "image",
   provider: "runway",
@@ -306,6 +326,14 @@ export const image = {
             warn: ctx.warn,
           }),
         );
+      } else if (sizes.pairs.length === 0) {
+        // An arm with no sizes at all (ideogram_vector: `ratio` is "auto" and
+        // nothing else) — the shape is refused naming what the arm takes.
+        ratio = ctx.take(
+          toRatioEnum(sizing.aspectRatio, sizes.autoAny === undefined ? [] : [sizes.autoAny], {
+            source: TEXT_TO_IMAGE_SOURCE,
+          }, { path: ["aspectRatio"], warn: ctx.warn }),
+        );
       } else {
         const bucket = ctx.take(
           toTier(tier, sizes.byTier, { path: ["resolution"], warn: ctx.warn }),
@@ -316,8 +344,12 @@ export const image = {
       ratio = ctx.take(
         toSizeFreeform("1:1", tier, UNLISTED, { path: ["resolution"], warn: ctx.warn }),
       );
+    } else if (input.resolution === undefined && !requiresRatio(ctx.model)) {
+      // No shape and no tier, at an arm whose `ratio` is optional (the
+      // Ideogram arms): nothing is sent, and the model's own default framing is
+      // the exact answer.
     } else {
-      // No shape was named, and `ratio` is required by every arm.
+      // No shape was named, and this arm requires `ratio` (or a tier was).
       const auto =
         sizes.autoByTier[tier] ?? (input.resolution === undefined ? sizes.autoAny : undefined);
       if (auto !== undefined) {
@@ -336,8 +368,8 @@ export const image = {
             code: "approximated_param",
             path: ["aspectRatio"],
             message:
-              `\`ratio\` is required by every text_to_image model and no shape was given, so ` +
-              `${JSON.stringify(chosen)} — the squarest size "${ctx.model}" offers at ${tier} — ` +
+              `\`ratio\` is required to size "${ctx.model}" and no shape was given, so ` +
+              `${JSON.stringify(chosen)} — the squarest size it offers at ${tier} — ` +
               `was sent. Set \`aspectRatio\` or \`dimensions\` to choose.`,
             meta: { achieved: chosen, tier, source: TEXT_TO_IMAGE_SOURCE },
           });
@@ -348,9 +380,10 @@ export const image = {
     const body: RunwayImageWire = {
       model: ctx.model,
       promptText: input.prompt,
-      // Empty only when a derivation above failed, which is an error the kernel
-      // has already collected — the body is never validated in that case.
-      ratio: (ratio ?? "") as RunwayImageRatio,
+      // Absent when a derivation above failed (an error the kernel has already
+      // collected — the body is never validated then) or when the arm's
+      // `ratio` is optional and nothing named a size.
+      ...(ratio !== undefined && { ratio: ratio as RunwayImageRatio }),
     };
 
     if (input.seed !== undefined) {
@@ -379,24 +412,11 @@ export const image = {
     }
 
     if (input.outputFormat !== undefined) {
-      if (input.outputFormat === "webp") {
-        ctx.fail({
-          code: "invalid_enum_value",
-          path: ["outputFormat"],
-          message:
-            "`outputFormat` on this route is PNG or JPEG (and only on the seedream5 arms); no " +
-            "text_to_image model returns WebP, so the encoding could only be substituted.",
-          meta: {
-            allowed: ["png", "jpeg"],
-            value: input.outputFormat,
-            source: TEXT_TO_IMAGE_SOURCE,
-          },
-        });
-      } else {
-        // Sent as-is; the seven arms without an `outputFormat` deny it by name.
-        // The wire spelling is the canonical one, so no provenance is declared.
-        body.outputFormat = input.outputFormat;
-      }
+      // Sent as-is: the arms without an `outputFormat` deny it by name, and the
+      // per-model enums answer for the rest — WebP is muse_image's and the
+      // gpt_image_2_6 pair's, PNG / JPEG the seedream5 / FIBO arms' as well.
+      // The wire spelling is the canonical one, so no provenance is declared.
+      body.outputFormat = input.outputFormat;
     }
 
     applyExtras(input, RUNWAY_IMAGE_MODEL_PARAMS, body, ctx);

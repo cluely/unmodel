@@ -490,3 +490,387 @@ describe("runway.videoFromImage documented enum coverage", () => {
     }
   });
 });
+
+describe("runway.videoFromImage — Kling, WAN, H3 Max, Grok Lite and Gemini Omni 1.x arms", () => {
+  const TEXT = "a fox runs";
+
+  test.each([
+    ["kling2.5_turbo_pro", { promptText: TEXT, duration: 5 }, 0.6],
+    ["kling3.0_standard", { duration: 5 }, 0.65],
+    ["kling3.0_pro", { duration: 5, audio: false }, 0.6],
+    ["kling3.0_4k", { duration: 5 }, 2.15],
+    ["klingO3_standard", { duration: 5 }, 0.65],
+    ["klingO3_pro", { duration: 5 }, 0.85],
+    ["klingO3_4k", { duration: 5 }, 2.15],
+    // List price, rounded up: 15.7 × 5 = 78.5 → 79 credits.
+    ["kling_4", { duration: 5 }, 0.79],
+    ["kling_4", { duration: 5, ratio: "auto_1080p" }, 1.18],
+    // 9.4 × 3 = 28.2, floored by the 29-credit minimum.
+    ["kling_4_flash", { duration: 3 }, 0.29],
+    ["kling_4_flash", { duration: 5 }, 0.47],
+    // Default `auto_1080p`: 20 credits/s.
+    ["wan3", { promptText: TEXT, duration: 5 }, 1],
+    ["wan3", { promptText: TEXT, duration: 5, ratio: "832:480" }, 0.25],
+    ["wan3_prime", { promptText: TEXT, duration: 5, ratio: "auto_720p" }, 0.7],
+    ["h3_max", { promptText: TEXT, duration: 5, resolution: "480p" }, 0.25],
+    ["h3_max", { promptText: TEXT, duration: 5 }, 0.4],
+    // 2 credits/s at the default 480p + 1 credit for the start frame.
+    ["grok_imagine_1_5_lite", { duration: 5 }, 0.11],
+    ["grok_imagine_1_5_lite", { duration: 5, ratio: "auto_1080p" }, 0.71],
+    // 10 credits/s at 720p + 1 per keyframe.
+    ["gemini_omni_flash_1.1", { promptText: TEXT, duration: 5, ratio: "1280:720" }, 0.51],
+    // Default 720p: 7 credits/s + 1 per keyframe; "auto" reserves 15 s.
+    ["gemini_omni_flash_1.2", { promptText: TEXT, duration: 5 }, 0.36],
+    ["gemini_omni_flash_1.2", { promptText: TEXT, duration: "auto" }, 1.06],
+  ] as const)("%s validates warning-free and prices (%o)", (model, extra, usd) => {
+    const r = safeUnchecked({ model, promptImage: IMAGE, ...extra });
+    expect(r.ok, JSON.stringify(r)).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([]);
+    expect(r.estimate.costUSD).toBeCloseTo(usd, 10);
+  });
+
+  test("the catalog carries each documented default rate", () => {
+    expect(models["kling2.5_turbo_pro"].cost?.perVideoSecond).toBeCloseTo(0.12, 10);
+    expect(models["kling3.0_standard"].cost?.perVideoSecond).toBeCloseTo(0.13, 10);
+    expect(models.kling_4_flash.cost?.perVideoSecond).toBeCloseTo(0.094, 10);
+    expect(models.wan3.cost?.perVideoSecond).toBeCloseTo(0.2, 10);
+    expect(models.grok_imagine_1_5_lite.cost?.perVideoSecond).toBeCloseTo(0.02, 10);
+    expect(models["gemini_omni_flash_1.2"].cost?.perVideoSecond).toBeCloseTo(0.07, 10);
+    // Time-bound, or tier-dependent with no documented default: no number.
+    expect("cost" in models.kling_4).toBe(false);
+    expect("cost" in models.wan3_prime).toBe(false);
+    expect("cost" in models.h3_max).toBe(false);
+    expect("cost" in models["gemini_omni_flash_1.1"]).toBe(false);
+  });
+
+  test("kling_4 with a reference video bills the input-video rate on twice the output", () => {
+    // 9.4 × (5 + 5), the input-video term floored at the output duration.
+    const r = safeUnchecked({
+      model: "kling_4",
+      promptImage: IMAGE,
+      promptText: TEXT,
+      duration: 5,
+      referenceVideos: [{ uri: "https://example.com/clip.mp4" }],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.94, 10);
+  });
+
+  test('gemini_omni_flash_1.1 takes duration "auto" (no documented reservation); integer-only arms refuse it', () => {
+    const r = safeUnchecked({
+      model: "gemini_omni_flash_1.1",
+      promptImage: IMAGE,
+      promptText: TEXT,
+      duration: "auto",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+    const gen = safeUnchecked({
+      model: "gen4.5",
+      promptImage: IMAGE,
+      promptText: TEXT,
+      ratio: "1280:720",
+      duration: "auto",
+    });
+    expect(gen.ok).toBe(false);
+    if (!gen.ok) expect(gen.errors[0]?.code).toBe("invalid_enum_value");
+  });
+
+  test("the Kling 2.5 / 3.0 / O3 arms require positions and carry minLength 2", () => {
+    const unpositioned = safeUnchecked({ model: "kling3.0_pro", promptImage: [{ uri: IMAGE }] });
+    expect(unpositioned.ok).toBe(false);
+    const short = safeUnchecked({ model: "kling2.5_turbo_pro", promptImage: IMAGE, promptText: "a" });
+    expect(short.ok).toBe(false);
+    if (!short.ok) expect(short.errors[0]?.meta?.min).toBe(2);
+    const firstLast = safeUnchecked({
+      model: "klingO3_4k",
+      promptImage: [
+        { uri: IMAGE, position: "first" },
+        { uri: IMAGE, position: "last" },
+      ],
+    });
+    expect(firstLast.ok).toBe(true);
+  });
+
+  test("cfgScale is 0–1 and only on kling2.5_turbo_pro / Kling 3.0", () => {
+    expect(safeUnchecked({ model: "kling3.0_standard", promptImage: IMAGE, cfgScale: 0.7 }).ok).toBe(true);
+    expect(safeUnchecked({ model: "kling3.0_standard", promptImage: IMAGE, cfgScale: 1.5 }).ok).toBe(false);
+    const o3 = safeUnchecked({ model: "klingO3_standard", promptImage: IMAGE, cfgScale: 0.5 });
+    expect(o3.ok).toBe(false);
+    if (!o3.ok) expect(o3.errors[0]).toMatchObject({ code: "unsupported_param", path: ["cfgScale"] });
+  });
+
+  test("multiPrompt segments must total 3–15 seconds", () => {
+    const segment = (duration: number) => ({ prompt: "a fox", duration });
+    const ok = safeUnchecked({
+      model: "kling3.0_standard",
+      promptImage: IMAGE,
+      providerSettings: { multiPrompt: [segment(5), segment(5)] },
+    });
+    expect(ok.ok).toBe(true);
+    const over = safeUnchecked({
+      model: "kling3.0_standard",
+      promptImage: IMAGE,
+      providerSettings: { multiPrompt: [segment(10), segment(6)] },
+    });
+    expect(over.ok).toBe(false);
+    if (!over.ok) {
+      expect(over.errors[0]).toMatchObject({ path: ["providerSettings", "multiPrompt"] });
+      expect(over.errors[0]?.meta?.total).toBe(16);
+    }
+  });
+
+  test('shotType "intelligence" requires promptText', () => {
+    const base = {
+      model: "kling3.0_pro",
+      promptImage: IMAGE,
+      providerSettings: { shotType: "intelligence" },
+    };
+    const bare = safeUnchecked(base);
+    expect(bare.ok).toBe(false);
+    if (!bare.ok) expect(bare.errors[0]).toMatchObject({ code: "invalid_shape", path: ["promptText"] });
+    expect(safeUnchecked({ ...base, promptText: TEXT }).ok).toBe(true);
+  });
+
+  test("keepOriginalSound is video_to_video's; the image_to_video object is closed", () => {
+    const r = safeUnchecked({
+      model: "klingO3_standard",
+      promptImage: IMAGE,
+      providerSettings: { keepOriginalSound: true },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
+  });
+
+  test("Kling O3: a last keyframe and multiPrompt cannot be combined", () => {
+    const multiPrompt = [{ prompt: "a fox", duration: 5 }];
+    const last = safeUnchecked({
+      model: "klingO3_pro",
+      promptImage: [
+        { uri: IMAGE, position: "first" },
+        { uri: IMAGE, position: "last" },
+      ],
+      providerSettings: { multiPrompt },
+    });
+    expect(last.ok).toBe(false);
+    if (!last.ok) expect(last.errors[0]?.path).toEqual(["promptImage", 1, "position"]);
+    const first = safeUnchecked({
+      model: "klingO3_pro",
+      promptImage: [{ uri: IMAGE, position: "first" }],
+      providerSettings: { multiPrompt },
+    });
+    expect(first.ok).toBe(true);
+  });
+
+  test("Kling O3 references: a bare URI or items, up to 7 images with the keyframes", () => {
+    expect(safeUnchecked({ model: "klingO3_standard", promptImage: IMAGE, references: IMAGE }).ok).toBe(
+      true,
+    );
+    const seven = safeUnchecked({
+      model: "klingO3_standard",
+      promptImage: IMAGE,
+      references: Array(6).fill({ uri: IMAGE }),
+    });
+    expect(seven.ok).toBe(true);
+    const eight = safeUnchecked({
+      model: "klingO3_standard",
+      promptImage: IMAGE,
+      references: Array(7).fill({ uri: IMAGE }),
+    });
+    expect(eight.ok).toBe(false);
+    if (!eight.ok) expect(eight.errors[0]?.meta?.max).toBe(7);
+  });
+
+  test("kling_4: one first frame, up to 8 middle frames, one last frame", () => {
+    const frame = (position: string) => ({ uri: IMAGE, position });
+    const ok = safeUnchecked({
+      model: "kling_4",
+      promptImage: [frame("first"), frame("middle"), frame("middle"), frame("last")],
+    });
+    expect(ok.ok).toBe(true);
+    const noFirst = safeUnchecked({ model: "kling_4", promptImage: [frame("middle")] });
+    expect(noFirst.ok).toBe(false);
+    const nineMiddle = safeUnchecked({
+      model: "kling_4",
+      promptImage: [frame("first"), ...Array(9).fill(frame("middle"))],
+    });
+    expect(nineMiddle.ok).toBe(false);
+    if (!nineMiddle.ok) {
+      expect(nineMiddle.errors[0]?.meta).toMatchObject({ position: "middle", max: 8 });
+    }
+    // `middle` is kling_4's alone.
+    const veo = safeUnchecked({
+      model: "veo3.1",
+      promptImage: [frame("first"), frame("middle")],
+      ratio: "1280:720",
+    });
+    expect(veo.ok).toBe(false);
+    if (!veo.ok) expect(veo.errors[0]?.code).toBe("invalid_enum_value");
+  });
+
+  test("kling_4: frames and references together are at most 10", () => {
+    const frames = [
+      { uri: IMAGE, position: "first" },
+      ...Array(4).fill({ uri: IMAGE, position: "middle" }),
+    ];
+    const ten = safeUnchecked({
+      model: "kling_4",
+      promptImage: frames,
+      promptText: TEXT,
+      references: Array(5).fill({ uri: IMAGE }),
+    });
+    expect(ten.ok).toBe(true);
+    const eleven = safeUnchecked({
+      model: "kling_4",
+      promptImage: frames,
+      promptText: TEXT,
+      references: Array(6).fill({ uri: IMAGE }),
+    });
+    expect(eleven.ok).toBe(false);
+    if (!eleven.ok) {
+      expect(eleven.errors[0]).toMatchObject({ path: ["references"], meta: { max: 10, count: 11 } });
+    }
+  });
+
+  test("kling_4 / kling_4_flash require promptText once a reference rides along", () => {
+    expect(safeUnchecked({ model: "kling_4", promptImage: IMAGE }).ok).toBe(true);
+    const refs = safeUnchecked({
+      model: "kling_4_flash",
+      promptImage: IMAGE,
+      references: [{ uri: IMAGE }],
+    });
+    expect(refs.ok).toBe(false);
+    if (!refs.ok) expect(refs.errors[0]).toMatchObject({ code: "invalid_shape", path: ["promptText"] });
+    expect(
+      safeUnchecked({
+        model: "kling_4_flash",
+        promptImage: IMAGE,
+        references: [{ uri: IMAGE }],
+        promptText: TEXT,
+      }).ok,
+    ).toBe(true);
+  });
+
+  test("kling_4_flash reference videos are bare { uri } items; wan3's carry type", () => {
+    const clip = "https://example.com/clip.mp4";
+    const typed = safeUnchecked({
+      model: "kling_4_flash",
+      promptImage: IMAGE,
+      promptText: TEXT,
+      referenceVideos: [{ type: "video", uri: clip }],
+    });
+    expect(typed.ok).toBe(false);
+    if (!typed.ok) {
+      expect(typed.errors[0]).toMatchObject({
+        code: "unsupported_param",
+        path: ["referenceVideos", 0, "type"],
+      });
+    }
+    expect(
+      safeUnchecked({
+        model: "kling_4_flash",
+        promptImage: IMAGE,
+        promptText: TEXT,
+        referenceVideos: [{ uri: clip }],
+      }).ok,
+    ).toBe(true);
+    const untyped = safeUnchecked({
+      model: "wan3",
+      promptImage: IMAGE,
+      promptText: TEXT,
+      referenceVideos: [{ uri: clip }],
+    });
+    expect(untyped.ok).toBe(false);
+    if (!untyped.ok) expect(untyped.errors[0]?.path).toEqual(["referenceVideos", 0, "type"]);
+  });
+
+  test("references must be an array on kling_4 (a bare URI is the Kling O3 form)", () => {
+    const r = safeUnchecked({ model: "kling_4", promptImage: IMAGE, promptText: TEXT, references: IMAGE });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]).toMatchObject({ code: "invalid_shape", path: ["references"] });
+  });
+
+  test("wan3: keyframe requests take an auto_* ratio, and keyframes cannot mix with references", () => {
+    const keyframes = [
+      { uri: IMAGE, position: "first" },
+      { uri: IMAGE, position: "last" },
+    ];
+    const pinned = safeUnchecked({
+      model: "wan3",
+      promptImage: keyframes,
+      promptText: TEXT,
+      ratio: "1280:720",
+    });
+    expect(pinned.ok).toBe(false);
+    if (!pinned.ok) expect(pinned.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["ratio"] });
+    expect(
+      safeUnchecked({ model: "wan3", promptImage: keyframes, promptText: TEXT, ratio: "auto_720p" }).ok,
+    ).toBe(true);
+    expect(safeUnchecked({ model: "wan3", promptImage: keyframes, promptText: TEXT }).ok).toBe(true);
+    // Unpositioned references may take a pixel ratio.
+    expect(
+      safeUnchecked({
+        model: "wan3",
+        promptImage: [{ uri: IMAGE }, { uri: IMAGE }],
+        promptText: TEXT,
+        ratio: "1280:720",
+      }).ok,
+    ).toBe(true);
+    const mixed = safeUnchecked({
+      model: "wan3_prime",
+      promptImage: [{ uri: IMAGE, position: "first" }, { uri: IMAGE }],
+      promptText: TEXT,
+    });
+    expect(mixed.ok).toBe(false);
+    if (!mixed.ok) expect(mixed.errors[0]).toMatchObject({ code: "invalid_shape", path: ["promptImage"] });
+  });
+
+  test("h3_max: a last frame requires a first frame", () => {
+    const lone = safeUnchecked({
+      model: "h3_max",
+      promptImage: [{ uri: IMAGE, position: "last" }],
+      promptText: TEXT,
+    });
+    expect(lone.ok).toBe(false);
+    if (!lone.ok) expect(lone.errors[0]?.meta).toMatchObject({ position: "first", min: 1, count: 0 });
+    const both = safeUnchecked({
+      model: "h3_max",
+      promptImage: [
+        { uri: IMAGE, position: "first" },
+        { uri: IMAGE, position: "last" },
+      ],
+      promptText: TEXT,
+    });
+    expect(both.ok).toBe(true);
+  });
+
+  test("h3_max takes promptExpansionMode and seed; other arms deny promptExpansionMode", () => {
+    expect(
+      safeUnchecked({
+        model: "h3_max",
+        promptImage: IMAGE,
+        promptText: TEXT,
+        promptExpansionMode: "disabled",
+        seed: 7,
+      }).ok,
+    ).toBe(true);
+    const bad = safeUnchecked({
+      model: "h3_max",
+      promptImage: IMAGE,
+      promptText: TEXT,
+      promptExpansionMode: "max",
+    });
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) expect(bad.errors[0]?.code).toBe("invalid_enum_value");
+    const gen = safeUnchecked({
+      model: "gen4.5",
+      promptImage: IMAGE,
+      promptText: TEXT,
+      ratio: "1280:720",
+      duration: 5,
+      promptExpansionMode: "disabled",
+    });
+    expect(gen.ok).toBe(false);
+  });
+});

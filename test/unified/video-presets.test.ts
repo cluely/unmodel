@@ -178,6 +178,13 @@ const REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = {
   "runway/seedance2_5": { aspectRatio: "16:9" },
   "runway/grok_imagine_1_5": { aspectRatio: "16:9" },
   "runway/gemini_omni_flash": { aspectRatio: "16:9" },
+  // The Kling 3.0 / O3 text_to_video arms require `ratio`.
+  "runway/kling3.0_standard": { aspectRatio: "16:9" },
+  "runway/kling3.0_pro": { aspectRatio: "16:9" },
+  "runway/kling3.0_4k": { aspectRatio: "16:9" },
+  "runway/klingO3_standard": { aspectRatio: "16:9" },
+  "runway/klingO3_pro": { aspectRatio: "16:9" },
+  "runway/klingO3_4k": { aspectRatio: "16:9" },
   "minimax/MiniMax-H3": { duration: 6, resolution: "720p" },
   "minimax/MiniMax-H3-Highspeed": { duration: 6, resolution: "720p" },
   "minimax/MiniMax-H3-Lite": { duration: 6, resolution: "720p" },

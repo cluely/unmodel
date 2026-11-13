@@ -5,9 +5,11 @@
  *
  * # Three routes, and which models are on them is the interesting part
  *
- * Runway's video catalog is thirteen models and *no* model is on all three
- * routes: `gen4_turbo` is image-to-video only, `aleph2` is video-to-video only,
- * and the seedance/hailuo family is on all but the first. So the route
+ * Runway's video catalog spans three routes and the models split across them:
+ * `gen4_turbo` is image-to-video only, `aleph2` is video-to-video only, the
+ * Kling 2.5 / 3.0, WAN, H3 Max and Grok arms skip video-to-video, and the
+ * seedance / hailuo / Kling O3 / 4.0 / Gemini Omni family serves all three.
+ * So the route
  * derivation is doing real work here — "`gen4_turbo` has no text-to-video
  * route; it serves image-to-video — pass `image`" is the message this category
  * exists to produce, and the model lists behind it are the endpoint modules'
@@ -23,8 +25,13 @@
  * 1. **`resolution` picks the bucket.** Each model's pairs are sorted into
  *    480p / 720p / 1080p / 1440p / 4k by their **short edge**, which is what a
  *    video resolution *is* — 1280:720 and 720:1280 are both 720p, and
- *    `992:432` is 480p. A tier a model has nothing in is an
- *    `invalid_enum_value` from {@link toTier} naming the tiers it does serve.
+ *    `992:432` is 480p — unless Runway documents the grouping itself because
+ *    it prices by it (`RATIO_TIERS`: kling_4's `1440:1440` is its 1080p square,
+ *    and Gemini Omni Flash 1.x's 360p sizes have no canonical tier at all). A
+ *    tier a model has nothing in is an `invalid_enum_value` from
+ *    {@link toTier} naming the tiers it does serve. Where the enum has an
+ *    `auto_<tier>` token, a tier with no shape compiles to it — exact, because
+ *    the caller named no framing either.
  * 2. **`aspectRatio` picks the entry.** {@link toRatioEnum} matches on the
  *    reduced ratio, so `"16:9"` finds `"1920:1080"` inside the 1080p bucket —
  *    Runway's own spelling, and no warning, because a spelling change is not a
@@ -39,14 +46,17 @@
  * and `happyhorse_1_0` — are the ones with a real `resolution` field: see
  * below.
  *
- * # `resolution` is a per-model field with three different casings
+ * # `resolution` is a per-model field with different casings
  *
- * Four models have a `resolution` param, and the spec spells its values
+ * Five models have a `resolution` param, and the spec spells its values
  * differently in each: `hailuo3` takes `"2K"` / `"768P"`, `happyhorse_1_0`
- * `"720P"` / `"1080P"`, and `grok_imagine_1_5` lowercase `"480p"` / `"720p"` /
- * `"1080p"`. The canonical tier maps through a per-model table, and `768P` is
- * the one entry that is not the size it is asked for — a `720p` request on
- * `hailuo3` gets 768 lines and an `approximated_param` saying so.
+ * `"720P"` / `"1080P"`, `grok_imagine_1_5` lowercase `"480p"` / `"720p"` /
+ * `"1080p"`, and `h3_max` `"480p"` / `"768p"`. The canonical tier maps through
+ * a per-model table, and `768P` / `768p` are the entries that are not the size
+ * they are asked for — a `720p` request on `hailuo3` or `h3_max` gets 768
+ * lines and an `approximated_param` saying so. (`gemini_omni_flash_1.2`'s
+ * video_to_video `resolution` applies to its extend and edit modes only, so it
+ * stays on `providerOptions.runway`.)
  *
  * On every other model the tier is the *bucket* above and nothing goes on the
  * wire for it, which is the honest encoding: those models have no resolution
@@ -59,10 +69,11 @@
  * `{ data, mimeType }` becomes a data URI, which is the one case in this
  * category where inline bytes are a first-class wire form.
  *
- * The two video fields are not interchangeable: `aleph2` and
- * `gemini_omni_flash` take `videoUri` and every seedance/hailuo arm takes
- * `promptVideo`, so this adapter picks per model from the endpoint's own
- * required-params table rather than sending one and hoping.
+ * The two video fields are not interchangeable: `aleph2`, `kling_4`,
+ * `kling_4_flash` and the gemini_omni_flash arms take `videoUri` and every
+ * seedance / hailuo / Kling O3 arm takes `promptVideo`, so this adapter picks
+ * per model from the endpoint's own required-params table rather than sending
+ * one and hoping.
  */
 import {
   applyExtras,
@@ -94,6 +105,7 @@ import {
   videoFromImageConstraints,
   videoFromVideoConstraints,
   videoFromVideoRequired,
+  RATIO_TIERS,
 } from "./constraints";
 import type { RunwayPromptImage } from "./shared";
 import { video as textValidator, type TextToVideoParams } from "./video";
@@ -104,9 +116,9 @@ import { MODELS, RUNWAY_VIDEO_MODEL_PARAMS } from "./video-params";
 /**
  * Per-model `resolution` tables, one per casing the spec uses.
  *
- * `768P` is the only value that is not the tier it answers for; the warning it
- * carries is raised where the table is read, not here, so the table stays a
- * transcription.
+ * `768P` / `768p` are the only values that are not the tier they answer for;
+ * the warning they carry is raised where the table is read, not here, so the
+ * table stays a transcription.
  */
 const HAILUO3_RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
   "720p": "768P",
@@ -121,6 +133,10 @@ const GROK_RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
   "720p": "720p",
   "1080p": "1080p",
 };
+const H3_MAX_RESOLUTIONS: Readonly<Partial<Record<VideoResolution, string>>> = {
+  "480p": "480p",
+  "720p": "768p",
+};
 
 const RESOLUTION_TABLES: Readonly<
   Record<string, Readonly<Partial<Record<VideoResolution, string>>>>
@@ -128,10 +144,11 @@ const RESOLUTION_TABLES: Readonly<
   hailuo3: HAILUO3_RESOLUTIONS,
   happyhorse_1_0: HAPPYHORSE_RESOLUTIONS,
   grok_imagine_1_5: GROK_RESOLUTIONS,
+  h3_max: H3_MAX_RESOLUTIONS,
 };
 
 /** The tiers whose wire value is a different number of lines, and what it is. */
-const APPROXIMATE_LINES: Readonly<Record<string, number>> = { "768P": 768 };
+const APPROXIMATE_LINES: Readonly<Record<string, number>> = { "768P": 768, "768p": 768 };
 
 /** A `ratio` member that is literally a pixel size. */
 const PIXEL_PAIR = /^(\d+):(\d+)$/;
@@ -208,8 +225,16 @@ function ratiosFor(route: VideoRoute, model: string): readonly string[] | undefi
   return allowed === undefined ? undefined : allowed.map(String);
 }
 
-/** The tier a pixel pair belongs to: nearest by short edge, in log space. */
-function tierOf(spelling: string): VideoResolution | undefined {
+/**
+ * The tier a pixel pair belongs to: the provider's own grouping where it
+ * documents one (`RATIO_TIERS`), else nearest by short edge, in log space.
+ * `null` is a pair whose documented tier the canonical vocabulary has no
+ * word for (Gemini Omni Flash 1.x's 360p) — reachable only through
+ * `providerOptions.runway.ratio`, never as an approximation of 480p.
+ */
+function tierOf(spelling: string, model: string): VideoResolution | null | undefined {
+  const documented = RATIO_TIERS[model]?.[spelling];
+  if (documented !== undefined) return documented === "360p" ? null : documented;
   const pixels = PIXEL_PAIR.exec(spelling);
   if (pixels === null) return undefined;
   const width = Number(pixels[1]);
@@ -228,19 +253,30 @@ function tierOf(spelling: string): VideoResolution | undefined {
   return best;
 }
 
-/** A `ratio` list bucketed by tier, or `undefined` when it holds no pixel pairs. */
+/**
+ * A `ratio` list bucketed by tier, or `undefined` when it holds no pixel
+ * pairs. `auto_<tier>` tokens carry no shape, so they are left out; they are
+ * what a tier alone compiles to (see `compile`).
+ */
 function bucketsOf(
   allowed: readonly string[],
+  model: string,
 ): Readonly<Partial<Record<VideoResolution, readonly string[]>>> | undefined {
   const buckets: Partial<Record<VideoResolution, string[]>> = {};
   let pairs = 0;
   for (const entry of allowed) {
-    const tier = tierOf(entry);
-    if (tier === undefined) continue;
+    if (!PIXEL_PAIR.test(entry)) continue;
+    const tier = tierOf(entry, model);
+    if (tier === undefined || tier === null) continue;
     pairs += 1;
     (buckets[tier] ??= []).push(entry);
   }
   return pairs === 0 ? undefined : buckets;
+}
+
+/** The entries a shape may resolve to when no tier was named. */
+function shapeCandidates(allowed: readonly string[], model: string): readonly string[] {
+  return allowed.filter((entry) => tierOf(entry, model) !== null);
 }
 
 export const video = {
@@ -300,7 +336,7 @@ export const video = {
     // --- Size: a per-model `resolution` field, or the `ratio` bucket --------
     const resolutions = RESOLUTION_TABLES[ctx.model];
     const allowed = ratiosFor(wireRoute, ctx.model);
-    const buckets = allowed === undefined ? undefined : bucketsOf(allowed);
+    const buckets = allowed === undefined ? undefined : bucketsOf(allowed, ctx.model);
 
     if (input.resolution !== undefined && resolutions !== undefined) {
       ctx.from(["resolution"], "resolution");
@@ -342,8 +378,9 @@ export const video = {
         const bucket =
           input.resolution === undefined || resolutions !== undefined
             ? // Either no tier was named, or it went to the model's own
-              // `resolution` field — in both cases every pair is a candidate.
-              allowed
+              // `resolution` field — in both cases every pair the vocabulary
+              // can name is a candidate.
+              shapeCandidates(allowed, ctx.model)
             : ctx.take(toTier(input.resolution, buckets, { path: ["resolution"], warn: ctx.warn }));
         if (bucket !== undefined) {
           const exact = toRatioEnum(input.aspectRatio, bucket, { source }, derive);
@@ -362,6 +399,15 @@ export const video = {
           }
         }
       }
+    } else if (
+      input.resolution !== undefined &&
+      resolutions === undefined &&
+      allowed?.includes(`auto_${input.resolution}`) === true
+    ) {
+      // A tier and no shape, at a model with an `auto_<tier>` token — "model-
+      // chosen framing" at exactly that tier, which is exactly the request.
+      ctx.from(["ratio"], "resolution");
+      body.ratio = `auto_${input.resolution}`;
     } else if (input.resolution !== undefined && resolutions === undefined) {
       // A tier and no shape, at a model whose size *is* the ratio: nothing can
       // go on the wire without inventing a shape, so the tier is refused rather
@@ -374,7 +420,8 @@ export const video = {
           `"${ctx.model}" has no \`resolution\` field — its \`ratio\` enum carries the pixel size, ` +
           `so a tier only picks between entries of a shape. Pass \`aspectRatio\` alongside ` +
           "`resolution`, or pick a model with a resolution field (hailuo3, happyhorse_1_0, " +
-          "grok_imagine_1_5).",
+          "grok_imagine_1_5, h3_max) or an `auto_<tier>` ratio (wan3, wan3_prime, kling_4, " +
+          "kling_4_flash).",
         meta: { value: input.resolution, source },
       });
     }
@@ -421,9 +468,10 @@ export const video = {
       const uri = ctx.take(toMediaUri(input.video, { path: ["video"], warn: ctx.warn }));
       if (uri !== undefined) {
         // Two different fields, and sending the wrong one is a deny rather than
-        // a rename: `aleph2` and `gemini_omni_flash` take `videoUri`, every
-        // seedance/hailuo arm takes `promptVideo`. The endpoint's own
-        // required-params table is what says which.
+        // a rename: `aleph2`, `kling_4`, `kling_4_flash` and the
+        // gemini_omni_flash arms take `videoUri`, every seedance / hailuo /
+        // Kling O3 arm takes `promptVideo`. The endpoint's own required-params
+        // table is what says which.
         const required = videoFromVideoRequired[ctx.model] ?? [];
         if (required.includes("promptVideo")) body.promptVideo = uri;
         else body.videoUri = uri;

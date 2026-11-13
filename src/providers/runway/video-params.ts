@@ -12,7 +12,7 @@
 import { EXTRA } from "../../core/unified/derive";
 import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 import type { RunwayTargetAspectRatio } from "./constraints";
-import type { RunwayAudioReference, RunwayContentModeration } from "./shared";
+import type { RunwayAudioReference, RunwayContentModeration, RunwayProviderSettings } from "./shared";
 import type { RunwayVideoKeyframe } from "./video-from-video";
 
 /** Every model with an arm on any of the three video routes. */
@@ -30,6 +30,21 @@ export const MODELS = [
   "grok_imagine_1_5",
   "gemini_omni_flash",
   "aleph2",
+  "kling2.5_turbo_pro",
+  "kling3.0_standard",
+  "kling3.0_pro",
+  "kling3.0_4k",
+  "klingO3_standard",
+  "klingO3_pro",
+  "klingO3_4k",
+  "kling_4",
+  "kling_4_flash",
+  "wan3",
+  "wan3_prime",
+  "h3_max",
+  "grok_imagine_1_5_lite",
+  "gemini_omni_flash_1.1",
+  "gemini_omni_flash_1.2",
 ] as const;
 
 /**
@@ -56,7 +71,16 @@ export const MODELS = [
  *
  * Four models have a real `resolution` field instead, and there the row is the
  * plain enum: `hailuo3` (720p → `768P`, which warns, and 1440p → `2K`),
- * `happyhorse_1_0` (720p/1080p) and `grok_imagine_1_5` (480p/720p/1080p).
+ * `happyhorse_1_0` (720p/1080p), `grok_imagine_1_5` (480p/720p/1080p) and
+ * `h3_max` (480p, and 720p → `768p`, which warns).
+ *
+ * Where Runway prices — and so documents — which tier each pair is (wan3,
+ * kling_4, kling_4_flash, grok_imagine_1_5_lite, the gemini_omni_flash_1.x
+ * pair), the row follows that grouping (`RATIO_TIERS` in ./constraints.ts)
+ * rather than the short edge, so `1440:1440` is kling_4's 1080p square. The
+ * Gemini Omni Flash 1.x 360p sizes have no canonical tier and are left out.
+ * Those models' `auto_<tier>` tokens are what a tier given without a shape
+ * compiles to.
  *
  * `aleph2` is the exception twice over. It has **no duration parameter at all**
  * (the output follows the input clip) and no resolution field, so both lists
@@ -71,7 +95,8 @@ export const MODELS = [
  * A Runway model can serve up to three routes and the unified surface picks one
  * from the *inputs*, so an extra that exists on only one route body would land
  * on the wrong body for a caller who used another. Three are excluded for
- * exactly that: `referenceVideos` (absent from `ImageToVideoParams`), `mode`
+ * exactly that: `referenceVideos` (denied by the image_to_video arm of every
+ * model whose other arms take it, wan3 and Kling 4.0 aside), `mode`
  * (video_to_video only, on a model that serves all four routes) and
  * `referenceAudio` **on `grok_imagine_1_5`** (accepted on text_to_video,
  * denied on image_to_video). All three stay on `providerOptions.runway`.
@@ -79,8 +104,11 @@ export const MODELS = [
  * What is left is accepted on every route its model serves:
  * `contentModeration` (gen4.5, gen4_turbo, aleph2), `outputFormat` /
  * `proresProfile` (gen4.5 and aleph2 — `gen4_turbo` denies both),
- * `audio` (the veo3.1 pair and the four seedance2 arms) and `referenceAudio`
- * (hailuo3 and the four seedance2 arms).
+ * `audio` (the veo3.1 pair, the four seedance2 arms, Kling 3.0 and wan3),
+ * `referenceAudio` (hailuo3, the four seedance2 arms and wan3), `cfgScale`
+ * (kling2.5_turbo_pro, Kling 3.0), `providerSettings` (Kling 3.0 / O3) and
+ * `promptExpansionMode` (h3_max). Kling O3's `audio` is excluded the same way
+ * `mode` is: its video_to_video arm has none.
  */
 export const OUTPUT_EXTRAS = {
   outputFormat: EXTRA as "mp4" | "prores" | "png_sequence",
@@ -113,6 +141,33 @@ export const VEO_ROW = {
   ratios: ["16:9", "9:16"],
   extras: { audio: EXTRA as boolean },
 } as const;
+
+const THREE_TO_FIFTEEN = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const;
+
+export const KLING3_EXTRAS = {
+  audio: EXTRA as boolean,
+  cfgScale: EXTRA as number,
+  providerSettings: EXTRA as Omit<RunwayProviderSettings, "keepOriginalSound">,
+} as const;
+
+export const KLING_O3_EXTRAS = {
+  providerSettings: EXTRA as RunwayProviderSettings,
+} as const;
+
+/** The three Kling 3.0 / O3 sizes per variant reduce to the same three shapes. */
+const KLING3_RATIOS = ["16:9", "9:16", "1:1"] as const;
+
+export const WAN3_ROW = {
+  durations: [
+    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+  ],
+  resolutions: ["480p", "720p", "1080p"],
+  ratios: ["26:15", "45:34", "1:1", "34:45", "15:26", "16:9", "69:52", "52:69", "9:16", "103:78", "78:103"],
+  extras: { audio: EXTRA as boolean, referenceAudio: EXTRA as RunwayAudioReference[] },
+} as const;
+
+export const GEMINI_OMNI_FLASH_1X_RESOLUTIONS = ["720p", "1080p", "4k"] as const;
 
 export const RUNWAY_VIDEO_MODEL_PARAMS = {
   "gen4.5": {
@@ -175,5 +230,87 @@ export const RUNWAY_VIDEO_MODEL_PARAMS = {
       targetAspectRatio: EXTRA as RunwayTargetAspectRatio,
       keyframes: EXTRA as RunwayVideoKeyframe[],
     },
+  },
+  "kling2.5_turbo_pro": {
+    durations: [5, 10],
+    resolutions: ["720p", "1080p", "1440p"],
+    ratios: KLING3_RATIOS,
+    extras: { cfgScale: EXTRA as number },
+  },
+  "kling3.0_standard": {
+    durations: THREE_TO_FIFTEEN,
+    resolutions: ["720p", "1080p"],
+    ratios: KLING3_RATIOS,
+    extras: KLING3_EXTRAS,
+  },
+  "kling3.0_pro": {
+    durations: THREE_TO_FIFTEEN,
+    resolutions: ["1080p", "1440p"],
+    ratios: KLING3_RATIOS,
+    extras: KLING3_EXTRAS,
+  },
+  "kling3.0_4k": {
+    durations: THREE_TO_FIFTEEN,
+    resolutions: ["4k"],
+    ratios: KLING3_RATIOS,
+    extras: KLING3_EXTRAS,
+  },
+  klingO3_standard: {
+    durations: THREE_TO_FIFTEEN,
+    resolutions: ["720p", "1080p"],
+    ratios: KLING3_RATIOS,
+    extras: KLING_O3_EXTRAS,
+  },
+  klingO3_pro: {
+    durations: THREE_TO_FIFTEEN,
+    resolutions: ["1080p", "1440p"],
+    ratios: KLING3_RATIOS,
+    extras: KLING_O3_EXTRAS,
+  },
+  klingO3_4k: {
+    durations: THREE_TO_FIFTEEN,
+    resolutions: ["4k"],
+    ratios: KLING3_RATIOS,
+    extras: KLING_O3_EXTRAS,
+  },
+  kling_4: {
+    durations: [
+      3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+      17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+    ],
+    resolutions: ["720p", "1080p"],
+    ratios: ["16:9", "9:16", "1:1", "365:156", "110:47"],
+  },
+  kling_4_flash: {
+    durations: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+    resolutions: ["720p"],
+    ratios: ["16:9", "9:16", "1:1", "366:157", "365:156"],
+  },
+  wan3: WAN3_ROW,
+  wan3_prime: WAN3_ROW,
+  h3_max: {
+    durations: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    resolutions: ["480p", "720p"],
+    // No `ratio` on either arm: "There is no `ratio` parameter."
+    ratios: [],
+    extras: { promptExpansionMode: EXTRA as "disabled" | "balanced" | "quality" },
+  },
+  grok_imagine_1_5_lite: {
+    durations: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    resolutions: ["480p", "720p", "1080p"],
+    ratios: [
+      "53:30", "30:53", "1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16",
+      "68:45", "45:68", "119:67", "67:119", "103:77", "77:103", "109:72", "72:109",
+    ],
+  },
+  "gemini_omni_flash_1.1": {
+    durations: [3, 4, 5, 6, 7, 8, 9, 10],
+    resolutions: GEMINI_OMNI_FLASH_1X_RESOLUTIONS,
+    ratios: ["16:9", "9:16"],
+  },
+  "gemini_omni_flash_1.2": {
+    durations: THREE_TO_FIFTEEN,
+    resolutions: GEMINI_OMNI_FLASH_1X_RESOLUTIONS,
+    ratios: ["16:9", "9:16"],
   },
 } as const satisfies VideoModelParamTable;

@@ -12,7 +12,13 @@
 import { EXTRA } from "../../core/unified/derive";
 import type { ModelParamTable } from "../../core/unified/vocabulary/image";
 
-/** Every model the text_to_image route has an arm for — the `imageModels` catalog. */
+/**
+ * Every generating model the text_to_image route has an arm for — the
+ * `imageModels` catalog less its two editing arms. `bria_fibo_edit_1_5` ("1 to
+ * 4 images to edit") and `seedream5_pro_layers` (one source image in, its
+ * layers out) take a prompt about an image rather than a prompt for one, so
+ * they stay on `runway.image` alone.
+ */
 export const MODELS = [
   "gen4_image",
   "gen4_image_turbo",
@@ -23,6 +29,18 @@ export const MODELS = [
   "seedream5_lite",
   "grok_imagine_image_2",
   "gemini_2.5_flash",
+  "muse_image",
+  "gemini_image3.1_flash_lite",
+  "nano_banana_2.1",
+  "gpt_image_2_5_flare",
+  "gpt_image_2_5_sunburst",
+  "gpt_image_2_6_flare",
+  "gpt_image_2_6_sunburst",
+  "bria_fibo_1_5",
+  "ideogram_4_0",
+  "ideogram_4_5",
+  "ideogram_vector",
+  "seedream5_flash",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -30,7 +48,7 @@ export const MODELS = [
 // ---------------------------------------------------------------------------
 
 /**
- * Nine models, nine `ratio` enums.
+ * One `ratio` enum per model.
  *
  * Runway spells its sizes as **pixel pairs punctuated with a colon**
  * (`"1920:1080"`), which is why every row's `sizes` is that enum respelled with
@@ -47,8 +65,11 @@ export const MODELS = [
  *
  * The extras split by arm, exactly as `imageConstraints` does:
  * `contentModeration` on the two gen4 arms, OpenAI's `quality` / `background`
- * on the `gpt_image_2` arm (with `"transparent"` absent, same as at OpenAI
- * itself), `grounding` on the seedream5 pair, and `quality` / `edit` on Grok.
+ * on the GPT Image arms (`"transparent"` only where the arm offers it, plus
+ * `reasoningEffort` on 2.6), `grounding` on the seedream5_pro / lite pair,
+ * `quality` / `edit` on Grok, `quality` on the Ideogram arms and
+ * `thinkingLevel` on nano_banana_2.1. `ideogram_vector` has no sizes at all —
+ * its only `ratio` is `"auto"` — so its row declares none.
  */
 export const GEN4_SIZES = [
   "1024x1024", "1080x1080", "1168x880", "1360x768", "1440x1080", "1080x1440",
@@ -110,9 +131,60 @@ export const GEMINI_2_5_FLASH_SIZES = [
   "832x1248", "1248x832", "896x1152", "1152x896",
 ] as const;
 
+export const MUSE_IMAGE_SIZES = [
+  "2352x1008", "2016x1152", "1920x1280", "1792x1344", "1600x1600", "1344x1792",
+  "1280x1920", "1152x2016",
+] as const;
+
+export const GEMINI_IMAGE3_1_FLASH_LITE_SIZES = [
+  "1024x1024", "848x1264", "1264x848", "896x1200", "1200x896", "928x1152",
+  "1152x928", "768x1376", "1376x768", "1584x672",
+] as const;
+
+export const NANO_BANANA_2_1_SIZES = [
+  ...GEMINI_IMAGE3_1_FLASH_LITE_SIZES,
+  "512x2064", "2064x512",
+  "352x2928", "2928x352", "2048x2048", "1696x2528", "2528x1696", "1792x2400",
+  "2400x1792", "1856x2304", "2304x1856", "1536x2752", "2752x1536", "3168x1344",
+  "1024x4128", "4128x1024", "704x5856", "5856x704", "4096x4096", "3392x5056",
+  "5056x3392", "3584x4800", "4800x3584", "3712x4608", "4608x3712", "3072x5504",
+  "5504x3072", "6336x2688", "2048x8256", "8256x2048", "1408x11712", "11712x1408",
+] as const;
+
+export const BRIA_FIBO_1_5_SIZES = [
+  "1024x1024", "768x1152", "1152x768", "768x1024", "1024x768", "768x960",
+  "960x768", "576x1024", "1024x576", "2048x2048", "1536x2304", "2304x1536",
+  "1536x2048", "2048x1536", "1536x1920", "1920x1536", "1152x2048", "2048x1152",
+] as const;
+
+export const IDEOGRAM_4_0_SIZES = [
+  "2048x2048", "2560x1440", "1440x2560", "2304x1728", "1728x2304", "2496x1664",
+  "1664x2496", "3072x1280", "1280x3072",
+] as const;
+
+export const IDEOGRAM_4_5_SIZES = [
+  "1024x1024", "1280x720", "720x1280", "1152x864", "864x1152", "1248x832",
+  "832x1248", "1120x896", "896x1120", "1440x720", "720x1440", "2048x2048",
+  "2560x1440", "1440x2560", "2304x1728", "1728x2304", "2496x1664", "1664x2496",
+  "2240x1792", "1792x2240", "2880x1440", "1440x2880", "1024x576", "576x1024",
+  "1408x704", "704x1408",
+] as const;
+
+export const SEEDREAM5_FLASH_SIZES = [
+  "1024x1024", "1184x896", "896x1184", "1376x768", "768x1376", "1248x832",
+  "832x1248", "1568x672", "2048x2048", "2304x1728", "1728x2304", "2848x1600",
+  "1600x2848", "2496x1664", "1664x2496", "3136x1344",
+] as const;
+
 export const CONTENT_MODERATION = {
   contentModeration: EXTRA as { publicFigureThreshold?: "auto" | "low" },
 } as const;
+
+/** The GPT Image 2.5 pair's five-step `quality`. */
+type GptImage25Quality = "low" | "medium" | "high" | "xhigh" | "max";
+
+/** `quality` on the gpt_image_2_6 pair and ideogram_4_0 / ideogram_vector. */
+type LowMediumHigh = "low" | "medium" | "high";
 
 export const RUNWAY_IMAGE_MODEL_PARAMS = {
   gen4_image: { sizes: GEN4_SIZES, tiers: ["1k"], extras: CONTENT_MODERATION },
@@ -149,4 +221,55 @@ export const RUNWAY_IMAGE_MODEL_PARAMS = {
     extras: { quality: EXTRA as "low" | "medium", edit: EXTRA as boolean },
   },
   "gemini_2.5_flash": { sizes: GEMINI_2_5_FLASH_SIZES, tiers: ["1k"] },
+  muse_image: { sizes: MUSE_IMAGE_SIZES, tiers: ["2k"] },
+  "gemini_image3.1_flash_lite": { sizes: GEMINI_IMAGE3_1_FLASH_LITE_SIZES, tiers: ["1k"] },
+  "nano_banana_2.1": {
+    sizes: NANO_BANANA_2_1_SIZES,
+    tiers: ["1k", "2k", "4k"],
+    extras: { thinkingLevel: EXTRA as "minimal" | "medium" | "high" },
+  },
+  gpt_image_2_5_flare: {
+    sizes: RUNWAY_GPT_IMAGE_2_SIZES,
+    tiers: ["1k", "2k", "4k"],
+    extras: { quality: EXTRA as GptImage25Quality, background: EXTRA as "opaque" | "auto" },
+  },
+  gpt_image_2_5_sunburst: {
+    sizes: RUNWAY_GPT_IMAGE_2_SIZES,
+    tiers: ["1k", "2k", "4k"],
+    extras: {
+      quality: EXTRA as GptImage25Quality,
+      background: EXTRA as "transparent" | "opaque" | "auto",
+    },
+  },
+  gpt_image_2_6_flare: {
+    sizes: RUNWAY_GPT_IMAGE_2_SIZES,
+    tiers: ["1k", "2k", "4k"],
+    extras: {
+      quality: EXTRA as LowMediumHigh,
+      background: EXTRA as "transparent" | "opaque" | "auto",
+      reasoningEffort: EXTRA as LowMediumHigh,
+    },
+  },
+  gpt_image_2_6_sunburst: {
+    sizes: RUNWAY_GPT_IMAGE_2_SIZES,
+    tiers: ["1k", "2k", "4k"],
+    extras: {
+      quality: EXTRA as LowMediumHigh,
+      background: EXTRA as "transparent" | "opaque" | "auto",
+      reasoningEffort: EXTRA as LowMediumHigh,
+    },
+  },
+  bria_fibo_1_5: { sizes: BRIA_FIBO_1_5_SIZES, tiers: ["1k", "2k"] },
+  ideogram_4_0: {
+    sizes: IDEOGRAM_4_0_SIZES,
+    tiers: ["2k"],
+    extras: { quality: EXTRA as LowMediumHigh },
+  },
+  ideogram_4_5: {
+    sizes: IDEOGRAM_4_5_SIZES,
+    tiers: ["1k", "2k"],
+    extras: { quality: EXTRA as "very_low" | LowMediumHigh },
+  },
+  ideogram_vector: { extras: { quality: EXTRA as LowMediumHigh } },
+  seedream5_flash: { sizes: SEEDREAM5_FLASH_SIZES, tiers: ["1k", "2k"] },
 } as const satisfies ModelParamTable;

@@ -256,3 +256,82 @@ describe("runway.video documented enum coverage", () => {
     }
   });
 });
+
+describe("runway.video — Kling, WAN, H3 Max, Grok Lite and Gemini Omni 1.x arms", () => {
+  const TEXT = "a fox runs";
+  const CLIP = "https://example.com/clip.mp4";
+
+  test.each([
+    ["kling2.5_turbo_pro", { promptText: TEXT, ratio: "1920:1080", duration: 10 }, 1.2],
+    ["kling3.0_standard", { ratio: "1280:720", duration: 5, audio: false }, 0.45],
+    ["klingO3_pro", { ratio: "1440:1440", duration: 5 }, 0.85],
+    // kling_4's documented tiers: 940:940 is 720p, 1440:1440 is 1080p.
+    ["kling_4", { promptText: TEXT, ratio: "940:940", duration: 5 }, 0.79],
+    ["kling_4", { promptText: TEXT, ratio: "1440:1440", duration: 5 }, 1.18],
+    ["kling_4_flash", { promptText: TEXT, ratio: "1464:628", duration: 5 }, 0.47],
+    ["wan3", { promptText: TEXT, duration: 5 }, 1],
+    ["wan3_prime", { promptText: TEXT, ratio: "624:624", duration: 5 }, 0.34],
+    ["h3_max", { promptText: TEXT, resolution: "768p", duration: 6 }, 0.48],
+    ["grok_imagine_1_5_lite", { promptText: TEXT, ratio: "1904:1072", duration: 5 }, 0.7],
+    ["grok_imagine_1_5_lite", { promptText: TEXT, duration: 5 }, 0.1],
+    // 1080p: 15 credits/s + 1 per reference image.
+    [
+      "gemini_omni_flash_1.1",
+      { promptText: TEXT, ratio: "1920:1080", duration: 4, references: [{ uri: "https://example.com/a.png" }] },
+      0.61,
+    ],
+    ["gemini_omni_flash_1.2", { promptText: TEXT, ratio: "3840:2160", duration: 3 }, 0.63],
+  ] as const)("%s validates warning-free and prices (%o)", (model, extra, usd) => {
+    const r = safeUnchecked({ model, ...extra });
+    expect(r.ok, JSON.stringify(r)).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([]);
+    expect(r.estimate.costUSD).toBeCloseTo(usd, 10);
+  });
+
+  test("the Kling 3.0 / O3 arms require ratio, not promptText", () => {
+    const none = safeUnchecked({ model: "kling3.0_4k", duration: 5 });
+    expect(none.ok).toBe(false);
+    if (!none.ok) expect(none.errors[0]).toMatchObject({ code: "invalid_shape", path: ["ratio"] });
+    expect(safeUnchecked({ model: "kling3.0_4k", ratio: "2880:2880" }).ok).toBe(true);
+    // …and each variant takes its own sizes only.
+    const pro = safeUnchecked({ model: "klingO3_pro", ratio: "1280:720" });
+    expect(pro.ok).toBe(false);
+    if (!pro.ok) expect(pro.errors[0]?.code).toBe("invalid_enum_value");
+  });
+
+  test("kling2.5_turbo_pro runs 5 or 10 seconds", () => {
+    const r = safeUnchecked({ model: "kling2.5_turbo_pro", promptText: TEXT, duration: 7 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.allowed).toEqual([5, 10]);
+  });
+
+  test("Gemini Omni Flash 1.x reference videos are bare { uri } items; seedance's carry type", () => {
+    expect(
+      safeUnchecked({ model: "gemini_omni_flash_1.2", promptText: TEXT, referenceVideos: [{ uri: CLIP }] }).ok,
+    ).toBe(true);
+    const typed = safeUnchecked({
+      model: "gemini_omni_flash_1.1",
+      promptText: TEXT,
+      referenceVideos: [{ type: "video", uri: CLIP }],
+    });
+    expect(typed.ok).toBe(false);
+    const untyped = safeUnchecked({ model: "seedance2", promptText: TEXT, referenceVideos: [{ uri: CLIP }] });
+    expect(untyped.ok).toBe(false);
+    if (!untyped.ok) {
+      expect(untyped.errors[0]).toMatchObject({ code: "invalid_shape", path: ["referenceVideos", 0, "type"] });
+    }
+  });
+
+  test("kling_4 takes no audio and grok_imagine_1_5_lite no references", () => {
+    const audio = safeUnchecked({ model: "kling_4", promptText: TEXT, audio: true });
+    expect(audio.ok).toBe(false);
+    if (!audio.ok) expect(audio.errors[0]).toMatchObject({ code: "unsupported_param", path: ["audio"] });
+    const refs = safeUnchecked({
+      model: "grok_imagine_1_5_lite",
+      promptText: TEXT,
+      references: [{ uri: "https://example.com/a.png" }],
+    });
+    expect(refs.ok).toBe(false);
+  });
+});

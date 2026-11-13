@@ -272,6 +272,33 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     expect(result.errors[0]!.message).toEndWith("(compiled from `size`)");
   });
 
+  test("runway's per-model outputFormat enum, reported at `outputFormat`", () => {
+    // WebP reaches the wire — muse_image returns it — and seedream5_pro's own
+    // png/jpeg enum is what refuses it there.
+    const muse = image({
+      model: "runway/muse_image",
+      prompt: "a lighthouse in fog",
+      outputFormat: "webp",
+    }) as unknown as Record<string, unknown>;
+    expect(muse["outputFormat"]).toBe("webp");
+    const seedream = image.safe({
+      model: "runway/seedream5_pro",
+      prompt: "a lighthouse in fog",
+      outputFormat: "webp",
+    });
+    expect(seedream.ok).toBe(false);
+    if (seedream.ok) return;
+    expect(seedream.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["outputFormat"] });
+  });
+
+  test("runway's optional-ratio arms get no invented size when none was asked for", () => {
+    const result = image.safe({ model: "runway/ideogram_4_0", prompt: "a lighthouse in fog" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect("ratio" in (result.params as unknown as Record<string, unknown>)).toBe(false);
+    expect(result.params.warnings).toEqual([]);
+  });
+
   test("leonardo's per-model dimension cap, reported at `aspectRatio`", () => {
     // `as never`: Phoenix's `tiers` is `["1k", "2k"]`, so `"4k"` no longer
     // compiles — the narrowing catching this at the call site is the point,

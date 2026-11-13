@@ -64,8 +64,11 @@ export type {
   RunwayAudioReference,
   RunwayVideoReference,
   RunwayImageReference,
+  RunwayPositionedReference,
+  RunwayProviderSettings,
   RunwayContentModeration,
   ModelShapeRules,
+  PairingRule,
 } from "./shared";
 
 export type {
@@ -75,6 +78,7 @@ export type {
   RunwayImageRatio,
   RunwayImageQuality,
   RunwayImageOutputFormat,
+  RunwayRatioTier,
 } from "./constraints";
 
 export type { VideoRoute } from "./pricing";

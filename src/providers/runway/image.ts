@@ -5,15 +5,19 @@
  * spec version 2024-11-06, and @runwayml/sdk on 2026-08-13):
  * - Every request must send the `X-Runway-Version: 2024-11-06` header; it is
  *   included in `.request.headers`.
- * - `promptText` and `ratio` are required by every model's arm;
- *   gen4_image_turbo additionally requires `referenceImages` (1–3 images).
- * - Reference-image sub-fields vary per model (`tag` for the gen4 / gpt_image_2
- *   / gemini arms, `subject` only for the gemini_image3 family, bare `uri` for
- *   the seedream and grok arms). The schema accepts the superset; the
- *   shape-rules table rejects a sub-field the chosen model has no schema for.
- * - `referenceImages` counts are capped per model (3 for gen4/grok/gemini_2.5,
- *   10 for seedream5_pro, 14 for the gemini_image3 family and seedream5_lite,
- *   16 for gpt_image_2), as is `promptText` (1000–32000 chars).
+ * - `promptText` and `ratio` are required per model, not by the route:
+ *   most arms require both, bria_fibo_edit_1_5 and the Ideogram arms make
+ *   `ratio` optional, and seedream5_pro_layers (a layer decomposition)
+ *   requires only its one source image. gen4_image_turbo additionally
+ *   requires `referenceImages` (1–3 images).
+ * - Reference-image sub-fields vary per model (`tag` for the gen4 / GPT
+ *   Image / gemini / nano_banana_2.1 arms, `subject` only for the
+ *   gemini_image3 family, bare `uri` everywhere else). The schema accepts the
+ *   superset; the shape-rules table rejects a sub-field the chosen model has
+ *   no schema for.
+ * - `referenceImages` counts are capped per model (1 on bria_fibo_1_5 and
+ *   ideogram_4_0, 16 on the GPT Image arms), as is `promptText` (up to 45000
+ *   chars on the gemini_image3.1 arms and nano_banana_2.1).
  * - The endpoint only starts a task and responds `{ id }`; polling
  *   GET /v1/tasks/{id} is out of unmodel's scope.
  * - Auth is `Authorization: Bearer <RUNWAYML_API_SECRET>` — unmodel never
@@ -72,32 +76,68 @@ export interface RunwayReferenceImage {
 
 export interface TextToImageParams {
   model: RunwayImageModelId | (string & {});
-  /** Required by every model; length caps vary (1000–32000 chars). */
-  promptText: string;
   /**
-   * Output ratio "W:H" (or auto/auto_1k/auto_2k where supported). The union
-   * spans every model's documented list; each model accepts only its own
-   * slice, narrowed at runtime by `imageConstraints`.
+   * Required by every model but seedream5_pro_layers (where it describes how
+   * to split the image); length caps vary (up to 45000 chars).
    */
-  ratio: RunwayImageRatio;
-  /** gen4_image / gen4_image_turbo only. Integer 0–4294967295. */
+  promptText?: string;
+  /**
+   * Output ratio "W:H" (or auto/auto_1k/auto_2k where supported). Required by
+   * most models; optional on bria_fibo_edit_1_5 and the Ideogram arms, absent
+   * on seedream5_pro_layers. The union spans every model's documented list;
+   * each model accepts only its own slice, narrowed at runtime by
+   * `imageConstraints`.
+   */
+  ratio?: RunwayImageRatio;
+  /**
+   * gen4_image / gen4_image_turbo (0–4294967295) and the FIBO /
+   * ideogram_vector arms (0–2147483647) only.
+   */
   seed?: number;
-  /** gpt_image_2 ("low" … "auto") / grok_imagine_image_2 ("low" | "medium") only. */
+  /**
+   * gpt_image_2 ("low" … "auto"), the GPT Image 2.5 ("low" … "max") / 2.6
+   * ("low" … "high") arms, the Ideogram arms and grok_imagine_image_2
+   * ("low" | "medium").
+   */
   quality?: RunwayImageQuality;
-  /** gpt_image_2 only ("transparent" is not supported). */
-  background?: "opaque" | "auto";
+  /**
+   * The GPT Image arms; "transparent" on gpt_image_2_5_sunburst and the
+   * gpt_image_2_6 pair only.
+   */
+  background?: "transparent" | "opaque" | "auto";
   /** Number of output images; supported range varies per model. */
   outputCount?: number;
-  /** seedream5_pro / seedream5_lite only. */
+  /**
+   * seedream5 / FIBO / Pro Layers arms (png | jpeg), muse_image (+ webp)
+   * and the gpt_image_2_6 pair (+ webp, gif, svg).
+   */
   outputFormat?: RunwayImageOutputFormat;
   /** seedream5_pro / seedream5_lite only: live web-search grounding. */
   grounding?: boolean;
   /** grok_imagine_image_2 only. */
   edit?: boolean;
-  /** Reference images; count limits vary per model (3–16). */
+  /** Reference images; count limits vary per model (1–16). */
   referenceImages?: RunwayReferenceImage[];
   /** gen4_image / gen4_image_turbo only. */
   contentModeration?: RunwayContentModeration;
+  /** nano_banana_2.1 only. Defaults to `"medium"`. */
+  thinkingLevel?: "minimal" | "medium" | "high";
+  /** gpt_image_2_6_* only. Defaults to `"high"`; does not change the price. */
+  reasoningEffort?: "low" | "medium" | "high";
+  /** gpt_image_2_6_* GIF output only: 2–16 frames. */
+  frameCount?: number;
+  /** gpt_image_2_6_* GIF output only: 20–2000 ms per frame. */
+  frameDurationMs?: number;
+  /** ideogram_4_5 only: edit the first reference image. */
+  preciseEdit?: boolean;
+  /** ideogram_4_5 only: `"none"`, `"auto"` (needs `maskUri`) or `"top,left,bottom,right"`. */
+  contextWindow?: string;
+  /** ideogram_4_5 only: a black-and-white mask the size of the first reference image. */
+  maskUri?: string;
+  /** seedream5_pro_layers only. Defaults to `"auto"`. */
+  resolution?: "auto" | "1k" | "1.5k" | "2k";
+  /** seedream5_pro_layers only. Defaults to `"standard"`. */
+  optimizePromptMode?: "standard" | "fast";
 }
 
 /**
@@ -123,17 +163,29 @@ const referenceImageSchema = z.looseObject({
 
 const imageSchema = z.looseObject({
   model: z.string(),
-  promptText: z.string().min(1, "promptText must be a non-empty string"),
-  ratio: z.string(),
+  // Required, and its minimum length, per model (`imageRequired`,
+  // `imageShapeRules`): ideogram_vector takes any length up to 9500, and
+  // seedream5_pro_layers may omit it.
+  promptText: z.string().optional(),
+  ratio: z.string().optional(),
   seed: seedSchema.optional(),
   quality: z.string().optional(),
-  background: z.enum(["opaque", "auto"]).optional(),
+  background: z.enum(["transparent", "opaque", "auto"]).optional(),
   outputCount: z.number().int().optional(),
   outputFormat: z.string().optional(),
   grounding: z.boolean().optional(),
   edit: z.boolean().optional(),
   referenceImages: z.array(referenceImageSchema).optional(),
   contentModeration: contentModerationSchema.optional(),
+  thinkingLevel: z.string().optional(),
+  reasoningEffort: z.string().optional(),
+  frameCount: z.number().int().min(2).max(16).optional(),
+  frameDurationMs: z.number().int().min(20).max(2000).optional(),
+  preciseEdit: z.boolean().optional(),
+  contextWindow: z.string().optional(),
+  maskUri: imageUriSchema.optional(),
+  resolution: z.string().optional(),
+  optimizePromptMode: z.string().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -149,6 +201,10 @@ function estimate(params: TextToImageParams, info: ModelInfo | undefined, _ctx: 
     quality: params.quality,
     outputCount: params.outputCount,
     referenceCount: params.referenceImages?.length ?? 0,
+    outputFormat: params.outputFormat,
+    frameCount: params.frameCount,
+    preciseEdit: params.preciseEdit,
+    resolution: params.resolution,
   });
   return costUSD === undefined ? {} : { costUSD };
 }

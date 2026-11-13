@@ -6,7 +6,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1443 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1437 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -576,16 +576,12 @@ export const CHAT_MODEL_REFS = [
   "openai/gpt-5",
   "openai/gpt-5-mini",
   "openai/gpt-5-nano",
-  "openai/gpt-5-pro",
   "openai/gpt-5.1",
   "openai/gpt-5.2",
-  "openai/gpt-5.2-pro",
   "openai/gpt-5.4",
   "openai/gpt-5.4-mini",
   "openai/gpt-5.4-nano",
-  "openai/gpt-5.4-pro",
   "openai/gpt-5.5",
-  "openai/gpt-5.5-pro",
   "openai/gpt-5.6",
   "openai/gpt-5.6-luna",
   "openai/gpt-5.6-sol",
@@ -596,10 +592,8 @@ export const CHAT_MODEL_REFS = [
   "openai/gpt-6.1-sol",
   "openai/gpt-6.1-terra",
   "openai/o1",
-  "openai/o1-pro",
   "openai/o3",
   "openai/o3-mini",
-  "openai/o3-pro",
   "openai/o4-mini",
   "openrouter/aion-labs/aion-2.0",
   "openrouter/aion-labs/aion-3.0",

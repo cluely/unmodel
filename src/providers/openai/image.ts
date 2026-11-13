@@ -63,7 +63,21 @@ interface GptImageBaseBody {
   quality?: "auto" | "low" | "medium" | "high" | null;
   size?: (typeof GPT_IMAGE_1_SIZE_VALUES)[number] | null;
   stream?: boolean | null;
+  /**
+   * @deprecated Use `safety_identifier` — "Deprecated: use `safety_identifier`
+   * instead. This parameter remains accepted for backward compatibility and is
+   * used when `safety_identifier` is omitted, null, or empty." (images/create
+   * reference, 2026-11-13).
+   */
   user?: string;
+  /**
+   * "A stable identifier for an end user in your organization, used for safety
+   * monitoring and abuse detection. … A non-empty value takes precedence over
+   * the deprecated `user` parameter." `maxLength: 128`. The reference scopes it
+   * to no model, so every GPT image arm carries it (images/create reference,
+   * 2026-11-13).
+   */
+  safety_identifier?: string | null;
   /** dall-e only — GPT image models always return base64. */
   response_format?: never;
   /** dall-e-3 only. */
@@ -161,13 +175,18 @@ interface GptImage26BaseBody extends Omit<GptImage25BaseBody, "output_format"> {
   frame_count?: number | null;
   /** Milliseconds per GIF frame, at least 20 (default 200). Only with `output_format: "gif"`. */
   frame_duration_ms?: number | null;
-  /** SVG generation settings — the model that writes the markup and its reasoning effort. */
+  /**
+   * SVG generation settings — the model that writes the markup and its
+   * reasoning effort. `svg.reasoning` is "optional object { effort } or null"
+   * and `effort` "optional "none" or "minimal" or "low" or 4 more or null" —
+   * `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`; "Supported
+   * efforts depend on the selected author model." (images/create reference,
+   * 2026-11-13).
+   */
   svg?: {
     model?: string;
-    reasoning?: { effort?: "none" | "low" | "medium" | "high" | "xhigh" | "max" };
+    reasoning?: { effort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | null } | null;
   } | null;
-  /** Stable end-user identifier, at most 128 characters; the reference deprecates `user` in its favour. */
-  safety_identifier?: string | null;
 }
 
 export interface GptImage26SunburstBody extends GptImage26BaseBody {
@@ -295,19 +314,24 @@ const imageSchema = z.looseObject({
   stream: z.boolean().nullable().optional(),
   style: z.string().nullable().optional(),
   user: z.string().optional(),
-  // GPT-Image-2.6 additions (images/create reference, 2026-11-12); the
-  // per-model enum rows refuse them where a model's page does not list them.
+  safety_identifier: z.string().max(128).nullable().optional(),
+  // GPT-Image-2.6 additions (images/create reference, 2026-11-12). The Tier-A
+  // arms type them only on the 2.6 ids, where the guide and changelog document
+  // them. At runtime `output_format: "gif" | "svg"` is enum-refused on the
+  // pre-2.6 rows, so checkGifAndSvgOutput refuses `frame_count` /
+  // `frame_duration_ms` there too (both need gif). `complexity` and `svg` pass
+  // through on other models: no page scopes them to a model, so a runtime deny
+  // would be an undocumented narrowing.
   complexity: z.string().nullable().optional(),
   frame_count: z.number().int().min(2).max(16).nullable().optional(),
   frame_duration_ms: z.number().int().min(20).nullable().optional(),
   svg: z
     .looseObject({
       model: z.string().optional(),
-      reasoning: z.looseObject({ effort: z.string().optional() }).optional(),
+      reasoning: z.looseObject({ effort: z.string().nullable().optional() }).nullable().optional(),
     })
     .nullable()
     .optional(),
-  safety_identifier: z.string().max(128).nullable().optional(),
 });
 
 /**

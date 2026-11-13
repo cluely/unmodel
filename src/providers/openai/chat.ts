@@ -107,7 +107,15 @@ export type NonChatModelId =
   // `gpt-daybreak-red-latest` → gpt-5.6-cyber) are "| Chat Completions |
   // `v1/chat/completions` | Not supported |" on both model pages (2026-11-12),
   // and "Status: Deprecated" besides.
-  | `gpt-daybreak-${string}`;
+  | `gpt-daybreak-${string}`
+  // The pro models (`gpt-5-pro`, `gpt-5.2-pro`, `gpt-5.4-pro`, `gpt-5.5-pro`,
+  // `o1-pro`, `o3-pro`) are "| Chat Completions | `v1/chat/completions` | Not
+  // supported |" on every model page (2026-11-12) — "GPT-5.5 Pro is available
+  // for Responses API requests", "o3-pro is available in the Responses API
+  // only". Two arms, not `${string}-pro${string}`, so the type matches exactly
+  // what the runtime `/-pro(?:$|-)/` matches and no `-prompt…` id is caught.
+  | `${string}-pro`
+  | `${string}-pro-${string}`;
 
 /** Chat-capable subset of the generated openai text-model union. */
 export type OpenaiChatModelId = Exclude<OpenaiTextModelId, NonChatModelId>;
@@ -161,6 +169,13 @@ const NON_CHAT_ROUTES: readonly NonChatRoute[] = [
     // `gpt-daybreak-blue-latest`, `gpt-daybreak-red-latest`: deprecated
     // aliases of gpt-5.6-sol / gpt-5.6-cyber, Responses-only like codex.
     match: /^gpt-daybreak-/,
+    route: "POST /v1/responses",
+    instead: undefined,
+  },
+  {
+    // `gpt-5-pro`, `gpt-5.2-pro`, `gpt-5.4-pro`, `gpt-5.5-pro`, `o1-pro`,
+    // `o3-pro` and their dated snapshots: Responses-only on every model page.
+    match: /-pro(?:$|-)/,
     route: "POST /v1/responses",
     instead: undefined,
   },

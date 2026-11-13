@@ -57,6 +57,12 @@ const GPT_IMAGE_EXTRAS = {
   moderation: MODERATION,
   output_compression: OUTPUT_COMPRESSION,
   user: USER,
+  /**
+   * `user`'s successor ("Deprecated: use `safety_identifier` instead."), which
+   * both image references document for every model, `maxLength: 128`
+   * (2026-11-13). Every GPT row on either route spreads this table.
+   */
+  safety_identifier: EXTRA as string | null,
 } as const;
 
 /**

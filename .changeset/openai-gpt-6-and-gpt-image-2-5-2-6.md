@@ -18,9 +18,9 @@ openai: GPT-6 generation on `openai.chat`, GPT-Image-2.5 / 2.6 on `openai.image`
     Sol, Luna and GPT-6.1 Terra ("When reasoning effort is not `none`, remove
     `temperature`, `top_p`…"); the catalog's fixed-sampling refusal stands at
     every other effort.
-  - `prompt_cache_retention` is `24h`-only on `gpt-5.5`, `gpt-5.6`,
-    `gpt-5.6-sol` and the GPT-6 rows ("For `gpt-5.5`, `gpt-5.5-pro`, and
-    future models, only `24h` is supported.").
+  - `prompt_cache_retention` is `24h`-only on `gpt-5.5`, the four `gpt-5.6`
+    rows (`gpt-5.6`, `-sol`, `-luna`, `-terra`) and the GPT-6 rows ("For
+    `gpt-5.5`, `gpt-5.5-pro`, and future models, only `24h` is supported.").
 - `openai.image` and `openai.imageEdit` gain `gpt-image-2.5-sunburst`,
   `gpt-image-2.5-flare` (each with its `-2026-09-08` snapshot),
   `gpt-image-2.6-sunburst` and `gpt-image-2.6-flare` as hand catalog rows
@@ -29,7 +29,8 @@ openai: GPT-6 generation on `openai.chat`, GPT-Image-2.5 / 2.6 on `openai.image`
   `xhigh` and `max` quality levels; 2.5 shares gpt-image-2's free-form `size`
   bounds, 2.6's size is unchecked (no page states its rules). 2.6 adds
   `complexity`, `output_format: "gif" | "svg"`, `frame_count`,
-  `frame_duration_ms`, `svg` and `safety_identifier`, with the documented
+  `frame_duration_ms` and `svg` (author `model` plus `reasoning.effort`
+  `none` … `max`, `minimal` included, both levels nullable), with the documented
   pairings enforced (GIF controls only with GIF output; GIF: no streaming,
   partial images, mask or custom compression; SVG: `n` must be 1, no
   streaming, partial images or compression). Edits on 2.5 / 2.6 take `markup`,

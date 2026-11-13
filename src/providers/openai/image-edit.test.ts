@@ -55,6 +55,14 @@ describe("openai.imageEdit happy path", () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
     expect(DEFAULT_IMAGE_EDIT_MODEL_ID).toBe("gpt-image-2.5-sunburst");
+    // ...and the default's free-form size bounds hold without an explicit id.
+    const offGrid = imageEdit.safe({ image: png(), prompt: "x", size: "1000x1000" });
+    expect(offGrid.ok).toBe(false);
+    if (!offGrid.ok) {
+      expect(offGrid.errors[0]?.code).toBe("invalid_enum_value");
+      expect(offGrid.errors[0]?.path).toEqual(["size"]);
+      expect(offGrid.errors[0]?.model).toBe("gpt-image-2.5-sunburst");
+    }
   });
 
   test("up to 16 images pass, 17 do not", () => {
@@ -335,5 +343,30 @@ describe("openai.imageEdit GPT-Image-2.5 / 2.6", () => {
     expect(
       imageEdit.safe({ model: "gpt-image-2.6-flare", image: png(), prompt: "x", output_format: "svg" }).ok,
     ).toBe(true);
+  });
+
+  test("svg.reasoning takes `minimal` and a null reasoning object", () => {
+    for (const reasoning of [{ effort: "minimal" as const }, null]) {
+      const r = imageEdit.safe({
+        model: "gpt-image-2.6-flare",
+        image: png(),
+        prompt: "x",
+        output_format: "svg",
+        svg: { model: "gpt-5", reasoning },
+      });
+      expect(r.ok, JSON.stringify(reasoning)).toBe(true);
+    }
+  });
+});
+
+describe("openai.imageEdit safety_identifier", () => {
+  // Scoped to no model on the createEdit reference, `maxLength: 128`.
+  test("a pre-2.6 model takes it, and 129 characters is refused", () => {
+    expect(
+      imageEdit.safe({ model: "gpt-image-2.5-flare", image: png(), prompt: "x", safety_identifier: "user-1234" }).ok,
+    ).toBe(true);
+    const r = imageEdit.safe({ model: "gpt-image-1.5", image: png(), prompt: "x", safety_identifier: "u".repeat(129) });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["safety_identifier"]);
   });
 });

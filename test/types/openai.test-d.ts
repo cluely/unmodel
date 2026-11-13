@@ -172,6 +172,9 @@ function chatModelUnionTests(): void {
   expectTrue<IsNever<Extract<OpenaiChatModelId, "gpt-realtime-2.1">>>();
   expectTrue<IsNever<Extract<OpenaiChatModelId, `gpt-daybreak-${string}`>>>();
   expectTrue<IsNever<Extract<OpenaiChatModelId, "gpt-daybreak-blue-latest">>>();
+  // The Responses-only pro models.
+  expectTrue<IsNever<Extract<OpenaiChatModelId, "gpt-5.5-pro">>>();
+  expectTrue<IsNever<Extract<OpenaiChatModelId, "o3-pro">>>();
   // Chat-capable ids survive the exclusion.
   expectTrue<"gpt-4o" extends OpenaiChatModelId ? true : false>();
   expectTrue<"o3" extends OpenaiChatModelId ? true : false>();
@@ -234,6 +237,14 @@ function imagesTypeTests(): void {
   // GPT-Image-2.6 adds complexity and the gif / svg output formats.
   image({ model: "gpt-image-2.6-sunburst", prompt: "x", complexity: "low", output_format: "gif", frame_count: 8 });
   image({ model: "gpt-image-2.6-flare", prompt: "x", output_format: "svg", svg: { reasoning: { effort: "low" } } });
+  // svg.reasoning.effort lists `minimal`, and both levels are nullable (images/create reference).
+  image({ model: "gpt-image-2.6-flare", prompt: "x", output_format: "svg", svg: { model: "gpt-5", reasoning: { effort: "minimal" } } });
+  image({ model: "gpt-image-2.6-flare", prompt: "x", output_format: "svg", svg: { model: "gpt-5", reasoning: null } });
+  image({ model: "gpt-image-2.6-flare", prompt: "x", output_format: "svg", svg: { model: "gpt-5", reasoning: { effort: null } } });
+  // safety_identifier is scoped to no model on the reference: every GPT image arm takes it.
+  image({ model: "gpt-image-2", prompt: "x", safety_identifier: "u-1" });
+  image({ model: "gpt-image-2.5-sunburst", prompt: "x", safety_identifier: "u-1" });
+  image({ model: "gpt-image-1-mini", prompt: "x", safety_identifier: null });
   // @ts-expect-error — complexity is a 2.6 param
   image({ model: "gpt-image-2.5-sunburst", prompt: "x", complexity: "low" });
   // @ts-expect-error — gif output is a 2.6 format
@@ -521,6 +532,11 @@ function imageEditTypeTests(): void {
   // GPT-Image-2.5 edits take markup, the longer ladder and free-form sizes.
   imageEdit({ model: "gpt-image-2.5-sunburst", image: file, prompt: "x", markup: file, quality: "max", size: "1536x864" });
   imageEdit({ model: "gpt-image-2.6-flare", image: file, prompt: "x", complexity: "high", output_format: "gif" });
+  imageEdit({ model: "gpt-image-2.6-flare", image: file, prompt: "x", output_format: "svg", svg: { model: "gpt-5", reasoning: { effort: "minimal" } } });
+  // safety_identifier on every GPT edit arm, the model-less default included.
+  imageEdit({ model: "gpt-image-2.5-flare", image: file, prompt: "x", safety_identifier: "u-1" });
+  imageEdit({ model: "gpt-image-1.5", image: file, prompt: "x", safety_identifier: "u-1" });
+  imageEdit({ image: file, prompt: "x", safety_identifier: "u-1" });
   // @ts-expect-error — markup is a GPT-Image-2.5+ param
   imageEdit({ model: "gpt-image-1.5", image: file, prompt: "x", markup: file });
 

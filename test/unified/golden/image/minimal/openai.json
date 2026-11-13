@@ -4,5 +4,13 @@
     "model": "gpt-image-2",
     "prompt": "a lighthouse in fog"
   },
-  "url": "https://api.openai.com/v1/images/generations"
+  "url": "https://api.openai.com/v1/images/generations",
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
+  ]
 }

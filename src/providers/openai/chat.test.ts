@@ -547,7 +547,7 @@ describe("openai.chat constraintsFor", () => {
 /**
  * The substrate signpost, and the three-way agreement behind it.
  *
- * OpenAI serves eleven ids in its own catalog on routes that are not
+ * OpenAI serves seventeen ids in its own catalog on routes that are not
  * /v1/chat/completions, and models.dev files every one of them as text-out —
  * so before this check they validated clean and addressed the chat endpoint.
  * The fact is stated three times because three consumers need it in three
@@ -562,10 +562,16 @@ describe("openai.chat constraintsFor", () => {
  * unified half: no `openai/…` chat ref survives that is not a chat model.
  */
 describe("openai.chat non-chat route signpost", () => {
-  /** The eleven ids in the committed snapshot OpenAI does not serve here. */
+  /** The seventeen ids in the committed snapshot OpenAI does not serve here. */
   const NON_CHAT_IDS = [
     "gpt-5.3-codex",
     "gpt-5.3-codex-spark",
+    "gpt-5-pro",
+    "gpt-5.2-pro",
+    "gpt-5.4-pro",
+    "gpt-5.5-pro",
+    "o1-pro",
+    "o3-pro",
     "gpt-daybreak-blue-latest",
     "gpt-daybreak-red-latest",
     "text-embedding-3-large",
@@ -618,6 +624,21 @@ describe("openai.chat non-chat route signpost", () => {
     }
   });
 
+  test("the pro models are Responses-only too", () => {
+    // "| Chat Completions | `v1/chat/completions` | Not supported |" on all six
+    // model pages (2026-11-12); "o3-pro is available in the Responses API only".
+    for (const id of ["gpt-5-pro", "gpt-5.2-pro", "gpt-5.4-pro", "gpt-5.5-pro", "o1-pro", "o3-pro"] as const) {
+      const result = chat.safe({ model: id, messages: [userMessage("hi")] });
+      const signpost = result.warnings.find((issue) => issue.code === "unsupported_capability");
+      expect(signpost?.message, id).toContain("POST /v1/responses");
+    }
+    // The suffix match is exact: a dated snapshot is caught, a `-pro…` word is not.
+    const snapshot = chat.safe({ model: "o3-pro-2025-06-10", messages: [userMessage("hi")] });
+    expect(snapshot.warnings.some((issue) => issue.code === "unsupported_capability")).toBe(true);
+    const lookalike = chat.safe({ model: "gpt-5-prompt-tuned", messages: [userMessage("hi")] });
+    expect(lookalike.warnings.some((issue) => issue.code === "unsupported_capability")).toBe(false);
+  });
+
   test("the image and realtime families point at the surface that does serve them", () => {
     const image = chat.safe({ model: "gpt-image-1.5", messages: [userMessage("hi")] });
     expect(
@@ -638,7 +659,7 @@ describe("openai.chat non-chat route signpost", () => {
     }
   });
 
-  test("the runtime table and `chatScopeExclude` name the same eleven rows", async () => {
+  test("the runtime table and `chatScopeExclude` name the same seventeen rows", async () => {
     const overrides = (await Bun.file(
       new URL("../../../data/availability-overrides.json", import.meta.url).pathname,
     ).json()) as { chatScopeExclude: string[] };
@@ -826,7 +847,31 @@ describe("openai.chat GPT-6 rules", () => {
 
   test("prompt_cache_retention is 24h-only from gpt-5.5 on", () => {
     // "For `gpt-5.5`, `gpt-5.5-pro`, and future models, only `24h` is supported."
-    for (const id of ["gpt-5.5", "gpt-5.6", "gpt-6-astra", "gpt-6-luna"] as const) {
+    // "Future models" is read off the catalog: every chat-served row released
+    // on or after gpt-5.5, so a new row cannot slip past the narrowing. The
+    // Responses-only rows (gpt-5.5-pro, Daybreak) are signposted instead.
+    const cut = catalog["gpt-5.5"]?.releaseDate ?? "";
+    const signposted = (id: string): boolean =>
+      chat
+        .safe({ model: id, messages: [userMessage("hi")] })
+        .warnings.some((issue) => issue.code === "unsupported_capability" && issue.path[0] === "model");
+    const ids = Object.keys(catalog)
+      .filter((id) => catalog[id]?.modalities.output.includes("text"))
+      .filter((id) => (catalog[id]?.releaseDate ?? "") >= cut && !signposted(id))
+      .sort();
+    expect(ids).toEqual([
+      "gpt-5.5",
+      "gpt-5.6",
+      "gpt-5.6-luna",
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-6-astra",
+      "gpt-6-luna",
+      "gpt-6-sol",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+    ]);
+    for (const id of ids) {
       expect(
         chat.safe({ model: id, messages: [userMessage("hi")], prompt_cache_retention: "24h" }).ok,
         id,

@@ -87,7 +87,17 @@ interface GptImageEditBase {
   quality?: "auto" | "low" | "medium" | "high" | null;
   size?: "auto" | "1024x1024" | "1536x1024" | "1024x1536" | null;
   stream?: boolean | null;
+  /**
+   * @deprecated Use `safety_identifier` — "Deprecated: use `safety_identifier`
+   * instead." (createEdit reference, 2026-11-13).
+   */
   user?: string;
+  /**
+   * Stable end-user identifier for safety monitoring, `maxLength: 128`; "A
+   * non-empty value takes precedence over the deprecated `user` parameter."
+   * Scoped to no model (createEdit reference, 2026-11-13).
+   */
+  safety_identifier?: string | null;
   /** dall-e-2 only — GPT image models always return base64. */
   response_format?: never;
 }
@@ -182,11 +192,16 @@ interface GptImage26EditBase extends Omit<GptImage25EditBase, "output_format"> {
   complexity?: "low" | "medium" | "high" | null;
   frame_count?: number | null;
   frame_duration_ms?: number | null;
+  /**
+   * `reasoning` is "optional object { effort } or null" and `effort` lists
+   * `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` (createEdit
+   * reference, 2026-11-13). `effort: null` is typed as on generations, where
+   * the reference documents it for the same object.
+   */
   svg?: {
     model?: string;
-    reasoning?: { effort?: "none" | "low" | "medium" | "high" | "xhigh" | "max" };
+    reasoning?: { effort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | null } | null;
   } | null;
-  safety_identifier?: string | null;
 }
 
 export interface GptImage26SunburstEditBody extends GptImage26EditBase {
@@ -296,8 +311,16 @@ const imageEditSchema = z.looseObject({
   size: z.string().nullable().optional(),
   stream: z.boolean().nullable().optional(),
   user: z.string().optional(),
-  // GPT-Image-2.5 / 2.6 additions (createEdit reference, 2026-11-12); the
-  // per-model enum rows refuse them where a model's page does not list them.
+  safety_identifier: z.string().max(128).nullable().optional(),
+  // GPT-Image-2.5 / 2.6 additions (createEdit reference, 2026-11-12). The
+  // Tier-A arms type them only where the reference, guide and changelog
+  // document them (`markup` on 2.5 / 2.6, the rest on 2.6). At runtime
+  // `output_format: "gif" | "svg"` is enum-refused on the pre-2.6 rows, so
+  // checkGifAndSvgOutput refuses `frame_count` / `frame_duration_ms` there too
+  // (both need gif). `complexity` and `svg` pass through on other models: no
+  // page scopes them to a model, so a runtime deny would be an undocumented
+  // narrowing. `markup` passes through as well — "Supports GPT Image 2.5."
+  // says where it works, and no 400 elsewhere is on record.
   markup: blobSchema.optional(),
   complexity: z.string().nullable().optional(),
   frame_count: z.number().int().min(2).max(16).nullable().optional(),
@@ -305,11 +328,10 @@ const imageEditSchema = z.looseObject({
   svg: z
     .looseObject({
       model: z.string().optional(),
-      reasoning: z.looseObject({ effort: z.string().optional() }).optional(),
+      reasoning: z.looseObject({ effort: z.string().nullable().optional() }).nullable().optional(),
     })
     .nullable()
     .optional(),
-  safety_identifier: z.string().max(128).nullable().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -425,6 +447,11 @@ function checkUploads(
 
 const checkPromptLimit = createPromptLimitCheck(DEFAULT_IMAGE_EDIT_MODEL_ID);
 
+/** The shared free-form size check, run against the documented server default when `model` is omitted. */
+function checkSize(params: AnyImageEditBody, info: ModelInfo | undefined, ctx: PipelineContext): void {
+  checkGptImage2Size({ ...params, model: params.model ?? DEFAULT_IMAGE_EDIT_MODEL_ID }, info, ctx);
+}
+
 // ---------------------------------------------------------------------------
 // Multipart body
 // ---------------------------------------------------------------------------
@@ -488,7 +515,7 @@ const validator = createValidator<AnyImageEditBody, unknown>({
     checkImageCount,
     checkUploads,
     checkMarkupWithoutMask,
-    checkGptImage2Size,
+    checkSize,
     checkTransparentOutputFormat,
     checkGifAndSvgOutput,
     checkPromptLimit,

@@ -32,5 +32,13 @@
         "source": "https://developers.openai.com/api/docs/guides/image-generation"
       }
     }
+  ],
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
   ]
 }

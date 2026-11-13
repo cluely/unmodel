@@ -19,7 +19,7 @@
  *
  * Two families of name live here, and `docs/decisions.md` §2 is why:
  *
- * - the **wire names** (`ChatCompletionsBody`, `ImagesBody`, `GptImage1Body`,
+ * - the **wire names** (`ChatCompletionsBody`, `ImagesBody`, `GptImage2Body`,
  *   …) — re-exported verbatim, because they are how you find the endpoint in
  *   the provider's own documentation;
  * - the **uniform category aliases** (`ChatBody`, `ImageBody`,

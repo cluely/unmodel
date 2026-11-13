@@ -5,5 +5,13 @@
     "prompt": "a lighthouse in fog",
     "size": "1360x768"
   },
-  "url": "https://api.openai.com/v1/images/generations"
+  "url": "https://api.openai.com/v1/images/generations",
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
+  ]
 }

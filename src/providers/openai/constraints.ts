@@ -735,8 +735,11 @@ const GPT6_REASONING_EFFORTS = ["none", ...GPT6_REASONING_EFFORTS_WITHOUT_NONE] 
 /**
  * "For `gpt-5.5`, `gpt-5.5-pro`, and future models, only `24h` is supported."
  * — chat/create reference on `prompt_cache_retention` (itself "Deprecated. Use
- * `prompt_cache_options.ttl` instead."), read 2026-11-12. Applied to the two
- * ids the sentence names and to the models released after them.
+ * `prompt_cache_options.ttl` instead."), read 2026-11-12. Applied to `gpt-5.5`
+ * and to every chat model released after it (the four gpt-5.6 rows of
+ * 2026-07-09 and the GPT-6 rows). `gpt-5.5-pro` gets no row: it is
+ * Responses-only, so `openai.chat` signposts the model itself (NON_CHAT_ROUTES
+ * in ./chat.ts) rather than narrowing a param on a route that does not serve it.
  */
 const PROMPT_CACHE_RETENTION_24H_ONLY = ["24h"] as const;
 
@@ -790,6 +793,8 @@ export const chatConstraints = {
   "gpt-5.5": { enums: RETENTION_24H_ENUMS },
   "gpt-5.6": { enums: RETENTION_24H_ENUMS },
   "gpt-5.6-sol": { enums: RETENTION_24H_ENUMS },
+  "gpt-5.6-luna": { enums: RETENTION_24H_ENUMS },
+  "gpt-5.6-terra": { enums: RETENTION_24H_ENUMS },
   "gpt-6-astra": { enums: GPT6_WITHOUT_NONE_ENUMS },
   "gpt-6.1-sol": { enums: GPT6_WITHOUT_NONE_ENUMS },
   "gpt-6-sol": { enums: GPT6_ENUMS },

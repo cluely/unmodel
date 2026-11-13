@@ -63,14 +63,14 @@
  * image of the mistake. It is documented here because it is the one thing about
  * this endpoint that surprises people, and it costs money.
  *
- * # Negative prompt is Phoenix-only, so it is a compile-time decision
+ * # Negative prompt depends on the model, so it is a compile-time decision
  *
- * `negative_prompt` (with a 1000-character cap) is in `PHOENIX_PARAMETERS` and
- * not in `LUCID_PARAMETERS`, and `checkParameters` reports a Lucid request
- * carrying it as `unsupported_param` — "it belongs to another model on this
- * endpoint". Because the answer depends on the model, it cannot go in
- * `unsupported` (which is model-blind); it is a `ctx.fail` naming the two
- * Phoenix ids that can serve it.
+ * `negative_prompt` (with a 1000-character cap) is in the Phoenix and Elements
+ * parameter lists and not in `LUCID_PARAMETERS`, and `checkParameters` reports
+ * a Lucid request carrying it as `unsupported_param` — "it belongs to other
+ * models on this endpoint". Because the answer depends on the model, it cannot
+ * go in `unsupported` (which is model-blind); it is a `ctx.fail` naming every
+ * tabled id that can serve it.
  *
  * `seed` is a plain nested pass-through. `outputFormat` and `outputDelivery`
  * have no field anywhere on this endpoint — the POST returns a generation id
@@ -122,8 +122,8 @@ function hasNegativePrompt(model: string): boolean {
  * `parameters` — the loose arm of Leonardo's per-model parameter objects.
  *
  * Loose because it is only ever the *compiled* subset: `mode`, `style_ids`,
- * `guidances` and the Phoenix extras are reachable through `providerOptions`
- * and are checked, per model, by `checkParameters`.
+ * `guidances` and the Phoenix and Elements extras are reachable through
+ * `providerOptions` and are checked, per model, by `checkParameters`.
  */
 export interface LeonardoImageWireParameters {
   /** REQUIRED on every documented arm. */
@@ -135,7 +135,7 @@ export interface LeonardoImageWireParameters {
   /** 1–8. Leonardo's own default is 4. */
   quantity?: number;
   seed?: number;
-  /** Phoenix only; ≤ 1000 characters. */
+  /** Phoenix and Elements only; ≤ 1000 characters. */
   negative_prompt?: string;
   [key: string]: unknown;
 }
@@ -243,15 +243,16 @@ export const image = {
       if (hasNegativePrompt(ctx.model)) {
         parameters.negative_prompt = input.negativePrompt;
       } else {
+        const takers = MODELS.filter(hasNegativePrompt);
         ctx.fail({
           code: "unsupported_param",
           path: ["negativePrompt"],
           message:
-            "`negative_prompt` is part of the Phoenix `parameters` schema only; " +
-            `"${ctx.model}" does not accept it (the API answers with a schema error, not a ` +
-            "silent ignore). Use leonardo/phoenix-v1.0 or leonardo/phoenix-v0.9, or describe " +
-            "what to avoid inside `prompt`.",
-          meta: { value: input.negativePrompt, source: LEONARDO_DOCS_URL },
+            `\`negative_prompt\` is not part of "${ctx.model}"'s \`parameters\` schema (the API ` +
+            "answers with a schema error, not a silent ignore). Use one of " +
+            `${takers.map((id) => `leonardo/${id}`).join(", ")}, or describe what to avoid ` +
+            "inside `prompt`.",
+          meta: { value: input.negativePrompt, models: takers, source: LEONARDO_DOCS_URL },
         });
       }
     }

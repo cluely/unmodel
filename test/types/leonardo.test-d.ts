@@ -30,4 +30,30 @@ function generationsBodyAliasTypeTests(): void {
   void knownAsFuture;
 }
 
+function elementsArmTypeTests(): void {
+  // The Elements arm: Phoenix's keys plus transparency, the two Elements
+  // arrays and four more guidance kinds.
+  image({
+    model: "kino-xl",
+    parameters: {
+      prompt: "hi",
+      mode: "QUALITY",
+      contrast: "LOW",
+      transparency: true,
+      user_elements: [{ akUUID: "element-id", weight: 0.5 }],
+      guidances: { edge: [{ image: { id: "a" }, strength: "HIGH" }] },
+    },
+  });
+
+  // @ts-expect-error — the Elements models have no ULTRA mode
+  image({ model: "lightning-xl", parameters: { prompt: "hi", mode: "ULTRA" } });
+
+  // @ts-expect-error — transparency is Elements-only
+  image({ model: "phoenix-v1.0", parameters: { prompt: "hi", transparency: true } });
+
+  // @ts-expect-error — edge guidance is Elements-only
+  image({ model: "lucid-origin", parameters: { prompt: "hi", guidances: { edge: [] } } });
+}
+
 void generationsBodyAliasTypeTests;
+void elementsArmTypeTests;

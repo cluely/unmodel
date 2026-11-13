@@ -288,6 +288,29 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     expect(result.errors[0]!.message).toContain("2048");
   });
 
+  test("leonardo's negativePrompt reaches the models that take it, and names them where it cannot", () => {
+    const params = image({
+      model: "leonardo/kino-xl",
+      prompt: "a lighthouse in fog",
+      negativePrompt: "blurry",
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "kino-xl",
+      parameters: { prompt: "a lighthouse in fog", negative_prompt: "blurry" },
+    });
+
+    const refused = image.safe({
+      model: "leonardo/lucid-origin",
+      prompt: "a lighthouse in fog",
+      negativePrompt: "blurry",
+    });
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.errors[0]!.path).toEqual(["negativePrompt"]);
+    expect(refused.errors[0]!.message).toContain("leonardo/phoenix-v1.0");
+    expect(refused.errors[0]!.message).toContain("leonardo/kino-xl");
+  });
+
   test("a canonical-space failure stops before the provider validator runs", () => {
     const result = image.safe({
       model: "google/imagen-4.0-generate-001",

@@ -148,8 +148,8 @@ DALL·E (`image`, at /v1/images), google (Imagen 4 via `image` → `:predict`; N
 gemini-*-image via `chat`), black-forest-labs (FLUX.2 `image`, FLUX 1.x `imageFlux1`,
 Kontext — api.bfl.ai, `unmodel/black-forest-labs`), bria (`image` + `imageLite`, Fibo 2 / Fibo Lite),
 bytedance (`image`, Seedream on BytePlus ModelArk), kling (`image` + `imageOmni`), krea
-(`image`), leonardo (`image`, Lucid / Phoenix), recraft (`image`), ideogram (v3 `image` + v4
-`imageV4`), reve (`image` + `imageV2`), stability (Stable Image `image` / `imageCore` /
+(`image`), leonardo (`image`, Lucid / Phoenix / the nine Elements models — `kino-xl` …
+`lightning-xl`), recraft (`image`), ideogram (v3 `image` + v4 `imageV4`), reve (`image` + `imageV2`), stability (Stable Image `image` / `imageCore` /
 `imageSd3`), luma (Photon `image`), runway (`image`), vidu (`imageFromReference`),
 xai (Grok Imagine `image` at /v1/images/generations), azure (Microsoft Foundry MAI-Image-2.5
 family via the `createAzure(endpoint)` factory — deployment-name model field, so wire

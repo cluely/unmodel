@@ -5,13 +5,25 @@ export type {
   LucidRealismBody,
   PhoenixV1Body,
   PhoenixV09Body,
+  KinoXlBody,
+  AnimeXlBody,
+  PortraitPerfectBody,
+  StockPhotographyBody,
+  IllustrativeAlbedoBody,
+  ConceptArtBody,
+  LifelikeVisionBody,
+  GraphicDesignBody,
+  LightningXlBody,
   UnknownLeonardoModelBody,
   LeonardoLucidParameters,
   LeonardoPhoenixParameters,
+  LeonardoElementsParameters,
   LeonardoImageReference,
   LeonardoStyleGuidance,
   LeonardoContentGuidance,
+  LeonardoGuidance,
   LeonardoImageToImageGuidance,
+  LeonardoElement,
 } from "./image";
 
 export {
@@ -24,6 +36,7 @@ export {
   LEONARDO_STYLE_STRENGTHS,
   LEONARDO_GUIDANCE_STRENGTHS,
   LEONARDO_MAX_STYLE_IDS,
+  LEONARDO_MAX_ELEMENTS,
   LEONARDO_DEFAULT_STYLE_ID,
   LEONARDO_KNOWN_PARAMETERS,
 } from "./model-rules";

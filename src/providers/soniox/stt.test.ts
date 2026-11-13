@@ -213,6 +213,29 @@ describe("soniox.stt explicit null", () => {
     expect(viaFile.ok).toBe(true);
     if (viaFile.ok) expect(viaFile.estimate.costUSD).toBeCloseTo(0.1, 10);
 
+    const overCap = stt.safe(
+      { model: "stt-async-v6", audio_url: null, file_id: "0190dcd1-2c3a-7a8b-9c0d-112233445566" },
+      { media: [{ path: ["file_id"], durationSeconds: MAX_AUDIO_DURATION_SECONDS + 1 }] },
+    );
+    expect(overCap.ok).toBe(false);
+    if (!overCap.ok) {
+      expect(overCap.errors[0]?.code).toBe("media_duration_exceeded");
+      expect(overCap.errors[0]?.path).toEqual(["file_id"]);
+    }
+
+    // The exact-path match must pick file_id over a stale audio_url declaration.
+    const twoDecl = stt.safe(
+      { model: "stt-async-v6", audio_url: null, file_id: "0190dcd1-2c3a-7a8b-9c0d-112233445566" },
+      {
+        media: [
+          { path: ["audio_url"], durationSeconds: 3600 },
+          { path: ["file_id"], durationSeconds: 7200 },
+        ],
+      },
+    );
+    expect(twoDecl.ok).toBe(true);
+    if (twoDecl.ok) expect(twoDecl.estimate.costUSD).toBeCloseTo(0.2, 10);
+
     const none = stt.safe({ model: "stt-async-v6", audio_url: null, file_id: null });
     expect(none.ok).toBe(false);
     if (!none.ok) expect(none.errors[0]?.message).toContain("no audio source");

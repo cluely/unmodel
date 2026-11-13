@@ -161,7 +161,10 @@ model ids are catalogued, and `mistral.stt` rejects them by name), and fish-audi
 `transcribe-stream-1` (Preview, MessagePack-only `wss://api.fish.audio/v1/asr/realtime`).
 **TTS still to do (leaderboard order):** typecast,
 gradium, async, microsoft/azure, mistral (Voxtral TTS), boson-ai, neuphonic, amazon (Polly),
-nvidia (Magpie), zyphra. Also still to do: deepgram's Flux TTS `/v2/speak`
+nvidia (Magpie), zyphra; not on the leaderboard: soniox (`tts-rt-v2` on
+`POST https://tts-rt.soniox.com/tts` and the `wss://tts-rt.soniox.com/tts-websocket` socket,
+plus voice cloning on `POST /v1/voices`; "`tts-rt-v2` is available to all API customers",
+https://docs.soniox.com/tts/models, checked 2026-11-12). Also still to do: deepgram's Flux TTS `/v2/speak`
 (`POST https://api.deepgram.com/v2/speak` batch and the `wss://api.deepgram.com/v2/speak`
 socket, `flux-{voice}-{language}` voices, GA 2026-08-12 —
 https://developers.deepgram.com/docs/flux-tts/overview; `deepgram.tts` and

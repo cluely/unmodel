@@ -183,7 +183,7 @@ describe("soniox.realtimeTranscription bounds + model gate", () => {
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
 
-  test("stt-rt-v4 is flagged deprecated, and its v5-only knobs warn", () => {
+  test("stt-rt-v4 is flagged deprecated, and the v5/v6 endpoint-tuning knobs warn on it", () => {
     const r = realtimeTranscription.safe({
       model: "stt-rt-v4",
       audio_format: "auto",

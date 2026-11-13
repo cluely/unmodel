@@ -190,7 +190,7 @@ const AGENT_TEXT_INPUT_MODEL_IDS: ReadonlySet<string> = new Set(["stt-rt-v6"]);
 
 export interface RealtimeTranscriptionConfig {
   /**
-   * **Deprecated** — "Send the API key with the connection instead"
+   * @deprecated "Send the API key with the connection instead"
    * (WEBSOCKET_DOCS): the `Authorization: Bearer <key>` header, or
    * `["soniox-api-key", key]` as the WebSocket protocols list. "From
    * **15 January 2027** a connection that sends its key only there is

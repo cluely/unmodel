@@ -250,8 +250,15 @@ interface SurfaceRule {
  * https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/partner-models/use-partner-models
  * (2026-11-12): "Grok models use the OpenAI-compatible chat completions and
  * Responses APIs, so the request path uses endpoints/openapi ." — the same
- * `endpoints/openapi/chat/completions` route the MaaS page documents, with the
- * `xai/`-prefixed id in the body (`"model": "xai/grok-4.7"`).
+ * `endpoints/openapi/chat/completions` route
+ * https://docs.cloud.google.com/vertex-ai/generative-ai/docs/maas/call-open-model-apis
+ * (2026-11-13) documents, whose body `model` is publisher-prefixed ("for
+ * example `openai/gpt-oss-120b-maas`"). The `xai/grok-*` ids are models.dev's
+ * google-vertex row ids, copied verbatim. No Vertex page shows a Grok request
+ * body (the Grok page says only "For Grok 4.7, use `grok-4.7`"), so the
+ * prefixed body spelling is unverified. No body carries it today:
+ * google-vertex.chatMaas is factory-configured and unmodel ships no MaaS
+ * module, so every retarget onto it is a structural refusal.
  *
  * azure deliberately has **no** rule. It also serves Claude, but on a wire
  * surface nobody has verified, so those rows are denied rather than labelled

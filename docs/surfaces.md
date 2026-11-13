@@ -398,8 +398,8 @@ JSON.stringify(request);
 //    "prompt":"sharp fabric weave, natural skin texture"}
 ```
 
-Both narrowed fields are per model. `source` is a still at seven of the ten
-endpoints and a clip at three — `fal-ai/seedvr/upscale/image` and
+Both narrowed fields are per model. `source` is a still at seven of the eleven
+endpoints and a clip at four — `fal-ai/seedvr/upscale/image` and
 `fal-ai/seedvr/upscale/video` are one vendor's one product on two paths — and
 `factor` has three answers:
 

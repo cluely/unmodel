@@ -76,7 +76,20 @@ const chatConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = 
     // reasoning" — no mapped values for this group, so anything else falls
     // under "Setting values other than the above valid values and mapped
     // values will cause an error."
-    enums: { reasoning_effort: ["max", "high", "low"] },
+    //
+    // `top_p`: https://www.alibabacloud.com/help/en/model-studio/kimi-api
+    // (checked 2026-11-12), "Default parameters": "| kimi-k3 | true (can be
+    // disabled; keeping it enabled is recommended) | 1.0 | 0.95 | 0.0 | - |
+    // - |" (columns: enable_thinking, temperature, top_p, presence_penalty).
+    // The generated row's `temperature: false` makes this a fixed-sampling
+    // model, so only the documented default passes — here 0.95, not the
+    // generic 1. Corroborated by
+    // https://platform.kimi.ai/docs/api/models-overview (checked 2026-11-12):
+    // "The K3 series column applies to `kimi-k3`, …", "`top_p` | Fixed at
+    // `0.95`" and "passing any other value returns an error". `temperature`
+    // stays with the catalog check (1 passes); `presence_penalty` is
+    // documented here only as a default, so it is not pinned.
+    enums: { top_p: [0.95], reasoning_effort: ["max", "high", "low"] },
     deny: {
       parallel_tool_calls: {
         ignored: true,

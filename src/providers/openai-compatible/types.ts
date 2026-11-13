@@ -47,6 +47,7 @@ export type {
   ChatAssistantMessage,
   ChatAudioPart,
   ChatCompletionsBodyBase,
+  ChatCompletionsCheck,
   ChatConstraintSpec,
   ChatFinalizeSpec,
   ChatSdkTargets,

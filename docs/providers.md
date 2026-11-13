@@ -29,7 +29,7 @@ provider — not their quality ranking.
 | xai (grok) | llm, image, video, stt | openai-compatible (+anthropic-compat) | **oai-base** (chat) + native `image`/`video`/`videoEdit`/`videoExtend` (Grok Imagine, live) | ✅ (`xai`) | |
 | groq | inference (chat, Whisper STT, Orpheus TTS) | openai-compatible | **oai-base** (chat live) | ✅ | chat only. Groq also serves `/audio/transcriptions` + `/audio/translations` (Whisper) and `/audio/speech` (Orpheus); no unmodel validator covers them yet, so those ids are catalog rows only (checked 2026-11-12, https://console.groq.com/docs/speech-to-text, https://console.groq.com/docs/text-to-speech) |
 | cerebras | inference | openai-compatible | **oai-base** (live) | ✅ | |
-| openrouter | aggregator (400+ models) | openai-compatible | **oai-base** (live) | ✅ (349 models) | |
+| openrouter | aggregator (400+ models) | openai-compatible | **oai-base** (live) | ✅ | |
 | huggingface | aggregator (router.huggingface.co) | openai-compatible | **oai-base** (live) | ✅ | |
 | elevenlabs | tts (r11), stt (Scribe, r1), music, sfx, sts, dubbing | native | **native** (TTS+STT+music+sfx+sts+dubbing live; realtime configs live) | ✋ | per-character pricing; `textToSpeechStreamInput` + `speechToTextRealtime` validate the socket configs; `dub` + `dubLanguage` are wire-only (no `unmodel/dubbing` — see "Dubbing" below); `sts` (voice changer) is `MULTIPART_ONLY` — its `audio` is a required `Blob` |
 | cartesia | tts (Sonic, r6), stt (Ink) | native | **native** (TTS+STT live; realtime configs live) | ✋ | `ttsWebsocket` (generation message) + `sttWebsocket` (connection query set) |
@@ -51,6 +51,14 @@ Special cases — now **live as endpoint factories** (no provider-wide static UR
 **amazon-bedrock** (`createAmazonBedrock({ region })`, `chat` on the native Converse wire
 format).
 Still catalog-only: **replicate** (native API — until a native validator lands).
+
+**Open question — Kimi K3 sampling on hosts (2026-11-12).** The hosts that resell the
+Kimi K3 series under `temperature: false` rows (deepinfra, fireworks-ai, huggingface,
+nebius, novita-ai, nvidia, togetherai, vercel) inherit the generic fixed-sampling rule —
+`top_p` 1 only — so they refuse `top_p: 0.95`, the value Moonshot fixes for the series
+("`top_p` | Fixed at `0.95`", https://platform.kimi.ai/docs/api/models-overview) and that
+`moonshotai.chat` and `alibaba.chat` pin. No host page states its own rule, so none is
+pinned until host-level evidence exists.
 
 ## Wave 2 — model creators with first-party OpenAI-compatible APIs (oai-base)
 
@@ -971,7 +979,7 @@ leaves rather than whole validators.
 | `unmodel/image` | `image`, `createImage` | 17 | black-forest-labs, bria, bytedance, fal, google, ideogram, kling, krea, leonardo, luma, openai, recraft, reve, runway, stability, vidu, xai |
 | `unmodel/tts` | `tts`, `createTts` | 19 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume, inworld, lmnt, minimax, murf, openai, resemble, rime, smallest-ai, speechify, stepfun |
 | `unmodel/stt` | `stt`, `createStt` | 13 | assemblyai, cartesia, deepgram, elevenlabs, fal, gladia, google, inworld, mistral, openai, revai, soniox, speechmatics |
-| `unmodel/video` | `video`, `createVideo` | 13 | alibaba, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu, xai |
+| `unmodel/video` | `video`, `createVideo` | 14 | alibaba, atlascloud, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu, xai |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 5 | black-forest-labs, fal, ideogram, openai, recraft — the five whose primary editing route is *image + prompt, no mask* |
 | `unmodel/music` | `music`, `createMusic` | 5 | elevenlabs, fal, google, mureka, stability |
 | `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (2 models, `POST /v1/sound-generation`), fal (6 endpoints from five vendors, ElevenLabs' own among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |

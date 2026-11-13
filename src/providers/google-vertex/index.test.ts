@@ -286,6 +286,23 @@ describe("google-vertex Gemini 4 thinking (Vertex model pages, 2026-11-12)", () 
         generationConfig: { thinkingConfig: { thinkingLevel, includeThoughts: true } },
       });
       expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings, model).toEqual([]);
+    }
+  });
+
+  test("XHIGH off hydrogen is a warning naming the page's levels, never a refusal", () => {
+    for (const model of ["gemini-4-carbon", "gemini-4-argon"]) {
+      const r = vertex.chat.safe({
+        model,
+        contents: textContents("hi"),
+        generationConfig: { thinkingConfig: { thinkingLevel: "XHIGH" } },
+      });
+      expect(r.ok, model).toBe(true);
+      if (r.ok) {
+        expect(r.warnings.map((w) => w.code)).toEqual(["invalid_enum_value"]);
+        expect(r.warnings[0]?.path).toEqual(["generationConfig", "thinkingConfig", "thinkingLevel"]);
+        expect(r.warnings[0]?.meta?.documented).toEqual(["LOW", "MEDIUM", "HIGH"]);
+      }
     }
   });
 

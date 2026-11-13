@@ -1,11 +1,11 @@
 /**
- * `unmodel/upscale` → fal, across 10 endpoints.
+ * `unmodel/upscale` → fal, across 11 endpoints.
  *
  * # The row says which shape, and here it genuinely varies
  *
  * `unmodel/lipsync` and `unmodel/avatar` read the same `sources` field and
  * every row in each of those categories agrees with every other. This one does
- * not: seven rows say `["image"]` and three say `["video"]`, and two of them —
+ * not: seven rows say `["image"]` and four say `["video"]`, and two of them —
  * `fal-ai/seedvr/upscale/image` and `fal-ai/seedvr/upscale/video` — are the
  * same vendor's same product on two paths. So the adapter asks the row for the
  * wire name rather than knowing one, and a still sent to a clip route is
@@ -25,9 +25,9 @@
  *
  * # `prompt` is canonical and still per-model
  *
- * Three of the ten steer on one (`fal-ai/clarity-upscaler`,
+ * Three of the eleven steer on one (`fal-ai/clarity-upscaler`,
  * `topaz/upscale/image/generative`, `blackforestlabs/flux-video-upscale`) and
- * seven have no field for it. That is the shape `unmodel/video` has for
+ * eight have no field for it. That is the shape `unmodel/video` has for
  * `negative_prompt` and it gets the same treatment: the word is canonical
  * because it means the same thing wherever it exists, and the refusal names the
  * endpoint and counts its siblings rather than claiming "fal cannot do this".
@@ -35,7 +35,7 @@
  * # There is no adapter-wide `unsupported`
  *
  * Risk R7, and this is the category where it would have been most tempting and
- * most wrong: `seed` exists at three of the ten, `output_format` at five,
+ * most wrong: `seed` exists at three of the eleven, `output_format` at five,
  * `prompt` at three. A provider-wide claim would be false at the majority of
  * fal's own upscale endpoints.
  */

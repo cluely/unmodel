@@ -208,7 +208,8 @@ const VERTEX_GEMINI_DOCS_URL = "https://docs.cloud.google.com/gemini-enterprise-
  * - `gemini-4-hydrogen` (`/4-hydrogen`): "Hydrogen supports thinking levels
  *   LOW , MEDIUM , HIGH (default), and XHIGH ."
  *
- * `XHIGH` on argon or carbon is not refused: neither page says it errors.
+ * `XHIGH` on argon or carbon is not refused: neither page says it errors. It
+ * draws a warning, because neither page lists it.
  */
 const GEMINI_4_THINKING_LEVELS = {
   "gemini-4-argon": { levels: ["LOW", "MEDIUM", "HIGH"], source: `${VERTEX_GEMINI_DOCS_URL}/4-argon` },
@@ -263,7 +264,10 @@ function hasSamplingRule(id: string): boolean {
   return Object.hasOwn(REFUSED_SAMPLING_PARAMS, id) || Object.hasOwn(IGNORED_SAMPLING_PARAMS, id);
 }
 
-/** Gemini 4 `thinkingConfig`: any `thinkingBudget`, and `thinkingLevel` MINIMAL, are a 400. */
+/**
+ * Gemini 4 `thinkingConfig`: any `thinkingBudget`, and `thinkingLevel` MINIMAL,
+ * are a 400; `XHIGH` where the page does not list it is a warning.
+ */
 function checkGemini4Thinking(
   params: VertexGenerateContentBody,
   _info: ModelInfo | undefined,
@@ -293,6 +297,20 @@ function checkGemini4Thinking(
       model: params.model,
       message: `\`generationConfig.thinkingConfig.thinkingLevel: "${level}"\` is refused by "${params.model}" on Vertex (HTTP 400); it accepts ${levels.join(", ")}.`,
       meta: { value: level, allowed: [...levels], source },
+    });
+  }
+
+  const documented: readonly string[] = levels;
+  if (level !== undefined && level.toUpperCase() === "XHIGH" && !documented.includes("XHIGH")) {
+    ctx.report({
+      code: "invalid_enum_value",
+      severity: "warning",
+      path: ["generationConfig", "thinkingConfig", "thinkingLevel"],
+      model: params.model,
+      message:
+        `\`generationConfig.thinkingConfig.thinkingLevel: "${level}"\` is documented on Vertex only for gemini-4-hydrogen; ` +
+        `"${params.model}"'s page lists ${levels.join(", ")}. No page says it returns an error, so the request is not refused.`,
+      meta: { value: level, documented: [...levels], source },
     });
   }
 }

@@ -122,10 +122,16 @@ describe("GLM-5.3 always thinks (https://docs.bigmodel.cn/cn/guide/capabilities/
     expect(openrouterChat({ ...body, reasoning_effort: "high" }).toApiSafe("zhipuai").ok).toBe(true);
   });
 
-  test("the unified entry terminates in the same rule", () => {
+  test("the unified entry compiles to the same table: medium rises to high, named", () => {
     const r = unifiedChat.safe({ model: "zhipuai/glm-5.3-flashx", messages: HI, reasoning: "medium" });
-    expect(r.ok).toBe(false);
-    if (r.ok) return;
-    expect(r.errors.map((e) => e.code)).toContain("invalid_enum_value");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(JSON.parse(JSON.stringify(r.params))).toMatchObject({ reasoning_effort: "high" });
+    const [warning, ...rest] = r.params.warnings;
+    expect(rest).toEqual([]);
+    expect(warning?.code).toBe("approximated_param");
+    if (warning?.code === "approximated_param") {
+      expect(warning.meta?.["levels"]).toEqual(["low", "high", "max"]);
+    }
   });
 });

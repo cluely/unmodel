@@ -315,12 +315,14 @@ export type ChatNativeTool =
 /**
  * The union of every dialect's effort vocabulary, not the intersection.
  *
- * OpenAI accepts `minimal|low|medium|high`, Anthropic `low|medium|high|xhigh|max`,
- * Gemini `MINIMAL|LOW|MEDIUM|HIGH`. Taking the intersection (`low|medium|high`)
- * would make `xhigh` unsayable to the one provider that has it; taking the
- * union means the compiler narrows to the target's nearest level and warns
- * `approximated_param` when it has to. Losing precision loudly beats not being
- * able to ask.
+ * Chat Completions models each document their own ladder (GPT-6 takes `xhigh`
+ * and `max`, Mistral Large 4 stops at `high`), Anthropic takes
+ * `low|medium|high|xhigh|max`, Gemini `MINIMAL|LOW|MEDIUM|HIGH` (plus `XHIGH`
+ * on Hydrogen). Taking the intersection (`low|medium|high`) would make `xhigh`
+ * and `max` unsayable where they exist; taking the union means the compiler
+ * narrows to the target model's nearest documented level — upward where it
+ * can — and warns `approximated_param` when it has to. Losing precision loudly
+ * beats not being able to ask.
  */
 export type ChatReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 

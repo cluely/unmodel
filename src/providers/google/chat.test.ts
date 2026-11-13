@@ -887,23 +887,30 @@ describe("generationConfig ranges and enums", () => {
     // The thinking guide's own REST sample for Hydrogen sends the lower-case
     // spelling; the check upper-cases before comparing.
     for (const thinkingLevel of ["XHIGH", "xhigh"]) {
-      expectOk(
+      const r = expectOk(
         chat.safe({
           model: "gemini-4-hydrogen",
           contents: HELLO,
           generationConfig: { thinkingConfig: { thinkingLevel } },
         }),
       );
+      expect(r.warnings, thinkingLevel).toEqual([]);
     }
     // Documented on Hydrogen only, but no page says it errors elsewhere, so
-    // it is not refused on another model.
-    expectOk(
-      chat.safe({
-        model: "gemini-3.8-flash",
-        contents: HELLO,
-        generationConfig: { thinkingConfig: { thinkingLevel: "XHIGH" } },
-      }),
-    );
+    // it is not refused on another model — it warns, because the package knows.
+    for (const model of ["gemini-4-carbon", "gemini-4-argon", "gemini-3.8-flash", "models/gemini-4-carbon"]) {
+      const r = expectOk(
+        chat.safe({
+          model,
+          contents: HELLO,
+          generationConfig: { thinkingConfig: { thinkingLevel: "XHIGH" } },
+        }),
+      );
+      expect(r.warnings.map((w) => w.code), model).toEqual(["invalid_enum_value"]);
+      expect(r.warnings[0]?.path).toEqual(["generationConfig", "thinkingConfig", "thinkingLevel"]);
+      expect(r.warnings[0]?.meta?.documentedOn).toEqual(["gemini-4-hydrogen"]);
+      expect(r.warnings[0]?.message).toContain("not refused");
+    }
   });
 
   test("Gemini 4 refuses thinkingBudget and thinkingLevel together, not a budget alone", () => {

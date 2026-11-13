@@ -427,15 +427,17 @@ function isGemini4Model(model: string): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * The two `thinkingConfig` rules Google states per MODEL rather than per
+ * The `thinkingConfig` rules Google states per MODEL rather than per
  * message, shared by `google.chat` and `google.stt` (the surfaces whose rows
  * reason; `google.tts`'s rows carry `reasoning: false` and never reach them).
- * Both are by NAME, not by catalog row, so they hold for the `models/`-prefixed
+ * All are by NAME, not by catalog row, so they hold for the `models/`-prefixed
  * spelling too. Sources and quotes: ./thinking-constraints.
  *
  * - `MINIMAL` on a {@link GEMINI_NO_MINIMAL_THINKING_MODEL_IDS} id "returns an
  *   error"; the refusal names the levels the model DOES take, with `XHIGH`
  *   only where {@link GEMINI_XHIGH_THINKING_MODEL_IDS} says so.
+ * - `XHIGH` off {@link GEMINI_XHIGH_THINKING_MODEL_IDS} is a WARNING: it is
+ *   documented on those ids only, and no page says it errors elsewhere.
  * - `thinkingBudget` AND `thinkingLevel` together on a {@link GEMINI_4_MODEL_IDS}
  *   id "returns a `400` error". A budget alone is accepted upstream (mapped to
  *   the nearest level with an API warning), so it is NOT refused here.
@@ -450,6 +452,9 @@ export function checkThinkingConfig(
   if (thinking === undefined) return;
   const id = stripModelsPrefix(model);
   const { thinkingBudget, thinkingLevel } = thinking;
+  const takesXhigh = GEMINI_XHIGH_THINKING_MODEL_IDS.includes(
+    id as (typeof GEMINI_XHIGH_THINKING_MODEL_IDS)[number],
+  );
 
   if (
     thinkingLevel !== undefined &&
@@ -458,9 +463,6 @@ export function checkThinkingConfig(
       id as (typeof GEMINI_NO_MINIMAL_THINKING_MODEL_IDS)[number],
     )
   ) {
-    const takesXhigh = GEMINI_XHIGH_THINKING_MODEL_IDS.includes(
-      id as (typeof GEMINI_XHIGH_THINKING_MODEL_IDS)[number],
-    );
     const allowed = GEMINI_THINKING_LEVELS.filter(
       (level) =>
         level !== "MINIMAL" &&
@@ -473,6 +475,27 @@ export function checkThinkingConfig(
       model,
       message: `\`generationConfig.thinkingConfig.thinkingLevel: "${thinkingLevel}"\` is not supported on "${model}" and returns an error; it accepts ${allowed.join(", ")}.`,
       meta: { value: thinkingLevel, allowed: [...allowed], source: GEMINI_THINKING_DOCS_URL },
+    });
+  }
+
+  // A warning, never an error: `invalid_enum_value` at `severity: "warning"` is
+  // this module's spelling of "outside the documented set, and no page says it
+  // errors" (S10 argues it).
+  if (thinkingLevel !== undefined && thinkingLevel.toUpperCase() === "XHIGH" && !takesXhigh) {
+    ctx.report({
+      code: "invalid_enum_value",
+      severity: "warning",
+      path: [...basePath, "thinkingConfig", "thinkingLevel"],
+      model,
+      message:
+        `\`generationConfig.thinkingConfig.thinkingLevel: "${thinkingLevel}"\` is documented only on ` +
+        `${GEMINI_XHIGH_THINKING_MODEL_IDS.join(", ")}, not on "${model}". ` +
+        "No page says it returns an error there, so the request is not refused.",
+      meta: {
+        value: thinkingLevel,
+        documentedOn: [...GEMINI_XHIGH_THINKING_MODEL_IDS],
+        source: GEMINI_THINKING_DOCS_URL,
+      },
     });
   }
 

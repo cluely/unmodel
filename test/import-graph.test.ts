@@ -1330,7 +1330,7 @@ describe("cross-provider imports", () => {
       // list below is exactly the set the `every declared .toApi edge has a
       // codec` test in test/interop/retarget-e2e.test.ts derives from the data.
       "src/providers/cloudflare-workers-ai/index.ts", // → gemini
-      "src/providers/deepinfra/index.ts", // → gemini
+      "src/providers/deepinfra/index.ts", // → gemini + anthropic-messages
       "src/providers/friendli/index.ts", // → gemini
       "src/providers/huggingface/index.ts", // → gemini
       "src/providers/nvidia/index.ts", // → gemini

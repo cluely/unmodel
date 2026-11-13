@@ -73,6 +73,23 @@ describe("alibaba.chat per-model rules (checked 2026-11-12)", () => {
     }
   });
 
+  test("kimi-k3 pins top_p at its documented 0.95, not the generic fixed-sampling 1", () => {
+    expect(chat.safe({ model: "kimi-k3", messages, top_p: 0.95 }).ok).toBe(true);
+    for (const top_p of [1, 0.5]) {
+      const r = chat.safe({ model: "kimi-k3", messages, top_p });
+      expect(r.ok, String(top_p)).toBe(false);
+      if (!r.ok) {
+        expect(r.errors.map((e) => e.code)).toEqual(["invalid_enum_value"]);
+        expect(r.errors[0]?.path).toEqual(["top_p"]);
+        expect(r.errors[0]?.meta?.allowed).toEqual([0.95]);
+      }
+    }
+    // temperature stays with the catalog's fixed-sampling check; presence_penalty is unpinned.
+    expect(chat.safe({ model: "kimi-k3", messages, temperature: 1 }).ok).toBe(true);
+    expect(chat.safe({ model: "kimi-k3", messages, temperature: 0.7 }).ok).toBe(false);
+    expect(chat.safe({ model: "kimi-k3", messages, presence_penalty: 0.5 }).ok).toBe(true);
+  });
+
   test("kimi-k3 ignores parallel_tool_calls: a warning, never a refusal", () => {
     const r = chat.safe({ model: "kimi-k3", messages, parallel_tool_calls: false });
     expect(r.ok).toBe(true);

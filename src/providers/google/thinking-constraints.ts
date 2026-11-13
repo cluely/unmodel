@@ -26,7 +26,8 @@ export const GEMINI_LONG_DECODE_DOCS_URL = "https://ai.google.dev/gemini-api/doc
  * introduces `xhigh`"), and NOT refused elsewhere: no page says it errors on
  * another model, and a refusal the API would have fulfilled is the one failure
  * this library must not have. {@link GEMINI_XHIGH_THINKING_MODEL_IDS} is what
- * the MINIMAL refusal's "it accepts …" list reads to say so per model.
+ * the MINIMAL refusal's "it accepts …" list reads to say so per model, and
+ * what decides that `XHIGH` elsewhere draws a warning rather than nothing.
  */
 export const GEMINI_THINKING_LEVELS = [
   "THINKING_LEVEL_UNSPECIFIED",
@@ -66,7 +67,8 @@ export const GEMINI_NO_MINIMAL_THINKING_MODEL_IDS = [
 
 /**
  * Models whose documented level set includes `XHIGH`, so the MINIMAL refusal
- * names it among the levels the model DOES accept.
+ * names it among the levels the model DOES accept, and `XHIGH` on any other id
+ * is a warning (documented here only; no page says it errors elsewhere).
  *
  * `gemini-4-hydrogen` — model page (2026-11-12): "Supported (low, medium, high,
  * xhigh)"; what's-new: "Hydrogen defaults to `high` rather than `medium`, adds

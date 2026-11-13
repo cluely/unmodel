@@ -4,7 +4,7 @@
  * `POST https://queue.fal.run/{endpoint}`, flat JSON body,
  * `Authorization: Key <FAL_KEY>`.
  *
- * ## Ten endpoints, two media, one address
+ * ## Eleven endpoints, two media, one address
  *
  * The only address in this provider whose OUTPUT modality is not fixed by the
  * verb: `fal-ai/aura-sr` returns an image and `fal-ai/seedvr/upscale/video`
@@ -14,15 +14,16 @@
  * point: same vendor, same product, same release, and the only thing separating
  * them is whether the source is `image_url` or `video_url`.
  *
- * ## Four endpoints have a real `model` field
+ * ## Five endpoints have a real `model` field
  *
  * `topaz/upscale/image/precision`, `topaz/upscale/image/generative`,
- * `topaz/upscale/video/precision` and `fal-ai/esrgan` all declare a top-level
- * `model` naming the restoration NETWORK — `"Standard V2"`, `"Wonder 3.5"`,
- * `"Proteus"`, `"RealESRGAN_x4plus"` — and at Topaz it also selects the RATE.
- * This is the largest concentration of the `model` collision in the roster,
- * which is why the route selector is `endpoint`: if it were `model`, four of
- * these ten endpoints would silently lose the field that decides what they do.
+ * `topaz/upscale/video/precision`, `topaz/upscale/video/generative` and
+ * `fal-ai/esrgan` all declare a top-level `model` naming the restoration
+ * NETWORK — `"Standard V2"`, `"Wonder 3.5"`, `"Proteus"`, `"Starlight HQ"`,
+ * `"RealESRGAN_x4plus"` — and at Topaz it also selects the RATE. This is the
+ * largest concentration of the `model` collision in the roster, which is why
+ * the route selector is `endpoint`: if it were `model`, five of these eleven
+ * endpoints would silently lose the field that decides what they do.
  *
  * ```ts
  * const params = fal.upscale({
@@ -82,7 +83,7 @@ export type { FalUpscaleBodyById, FalUpscaleResultById } from "./gen/upscale-wir
 /**
  * One endpoint's request params: its published body, plus the route selector.
  *
- * Note what this does NOT strip: `model`, on the four endpoints that declare
+ * Note what this does NOT strip: `model`, on the five endpoints that declare
  * one. `FalUpscaleBodyById["fal-ai/esrgan"]` types it as the six-value
  * checkpoint enum fal publishes, and it goes on the wire untouched.
  */

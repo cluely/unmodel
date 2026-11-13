@@ -14,7 +14,7 @@ import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 import { LEGACY_ASPECT_RATIOS, WIDE_ASPECT_RATIOS, type PixverseMotionMode } from "./shared";
 
 /** Every id the generation routes accept — the `pixverse/…` ref union. */
-export const MODELS = ["c1", "v6", "v5.6", "v5.5", "v5", "v4.5", "v4", "v3.5"] as const;
+export const MODELS = ["v6-max", "c1", "v6", "v5.6", "v5.5", "v5", "v4.5", "v4", "v3.5"] as const;
 
 /**
  * PixVerse's per-model surface.
@@ -26,17 +26,18 @@ export const MODELS = ["c1", "v6", "v5.6", "v5.5", "v5", "v4.5", "v4", "v3.5"] a
  * keyed off the same three: `AUDIO_SWITCH_MODELS`, `MULTI_CLIP_MODELS` and
  * `LEGACY_AUDIO_MODELS`.
  *
- * `motion_mode`, `camera_movement` and `template_id` are ungated — every model
- * takes them — so they are on every row.
+ * `motion_mode` and `camera_movement` are ungated — every model takes them — so
+ * they are on every row. `template_id` is on every row but `v6-max`'s, which
+ * `NO_TEMPLATE_MODELS` refuses.
  *
- * `durations` is a closed enum on six of the eight and a *range* on `v6` and
- * `c1` (every integer from 1 to 15), so those two carry no `durations` and
- * `duration` stays `number` there. `quality` is `360p`/`540p`/`720p`/`1080p` on
- * every model, of which two have canonical names — hence the identical
- * `resolutions` on all eight, and `providerOptions.pixverse.quality` for the
- * other two. Note the adapter *fills* `quality: "540p"` when the caller names
- * no tier: that default is a value this row cannot name, which is exactly why
- * filling it warns.
+ * `durations` is a closed enum on six of the nine and a *range* on `v6-max`,
+ * `v6` and `c1` (every integer from 1 to 15), so those three carry no
+ * `durations` and `duration` stays `number` there. `quality` is
+ * `360p`/`540p`/`720p`/`1080p` on every model, of which two have canonical
+ * names — hence the identical `resolutions` on all nine, and
+ * `providerOptions.pixverse.quality` for the other two. Note the adapter
+ * *fills* `quality: "540p"` when the caller names no tier: that default is a
+ * value this row cannot name, which is exactly why filling it warns.
  */
 export const COMMON_EXTRAS = {
   motion_mode: EXTRA as PixverseMotionMode,
@@ -72,6 +73,15 @@ export const WIDE_ROW = {
 } as const;
 
 export const PIXVERSE_VIDEO_MODEL_PARAMS = {
+  "v6-max": {
+    resolutions: TIERS,
+    ratios: WIDE_ASPECT_RATIOS,
+    extras: {
+      motion_mode: EXTRA as PixverseMotionMode,
+      camera_movement: EXTRA as string,
+      generate_audio_switch: EXTRA as boolean,
+    },
+  },
   c1: WIDE_ROW,
   v6: {
     resolutions: TIERS,

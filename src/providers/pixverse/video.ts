@@ -6,10 +6,11 @@
  * 2026-08-13):
  * - `prompt`, `model`, `aspect_ratio`, `duration` and `quality` are all
  *   required by the schema.
- * - `aspect_ratio` is wider on v6 / c1 (it adds 2:3, 3:2 and 21:9); `duration`
- *   is 1–15s on v6/c1 but a fixed value list below that; `generate_audio_switch`
- *   is v5.5+, `generate_multi_clip_switch` is v5.5/v6, and the sound-effect /
- *   lip-sync TTS fields are "v5 and below".
+ * - `aspect_ratio` is wider on v6-max / v6 / c1 (it adds 2:3, 3:2 and 21:9);
+ *   `duration` is 1–15s on v6-max/v6/c1 but a fixed value list below that;
+ *   `generate_audio_switch` is v5.5+, `generate_multi_clip_switch` is v5.5/v6,
+ *   `template_id` is refused on v6-max, and the sound-effect / lip-sync TTS
+ *   fields are "v5 and below".
  * - Async: responds `{ ErrCode, ErrMsg, Resp: { video_id } }`; poll
  *   `GET /openapi/v2/video/result/{video_id}`.
  * - Headers: add `API-KEY` and a fresh `Ai-trace-id` UUID yourself — unmodel
@@ -50,15 +51,15 @@ export interface TextToVideoParams {
   /** Required; up to 5000 characters. */
   prompt: string;
   model: PixverseModelId | (string & {});
-  /** Required. v6 / c1 also accept 2:3, 3:2 and 21:9. */
+  /** Required. v6-max / v6 / c1 also accept 2:3, 3:2 and 21:9. */
   aspect_ratio: PixverseAspectRatio;
-  /** Required. 1–15 on v6/c1; a fixed list on the older models. */
+  /** Required. 1–15 on v6-max/v6/c1; a fixed list on the older models. */
   duration: number;
   /** Required. */
   quality: PixverseQualityValue;
   /** 0 – 2147483647. */
   seed?: number;
-  /** Inline audio. v5.5 / v5.6 / v6 / c1 only; defaults to false. */
+  /** Inline audio. v5.5 / v5.6 / v6 / c1 / v6-max only; defaults to false. */
   generate_audio_switch?: boolean;
   /** Inline multi-clip output. v5.5 / v6 only; defaults to false. */
   generate_multi_clip_switch?: boolean;
@@ -79,7 +80,7 @@ export interface TextToVideoParams {
   motion_mode?: PixverseMotionMode;
   /** Camera preset, e.g. "zoom_in" — commented into the official example. */
   camera_movement?: string;
-  /** An activated template id. */
+  /** An activated template id. Not on v6-max. */
   template_id?: number;
 }
 
@@ -102,8 +103,9 @@ const videoSchema = z.looseObject({
   template_id: z.number().int().optional(),
 });
 
-/** Per-model `aspect_ratio` narrowing — v6 and c1 get the wide set. */
+/** Per-model `aspect_ratio` narrowing — v6-max, v6 and c1 get the wide set. */
 export const videoConstraints = {
+  "v6-max": { enums: { aspect_ratio: WIDE_ASPECT_RATIOS } },
   v6: { enums: { aspect_ratio: WIDE_ASPECT_RATIOS } },
   c1: { enums: { aspect_ratio: WIDE_ASPECT_RATIOS } },
   "v5.6": { enums: { aspect_ratio: LEGACY_ASPECT_RATIOS } },

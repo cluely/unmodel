@@ -11,8 +11,9 @@
  * - There is no `aspect_ratio` here — the input image sets it (confirmed by
  *   the V6 parameter matrix, which marks aspect_ratio ❌ for i2v).
  * - The same version gates as text-to-video apply: `generate_audio_switch` is
- *   v5.5+, `generate_multi_clip_switch` is v5.5/v6, and the sound-effect /
- *   lip-sync TTS fields are "v5 and below" (or with a `template_id`).
+ *   v5.5+, `generate_multi_clip_switch` is v5.5/v6, `template_id` is refused on
+ *   v6-max, and the sound-effect / lip-sync TTS fields are "v5 and below" (or
+ *   with a `template_id`).
  * - Headers: add `API-KEY` and a fresh `Ai-trace-id` UUID yourself.
  */
 
@@ -49,7 +50,7 @@ export interface ImageToVideoParams {
   /** Required; up to 5000 characters. */
   prompt: string;
   model: PixverseModelId | (string & {});
-  /** Required. 1–15 on v6/c1; a fixed list on the older models. */
+  /** Required. 1–15 on v6-max/v6/c1; a fixed list on the older models. */
   duration: number;
   /** Required. */
   quality: PixverseQualityValue;
@@ -57,9 +58,9 @@ export interface ImageToVideoParams {
   seed?: number;
   /** Multi-image templates only, e.g. `[123, 456]`. */
   img_ids?: number[];
-  /** An activated template id. */
+  /** An activated template id. Not on v6-max. */
   template_id?: number;
-  /** Inline audio. v5.5 / v5.6 / v6 / c1 only; defaults to false. */
+  /** Inline audio. v5.5 / v5.6 / v6 / c1 / v6-max only; defaults to false. */
   generate_audio_switch?: boolean;
   /** Inline multi-clip output. v5.5 / v6 only; defaults to false. */
   generate_multi_clip_switch?: boolean;

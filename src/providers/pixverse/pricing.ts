@@ -6,7 +6,8 @@
  * rate), so USD = credits × 0.01.
  *
  * Two billing shapes:
- *   - v6 and c1 bill PER SECOND, by quality tier and whether audio is on.
+ *   - v6-max, v6 and c1 bill PER SECOND, by quality tier and whether audio is
+ *     on.
  *   - v5.6, v5.5, v5 and the v4.5/v4/v3.5 family bill PER GENERATION, from a
  *     fixed (quality × duration) table — with an audio column on v5.6/v5.5, a
  *     multi-clip column on v5.5, and a `motion_mode` column on v4.5/v4/v3.5.
@@ -22,8 +23,18 @@ import { CREDIT_USD } from "./models";
 export const QUALITIES = ["360p", "540p", "720p", "1080p"] as const;
 export type PixverseQuality = (typeof QUALITIES)[number];
 
-/** v6 / c1 credits per second: [silent, with audio] by quality. */
+/** v6-max / v6 / c1 credits per second: [silent, with audio] by quality. */
 const PER_SECOND: Readonly<Record<string, Partial<Record<string, readonly [number, number]>>>> = {
+  // https://docs.platform.pixverse.ai/pixverse-api-pricing-2394995m0 (2026-11-12):
+  // "V6 Max | Off | **6 Credits/s** … | **9 Credits/s** … | **11 Credits/s** … |
+  // **22 Credits/s**" and "| V6 Max | On | **9 Credits/s** … | **11 Credits/s** … |
+  // **15 Credits/s** … | **28 Credits/s**" (360p / 540p / 720p / 1080p).
+  "v6-max": {
+    "360p": [6, 9],
+    "540p": [9, 11],
+    "720p": [11, 15],
+    "1080p": [22, 28],
+  },
   v6: {
     "360p": [5, 7],
     "540p": [7, 9],

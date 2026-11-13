@@ -186,6 +186,7 @@ const REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = {
   "lightricks/ltx-2-5-pro": { duration: 8, resolution: "1080p", aspectRatio: "16:9" },
   "lightricks/ltx-2-3-fast": { duration: 8, resolution: "1080p", aspectRatio: "16:9" },
   "lightricks/ltx-2-3-pro": { duration: 8, resolution: "1080p", aspectRatio: "16:9" },
+  "pixverse/v6-max": { duration: 5, resolution: "720p", aspectRatio: "16:9" },
   "pixverse/c1": { duration: 5, resolution: "720p", aspectRatio: "16:9" },
   "pixverse/v6": { duration: 5, resolution: "720p", aspectRatio: "16:9" },
   "pixverse/v5.6": { duration: 5, resolution: "720p", aspectRatio: "16:9" },

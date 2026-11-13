@@ -301,6 +301,11 @@ function extrasNarrowingTests(): void {
   // @ts-expect-error — a key no model on the ref'd provider takes is a typo.
   video({ model: "luma/ray-2", prompt: "hi", lop: true });
   video({ model: "luma/ray-2", prompt: "hi", loop: true });
+
+  video({ model: "pixverse/v6", prompt: "hi", template_id: 302325299692608 });
+  // @ts-expect-error — V6 Max takes no video templates ("Video Templates: Not supported").
+  video({ model: "pixverse/v6-max", prompt: "hi", template_id: 302325299692608 });
+  video({ model: "pixverse/v6-max", prompt: "hi", aspectRatio: "21:9", generate_audio_switch: true });
 }
 
 /**

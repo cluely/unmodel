@@ -131,15 +131,19 @@ export const PIXVERSE_VIDEO_FAL_OVERLAP = {
 } as const;
 
 /**
- * The seven PixVerse ids fal does not serve, with the reason, so a caller who
+ * The eight PixVerse ids fal does not serve, with the reason, so a caller who
  * reaches for one is told *why* rather than told the model is unknown.
  *
- * `c1` is the one worth spelling out: it shares v6's per-second duration model
- * and wide ratio set, so it looks mappable — but fal serves no `c1` endpoint,
- * and routing a `c1` request to the v6 URL would swap the model, not the
- * transport.
+ * `c1` and `v6-max` are the ones worth spelling out: they share v6's
+ * per-second duration model and wide ratio set, so they look mappable — but
+ * fal serves no endpoint for either, and routing one to the v6 URL would swap
+ * the model, not the transport. V6 Max: both
+ * https://fal.ai/models/fal-ai/pixverse/v6-max/text-to-video/llms.txt and
+ * https://fal.ai/models/pixverse/v6-max/text-to-video/llms.txt answer HTTP 404
+ * (2026-11-12), and `data/fal/curation.json` names no v6-max endpoint.
  */
 export const PIXVERSE_VIDEO_FAL_REFUSALS: Readonly<Record<string, string>> = Object.freeze({
+  "v6-max": "fal serves no PixVerse V6 Max endpoint; routing a V6 Max request to the v6 URL would swap the model rather than the transport.",
   c1: "fal serves no PixVerse C1 endpoint; routing a C1 request to the v6 URL would swap the model rather than the transport.",
   "v5.6": "fal's curated PixVerse roster is v6 only.",
   "v5.5": "fal's curated PixVerse roster is v6 only.",

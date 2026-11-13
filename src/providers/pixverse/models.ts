@@ -15,8 +15,8 @@
 //
 // Why most entries carry no `cost`: `quality` is a REQUIRED request field with
 // no documented default, and the credit rate is a function of it —
-//   - v6 / c1 bill PER SECOND: 5–18 credits/s (v6) or 6–19 (c1) silent,
-//     7–23 / 8–24 with audio, by quality tier.
+//   - v6-max / v6 / c1 bill PER SECOND: 6–22 credits/s (v6-max), 5–18 (v6) or
+//     6–19 (c1) silent, 9–28 / 7–23 / 8–24 with audio, by quality tier.
 //   - v5.6 / v5.5 / v5 / v4.5 / v4 / v3.5 bill PER GENERATION by
 //     quality × duration (× audio, × multi-clip, × motion_mode), which
 //     `ModelCost` has no unit for at all.
@@ -26,7 +26,18 @@
 //
 // Model coverage vs. the artificialanalysis census: PixVerse V6, V5.6, V5.5,
 // V5 and V4.5 are all documented `model` values and all appear below, together
-// with the V4 / V3.5 legacy ids and the C1 cinematic model.
+// with the V4 / V3.5 legacy ids, the C1 cinematic model and V6 Max.
+//
+// `v5-fast` is a value of both routes' `model` enum but has no row, because
+// nothing about it is published to transcribe (all verified 2026-11-12): the
+// image-to-video schema says "Access to v5-fast depends on account
+// permissions"
+// (https://docs.platform.pixverse.ai/image-to-video-and-video-templates-13016633e0),
+// the pricing page lists no rate for it ("Not listed: no public rate is
+// provided"; https://docs.platform.pixverse.ai/pixverse-api-pricing-2394995m0),
+// and the capability map covers only "V6 Max, C1, V6, V5.6, or V5"
+// (https://docs.platform.pixverse.ai/model-capability-map-2394982m0). It
+// validates with an `unknown_model` warning and no per-model checks.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -44,6 +55,19 @@ export const CREDIT_USD = 0.01;
 const videoModality = { input: ["text", "image"], output: ["video"] } as const;
 
 export const models = {
+  "v6-max": {
+    id: "v6-max",
+    name: "PixVerse V6 Max",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: videoModality,
+    limit: { context: 0 },
+    // Per second, 6–22 credits silent / 9–28 with audio by quality tier.
+    // https://docs.platform.pixverse.ai/changelog-2394996m0 (2026-11-12):
+    // "Added V6-max support for Text-to-Video and Image-to-Video."
+  },
   c1: {
     id: "c1",
     name: "PixVerse C1",

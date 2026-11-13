@@ -42,7 +42,12 @@ export type PixverseQualityValue = (typeof PIXVERSE_QUALITIES)[number];
 /** `aspect_ratio` values the pre-v6 models accept. */
 export const LEGACY_ASPECT_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
-/** `aspect_ratio` values v6 and c1 add on top of the legacy set. */
+/**
+ * `aspect_ratio` values v6-max, v6 and c1 add on top of the legacy set. V6 Max:
+ * the capability map's "Aspect Ratios" row reads "16:9 / 9:16 / 4:3 / 3:4 /
+ * 1:1 / 2:3 / 3:2 / 21:9" in its column —
+ * https://docs.platform.pixverse.ai/model-capability-map-2394982m0 (2026-11-12).
+ */
 export const WIDE_ASPECT_RATIOS = [
   "16:9",
   "4:3",
@@ -76,14 +81,47 @@ export const SEED_MAX = 2_147_483_647;
 export const seedSchema = z.number().int().min(SEED_MIN).max(SEED_MAX);
 export const promptSchema = z.string().max(PROMPT_MAX_CHARS);
 
-/** Models that bill (and are documented) per second, with 1–15s durations. */
-export const PER_SECOND_MODELS = ["v6", "c1"] as const;
+/**
+ * Models that bill (and are documented) per second, with 1–15s durations.
+ * V6 Max: the capability map's "Video Duration" row reads "1-15 seconds" in its
+ * column (https://docs.platform.pixverse.ai/model-capability-map-2394982m0,
+ * 2026-11-12), and the pricing page bills it in "Credits/s".
+ */
+export const PER_SECOND_MODELS = ["v6", "c1", "v6-max"] as const;
 
-/** Models that accept `generate_audio_switch`. */
-export const AUDIO_SWITCH_MODELS = ["v5.5", "v5.6", "v6", "c1"] as const;
+/**
+ * Models that accept `generate_audio_switch`. V6 Max: the capability map
+ * describes it as "Text-to-video and image-to-video with optional native
+ * audio" and the pricing page prices "| V6 Max | On |" (both verified
+ * 2026-11-12); the image-to-video field description names only "V5.5,
+ * V5.6, V6, or C1", while its own `image_v6_minimum` example sends
+ * `generate_audio_switch` with `model: v6-max`.
+ */
+export const AUDIO_SWITCH_MODELS = ["v5.5", "v5.6", "v6", "c1", "v6-max"] as const;
 
-/** Models that accept `generate_multi_clip_switch`. */
+/**
+ * Models that accept `generate_multi_clip_switch`. V6 Max is absent on the
+ * strength of the image-to-video schema's `allOf` (the switch is `false` unless
+ * `model` is `v5.5` or `v6`) and the text-to-video error example ("supported in
+ * model v5.5, v6 only") — although that page's `text_v6_complete` example sends
+ * the switch with `model: v6-max` (all verified 2026-11-12).
+ */
 export const MULTI_CLIP_MODELS = ["v5.5", "v6"] as const;
+
+/**
+ * Models that refuse `template_id`. The capability map's "Video Templates" row
+ * reads "Not supported" for V6 Max and "Determined by the template" for C1,
+ * V6, V5.6 and V5 (https://docs.platform.pixverse.ai/model-capability-map-2394982m0),
+ * and the pricing page adds "V6 MAX (v6-max) Only support
+ * text-to-video/image-to-video now"
+ * (https://docs.platform.pixverse.ai/pixverse-api-pricing-2394995m0) — both
+ * verified 2026-11-12. A deny list, because templates are the rule and V6 Max
+ * is the exception.
+ */
+export const NO_TEMPLATE_MODELS = ["v6-max"] as const;
+
+/** The models the capability map lists as template-capable, named by the refusal. */
+const TEMPLATE_MODELS = ["c1", "v6", "v5.6", "v5"] as const;
 
 /** Models that accept the sound-effect and lip-sync TTS fields ("v5 and below"). */
 export const LEGACY_AUDIO_MODELS = ["v5", "v4.5", "v4", "v3.5"] as const;
@@ -93,8 +131,8 @@ export const LEGACY_AUDIO_MODELS = ["v5", "v4.5", "v4", "v3.5"] as const;
  *
  * "v3.5/v4/v4.5 : 5/8 (v3.5 1080p cannot use 8); v5 : 5/8; v5.5/v5.6 : 5/8/10
  * (1080p cannot use 10); v6/c1 : 1~15" — the schema's own `duration`
- * description. v6/c1 take any integer in the range, so they are expressed as
- * bounds instead of a value list.
+ * description. v6-max/v6/c1 take any integer in the range, so they are
+ * expressed as bounds instead of a value list.
  */
 export const DURATIONS: Readonly<Record<string, readonly number[]>> = {
   "v3.5": [5, 8],
@@ -220,6 +258,16 @@ export function checkModelGatedFields<P extends { model: string }>(
           meta: { source, supported: [...gate.models] },
         });
       }
+    }
+    const noTemplates: readonly string[] = NO_TEMPLATE_MODELS;
+    if (record.template_id != null && noTemplates.includes(params.model)) {
+      ctx.report({
+        code: "unsupported_param",
+        path: ["template_id"],
+        model: params.model,
+        message: `\`template_id\` is not supported by "${params.model}", which PixVerse serves for text-to-video and image-to-video only — video templates run on ${TEMPLATE_MODELS.join(", ")}.`,
+        meta: { source },
+      });
     }
   };
 }

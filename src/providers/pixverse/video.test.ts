@@ -124,7 +124,7 @@ describe("pixverse.video model rules", () => {
     if (!r.ok) {
       const issue = r.errors.find((e) => e.code === "unsupported_param");
       expect(issue?.path).toEqual(["generate_audio_switch"]);
-      expect(issue?.meta?.supported).toEqual(["v5.5", "v5.6", "v6", "c1"]);
+      expect(issue?.meta?.supported).toEqual(["v5.5", "v5.6", "v6", "c1", "v6-max"]);
     }
   });
 
@@ -166,6 +166,93 @@ describe("pixverse.video model rules", () => {
     });
     expect(quality.ok).toBe(false);
     if (!quality.ok) expect(quality.errors[0]?.path).toEqual(["quality"]);
+  });
+});
+
+describe("pixverse v6-max", () => {
+  test("validates and prices per second on both routes", () => {
+    const text = video.safe({
+      model: "v6-max",
+      prompt: "hi",
+      aspect_ratio: "16:9",
+      quality: "720p",
+      duration: 5,
+    });
+    expect(text.ok).toBe(true);
+    if (text.ok) {
+      expect(text.warnings).toEqual([]);
+      expect(text.estimate.costUSD).toBeCloseTo(0.55, 10); // 11 cr/s × 5
+    }
+
+    const image = videoFromImage.safe({
+      model: "v6-max",
+      img_id: 1,
+      prompt: "hi",
+      quality: "1080p",
+      duration: 5,
+      generate_audio_switch: true,
+    });
+    expect(image.ok).toBe(true);
+    if (image.ok) {
+      expect(image.warnings).toEqual([]);
+      expect(image.estimate.costUSD).toBeCloseTo(1.4, 10); // 28 cr/s × 5
+    }
+  });
+
+  test("takes 1-15s and the wide ratio set", () => {
+    expect(
+      video.safe({
+        model: "v6-max",
+        prompt: "hi",
+        aspect_ratio: "21:9",
+        quality: "360p",
+        duration: 1,
+      }).ok,
+    ).toBe(true);
+
+    const over = video.safe({
+      model: "v6-max",
+      prompt: "hi",
+      aspect_ratio: "16:9",
+      quality: "720p",
+      duration: 16,
+    });
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.meta?.max).toBe(15);
+  });
+
+  test("refuses template_id, which v6 takes", () => {
+    const base = {
+      prompt: "hi",
+      aspect_ratio: "16:9",
+      quality: "720p",
+      duration: 5,
+      template_id: 302325299692608,
+    } as const;
+    expect(video.safe({ ...base, model: "v6" }).ok).toBe(true);
+
+    const text = video.safe({ ...base, model: "v6-max" });
+    expect(text.ok).toBe(false);
+    if (!text.ok) {
+      const issue = text.errors.find((e) => e.code === "unsupported_param");
+      expect(issue?.path).toEqual(["template_id"]);
+      expect(issue?.message).toContain("c1, v6, v5.6, v5");
+    }
+
+    const image = videoFromImage.safe({
+      model: "v6-max",
+      img_id: 1,
+      template_id: 302325299692608,
+      prompt: "hi",
+      quality: "720p",
+      duration: 5,
+    });
+    expect(image.ok).toBe(false);
+    if (!image.ok) {
+      expect(image.errors.find((e) => e.code === "unsupported_param")?.path).toEqual([
+        "template_id",
+      ]);
+    }
   });
 });
 

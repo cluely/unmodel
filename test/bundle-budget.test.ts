@@ -205,8 +205,12 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * dubbing languages), and a five-row model table. 62.0 KiB measured — the
    * heaviest hand provider in the tree, and the two catalogs are most of the
    * difference from tripo3d's 46.4.
+   *
+   * 78.9 measured, 2026-11-12: the error catalog grew to 135 codes and the
+   * dubbing enum to 110, and the segments/outputAudio/dialogueEdit checks and
+   * nine more typed options landed — data and checks, no new module.
    */
-  sync: 70,
+  sync: 87,
   /**
    * The native Topaz provider: two validators across two routes, a fifteen-row
    * per-model SETTINGS table that Topaz's own OpenAPI document does not
@@ -1148,7 +1152,11 @@ const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
 // voice_settings, engine) and two rows of a dozen extras each. HeyGen is most
 // of the delta and the schema is most of HeyGen — which is the shape of the
 // thing this pack is for.
-const LIPSYNC_PACK_BUDGET_KIB = 445;
+//
+// **Bumped 445 → 490 at the 2026-11-12 model wave**, 445.8 KiB measured: sync's
+// error catalog (62 → 135 codes) and dubbing enum (93 → 110) — the same DATA
+// described above — on top of heygen's and veed's corrections. No new module.
+const LIPSYNC_PACK_BUDGET_KIB = 490;
 
 /** The four providers `unmodel/lipsync`'s ready-made pack is allowed to reach. */
 const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];

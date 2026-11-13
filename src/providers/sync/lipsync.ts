@@ -3,9 +3,11 @@
  *
  * Wire notes (verified against the curated OpenAPI 3.1 document at
  * https://sync.so/docs/openapi.json, the reference page at
- * https://sync.so/docs/api-reference/api/generate-api/create.md and the model
- * page at https://sync.so/docs/models/lipsync.md on 2026-08-25; the SDK types
- * in `@sync.so/sdk@0.3.0` were the tiebreak — see `./shared.ts`):
+ * https://sync.so/docs/api-reference/api/generate-api/create.md, the model
+ * page at https://sync.so/docs/models/lipsync.md and the guides at
+ * https://sync.so/docs/developer-guides/segments.md and
+ * https://sync.so/docs/developer-guides/dialogue-editing.md on 2026-11-12; the
+ * SDK types in `@sync.so/sdk@0.4.0` are the tiebreak — see `./shared.ts`):
  *
  * - `model` and `input` are the only required fields.
  * - `input` is an ARRAY, and its arity is a rule rather than a shape: exactly
@@ -57,22 +59,27 @@ import {
   checkInputArity,
   checkInputRefs,
   checkModelGatedOptions,
+  checkReactPrompt,
   checkSegmentRefIds,
   generationCommonSchema,
   optionsSchema,
   ttsInputSchema,
   videoInputSchema,
   type SyncAudioLikeInput,
+  type SyncDialogueEditReference,
   type SyncDubParams,
   type SyncGenerationOptions,
   type SyncGenerationSegment,
   type SyncModelId,
+  type SyncOutputAudio,
   type SyncVideoInput,
 } from "./shared";
 
 export { GENERATE_URL } from "./shared";
 
 const SOURCE = `${DOCS_BASE}/api-reference/api/generate-api/create`;
+const SEGMENTS_SOURCE = `${DOCS_BASE}/developer-guides/segments`;
+const DIALOGUE_EDIT_SOURCE = `${DOCS_BASE}/developer-guides/dialogue-editing`;
 
 /** The items a lipsync generation's `input` array may hold. */
 export type SyncLipsyncInputItem = SyncVideoInput | SyncAudioLikeInput;
@@ -82,17 +89,19 @@ export interface SyncLipsyncParams {
   model: SyncModelId | (string & {});
   /**
    * Required. Exactly one `{ type: "video" }` item plus one `{ type: "audio" }`
-   * or `{ type: "text" }` item — unless `dubParams` is set, which supplies the
-   * voice from the clip's own track and forbids the second item.
+   * or `{ type: "text" }` item — unless `dubParams` or `dialogueEdit` is set,
+   * which supplies the voice itself and forbids the second item.
    *
    * More than one voice item is legal only alongside `segments`, which is what
    * places them on the timeline.
    */
   input: readonly SyncLipsyncInputItem[];
-  /** The six published dials. Four of them are model-gated; see `./shared.ts`. */
+  /** The fifteen published dials. Five of them are model-gated; see `./shared.ts`. */
   options?: SyncGenerationOptions;
-  /** Several voices over one clip, each on its own `[startTime, endTime]`. */
+  /** Several voices over one clip, each on its own time or frame range. */
   segments?: readonly SyncGenerationSegment[];
+  /** One audio input played over the whole output. Needs `segments`. */
+  outputAudio?: SyncOutputAudio;
   /** HTTPS. sync. POSTs the finished generation here, signed `Sync-Signature`. */
   webhookUrl?: string;
   /** Up to 255 chars; sync. strips non-alphanumerics and appends `.mp4`. */
@@ -101,6 +110,8 @@ export interface SyncLipsyncParams {
   dubParams?: SyncDubParams;
   /** Attach the generation to a Studio project. A foreign id is a 422. */
   projectId?: string;
+  /** Lip-sync the clip to a completed dialogue edit. One video input, nothing else. */
+  dialogueEdit?: SyncDialogueEditReference;
 }
 
 const lipsyncSchema = z.looseObject({
@@ -109,39 +120,56 @@ const lipsyncSchema = z.looseObject({
   segments: z
     .array(
       z.looseObject({
-        startTime: z.number(),
-        endTime: z.number(),
-        audioInput: z.looseObject({
-          refId: z.string(),
-          startTime: z.number().optional(),
-          endTime: z.number().optional(),
-        }),
+        startTime: z.number().optional(),
+        endTime: z.number().optional(),
+        startFrame: z.number().optional(),
+        endFrame: z.number().optional(),
+        audioInput: z
+          .looseObject({
+            refId: z.string(),
+            startTime: z.number().optional(),
+            endTime: z.number().optional(),
+          })
+          .optional(),
+        lipsync: z.boolean().optional(),
         optionsOverride: optionsSchema.optional(),
       }),
     )
     .optional(),
+  outputAudio: z.looseObject({ refId: z.string() }).optional(),
   dubParams: z
     .looseObject({
       providerName: z.enum(SYNC_TTS_PROVIDERS),
       targetLang: z.enum(SYNC_DUB_LANGUAGES),
       sourceLang: z.enum(SYNC_DUB_SOURCE_LANGUAGES).optional(),
       numSpeakers: z.number().int().optional(),
+      cloningStrength: z.number().int().min(1).max(10).optional(),
+      startTime: z.number().optional(),
+      endTime: z.number().optional(),
     })
     .optional(),
+  dialogueEdit: z.looseObject({ id: z.string() }).optional(),
 });
 
 /**
- * Segment time ranges have to be ordered and the crop window comes as a pair.
+ * Segment ranges have to be ordered and the crop window comes as a pair.
  *
- * Both are stated on the schema's own field descriptions ("Must be less than or
- * equal to endTime"; "When specified, endTime must also be provided") and
- * neither is expressible in the shape, because both fields are plain numbers.
+ * All three are stated on the schema's own field descriptions ("Must be less
+ * than or equal to endTime"; "When specified, endTime must also be provided")
+ * or on /developer-guides/segments ("`startFrame` must be strictly less than
+ * `endFrame`. Unlike time-based segments which allow equal start and end
+ * times, frame-based segments require at least one frame of difference"), and
+ * none is expressible in the shape, because every field is a plain number.
  */
 function checkSegmentTimes(params: SyncLipsyncParams, _info: unknown, ctx: PipelineContext): void {
   const segments = params.segments;
   if (segments === undefined) return;
   segments.forEach((segment, index) => {
-    if (segment.startTime > segment.endTime) {
+    if (
+      segment.startTime !== undefined &&
+      segment.endTime !== undefined &&
+      segment.startTime > segment.endTime
+    ) {
       ctx.report({
         code: "invalid_shape",
         path: ["segments", index, "startTime"],
@@ -152,6 +180,23 @@ function checkSegmentTimes(params: SyncLipsyncParams, _info: unknown, ctx: Pipel
         meta: { source: SOURCE },
       });
     }
+    if (
+      segment.startFrame !== undefined &&
+      segment.endFrame !== undefined &&
+      segment.startFrame >= segment.endFrame
+    ) {
+      ctx.report({
+        code: "invalid_shape",
+        path: ["segments", index, "startFrame"],
+        model: params.model,
+        message:
+          `\`segments[${index}]\` runs from frame ${segment.startFrame} to frame ${segment.endFrame}. Frame ` +
+          "bounds must be strictly ordered — `startFrame` less than `endFrame`, at least one frame apart — " +
+          "where time bounds may be equal.",
+        meta: { source: SEGMENTS_SOURCE },
+      });
+    }
+    if (segment.audioInput === undefined) return;
     const { startTime, endTime } = segment.audioInput;
     if ((startTime === undefined) !== (endTime === undefined)) {
       ctx.report({
@@ -173,6 +218,157 @@ function checkSegmentTimes(params: SyncLipsyncParams, _info: unknown, ctx: Pipel
         meta: { source: SOURCE },
       });
     }
+  });
+}
+
+/**
+ * A segment is lipsynced unless it says `lipsync: false`, and a lipsynced
+ * segment needs a track.
+ *
+ * Every segment field is optional in the spec, so neither rule is in the shape.
+ * Both are 422 `generation_input_segments_invalid` on /developer-guides/segments:
+ * "Only a segment with `lipsync: false` can omit `audioInput`", and "Every
+ * segment sets lipsync: false, so there is nothing to lipsync".
+ */
+function checkSegmentLipsync(params: SyncLipsyncParams, _info: unknown, ctx: PipelineContext): void {
+  const segments = params.segments;
+  if (segments === undefined || segments.length === 0) return;
+  segments.forEach((segment, index) => {
+    if (segment.lipsync === false || segment.audioInput !== undefined) return;
+    ctx.report({
+      code: "invalid_shape",
+      path: ["segments", index, "audioInput"],
+      model: params.model,
+      message:
+        `\`segments[${index}]\` is lipsynced (\`lipsync\` defaults to true) and names no track. Add ` +
+        "`audioInput: { refId }` pointing at an audio or text input, or set `lipsync: false` to keep this " +
+        "part of the video exactly as it is.",
+      meta: { source: SEGMENTS_SOURCE },
+    });
+  });
+  if (segments.every((segment) => segment.lipsync === false)) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["segments"],
+      model: params.model,
+      message:
+        "Every segment sets `lipsync: false`, so there is nothing to lipsync. Lipsync at least one " +
+        "segment — to keep the whole video unchanged, do not create a generation.",
+      meta: { source: SEGMENTS_SOURCE },
+    });
+  }
+}
+
+/**
+ * `outputAudio` — the one track played over the whole output — and the rule
+ * that makes it necessary.
+ *
+ * Three 422 `generation_input_segments_invalid` cases from
+ * /developer-guides/segments: "outputAudio needs segments"; its `refId` "names
+ * no audio input in the request, or names a text-to-speech input"; and a
+ * `lipsync: false` segment with `outputAudio` missing when "the request
+ * doesn't have exactly one audio input" — the one input that would otherwise
+ * play over it.
+ */
+function checkOutputAudio(params: SyncLipsyncParams, _info: unknown, ctx: PipelineContext): void {
+  const outputAudio = params.outputAudio;
+  const segments = params.segments;
+  if (segments === undefined) {
+    if (outputAudio === undefined) return;
+    ctx.report({
+      code: "invalid_shape",
+      path: ["outputAudio"],
+      model: params.model,
+      message:
+        "`outputAudio` needs `segments`. To play one audio input across the whole video, send it as the " +
+        "only audio input and omit both `segments` and `outputAudio`.",
+      meta: { source: SEGMENTS_SOURCE },
+    });
+    return;
+  }
+
+  const audios = params.input.filter((item) => item.type === "audio");
+  if (outputAudio === undefined) {
+    if (!segments.some((segment) => segment.lipsync === false) || audios.length === 1) return;
+    ctx.report({
+      code: "invalid_shape",
+      path: ["outputAudio"],
+      model: params.model,
+      message:
+        "A `lipsync: false` segment plays one audio track over the whole output, and with no " +
+        `\`outputAudio\` that track is the request's only audio input — this request has ${audios.length}. ` +
+        "Set `outputAudio: { refId }` to the audio input that covers the whole video.",
+      meta: { source: SEGMENTS_SOURCE, audios: audios.length },
+    });
+    return;
+  }
+
+  const refId = outputAudio.refId;
+  if (audios.some((item) => item.refId === refId)) return;
+  const known = audios.map((item) => item.refId).filter((id): id is string => id !== undefined);
+  const isText = params.input.some((item) => item.type === "text" && item.refId === refId);
+  ctx.report({
+    code: "invalid_shape",
+    path: ["outputAudio", "refId"],
+    model: params.model,
+    message:
+      `\`outputAudio.refId\` is "${refId}", which ${isText ? "names a text input" : "names no input"}; it must ` +
+      "name an `audio` input, not a text input. The audio refIds in this request are " +
+      `${known.length === 0 ? "none" : known.map((id) => `"${id}"`).join(", ")}.`,
+    meta: { source: SEGMENTS_SOURCE, refId, known },
+  });
+}
+
+/**
+ * `dialogueEdit` is a request MODE, like `dubParams`: the completed edit
+ * supplies the audio and the edited regions.
+ *
+ * "Submit `dialogueEdit: { "id": "..." }` with exactly one video input. … Do
+ * not add an audio input, image input, `segments`, or `dubParams`."
+ * (/developer-guides/dialogue-editing). The one-video half is
+ * `checkInputArity`'s, and an image item cannot reach this address at all.
+ */
+function checkDialogueEdit(params: SyncLipsyncParams, _info: unknown, ctx: PipelineContext): void {
+  if (params.dialogueEdit === undefined) return;
+  const voices = params.input.filter((item) => item.type === "audio" || item.type === "text");
+  const conflicts = [
+    ...(voices.length > 0 ? [`${voices.length} audio or text input${voices.length === 1 ? "" : "s"}`] : []),
+    ...(params.segments !== undefined ? ["`segments`"] : []),
+    ...(params.dubParams !== undefined ? ["`dubParams`"] : []),
+  ];
+  if (conflicts.length === 0) return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["dialogueEdit"],
+    model: params.model,
+    message:
+      "`dialogueEdit` takes its audio and edited regions from the completed dialogue edit, so the request " +
+      "carries exactly one video input — the original the edit was made from — and nothing else to " +
+      `say. This one also has ${conflicts.join(" and ")}; drop ${conflicts.length === 1 ? "it" : "them"}, ` +
+      "or drop `dialogueEdit`.",
+    meta: { source: DIALOGUE_EDIT_SOURCE, conflicts },
+  });
+}
+
+/**
+ * A dubbed range runs forwards.
+ *
+ * `dubParams.endTime` "Must be after startTime and within the source video",
+ * and "Invalid ranges return 422 generation_input_trim_invalid". The source's
+ * length is not in the request; the order is.
+ */
+function checkDubRange(params: SyncLipsyncParams, _info: unknown, ctx: PipelineContext): void {
+  const startTime = params.dubParams?.startTime ?? 0;
+  const endTime = params.dubParams?.endTime;
+  if (endTime === undefined || endTime > startTime) return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["dubParams", "endTime"],
+    model: params.model,
+    message:
+      `\`dubParams\` selects ${startTime}s to ${endTime}s of the source; \`endTime\` must be after ` +
+      `\`startTime\`${params.dubParams?.startTime === undefined ? ", which defaults to 0" : ""}.`,
+    meta: { source: SOURCE },
   });
 }
 
@@ -215,12 +411,13 @@ function finalize(params: SyncLipsyncParams): unknown {
  * No `estimate`, and the reason is worth stating because sync. publishes a
  * per-second rate for every model.
  *
- * The rate is per second of OUTPUT, and the output's duration is the input
- * clip's (or the audio's, depending on `sync_mode`) — neither of which a URL
- * reveals. Multiplying by a guessed duration would produce a number that looks
- * authoritative and is not. sync.'s own `POST /v2/analyze/cost` takes this exact
- * body and answers `{ estimatedFrameCount, estimatedGenerationCost }` in USD;
- * `ANALYZE_COST_URL` is exported for it, and unmodel never calls it.
+ * The rate is per OUTPUT FRAME, quoted per second at 25 fps, and the output's
+ * duration is the input clip's (or the audio's, depending on `sync_mode`) —
+ * none of which a URL reveals. Multiplying by a guessed duration would produce
+ * a number that looks authoritative and is not. sync.'s own
+ * `POST /v2/generations/estimate` answers in USD once you supply the duration
+ * (and the fps) yourself — it takes `{ model, duration, fps? }`, not this body;
+ * `ESTIMATE_COST_URL` is exported for it, and unmodel never calls it.
  */
 const validator = createValidator<SyncLipsyncParams, unknown>({
   endpoint: "sync.lipsync",
@@ -233,9 +430,14 @@ const validator = createValidator<SyncLipsyncParams, unknown>({
     checkInputRefs(SOURCE),
     checkImageModel(SOURCE),
     checkModelGatedOptions(`${DOCS_BASE}/models/lipsync`),
+    checkReactPrompt(`${DOCS_BASE}/models/react`),
     checkDubParams(SOURCE),
+    checkDubRange,
+    checkDialogueEdit,
     checkSegmentRefIds(SOURCE),
     checkSegmentTimes,
+    checkSegmentLipsync,
+    checkOutputAudio,
   ],
   finalize,
 });

@@ -322,12 +322,17 @@ wrong, so it is checked here.
 
 Pricing is per second of OUTPUT at 25 fps, and each rate is published as a band whose low end is
 a volume discount rather than an uncertainty: sync-3 $0.107–$0.133, lipsync-2 $0.04–$0.05,
-lipsync-2-pro $0.067–$0.083, lipsync-1.9.0-beta $0.02–$0.025, react-1 $0.133–$0.167.
+lipsync-2-pro $0.067–$0.083, lipsync-1.9.0-beta $0.02–$0.025, react-1 $0.133–$0.167. The charge
+is per output FRAME — "per-second equivalents at **25 output frames per second**, not flat prices
+per second at every frame rate" — so a 30 fps output costs 20% more per second, and dubbing,
+a `text` input's speech and the reasoning pass are billed on top. sync.'s own estimate endpoint
+(`ESTIMATE_COST_URL`) quotes a model and a duration you supply.
 
-Not served: `POST /v2/tts` and the `/v2/voices` clone surface, which are an ElevenLabs
-passthrough — unmodel carries ElevenLabs natively, with the real voice roster and the real
-format controls rather than a two-field projection of them — and `/v2/assets`, `/v2/projects`
-and `/v2/batch`, which are storage, organisation and an envelope rather than generation.
+Not served: `POST /v2/tts`, its asynchronous twin `POST /v2/tts/jobs` and the `/v2/voices` clone
+surface, which are an ElevenLabs passthrough — unmodel carries ElevenLabs natively, with the real
+voice roster and the real format controls rather than a two-field projection of them — and
+`/v2/assets`, `/v2/audio-trims`, `/v2/projects` and `/v2/batch`, which are storage, asset
+preparation, organisation and an envelope rather than generation.
 
 The overlap with fal is the comparison this pack exists to make cheap: four of fal's ten lipsync
 endpoints are sync.'s own models resold, so `lipsync({ model: "fal/fal-ai/sync-lipsync/v2", … })`

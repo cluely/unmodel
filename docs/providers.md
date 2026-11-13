@@ -90,7 +90,8 @@ types): openai (tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15), cart
 deepgram (Aura 1/2), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave — deprecated,
 access ends 2026-11-13; see `hume.sts` below), inworld,
 lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
-resemble (`tts` + `ttsStream`), rime, smallest-ai,
+resemble (`tts` + `ttsStream`; closed to new customers since 2026-08-13, existing customers
+still served — see `src/providers/resemble/models.ts`), rime, smallest-ai,
 speechify (`tts` + `ttsStream`), stepfun (StepAudio 3, StepAudio 2.5), breezeblue (Breeze TTS 2 and
 Breeze TTS 2 Multilingual),
 alibaba (Qwen3-TTS on DashScope; the realtime ids — WebSocket, and for

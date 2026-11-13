@@ -15,10 +15,10 @@
  * https://docs.resemble.ai/voice-generation/text-to-speech/synchronous
  * (verified 2026-08-13).
  *
- * NO COST IS COMPUTED. Resemble publishes no public per-character or
- * per-second USD rate for voice generation, so the catalog carries no rate
- * (see models.ts) and `costUSD` stays undefined — `duration` is reported for
- * your own accounting, not priced.
+ * NO COST IS COMPUTED. Resemble's per-second voice rate depends on the
+ * caller's plan and is no longer sold to new customers, so the catalog
+ * carries no rate (see models.ts) and `costUSD` stays undefined — `duration`
+ * is reported for your own accounting, not priced.
  */
 
 import type { Issue } from "../../core/issues";

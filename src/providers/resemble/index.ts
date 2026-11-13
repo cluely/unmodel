@@ -28,6 +28,7 @@ export {
   models,
   provider,
   RESEMBLE_MAX_CHARACTERS,
+  RESEMBLE_SYNTHESIZE_MAX_CHARACTERS,
   TTS_MODEL_IDS,
   STS_MODEL_IDS,
 } from "./models";

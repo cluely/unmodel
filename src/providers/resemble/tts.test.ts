@@ -9,7 +9,13 @@ import {
   PRECISIONS,
 } from "./tts";
 import { checkTts } from "./check";
-import { models, RESEMBLE_MAX_CHARACTERS, TTS_MODEL_IDS, STS_MODEL_IDS } from "./models";
+import {
+  models,
+  RESEMBLE_MAX_CHARACTERS,
+  RESEMBLE_SYNTHESIZE_MAX_CHARACTERS,
+  TTS_MODEL_IDS,
+  STS_MODEL_IDS,
+} from "./models";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -85,7 +91,7 @@ describe("resemble.tts happy path", () => {
       expect(r.estimate.costUSD).toBeUndefined();
       expect(r.warnings.map((w) => w.code)).not.toContain("unknown_model");
     }
-    // The catalog carries no rate either — Resemble publishes none.
+    // The catalog carries no rate either — Resemble's is plan-dependent.
     expect(catalog["resemble-ultra"]?.cost).toBeUndefined();
   });
 
@@ -160,33 +166,72 @@ describe("resemble precision/format pairing", () => {
 });
 
 describe("resemble character limit", () => {
-  test("data over 2000 characters is over_output_limit with character meta", () => {
+  test("the caps are the documented figures and the row carries the shared one", () => {
+    expect(RESEMBLE_MAX_CHARACTERS).toBe(2000);
+    expect(RESEMBLE_SYNTHESIZE_MAX_CHARACTERS).toBe(3000);
     expect(models["resemble-ultra"].limit.characters).toBe(RESEMBLE_MAX_CHARACTERS);
-    const data = "a".repeat(RESEMBLE_MAX_CHARACTERS + 1);
+  });
+
+  test("/synthesize: data over 3000 characters is over_output_limit with character meta", () => {
+    const data = "a".repeat(RESEMBLE_SYNTHESIZE_MAX_CHARACTERS + 1);
     const r = tts.safe({ voice_uuid: "v", data });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       const err = r.errors.find((e) => e.code === "over_output_limit");
       expect(err?.path).toEqual(["data"]);
       expect(err?.meta).toMatchObject({
-        limitCharacters: RESEMBLE_MAX_CHARACTERS,
-        actualCharacters: RESEMBLE_MAX_CHARACTERS + 1,
+        limitCharacters: RESEMBLE_SYNTHESIZE_MAX_CHARACTERS,
+        actualCharacters: RESEMBLE_SYNTHESIZE_MAX_CHARACTERS + 1,
+        source: "https://docs.resemble.ai/api-reference/text-to-speech/synthesize",
       });
     }
   });
 
-  test("the streaming route enforces the same cap", () => {
+  test("/synthesize: 2001–3000 characters passes with a warning naming both pages", () => {
+    for (const length of [RESEMBLE_MAX_CHARACTERS + 1, RESEMBLE_SYNTHESIZE_MAX_CHARACTERS]) {
+      const r = tts.safe({ voice_uuid: "v", data: "a".repeat(length) });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const warn = r.warnings.find((w) => w.code === "over_output_limit");
+        expect(warn?.severity).toBe("warning");
+        expect(warn?.path).toEqual(["data"]);
+        expect(warn?.meta).toMatchObject({
+          limitCharacters: RESEMBLE_MAX_CHARACTERS,
+          actualCharacters: length,
+          source: "https://docs.resemble.ai/voice-generation/text-to-speech/synchronous",
+          referenceLimitCharacters: RESEMBLE_SYNTHESIZE_MAX_CHARACTERS,
+          referenceSource: "https://docs.resemble.ai/api-reference/text-to-speech/synthesize",
+        });
+      }
+    }
+  });
+
+  test("/synthesize: exactly 2000 characters is clean", () => {
+    const r = tts.safe({ voice_uuid: "v", data: "a".repeat(RESEMBLE_MAX_CHARACTERS) });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("/stream: data over 2000 characters is an error", () => {
     const r = ttsStream.safe({
       voice_uuid: "v",
       data: "a".repeat(RESEMBLE_MAX_CHARACTERS + 1),
     });
     expect(r.ok).toBe(false);
+    if (!r.ok) {
+      const err = r.errors.find((e) => e.code === "over_output_limit");
+      expect(err?.meta).toMatchObject({
+        limitCharacters: RESEMBLE_MAX_CHARACTERS,
+        actualCharacters: RESEMBLE_MAX_CHARACTERS + 1,
+        source: "https://docs.resemble.ai/voice-generation/text-to-speech/streaming-http",
+      });
+    }
   });
 
-  test("exactly at the cap passes", () => {
-    expect(tts.safe({ voice_uuid: "v", data: "a".repeat(RESEMBLE_MAX_CHARACTERS) }).ok).toBe(
-      true,
-    );
+  test("/stream: exactly 2000 characters is clean", () => {
+    const r = ttsStream.safe({ voice_uuid: "v", data: "a".repeat(RESEMBLE_MAX_CHARACTERS) });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
   });
 });
 

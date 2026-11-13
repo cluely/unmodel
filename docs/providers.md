@@ -89,6 +89,19 @@ pre-send estimates. **Excluded:** the Orchestrator API (`/orchestrator/v1`) — 
 API is in private preview." ([orchestrator models](https://docs.perplexity.ai/docs/orchestrator/models),
 2026-11-12).
 
+**upstage** addresses Chat Completions (`POST https://api.upstage.ai/v1/chat/completions`)
+for solar-pro4 and solar-mini4. Upstage retired the older Solar ids on October 30, 2026
+(KST): "Support ended for `solar-pro3` and all of its versions", with the same line for
+`solar-pro2` and `solar-mini` ([changelog](https://console.upstage.ai/docs/resources/changelog),
+2026-11-12). Replacements: `solar-pro4` for solar-pro3 and solar-pro2, `solar-mini4` for
+solar-mini. Upstage answers a retired id with 400 `invalid_request_body`, "a model that is
+invalid or no longer supported" ([error codes](https://console.upstage.ai/docs/resources/error-codes),
+2026-11-12). models.dev still carries the three rows with no `status`, so `upstage.chat`
+validates and prices them without a `deprecated_model` warning until upstream marks them
+deprecated; the one exception is `reasoning_effort` on the solar-mini family, still refused.
+Open owner decisions: a hand retired-ids refusal (google's `VIDEO_RETIRED_IDS` shape) and
+whether the solar-mini `reasoning_effort` deny retires with its model.
+
 ## Speech wave — TTS / STT (native APIs, hand-maintained catalogs ✋)
 
 **Live — TTS:** every provider addresses its synthesis route as `tts` (the address-vs-wire

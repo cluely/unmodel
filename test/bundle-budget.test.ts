@@ -319,8 +319,11 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    *
    * **minimax 227 → 250 at the 2026-11-12 model wave (227.0 measured).** The
    * barrel's own growth: the MiniMax-M3 / M3.1-Flash deny and enum tables and
-   * the three H3 rows on `minimax.videoV2`; the shared generated chat-refs
-   * table every barrel reaches is what crossed the line, not a new edge.
+   * the three H3 rows on `minimax.videoV2` left it at the edge. The upstage
+   * slice then pushed it over by +0.6 KiB (226.5 → 227.0): the new JSDoc on
+   * `upstage/constraints.ts`, which `retarget/target-constraints.ts` inlines
+   * into the shared target-constraints chunk (unminified ESM ships the prose).
+   * No module joined the graph, and the generated chat-refs table is not in it.
    */
   pixverse: 71, // 64.4 measured, 2026-11-12: v6-max, webhook_id and the image-to-video template arm; ~10% headroom.
   lightricks: 68,

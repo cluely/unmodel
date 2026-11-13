@@ -8,7 +8,7 @@ describe("unmodel/upstage", () => {
 
   test("a catalog model validates ok and the result is wire-pure", () => {
     const params = {
-      model: "solar-pro3" as const,
+      model: "solar-pro4" as const,
       messages: [{ role: "user" as const, content: "hi" }],
     };
     const r = chat.safe(params);
@@ -34,7 +34,9 @@ describe("unmodel/upstage", () => {
     }
   });
 
-  test("reasoning_effort is denied for solar-mini per Upstage's docs", () => {
+  // The live for-agents/raw URL serves a 404 page (checked 2026-11-12), so the
+  // deny cites its last capture and names the replacement model.
+  test("reasoning_effort is denied for the retired solar-mini, citing the archived reference", () => {
     const r = chat.safe({
       model: "solar-mini",
       messages: [{ role: "user", content: "hi" }],
@@ -44,7 +46,10 @@ describe("unmodel/upstage", () => {
     if (!r.ok) {
       const issue = r.errors.find((e) => e.code === "unsupported_param");
       expect(issue?.path).toEqual(["reasoning_effort"]);
-      expect(issue?.meta?.source).toContain("console.upstage.ai");
+      expect(issue?.meta?.source).toStartWith(
+        "https://web.archive.org/web/20260414103038/https://console.upstage.ai/api/docs/for-agents/raw",
+      );
+      expect(issue?.message).toContain("solar-mini4");
     }
   });
 
@@ -115,7 +120,7 @@ describe("unmodel/upstage", () => {
 
   test("checkChat maps usage from a minimal response", () => {
     const report = checkChat({
-      model: "solar-pro3",
+      model: "solar-pro4",
       choices: [{ finish_reason: "stop" }],
       usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
     });

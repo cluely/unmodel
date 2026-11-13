@@ -5,7 +5,7 @@
  *
  * ## What is here
  *
- * The two generation models VEED publishes, one address each, because they are
+ * Two of the five models VEED publishes, one address each, because they are
  * two URLs with disjoint schemas and different prices:
  *
  * - `lipsync` — `POST /v1/lipsync-2.0`. A source CLIP plus a new track;
@@ -17,13 +17,18 @@
  * ## What is deliberately NOT here
  *
  * **The `video-background-removal` family** — three variants and six of VEED's
- * ten operations. A real, priced, well-documented product that matches no
+ * eighteen operations. A real, priced, well-documented product that matches no
  * category unmodel has: it mattes a subject out of a clip and hands back a WebM
  * with an alpha channel (or two files on h264, RGB plus the matte). `video`
  * invents frames, `imageEdit` is a still, `upscale` changes resolution — none
  * of those vocabularies fits, and a one-provider `matting` category read off a
  * single witness is exactly what this library declines to build. It joins the
  * day a second vendor publishes the same operation.
+ *
+ * **Dubbing and Clean Audio** — `/v1/dubbing`, `/v1/dubbing-pro`,
+ * `/v1/clean-audio` and `/v1/clean-audio-video`, public and priced. Each is a
+ * new endpoint address rather than a model on one of the two here, and none is
+ * served yet; `./models.ts` says what each would need.
  *
  * **A presenter roster.** fal sells `veed/avatars/audio-to-video`, a library of
  * trained presenters selected by `avatar_id`. It has no native endpoint: `POST
@@ -57,12 +62,13 @@
  *
  * ## Getting a key
  *
- * The docs, the schemas and the playground are fully public — no login — but
- * keys are not self-serve: every page's footer reads "API access is granted on
- * request" and links to https://www.veed.io/contact-sales. That is a credential
- * gate rather than a documentation gate, which is why the types here are as
- * exact as any in the library and were nonetheless never exercised against a
- * live key.
+ * Self-serve: "Create one in your workspace dashboard, then put it in your
+ * environment" (https://api.veed.io/docs/quickstart). Self-serve workspaces
+ * prepay credits in the dashboard's Billing; sales is for Enterprise arrears
+ * billing, higher rate limits and volume pricing, not for a key
+ * (https://api.veed.io/docs/accounts, 2026-11-12). The types here were
+ * transcribed from the spec and its pages and have not been exercised against
+ * a live key.
  */
 
 export { lipsync, lipsyncConstraints, LIPSYNC_MODEL } from "./lipsync";
@@ -85,6 +91,7 @@ export {
   VEED_JOB_ERROR_CODES,
   VEED_JOB_STATUSES,
   VEED_MEDIA_EXPIRATION_DEFAULT_SECONDS,
+  VEED_MEDIA_EXPIRATION_MAX_SECONDS,
   VEED_MODELS,
   VEED_POLL_INTERVAL_SECONDS,
   VEED_PRICING,

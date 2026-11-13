@@ -4,8 +4,9 @@
  * Re-render a clip with the speaker's mouth matched to a new track: dubbing,
  * voice replacement, or a cleaner take.
  *
- * Wire notes (verified against https://api.veed.io/openapi.json and the model
- * page at https://api.veed.io/models/lipsync-2.0 on 2026-08-25):
+ * Wire notes (verified against https://api.veed.io/openapi.json and the
+ * reference page at https://api.veed.io/docs/api/post-v1-lipsync-2-0 on
+ * 2026-11-12):
  *
  * - **Two fields, both required, and no others.** `video_url` and `audio_url`,
  *   each a public `http(s)` URL 1–8192 characters long. `Lipsync20Input` is
@@ -15,6 +16,9 @@
  * - **No dials at all.** No `sync_mode`, no `loop_mode`, no fps, no resolution,
  *   no seed. What VEED does when the track outlasts the clip is not a question
  *   this API takes an answer to.
+ * - **One speaker per clip.** "`video_url` — public URL of the source video,
+ *   with one speaker. More than one speaker is not supported." The URL is not
+ *   fetched here, so that is a documented limit rather than a check.
  * - `application/json`. There is no multipart arm and no base64 arm anywhere in
  *   VEED's document: inputs are URLs VEED fetches, full stop.
  * - Async: responds **202** with `{ data: { job_id, status: "PROCESSING" } }`;
@@ -54,7 +58,7 @@ import {
 
 export { LIPSYNC_URL } from "./shared";
 
-const SOURCE = `${DOCS_BASE}/models/lipsync-2.0`;
+const SOURCE = `${DOCS_BASE}/docs/api/post-v1-lipsync-2-0`;
 
 /** The id this address serves — one, and the path says so. */
 export const LIPSYNC_MODEL = "lipsync-2.0";
@@ -92,9 +96,9 @@ const lipsyncSchema = z.looseObject({
  * An EMPTY row, and that is the finding rather than an omission:
  * `Lipsync20Input` has two fields, both required and both URLs, so there is no
  * enum to narrow, no param to deny and no media rule to state — VEED documents
- * no format list, no duration ceiling and no size ceiling for either input. The
- * one published limit is `audio_too_long`, a failure code with no number
- * attached to it.
+ * no format list, no duration ceiling and no size ceiling for either input.
+ * What it does publish cannot be checked against a URL: one speaker per clip,
+ * and `audio_too_long`, a failure code with no number attached to it.
  */
 export const lipsyncConstraints = {
   "lipsync-2.0": {},
@@ -103,9 +107,10 @@ export const lipsyncConstraints = {
 /**
  * `.toSdk("veed")` hands back the same flat object.
  *
- * VEED ships no client library in any language — the docs' three tabs are
- * curl, Node `fetch` and Go `net/http` — so this target exists for the shape
- * the rest of the library has rather than for a package to consume. Derived
+ * VEED's generated SDKs (npm `@veedstudio/sdk`, PyPI `veed`, Go
+ * `veed-sdk-go`) take the same flat body: `@veedstudio/sdk` 0.3.0's
+ * `Lipsync20Input` is exactly `video_url` and `audio_url`. unmodel does not
+ * depend on any of them, so this target returns the body unchanged. Derived
  * from the `sdk` literal in `finalize`; it must stay an object type with no
  * index signature, or `toSdk` would accept any string.
  */

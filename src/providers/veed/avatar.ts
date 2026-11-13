@@ -5,8 +5,9 @@
  * VEED's own tag calls it "talking-avatar creation", and it is the whole reason
  * this provider reaches `unmodel/avatar` as well as `unmodel/lipsync`.
  *
- * Wire notes (verified against https://api.veed.io/openapi.json and the model
- * page at https://api.veed.io/models/fabric-1.0 on 2026-08-25):
+ * Wire notes (verified against https://api.veed.io/openapi.json and the
+ * reference page at https://api.veed.io/docs/api/post-v1-fabric-1-0 on
+ * 2026-11-12):
  *
  * - **Three fields, all three required.** `image_url`, `audio_url` and
  *   `resolution`. The first two are public `http(s)` URLs, 1–8192 characters;
@@ -60,7 +61,7 @@ import {
 
 export { FABRIC_URL } from "./shared";
 
-const SOURCE = `${DOCS_BASE}/models/fabric-1.0`;
+const SOURCE = `${DOCS_BASE}/docs/api/post-v1-fabric-1-0`;
 
 /** The id this address serves — one, and the path says so. */
 export const AVATAR_MODEL = "fabric-1.0";
@@ -106,7 +107,7 @@ export const avatarConstraints = {
   },
 } as const satisfies Readonly<Partial<Record<string, EndpointConstraints>>>;
 
-/** See `./lipsync.ts` — one target, and VEED ships no client to hand it to. */
+/** See `./lipsync.ts` — one target, the flat body VEED's own SDKs also take. */
 type VeedSdkTargets<B> = { veed: () => B };
 
 function finalize(params: VeedAvatarParams): unknown {

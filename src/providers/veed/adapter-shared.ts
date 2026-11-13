@@ -14,9 +14,9 @@ export const SOURCE_URL = "https://api.veed.io/docs";
  * What to do instead, when a caller hands an adapter inline bytes.
  *
  * VEED has **no upload arm at all**: no multipart, no base64, no asset ids, no
- * presigned-upload endpoint. Every media field in the whole ten-operation
- * document is a URL with the pattern `^[Hh][Tt][Tt][Pp][Ss]?://` on it, which
- * VEED fetches. So a `{ data }` ref is refused here naming the only thing that
+ * presigned-upload endpoint. Every media field in VEED's whole document is a
+ * URL with the pattern `^[Hh][Tt][Tt][Pp][Ss]?://` on it, which VEED
+ * fetches. So a `{ data }` ref is refused here naming the only thing that
  * works, rather than compiled into a `data:` URI VEED would reject with a 422
  * before creating a job.
  *

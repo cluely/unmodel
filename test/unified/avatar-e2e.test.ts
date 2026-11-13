@@ -200,6 +200,7 @@ describe("the result is VEED's own Validated, and it insists on a resolution", (
     expect(issue?.message).toContain("$0.08");
     expect(issue?.message).toContain("$0.15");
     expect(issue?.meta?.["allowed"]).toEqual(["480p", "720p"]);
+    expect(issue?.meta?.["source"]).toBe("https://api.veed.io/docs/api/post-v1-fabric-1-0");
   });
 
   test("it ends in the SAME validator the hand surface calls", () => {

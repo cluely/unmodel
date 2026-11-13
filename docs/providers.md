@@ -363,10 +363,12 @@ because sync. catalogues no preset performers and publishes no field to name one
 `https://api.veed.io/v1`, JSON bodies, `Authorization: Bearer vp_…` (`VEED_API_KEY`), and two
 URLs with disjoint schemas: `POST /v1/lipsync-2.0` takes `{ video_url, audio_url }` and
 `POST /v1/fabric-1.0` takes `{ image_url, audio_url, resolution }`. Everything here comes from
-one publicly fetchable OpenAPI 3.1.0 document (`https://api.veed.io/openapi.json`, 10
-operations, 21 schemas) whose components are also served standalone at
-`/schemas/{Name}.json` — the same URL every response carries in its own `$schema`. There was no
-SDK tiebreak to run: VEED ships no client in any language.
+one publicly fetchable OpenAPI 3.1.0 document (`https://api.veed.io/openapi.json`, 18
+operations, 37 schemas, verified 2026-11-12) whose components are also served standalone at
+`/schemas/{Name}.json` — the same URL every response carries in its own `$schema`. VEED's
+official SDKs (npm `@veedstudio/sdk`, PyPI `veed`, Go `veed-sdk-go`) are generated from that
+document and lag it — `@veedstudio/sdk` 0.3.0's job types omit the `credits_charged` /
+`credits_estimated` fields the spec declares — so the spec stays the primary source.
 
 Three facts about that document decide the whole provider. **Every request schema is
 `additionalProperties: false`**, so an undeclared key is a 422 with no job created rather than a
@@ -384,16 +386,16 @@ Pricing is unusually good here: it is IN THE SPEC. Each submit operation carries
 `x-veed-pricing` extension with currency, unit, rounding and a `rates` array that may be
 conditioned on a request field — `{"rates":[{"amount":0.07}],"unit":"second","rounding":"exact"}`
 on lipsync, and the two-way `resolution` fork on fabric. So the rates unmodel carries change in
-the same diff as a schema change rather than drifting away from a marketing page. (Where the
-published numbers DO disagree, `https://www.veed.io/api` says Fabric is "$0.08–$0.20/sec"; the
-model page, the tools page and the machine-readable extension all say $0.08–$0.15, and the
-outlier is not followed.)
+the same diff as a schema change rather than drifting away from a marketing page.
+(`https://www.veed.io/api` prices Fabric up to $0.20/sec because it lists a "Fast" tier —
+480p $0.10, 720p $0.20 — that has no native route; its "Regular" rows are the native $0.08 and
+$0.15, matching `https://api.veed.io/pricing` and the extension.)
 
 Neither address estimates. The rate is per second of GENERATED video and the generated video's
 length is the input's, behind a URL unmodel never fetches; VEED publishes no pre-flight quote
 endpoint either.
 
-Not served: the `video-background-removal` family — three variants and six of VEED's ten
+Not served: the `video-background-removal` family — three variants and six of VEED's eighteen
 operations. It is a real, priced, publicly documented product that matches no category unmodel
 has (it mattes a subject out of a clip and returns a WebM with an alpha channel, or two files on
 h264), and a one-provider `matting` category read off a single witness is exactly what this
@@ -402,11 +404,17 @@ sells `veed/avatars/audio-to-video`, a library of trained presenters named by `a
 `POST /v1/avatars` answers a real JSON 404 — so the same vendor is a `sources: []` row at fal
 and a `sources: ["image"]` row here, two products that happen to share a name.
 
-⚠️ **Keys are not self-serve.** The docs, the schemas and the playground are fully public with
-no login, but every page's footer reads "API access is granted on request" and links to
-`https://www.veed.io/contact-sales`. That is a credential gate rather than a documentation gate,
-which is why the types here are as exact as any in the library and were nonetheless never
-exercised against a live key.
+Not yet served, and each a new endpoint address awaiting an owner decision: Dubbing
+(`/v1/dubbing` $0.11/sec, `/v1/dubbing-pro` $0.18/sec, of generated video — a third native
+dubbing witness beside `elevenlabs.dub` and HeyGen's declined video-translations route) and
+Clean Audio (`/v1/clean-audio`, `/v1/clean-audio-video`, $0.0125 per minute of input audio — no
+category and no second witness).
+
+**Keys are self-serve.** Create one in the workspace dashboard
+(`https://api.veed.io/docs/quickstart`); self-serve workspaces prepay credits, and sales is for
+Enterprise arrears billing, higher rate limits and volume pricing
+(`https://api.veed.io/docs/accounts`). The types here were transcribed from the spec and have
+not been exercised against a live key.
 
 **HeyGen — `heygen.avatar` and `heygen.lipsync`, 5 models.** Tier: **native**.
 `https://api.heygen.com/v3`, JSON bodies, `x-api-key: <HEYGEN_API_KEY>`, two URLs with two
@@ -572,8 +580,8 @@ have that arm, so one HeyGen request accepts bytes for the still and refuses the
 That asymmetry is the vendor's, and the refusal says so.
 
 **Two kinds of failure at VEED, and code that checks `res.ok` sees one of them.** A submit
-rejected at the HTTP layer creates no job and carries an eight-member `error.code`; a job that
-was ACCEPTED and then failed carries a seven-member, disjoint `result.error.code` and arrives
+rejected at the HTTP layer creates no job and carries a nine-member `error.code`; a job that
+was ACCEPTED and then failed carries an eight-member, disjoint `result.error.code` and arrives
 through the GET with a 200. Both vocabularies are exported from `unmodel/veed/values`.
 
 ## 3D wave — the first category with two witnesses

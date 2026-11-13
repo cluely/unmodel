@@ -30,8 +30,11 @@ import {
   MEDIA_URL_PATTERN,
   OPENAPI_URL,
   VEED_ERROR_CODES,
+  VEED_ERROR_REASONS,
   VEED_JOB_ERROR_CODES,
   VEED_JOB_STATUSES,
+  VEED_MEDIA_EXPIRATION_DEFAULT_SECONDS,
+  VEED_MEDIA_EXPIRATION_MAX_SECONDS,
   VEED_MODELS,
   VEED_PRICING,
   VEED_RESOLUTIONS,
@@ -104,6 +107,8 @@ describe("every media field is a URL VEED fetches, and only that", () => {
     expect(issue?.code).toBe("invalid_shape");
     expect(issue?.message).toContain("no upload arm at all");
     expect(issue?.message).toContain("no multipart, no base64 and no asset ids");
+    // The route's live reference page, not the retired `/models/<id>` page.
+    expect(issue?.meta?.["source"]).toBe("https://api.veed.io/docs/api/post-v1-lipsync-2-0");
   });
 
   test("object-store references and bare paths get the other half of the message", () => {
@@ -176,6 +181,7 @@ describe("`additionalProperties: false` is an ERROR here, not a warning", () => 
     if (result.ok) return;
     const issue = result.errors.find((error) => error.path.join(".") === "video_url");
     expect(issue?.message).toContain("`image_url`, `audio_url`, `resolution`");
+    expect(issue?.meta?.["source"]).toBe("https://api.veed.io/docs/api/post-v1-fabric-1-0");
   });
 });
 
@@ -247,10 +253,49 @@ describe("the failure surface has two channels", () => {
     expect(VEED_JOB_ERROR_CODES).toContain("audio_too_long");
   });
 
+  test("the money arm is spelled two ways on the two channels", () => {
+    // `ErrorBody.code` says `insufficient_tokens`; `ErrorDetail.reason` and
+    // every `JobError*ErrorCode` say `insufficient_credits` (openapi.json,
+    // 2026-11-12). The two lists stay disjoint because the spellings differ.
+    expect(VEED_ERROR_CODES).toEqual([
+      "invalid_request",
+      "unauthenticated",
+      "insufficient_tokens",
+      "permission_denied",
+      "not_found",
+      "conflict",
+      "rate_limited",
+      "unavailable",
+      "internal",
+    ]);
+    expect(VEED_JOB_ERROR_CODES.at(-1)).toBe("insufficient_credits");
+    expect(VEED_JOB_ERROR_CODES).toHaveLength(8);
+    expect(VEED_ERROR_REASONS).toEqual([
+      "api_key_expired",
+      "api_key_inactive",
+      "api_key_invalid",
+      "api_key_revoked",
+      "api_key_workspace_unavailable",
+      "insufficient_credits",
+      "job_not_found",
+      "model_access_required",
+      "oauth_token_invalid",
+    ]);
+  });
+
   test("`CANCELLED` is in the status union although no cancel route exists", () => {
-    // It is in the spec's enum on all three job schemas, so it is in the union;
+    // It is in the spec's enum on all six job schemas, so it is in the union;
     // a `switch` that omitted it would fall through the day VEED ships one.
     expect(VEED_JOB_STATUSES).toContain("CANCELLED");
     expect(VEED_JOB_STATUSES).toEqual(["PROCESSING", "COMPLETED", "FAILED", "CANCELLED"]);
+  });
+});
+
+describe("the result URL's lifetime", () => {
+  test("the expiration header publishes its default and its ceiling", () => {
+    // One day unless asked; at most thirty days, and a larger ask is capped
+    // rather than refused, so the ceiling is data and never a check.
+    expect(VEED_MEDIA_EXPIRATION_DEFAULT_SECONDS).toBe(86_400);
+    expect(VEED_MEDIA_EXPIRATION_MAX_SECONDS).toBe(30 * VEED_MEDIA_EXPIRATION_DEFAULT_SECONDS);
   });
 });

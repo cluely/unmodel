@@ -4,12 +4,12 @@
  *
  * Wire notes (transcribed from the machine-readable v2beta spec at
  * https://api.stability.ai/v2alpha/openapi — despite the /v2alpha path it
- * serves the v2beta REST spec and IS the definition the rendered reference at
- * https://platform.stability.ai/docs/api-reference loads — on 2026-08-13):
+ * serves the v2beta REST spec and matches the rendered reference at
+ * https://docs.stability.ai/api-reference — on 2026-08-13):
  * - MULTIPART form endpoints, like the stable-image routes: the validated
  *   output's enumerable props are the exact form fields (including the `audio`
  *   Blob) — do NOT `JSON.stringify` them. Send `.request.url` +
- *   `toFormData(validated)` (re-exported from ./generate) as the body; fetch
+ *   `toFormData(validated)` (from ./image) as the body; fetch
  *   derives the multipart content-type with its boundary from the FormData,
  *   which is why `.request.headers` is empty.
  * - Accept header: `audio/*` (the server default) returns raw audio bytes;
@@ -44,7 +44,7 @@ export const STABLE_AUDIO_INPAINT_URL = `${AUDIO_BASE_URL}/inpaint`;
 
 const API_REFERENCE_URL = "https://api.stability.ai/v2alpha/openapi";
 
-/** 1 credit = $0.01 — https://platform.stability.ai/pricing */
+/** 1 credit = $0.01 — https://docs.stability.ai/pricing */
 export const STABILITY_USD_PER_CREDIT = 0.01;
 
 /**
@@ -81,16 +81,19 @@ export const STABLE_AUDIO_2_5_STRENGTH_MIN = 0.01;
 /**
  * Credits a successful generation costs:
  * - stable-audio-2: `credits = 17 + 0.06 * steps` (50 steps → 20 credits).
- * - stable-audio-2.5: flat 20 credits.
- * - stable-audio-3 (the async /v2beta/audio/stable-audio/* routes): flat 26.
- * Unknown models return undefined rather than guessing.
+ * - stable-audio-2.5: flat 8 credits — "Requests made using the Stable Audio
+ *   2.5 model have a flat rate of 8 credits per successful result."
+ * - stable-audio-3 (the async /v2beta/audio/stable-audio/* routes): flat 8 —
+ *   "`stable-audio-3` requires 8 credits per generation".
+ * (https://api.stability.ai/v2alpha/openapi, 2026-11-12.) Unknown models
+ * return undefined rather than guessing.
  */
 export function stableAudioCredits(model: string, steps?: number): number | undefined {
   if (model === "stable-audio-2") {
     return 17 + 0.06 * (steps ?? STABLE_AUDIO_STEPS["stable-audio-2"]!.default);
   }
-  if (model === "stable-audio-2.5") return 20;
-  if (model === "stable-audio-3") return 26;
+  if (model === "stable-audio-2.5") return 8;
+  if (model === "stable-audio-3") return 8;
   return undefined;
 }
 
@@ -363,8 +366,9 @@ interface StableAudioValidator<P> {
 
 /**
  * Validates params for `POST /v2beta/audio/stable-audio-2/text-to-audio`
- * (music and sound effects up to 190 seconds at 44.1kHz stereo; 20 credits ≈
- * $0.20 per successful generation at the default step counts).
+ * (music and sound effects up to 190 seconds at 44.1kHz stereo; per successful
+ * generation, 20 credits ≈ $0.20 on stable-audio-2 at its default 50 steps and
+ * a flat 8 credits ≈ $0.08 on stable-audio-2.5).
  *
  * Multipart endpoint: the validated output's enumerable props are the exact
  * form fields — send `.request.url` + `toFormData(validated)` as the body,
@@ -408,7 +412,7 @@ export const musicFromAudio = audioToAudioValidator as unknown as StableAudioVal
 /**
  * Validates params for `POST /v2beta/audio/stable-audio-2/inpaint`
  * (regenerate the `mask_start`–`mask_end` window of an existing track with
- * Stable Audio 2.5; flat 20 credits ≈ $0.20).
+ * Stable Audio 2.5; flat 8 credits ≈ $0.08).
  *
  * This route has no `model` field — Stable Audio 2.5 is the only model, so its
  * 4–8 `steps` bounds apply. Multipart endpoint — see

@@ -1,12 +1,12 @@
 // Hand-maintained — Stability AI is not in models.dev; refresh from
 //   https://api.stability.ai/v2alpha/openapi           (MACHINE-READABLE ground
 //     truth: despite the /v2alpha path this URL serves the v2beta REST spec,
-//     stable-image generate/edit/control/upscale routes included. It is the
-//     spec the rendered reference SPA loads — see VITE_REST_API_SPEC_URL in
-//     https://platform.stability.ai/assets/index-*.js)
-//   https://platform.stability.ai/docs/api-reference   (rendered reference)
-//   https://platform.stability.ai/pricing              (credit rates; "1 credit = $0.01")
-// Verified 2026-08-13.
+//     stable-image generate/edit/control/upscale routes included, and it
+//     matches the rendered reference)
+//   https://docs.stability.ai/api-reference            (rendered reference; every
+//     page is also served as <route>.md, indexed at https://docs.stability.ai/llms.txt)
+//   https://docs.stability.ai/pricing                  (credit rates; "1 credit = $0.01")
+// Verified 2026-11-12.
 //
 // Pricing conversions (documented so the arithmetic never rots unexplained):
 // - Stability bills flat credits per successful generation; failed
@@ -35,12 +35,19 @@
 //   per successful GENERATION of audio, which `ModelCost` cannot express
 //   (`perImage` is images, `perAudioMinute` is per minute — Stable Audio is
 //   neither: a 10-second and a 190-second track cost the same). The rates are
-//   real and documented, so ./audio exports the arithmetic
+//   real and documented, so ./music exports the arithmetic
 //   (`stableAudioCredits` / `STABILITY_USD_PER_CREDIT`) and its validators
 //   still produce an exact `estimate.costUSD`:
 //     stable-audio-2      17 + 0.06 x steps credits (50 steps → 20 → $0.20)
-//     stable-audio-2.5    20 credits flat → $0.20
-//     stable-audio-3      26 credits flat → $0.26
+//     stable-audio-2.5    8 credits flat → $0.08
+//     stable-audio-3      8 credits flat → $0.08
+//   Sources, 2026-11-12: the v2beta spec — "Requests made using the Stable
+//   Audio 2.5 model have a flat rate of 8 credits per successful result." and
+//   "`stable-audio-3` requires 8 credits per generation" — and the pricing
+//   page, which lists "Stable Audio 3.0 … | 8 |" and "Stable Audio 2.5 … | 8 |".
+//   The pricing page omits Stable Audio 2.0, but the spec still makes it the
+//   2.x routes' default ("default":"stable-audio-2") priced by
+//   "`credits = 17 + 0.06 * steps`", so the row stays.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -48,10 +55,10 @@ export const provider = {
   id: "stability",
   name: "Stability AI",
   env: ["STABILITY_API_KEY"],
-  doc: "https://platform.stability.ai/docs/api-reference",
+  doc: "https://docs.stability.ai/api-reference",
 } as const satisfies ProviderInfo;
 
-/** 1 credit = $0.01 — https://platform.stability.ai/pricing */
+/** 1 credit = $0.01 — https://docs.stability.ai/pricing */
 const USD_PER_CREDIT = 0.01;
 
 const routeModels = {
@@ -274,7 +281,7 @@ const editModels = {
  * it is Stable Audio 2.5 only). `stable-audio-3` is served by the separate
  * ASYNC `/v2beta/audio/stable-audio/*` routes (HTTP 202 + poll
  * `GET /v2beta/audio/results/{id}`), which unmodel does not validate yet; it
- * is catalogued for completeness and pricing, and ./audio rejects it on the
+ * is catalogued for completeness and pricing, and ./music rejects it on the
  * 2.x routes. See the header for why these carry no `cost`.
  */
 const audioModels = {
@@ -309,7 +316,10 @@ const audioModels = {
     toolCall: false,
     openWeights: false,
     modalities: { input: ["text", "audio"], output: ["audio"] },
-    limit: { context: 0 },
+    // `prompt` on all three /v2beta/audio/stable-audio/* routes is the shared
+    // schema — https://api.stability.ai/v2alpha/openapi, 2026-11-12:
+    // "AudioPrompt":{"type":"string","maxLength":10000
+    limit: { context: 0, characters: 10000 },
   },
 } as const satisfies Record<string, ModelInfo>;
 

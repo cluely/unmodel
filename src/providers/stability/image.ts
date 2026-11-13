@@ -4,8 +4,8 @@
  *
  * Wire notes (transcribed from the machine-readable v2beta spec at
  * https://api.stability.ai/v2alpha/openapi — despite the /v2alpha path it
- * serves the v2beta REST spec and IS the definition the rendered reference at
- * https://platform.stability.ai/docs/api-reference loads — on 2026-08-13):
+ * serves the v2beta REST spec and matches the rendered reference at
+ * https://docs.stability.ai/api-reference — on 2026-08-13):
  * - These are MULTIPART form endpoints. The validated output's enumerable
  *   props are the exact multipart fields (including the `image` Blob) — do
  *   NOT `JSON.stringify` them. The raw-fetch path is `.request.url` +

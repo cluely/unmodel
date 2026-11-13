@@ -5,8 +5,8 @@
  * remove-background).
  *
  * Wire notes (transcribed from the machine-readable v2beta spec at
- * https://api.stability.ai/v2alpha/openapi — the spec the rendered reference
- * SPA loads — on 2026-08-13):
+ * https://api.stability.ai/v2alpha/openapi — which matches the rendered
+ * reference at https://docs.stability.ai/api-reference — on 2026-08-13):
  * - MULTIPART form endpoints, exactly like the generate routes: the validated
  *   output's enumerable props are the form fields (including the `image` /
  *   `mask` Blobs) — do NOT `JSON.stringify` them. Send `.request.url` +
@@ -31,7 +31,9 @@
  * - Input-image validation rules ("every side ≥ 64 px", "total pixel count
  *   between 4,096 and 9,437,184", "aspect ratio between 1:2.5 and 2.5:1") are
  *   documented per route but cannot be checked from a Blob without decoding
- *   it, so they are recorded here and enforced server-side.
+ *   it, so they are recorded here and enforced server-side. remove-background
+ *   caps lower: "Total pixel count must be between 4,096 and 4,194,304
+ *   pixels" (spec, 2026-11-12).
  * - Billing is flat credits per successful generation (1 credit = $0.01); the
  *   estimate is exact per image, surcharge-free.
  */
@@ -62,7 +64,7 @@ export const STABLE_IMAGE_REMOVE_BACKGROUND_URL = `${EDIT_BASE_URL}/remove-backg
 
 /**
  * The spec is served here despite the /v2alpha path; it carries the v2beta
- * routes and is what platform.stability.ai's reference renders.
+ * routes and matches the reference at https://docs.stability.ai/api-reference.
  */
 const SPEC_URL = "https://api.stability.ai/v2alpha/openapi";
 

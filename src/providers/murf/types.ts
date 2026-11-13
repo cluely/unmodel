@@ -49,11 +49,13 @@ export type {
   MurfFormat,
   MurfGenerateSampleRate,
   MurfStreamSampleRate,
+  PronunciationDetail,
+  PronunciationDetailType,
 } from "./tts";
 
 export type { MurfSpeechResponseLike, MurfWordDuration } from "./check";
 
-export type { MurfModelId, MurfTtsModelId } from "./models";
+export type { MurfModelId, MurfTtsModelId, MurfStreamModelId } from "./models";
 
 // ---------------------------------------------------------------------------
 // Uniform category aliases — one per endpoint address this provider serves.

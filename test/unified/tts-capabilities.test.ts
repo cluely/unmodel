@@ -635,12 +635,13 @@ test("the eight providers whose delivery a request field moves are exactly these
 });
 
 test("murf is the one provider whose delivery the model ref decides", () => {
-  // `gen2` is served by /v1/speech/generate (JSON) and `falcon-2` by
+  // `gen2` is served by /v1/speech/generate (JSON) and the Falcon rows by
   // /v1/speech/stream (bytes), so the route — and the answer — is the ref's.
   const byModel = rows.filter(([, row]) => "byModel" in row.adapter.delivery);
   expect(byModel.map(([provider]) => provider)).toEqual(["murf"]);
   const spec = murf.delivery;
   expect(Object.keys(spec.byModel).sort()).toEqual([...murf.models].sort());
+  expect(spec.byModel["falcon-2.1"]).toEqual({ kind: "bytes" });
   expect(spec.byModel["falcon-2"]).toEqual({ kind: "bytes" });
 });
 

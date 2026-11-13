@@ -48,6 +48,7 @@ expectAssignable<PackRefs>("elevenlabs/eleven_flash_v2_5");
 expectAssignable<PackRefs>("openai/gpt-4o-mini-tts");
 expectAssignable<PackRefs>("cartesia/sonic-3.5");
 expectAssignable<PackRefs>("murf/falcon-2");
+expectAssignable<PackRefs>("murf/falcon-2.1");
 // @ts-expect-error — a model no adapter declares is not in the union…
 expectAssignable<PackRefs>("elevenlabs/eleven_v9");
 // @ts-expect-error — …and neither is a provider from another category.

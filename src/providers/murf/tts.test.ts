@@ -8,9 +8,15 @@ import {
   CHANNEL_TYPES,
   COMPANDED_SAMPLE_RATE,
   COMPANDED_CHANNEL_TYPE,
+  DEFAULT_STREAM_MODEL,
+  FALCON_STYLE,
+  VOLUME_OFFSET_MIN,
+  VOLUME_OFFSET_MAX,
 } from "./tts";
 import { checkTts } from "./check";
 import { models, MURF_MAX_CHARACTERS, STREAM_MODEL_IDS, GENERATE_MODEL_VERSIONS } from "./models";
+import { tts as murfAdapter } from "./unified";
+import { createTts } from "../../unified/tts";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -209,23 +215,114 @@ describe("murf enums", () => {
 });
 
 describe("murf.ttsStream", () => {
-  test("targets the streaming URL and defaults to falcon-2 pricing", () => {
+  test("targets the streaming URL and defaults to falcon-2.1 pricing", () => {
+    expect(DEFAULT_STREAM_MODEL).toBe("falcon-2.1");
     const v = ttsStream({ text: "a".repeat(1000), voiceId: "en-US-natalie" });
     expect(Object.keys(v)).toEqual(["text", "voiceId"]);
     expect(v.request.url).toBe(SPEECH_STREAM_URL);
     expect(v.request.headers["content-type"]).toBe("application/json");
     const r = ttsStream.safe({ text: "a".repeat(1000), voiceId: "en-US-natalie" });
     expect(r.ok).toBe(true);
-    // falcon-2 is $10 / 1M characters.
+    // falcon-2.1 is $10 / 1M characters.
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo((1000 * 10) / 1_000_000, 12);
   });
 
-  test("both documented models resolve in the catalog", () => {
+  test("every documented stream id resolves to a catalog row", () => {
     for (const model of STREAM_MODEL_IDS) {
       const r = ttsStream.safe({ text: "hi", voiceId: "v", model });
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.warnings).toEqual([]);
-      expect(Object.hasOwn(models, model)).toBe(true);
+    }
+  });
+
+  test("falcon-2.1 validates and prices at $10 / 1M characters", () => {
+    expect(models["falcon-2.1"].limit.characters).toBe(MURF_MAX_CHARACTERS);
+    const r = ttsStream.safe({ text: "a".repeat(1000), voiceId: "v", model: "falcon-2.1" });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo((1000 * 10) / 1_000_000, 12);
+    }
+  });
+
+  test("the earlier spellings falcon2 and FALCON price as falcon-2.1", () => {
+    for (const model of ["falcon2", "FALCON"] as const) {
+      const r = ttsStream.safe({ text: "a".repeat(1000), voiceId: "v", model });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings).toEqual([]);
+        expect(r.estimate.costUSD).toBeCloseTo((1000 * 10) / 1_000_000, 12);
+      }
+    }
+    // Only the documented spellings: a lower-case `falcon` is not one on HTTP.
+    const off = safeStream({ text: "hi", voiceId: "v", model: "falcon" });
+    expect(off.ok && off.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+
+  test("volumeOffset in -50..50 is clean; outside it warns that Murf clamps", () => {
+    expect(ttsStream.safe({ text: "hi", voiceId: "v", volumeOffset: VOLUME_OFFSET_MIN }).ok).toBe(
+      true,
+    );
+    const clean = ttsStream.safe({ text: "hi", voiceId: "v", volumeOffset: VOLUME_OFFSET_MAX });
+    expect(clean.ok && clean.warnings).toEqual([]);
+    for (const [value, applied] of [
+      [80, 50],
+      [-70, -50],
+    ] as const) {
+      const r = ttsStream.safe({ text: "hi", voiceId: "v", volumeOffset: value });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const warn = r.warnings.find((w) => w.path[0] === "volumeOffset");
+        expect(warn?.severity).toBe("warning");
+        expect(warn?.meta).toMatchObject({ value, applied });
+      }
+    }
+  });
+
+  test("volumeOffset must be an integer", () => {
+    expect(safeStream({ text: "hi", voiceId: "v", volumeOffset: 1.5 }).ok).toBe(false);
+  });
+
+  test("pronunciationDictionary takes IPA / SAY_AS entries and refuses other types", () => {
+    const ok = ttsStream.safe({
+      text: "Murf reads tomato",
+      voiceId: "v",
+      pronunciationDictionary: {
+        tomato: { type: "IPA", pronunciation: "təˈmeɪtoʊ" },
+        Murf: { type: "SAY_AS", pronunciation: "murph" },
+      },
+    });
+    expect(ok.ok && ok.warnings).toEqual([]);
+    const bad = safeStream({
+      text: "hi",
+      voiceId: "v",
+      pronunciationDictionary: { hi: { type: "XSAMPA", pronunciation: "haI" } },
+    });
+    expect(bad.ok).toBe(false);
+  });
+
+  test("multiNativeLocale on the stream route warns as deprecated in favour of locale", () => {
+    const r = ttsStream.safe({ text: "hi", voiceId: "v", multiNativeLocale: "en-US" });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const warn = r.warnings.find((w) => w.path[0] === "multiNativeLocale");
+      expect(warn?.code).toBe("unsupported_param");
+      expect(warn?.meta?.replacement).toBe("locale");
+    }
+  });
+
+  test("Falcon 2.1 speaks one style: Conversational is clean, another warns", () => {
+    const clean = ttsStream.safe({ text: "hi", voiceId: "v", style: FALCON_STYLE });
+    expect(clean.ok && clean.warnings).toEqual([]);
+    for (const model of ["falcon-2.1", "falcon-2", "FALCON"] as const) {
+      const r = ttsStream.safe({ text: "hi", voiceId: "v", model, style: "Angry" });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const warn = r.warnings.find((w) => w.path[0] === "style");
+        expect(warn?.code).toBe("invalid_enum_value");
+        expect(warn?.severity).toBe("warning");
+        expect(warn?.meta?.allowed).toEqual([FALCON_STYLE]);
+      }
     }
   });
 
@@ -235,13 +332,15 @@ describe("murf.ttsStream", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo((1000 * 30) / 1_000_000, 12);
   });
 
-  test("variation on falcon-2 warns as a silent no-op", () => {
-    const r = ttsStream.safe({ text: "hi", voiceId: "v", model: "falcon-2", variation: 3 });
-    expect(r.ok).toBe(true);
-    if (r.ok) {
-      const warn = r.warnings.find((w) => w.path[0] === "variation");
-      expect(warn?.code).toBe("unsupported_param");
-      expect(warn?.meta?.ignored).toBe(true);
+  test("variation on every Falcon spelling warns as a silent no-op", () => {
+    for (const model of ["falcon-2.1", "falcon-2", "falcon2", "FALCON"] as const) {
+      const r = ttsStream.safe({ text: "hi", voiceId: "v", model, variation: 3 });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const warn = r.warnings.find((w) => w.path[0] === "variation");
+        expect(warn?.code).toBe("unsupported_param");
+        expect(warn?.meta?.ignored).toBe(true);
+      }
     }
   });
 
@@ -255,6 +354,42 @@ describe("murf.ttsStream", () => {
     const r = safeStream({ text: "hi", voiceId: "v", model: "falcon-3" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+});
+
+describe("murf unified tts", () => {
+  const unified = createTts([murfAdapter]);
+
+  test("murf/falcon-2.1 compiles to the stream route with its extras", () => {
+    const r = unified.safe({
+      model: "murf/falcon-2.1",
+      text: "hi",
+      voice: "en-US-natalie",
+      volumeOffset: 10,
+      pronunciationDictionary: { hi: { type: "IPA", pronunciation: "haɪ" } },
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([]);
+    expect(r.params.request.url).toBe(SPEECH_STREAM_URL);
+    expect(JSON.parse(JSON.stringify(r.params))).toEqual({
+      text: "hi",
+      voiceId: "en-US-natalie",
+      model: "falcon-2.1",
+      volumeOffset: 10,
+      pronunciationDictionary: { hi: { type: "IPA", pronunciation: "haɪ" } },
+    });
+  });
+
+  test("murf/falcon-2 takes the same stream extras", () => {
+    const r = unified.safe({
+      model: "murf/falcon-2",
+      text: "hi",
+      voice: "en-US-natalie",
+      volumeOffset: -10,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.params.request.url).toBe(SPEECH_STREAM_URL);
   });
 });
 

@@ -9,12 +9,14 @@
  *
  * - TWO MODEL SPELLINGS, ONE CATALOG: `/v1/speech/generate` selects the model
  *   with `modelVersion: "GEN2"` (upper-case, and GEN2 is its only documented
- *   value); `/v1/speech/stream` uses `model: "falcon-2" | "gen2"`
- *   (lower-case). The catalog keys on the lower-case spelling and the
- *   generate validator lower-cases `modelVersion` for lookup, so both routes
- *   price and gate against the same entries. Asking `/v1/speech/generate`
- *   for Falcon 2 is an `invalid_enum_value` error pointing at the streaming
- *   endpoint.
+ *   value); `/v1/speech/stream` uses a lower-case `model` — `"falcon-2.1"`,
+ *   one of the earlier identifiers Murf still accepts for it (`falcon-2`,
+ *   `falcon2`, `FALCON`), or `"gen2"`. The catalog keys on the lower-case
+ *   spelling, the generate validator lower-cases `modelVersion` for lookup,
+ *   and the stream validator resolves `falcon2` / `FALCON` to the
+ *   `falcon-2.1` row, so both routes price and gate against the same
+ *   entries. Asking `/v1/speech/generate` for Falcon is an
+ *   `invalid_enum_value` error pointing at the streaming endpoint.
  * - CHARACTER CAP: "The API supports up to 3,000 characters per request."
  *   A breach is reported as `over_output_limit` — there is no
  *   character-specific issue code, so the message and meta
@@ -50,7 +52,8 @@ import {
   models,
   MURF_MAX_CHARACTERS,
   GENERATE_MODEL_VERSIONS,
-  type MurfTtsModelId,
+  STREAM_MODEL_ALIASES,
+  type MurfStreamModelId,
 } from "./models";
 
 export const SPEECH_GENERATE_URL = "https://api.murf.ai/v1/speech/generate";
@@ -64,13 +67,10 @@ const CUSTOMIZATION_DOCS = "https://murf.ai/api/docs/text-to-speech/speech-custo
 const TTS_OVERVIEW_DOCS = "https://murf.ai/api/docs/text-to-speech/overview";
 
 /**
- * Server-side default of the streaming `model` field. The docs qualify it —
- * "Default is falcon-2 for all regions except US-East" — so on a US-East
- * host an omitted `model` resolves to gen2 instead, and the cost estimate
- * for an omitted `model` understates there. Pass `model` explicitly to
- * remove the ambiguity.
+ * Server-side default of the streaming `model` field: "`model` (enum,
+ * optional, default: falcon-2.1)" (stream reference, 2026-11-12).
  */
-export const DEFAULT_STREAM_MODEL = "falcon-2";
+export const DEFAULT_STREAM_MODEL = "falcon-2.1";
 
 /** Server-side default of `modelVersion` on POST /v1/speech/generate. */
 export const DEFAULT_MODEL_VERSION = "GEN2";
@@ -107,10 +107,33 @@ export const PITCH_MAX = 50;
 /** "An integer between 0 and 5" — `variation`. Default 1. */
 export const VARIATION_MIN = 0;
 export const VARIATION_MAX = 5;
+/**
+ * `volumeOffset` on POST /v1/speech/stream: "Adjusts loudness relative to the
+ * model's default output, from -50 to 50 … Values outside the range are
+ * clamped to the nearest limit." Integer, default 0 (stream reference,
+ * 2026-11-12).
+ */
+export const VOLUME_OFFSET_MIN = -50;
+export const VOLUME_OFFSET_MAX = 50;
+/**
+ * "Falcon 2.1 voices speak in a single style, `Conversational`. If you send
+ * `style` with Falcon 2.1, use `Conversational`." (speech customization,
+ * 2026-11-12)
+ */
+export const FALCON_STYLE = "Conversational";
+/** `PronunciationDetail.type` values — openapi.json `PronunciationDetailType` (2026-11-12). */
+export const PRONUNCIATION_TYPES = ["IPA", "SAY_AS"] as const;
+export type PronunciationDetailType = (typeof PRONUNCIATION_TYPES)[number];
 
 // ---------------------------------------------------------------------------
 // Wire types
 // ---------------------------------------------------------------------------
+
+/** One `pronunciationDictionary` value — openapi.json `PronunciationDetail`; both fields optional. */
+export interface PronunciationDetail {
+  type?: PronunciationDetailType;
+  pronunciation?: string;
+}
 
 /** Fields both speech routes share. */
 interface SpeechCommon {
@@ -150,10 +173,23 @@ export interface SpeechGenerateBody extends SpeechCommon {
 }
 
 export interface SpeechStreamBody extends SpeechCommon {
-  /** "falcon-2" (default outside US-East) or "gen2". */
-  model?: MurfTtsModelId | (string & {});
+  /**
+   * "Valid values: falcon-2.1" (the default). "The earlier identifiers
+   * falcon-2, falcon2 and FALCON are still accepted and use Falcon 2.1."
+   */
+  model?: MurfStreamModelId | (string & {});
   /** Hz; default 24000 for Falcon 2, 44100 for Gen2. */
   sampleRate?: MurfStreamSampleRate;
+  /**
+   * "Adjusts loudness relative to the model's default output, from -50 to
+   * 50." Integer, default 0; "Values outside the range are clamped to the
+   * nearest limit."
+   */
+  volumeOffset?: number;
+  /** "Custom pronunciations for words in `text`." */
+  pronunciationDictionary?: Record<string, PronunciationDetail>;
+  /** @deprecated Superseded by `locale`. */
+  multiNativeLocale?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -183,10 +219,21 @@ const generateSchema = z.looseObject({
   multiNativeLocale: z.string().optional(),
 });
 
+const pronunciationDictionarySchema = z.record(
+  z.string(),
+  z.looseObject({
+    type: z.enum(PRONUNCIATION_TYPES).optional(),
+    pronunciation: z.string().optional(),
+  }),
+);
+
 const streamSchema = z.looseObject({
   ...commonShape,
   model: z.string().optional(),
   sampleRate: z.literal(STREAM_SAMPLE_RATES).optional(),
+  volumeOffset: z.number().int().optional(),
+  pronunciationDictionary: pronunciationDictionarySchema.optional(),
+  multiNativeLocale: z.string().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -203,8 +250,10 @@ function generateModelId(params: SpeechGenerateBody): string {
   return (params.modelVersion ?? DEFAULT_MODEL_VERSION).toLowerCase();
 }
 
+/** Catalog id behind a `/v1/speech/stream` request: `falcon2` / `FALCON` resolve to `falcon-2.1`. */
 function streamModelId(params: SpeechStreamBody): string {
-  return params.model ?? DEFAULT_STREAM_MODEL;
+  const model = params.model ?? DEFAULT_STREAM_MODEL;
+  return STREAM_MODEL_ALIASES.get(model) ?? model;
 }
 
 function checkSharedEnums(
@@ -318,7 +367,7 @@ function checkGenerate(
       code: "invalid_enum_value",
       path: ["modelVersion"],
       model,
-      message: `\`modelVersion\` must be one of ${GENERATE_MODEL_VERSIONS.map((v) => JSON.stringify(v)).join(", ")}; got ${JSON.stringify(modelVersion)}. Falcon 2 is served by POST /v1/speech/stream via \`model: "falcon-2"\`, not by this endpoint.`,
+      message: `\`modelVersion\` must be one of ${GENERATE_MODEL_VERSIONS.map((v) => JSON.stringify(v)).join(", ")}; got ${JSON.stringify(modelVersion)}. Falcon 2.1 is served by POST /v1/speech/stream via \`model: "falcon-2.1"\`, not by this endpoint.`,
       meta: {
         allowed: [...GENERATE_MODEL_VERSIONS],
         value: modelVersion,
@@ -327,19 +376,30 @@ function checkGenerate(
     });
   }
 
-  // Reported as `unsupported_param` at warning severity: the field is
-  // documented as deprecated (not removed), and `deprecated_model` is
-  // reserved for model ids, not params.
-  if (params.multiNativeLocale !== undefined) {
-    ctx.report({
-      code: "unsupported_param",
-      severity: "warning",
-      path: ["multiNativeLocale"],
-      model,
-      message: "`multiNativeLocale` is deprecated and superseded by `locale`; use `locale` instead.",
-      meta: { replacement: "locale", source: GENERATE_DOCS },
-    });
-  }
+  checkMultiNativeLocale(params, model, ctx, GENERATE_DOCS);
+}
+
+/**
+ * "We have deprecated the `multiNativeLocale` field across all Text-to-Speech
+ * (TTS) endpoints" (changelog 2026-03-05). Reported as `unsupported_param` at
+ * warning severity: the field is documented as deprecated (not removed), and
+ * `deprecated_model` is reserved for model ids, not params.
+ */
+function checkMultiNativeLocale(
+  params: { multiNativeLocale?: string },
+  model: string,
+  ctx: PipelineContext,
+  source: string,
+): void {
+  if (params.multiNativeLocale === undefined) return;
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["multiNativeLocale"],
+    model,
+    message: "`multiNativeLocale` is deprecated and superseded by `locale`; use `locale` instead.",
+    meta: { replacement: "locale", source },
+  });
 }
 
 // --- /v1/speech/stream checks ----------------------------------------------
@@ -353,26 +413,72 @@ function checkStream(
   checkSharedEnums(params, model, ctx, STREAM_DOCS);
   checkCompandedFormat(params, model, ctx);
   checkCharacterLimit(params, info, model, ctx);
+  checkVolumeOffset(params, model, ctx);
+  checkMultiNativeLocale(params, model, ctx, STREAM_DOCS);
 
-  // No model-kind gate here: STREAM_MODEL_IDS is exactly the catalog, so an
-  // id the catalog does not know already draws the pipeline's
-  // `unknown_model` warning — the right severity for a value that may simply
-  // be newer than this catalog. The live gate is on /v1/speech/generate,
-  // whose `modelVersion` enum genuinely excludes Falcon 2.
+  // No model-kind gate here: every id in STREAM_MODEL_IDS resolves to a
+  // catalog row, so an id the catalog does not know already draws the
+  // pipeline's `unknown_model` warning — the right severity for a value that
+  // may simply be newer than this catalog. The live gate is on
+  // /v1/speech/generate, whose `modelVersion` enum genuinely excludes Falcon.
 
-  // "variation … (Gen2 only)" — Falcon 2 accepts the request and ignores it,
+  // Every Falcon stream id is Falcon 2.1 — `falcon-2`, `falcon2` and `FALCON`
+  // "keep working and now use Falcon 2.1" (changelog 2026-10-19) — so the
+  // Falcon 2.1 rules below key on the catalog family, not on one spelling.
+  if (info?.family !== "falcon") return;
+
+  // "If you send `style` with Falcon 2.1, use `Conversational`." No rejection
+  // is documented, so another value is a warning, never an error.
+  if (params.style !== undefined && params.style !== FALCON_STYLE) {
+    ctx.report({
+      code: "invalid_enum_value",
+      severity: "warning",
+      path: ["style"],
+      model,
+      message: `Falcon 2.1 voices speak in a single style, ${JSON.stringify(FALCON_STYLE)}; got ${JSON.stringify(params.style)}. Style control is a Gen2 feature of POST /v1/speech/generate.`,
+      meta: { allowed: [FALCON_STYLE], value: params.style, source: CUSTOMIZATION_DOCS },
+    });
+  }
+
+  // "variation … (Gen2 only)" — Falcon accepts the request and ignores it,
   // so the requested dynamism is silently not applied.
-  if (params.variation !== undefined && model === "falcon-2") {
+  if (params.variation !== undefined) {
     ctx.report({
       code: "unsupported_param",
       severity: "warning",
       path: ["variation"],
       model,
       message:
-        "`variation` is documented as Gen2 only; Falcon 2 accepts the request but the requested pause/pitch/speed variation is not applied.",
+        "`variation` is documented as Gen2 only; Falcon 2.1 accepts the request but the requested pause/pitch/speed variation is not applied.",
       meta: { ignored: true, source: CUSTOMIZATION_DOCS },
     });
   }
+}
+
+/**
+ * "Values outside -50 to 50 aren't rejected. They're clamped to the nearest
+ * limit, so `80` is applied as `50` and `-70` as `-50`." (speech
+ * customization, 2026-11-12). A silent clamp is worth surfacing, but it must
+ * not fail a request the API fulfils, so it is a warning.
+ */
+function checkVolumeOffset(params: SpeechStreamBody, model: string, ctx: PipelineContext): void {
+  const value = params.volumeOffset;
+  if (value === undefined || (value >= VOLUME_OFFSET_MIN && value <= VOLUME_OFFSET_MAX)) return;
+  const applied = value < VOLUME_OFFSET_MIN ? VOLUME_OFFSET_MIN : VOLUME_OFFSET_MAX;
+  ctx.report({
+    code: "invalid_shape",
+    severity: "warning",
+    path: ["volumeOffset"],
+    model,
+    message: `\`volumeOffset\` is ${value}; Murf accepts ${VOLUME_OFFSET_MIN} to ${VOLUME_OFFSET_MAX} and clamps anything outside it without an error, so the request succeeds at ${applied} instead.`,
+    meta: {
+      min: VOLUME_OFFSET_MIN,
+      max: VOLUME_OFFSET_MAX,
+      value,
+      applied,
+      source: CUSTOMIZATION_DOCS,
+    },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -473,12 +579,12 @@ export const tts = generateValidator as unknown as {
 
 /**
  * Validates params for Murf `POST /v1/speech/stream` — the low-latency route
- * and the only one that serves Falcon 2. The response is an audio stream, so
+ * and the only one that serves Falcon 2.1. The response is an audio stream, so
  * there is no response checker. `encodeAsBase64` is deliberately absent from
  * the params type: it is "Not available for Streaming API".
  *
  * ```ts
- * const params = murf.ttsStream({ text: "Hello", voiceId: "en-US-natalie", model: "falcon-2" });
+ * const params = murf.ttsStream({ text: "Hello", voiceId: "en-US-natalie", model: "falcon-2.1" });
  * const res = await fetch(params.request.url, {
  *   method: params.request.method,
  *   headers: { ...params.request.headers, "api-key": process.env.MURF_API_KEY! },

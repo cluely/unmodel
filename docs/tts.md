@@ -116,7 +116,7 @@ Three shapes: flat (one answer), `byRequestField` (one request field decides), a
 | `rime` | `RIME_TTS_DELIVERY` | flat: raw bytes |
 | `lmnt` | `LMNT_TTS_DELIVERY` | flat: raw bytes |
 | `fish-audio` | `FISH_AUDIO_TTS_DELIVERY` | flat: raw bytes |
-| `murf` | `MURF_TTS_DELIVERY` | by model — `gen2` answers JSON (base64 or URL, by `encodeAsBase64`), `falcon-2` answers bytes |
+| `murf` | `MURF_TTS_DELIVERY` | by model — `gen2` answers JSON (base64 or URL, by `encodeAsBase64`), `falcon-2.1` and `falcon-2` answer bytes |
 | `resemble` | `RESEMBLE_TTS_DELIVERY` | flat: base64 inside the JSON |
 | `smallest-ai` | `SMALLEST_TTS_DELIVERY` | flat: raw bytes |
 | `speechify` | `SPEECHIFY_TTS_DELIVERY` | flat: base64 inside the JSON |
@@ -199,11 +199,13 @@ SSML tags.
 `over_output_limit` check exists and never fires against the shipped catalog. It is
 wired rather than absent so a published cap becomes a catalog edit, not a code change.
 
-**Murf — regional routers.** Falcon 2 also publishes a global router
+**Murf — regional routers.** Falcon 2.1 also publishes a global router
 (`https://global.api.murf.ai/v1/speech/stream`) plus eleven regional hosts. `.request.url`
 targets the documented default host; swap the origin yourself if you route regionally.
 Note also the two model spellings across the two routes — `modelVersion: "GEN2"` on
-generate, `model: "falcon-2" | "gen2"` on stream — resolved against one catalog.
+generate, `model: "falcon-2.1" | "gen2"` on stream — resolved against one catalog. The
+stream route also accepts Falcon 2.1's earlier identifiers `falcon-2`, `falcon2` and
+`FALCON`, which price and validate as `falcon-2.1`.
 
 **Fish Audio — `references` is MessagePack-only.** The endpoint accepts
 `application/json` or `application/msgpack` and unmodel finalizes to JSON. The field

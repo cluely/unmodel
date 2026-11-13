@@ -35,7 +35,7 @@ describe("soniox.stt happy path", () => {
 
   test("file_id source and structured context validate", () => {
     const r = stt.safe({
-      model: "stt-async-v5",
+      model: "stt-async-v6",
       file_id: "0190dcd1-2c3a-7a8b-9c0d-112233445566",
       context: {
         general: [{ key: "Domain", value: "medicine" }],
@@ -173,6 +173,23 @@ describe("soniox.stt stt-async-v6", () => {
       expect(r.errors[0]?.code).toBe("unsupported_capability");
       expect(r.errors[0]?.message).toContain('"stt-async-v6"');
     }
+  });
+});
+
+// https://docs.soniox.com/stt/models (2026-11-12): stt-async-v5 is
+// "**Deprecated**<br />Will be removed Dec 15, 2026" and routes to
+// stt-async-v6 after that date — still served, so it validates and prices.
+describe("soniox.stt stt-async-v5 deprecation", () => {
+  test("stt-async-v5 validates with exactly a deprecated_model warning, and still prices", () => {
+    expect(models["stt-async-v5"].status).toBe("deprecated");
+    const r = stt.safe(
+      { model: "stt-async-v5", audio_url: "https://a.com/x.mp3" },
+      { media: [{ path: ["audio_url"], durationSeconds: 3600 }] },
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+    expect(r.estimate.costUSD).toBeCloseTo(0.1, 10);
   });
 });
 

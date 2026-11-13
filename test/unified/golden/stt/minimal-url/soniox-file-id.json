@@ -1,10 +1,10 @@
 {
-  "ref": "soniox/stt-async-v5",
+  "ref": "soniox/stt-async-v6",
   "audio": {
     "fileId": "f_2f8a"
   },
   "params": {
-    "model": "stt-async-v5",
+    "model": "stt-async-v6",
     "file_id": "f_2f8a"
   },
   "url": "https://api.soniox.com/v1/transcriptions",

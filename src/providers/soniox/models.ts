@@ -63,6 +63,10 @@ const asyncModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
+    // https://docs.soniox.com/stt/models (2026-11-12): "**Deprecated**<br />Will
+    // be removed Dec 15, 2026" — still served; after that date "requests using
+    // stt-async-v5 will automatically route to stt-async-v6".
+    status: "deprecated",
     modalities: { input: ["audio"], output: ["text"] },
     // limit.context 0: STT is not token-windowed; the pipeline skips context
     // checks. Soniox caps a single request at 5 hours of audio — enforced in
@@ -120,6 +124,10 @@ const realtimeModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
+    // https://docs.soniox.com/stt/models (2026-11-12): "**Deprecated**<br />Will
+    // be removed Dec 15, 2026" — still served; "After December 15, 2026,
+    // requests using stt-rt-v5 will automatically route to stt-rt-v6".
+    status: "deprecated",
     modalities: { input: ["audio"], output: ["text"] },
     // Same 5-hour per-request audio cap as the async models (MODELS_DOCS).
     limit: { context: 0 },

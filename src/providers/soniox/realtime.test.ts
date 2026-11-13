@@ -56,7 +56,7 @@ describe("soniox.realtimeTranscription happy path", () => {
   test("every documented field passes, warning-free", () => {
     const r = realtimeTranscription.safe({
       api_key: "sk-not-a-real-key",
-      model: "stt-rt-v5",
+      model: "stt-rt-v6",
       audio_format: "auto",
       language_hints: ["en"],
       language_hints_strict: true,
@@ -87,7 +87,7 @@ describe("soniox.realtimeTranscription happy path", () => {
 
   test("unknown field warns but passes through", () => {
     const r = safeUnchecked({
-      model: "stt-rt-v5",
+      model: "stt-rt-v6",
       audio_format: "auto",
       brand_new_toggle: true,
     });
@@ -345,7 +345,7 @@ describe("soniox.realtimeTranscription stt-rt-v6", () => {
       enable_agent_text_input: false,
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings).toEqual([]);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 
   test("an unknown id keeps agent text input; an async id is refused by the model gate alone", () => {
@@ -371,6 +371,24 @@ describe("soniox.realtimeTranscription stt-rt-v6", () => {
     const r = realtimeTranscription.safe({ model: "stt-rt-v6", audio_format: "auto" }, tenMinutes);
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.02, 10);
+  });
+});
+
+// https://docs.soniox.com/stt/models (2026-11-12): stt-rt-v5 is
+// "**Deprecated**<br />Will be removed Dec 15, 2026" and routes to stt-rt-v6
+// after that date — still served, so it validates and prices, with a warning.
+describe("soniox.realtimeTranscription stt-rt-v5 deprecation", () => {
+  test("stt-rt-v5 validates with exactly a deprecated_model warning, and still prices", () => {
+    expect(models["stt-rt-v5"].status).toBe("deprecated");
+    const r = realtimeTranscription.safe({ model: "stt-rt-v5", audio_format: "auto" }, tenMinutes);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+    expect(r.estimate.costUSD).toBeCloseTo(0.02, 10);
+  });
+
+  test("stt-rt-v6 carries no lifecycle status", () => {
+    expect("status" in models["stt-rt-v6"]).toBe(false);
   });
 });
 

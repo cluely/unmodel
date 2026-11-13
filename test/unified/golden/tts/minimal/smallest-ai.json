@@ -8,7 +8,6 @@
   },
   "url": "https://api.smallest.ai/waves/v1/tts",
   "headers": {
-    "content-type": "application/json",
-    "accept": "audio/wav"
+    "content-type": "application/json"
   }
 }

@@ -1125,7 +1125,7 @@ tts({ model: "lmnt/blizzard", text: "x", language: "¦" });`);
    *     `filter((c): c is Exclude<L, "auto"> => …)`, which answers the same type
    *     for both calls whatever the predicate tests — so the 20-code base pool
    *     typed as all 31 and offered the eleven Pro-only codes its own validator
-   *     refuses.
+   *     warns about.
    *
    * The lists are asserted by *count* as well as by membership, because both
    * failures are "the list is a different size than the table says".

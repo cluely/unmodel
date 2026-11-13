@@ -47,7 +47,7 @@ every row because all nineteen are JSON endpoints.
 | `fish-audio` | POST | `https://api.fish.audio/v1/tts` | `content-type: application/json`<br>`model: s2.1-pro` |
 | `murf` | POST | `https://api.murf.ai/v1/speech/generate` | `content-type: application/json` |
 | `resemble` | POST | `https://f.cluster.resemble.ai/synthesize` | `content-type: application/json` |
-| `smallest-ai` | POST | `https://api.smallest.ai/waves/v1/tts` | `accept: audio/wav`<br>`content-type: application/json` |
+| `smallest-ai` | POST | `https://api.smallest.ai/waves/v1/tts` | `content-type: application/json` |
 | `speechify` | POST | `https://api.speechify.ai/v1/audio/speech` | `content-type: application/json` |
 | `stepfun` | POST | `https://api.stepfun.ai/v1/audio/speech` | `content-type: application/json` |
 | `breezeblue` | POST | `https://api.breeze.blue/v1/text-to-speech/VOICE_ID` | `content-type: application/json` |
@@ -236,10 +236,11 @@ with `Accept`, not a body field; and speed is direction-inverted across models
 (`timeScaleFactor` below 1.0 is *faster*, `speedAlpha` above 1.0 is faster), which no
 validator can fix.
 
-**Smallest AI — the budget can silently never fire.** A per-character list price is
-published for `lightning_v3.1_pro` only, and an omitted `model` resolves to the standard
-`lightning_v3.1` pool. So a request that leaves `model` out gets no `costUSD`, and a
-`maxCostUSD` budget has nothing to compare against.
+**Smallest AI — the budget can silently never fire.** Both pools publish a per-character
+rate, but an omitted `model` is picked from the voice (Pro catalog voices use
+`lightning_v3.1_pro`, all others `lightning_v3.1`), and the validator cannot see which pool a
+voice belongs to. So a request that leaves `model` out gets no `costUSD`, and a `maxCostUSD`
+budget has nothing to compare against — pin `model` to have it enforced.
 
 ## See also
 

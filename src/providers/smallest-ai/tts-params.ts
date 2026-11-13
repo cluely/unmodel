@@ -11,14 +11,14 @@
 
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
-import type { SmallestLanguage } from "./models";
+import type { SmallestContentFilter, SmallestDateFormat, SmallestLanguage } from "./models";
 import { LANGUAGES, PRO_ONLY_LANGUAGES } from "./models";
 
 /** The two Lightning pools and the Pro preview checkpoint — the ref union for `smallest-ai/…`. */
 export const MODELS = ["lightning_v3.1", "lightning_v3.1_pro", "lightning_v3.1_pro_10_26"] as const;
 
 export const SYNTHESIZE_DOCS =
-  "https://docs.smallest.ai/models/api-reference/text-to-speech/synthesize-speech";
+  "https://docs.smallest.ai/api-reference/models/text-to-speech/synthesize-speech";
 
 export const SAMPLE_RATES = [8000, 16000, 24000, 44100] as const;
 
@@ -46,7 +46,7 @@ export const FORMAT: AudioFormatSpec = {
  *
  * Both rows are computed from the provider's own two arrays rather than copied
  * out of them — `LANGUAGES` minus `"auto"` is the Pro pool's 31, and minus
- * `PRO_ONLY_LANGUAGES` as well is the base pool's 20 — so `checkProOnly`'s
+ * `PRO_ONLY_LANGUAGES` as well is the base pool's 20 — so `checkLanguagePool`'s
  * allow-list and the editor's completion list are derived from the same source
  * and cannot drift. `"auto"` is dropped for LMNT's reason: it is a wire value
  * the canonical BCP-47 `language` cannot spell, and omitting the field is how
@@ -56,8 +56,8 @@ export const FORMAT: AudioFormatSpec = {
  * "the language used to read numeric content, independent of `language`" — so
  * it is an extra rather than a canonical word, typed with the provider's own
  * 32-member union (including `"auto"`, which *is* legal there because nothing
- * translates it). `checkProOnly` covers it too, so a Pro-only code on the base
- * pool is still refused at run time.
+ * translates it). `checkLanguagePool` covers it too, so a Pro-only code on the
+ * base pool still draws a warning at run time.
  */
 /**
  * The two pools, derived rather than copied — and cast rather than
@@ -68,10 +68,10 @@ export const FORMAT: AudioFormatSpec = {
  * claim about one element and not about the array. Written the obvious way
  * (`filter((c): c is Exclude<SmallestLanguage, "auto"> => …)`) both pools type
  * as the same 31 codes, the base row silently gains the 11 Pro-only ones, and
- * an editor offers `"ja"` on `lightning_v3.1` — where `checkProOnly` refuses
- * it. Measured. So each `as` names exactly the set its runtime filter produces,
- * and `test/unified/tts-presets.test.ts` proves the runtime half matches by
- * compiling every code the row declares.
+ * an editor offers `"ja"` on `lightning_v3.1` — where `checkLanguagePool` warns
+ * about it. Measured. So each `as` names exactly the set its runtime filter
+ * produces, and `test/unified/tts-presets.test.ts` proves the runtime half
+ * matches by compiling every code the row declares.
  */
 export type ProOnlyLanguage = (typeof PRO_ONLY_LANGUAGES)[number];
 
@@ -87,6 +87,8 @@ export const SHARED_EXTRAS = {
   number_pronunciation_language: EXTRA as SmallestLanguage,
   math_notation: EXTRA as boolean,
   pronunciation_dicts: EXTRA as string[],
+  date_format: EXTRA as SmallestDateFormat,
+  content_filter: EXTRA as SmallestContentFilter,
 } as const;
 
 export const CODECS = ["mp3", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] as const;

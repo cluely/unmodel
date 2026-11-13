@@ -45,6 +45,9 @@ export type {
   SmallestSampleRate,
   SmallestOutputFormat,
   SmallestLanguage,
+  SmallestDateFormat,
+  SmallestContentFilter,
+  SmallestContentFilterAction,
 } from "./tts";
 
 export type { SmallestModelId, SmallestTtsModelId } from "./models";

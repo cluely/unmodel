@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { tts, TTS_URL, MAX_CHARACTERS, REQUIRED_ACCEPT, PRO_ONLY_LANGUAGES } from "./tts";
+import { tts, TTS_URL, MAX_CHARACTERS, PRO_ONLY_LANGUAGES } from "./tts";
 import { models } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
@@ -11,7 +11,7 @@ const safeUnchecked = tts.safe as unknown as (
 ) => ValidateResult<Record<string, unknown>>;
 
 describe("smallest-ai.tts happy path", () => {
-  test("returns a wire-pure body with the required accept header", () => {
+  test("returns a wire-pure body with only the JSON content-type header", () => {
     const params = {
       text: "Hello from Waves TTS.",
       voice_id: "meher",
@@ -26,9 +26,9 @@ describe("smallest-ai.tts happy path", () => {
 
     expect(v.request.url).toBe(TTS_URL);
     expect(v.request.method).toBe("POST");
-    expect(v.request.headers["content-type"]).toBe("application/json");
-    // Documented as required — "omitting it can return an empty or unplayable response".
-    expect(v.request.headers.accept).toBe(REQUIRED_ACCEPT);
+    // "`Accept` ... Optional. The server ignores it; `output_format` sets the
+    // audio format." — so it is not sent.
+    expect(v.request.headers).toEqual({ "content-type": "application/json" });
     // No first-party JS SDK; the Python SDK takes the same keys.
     expect(v.toSdk("smallest-ai")).toEqual(params);
   });
@@ -36,13 +36,15 @@ describe("smallest-ai.tts happy path", () => {
   test("all documented optional fields pass", () => {
     const r = tts.safe({
       text: "x",
-      voice_id: "magnus",
-      model: "lightning_v3.1",
+      voice_id: "meher",
+      model: "lightning_v3.1_pro",
       sample_rate: 44100,
       speed: 1.5,
       language: "hi",
       number_pronunciation_language: "en",
       math_notation: true,
+      date_format: "EU",
+      content_filter: { enabled: true, action: "redact" },
       output_format: "mp3",
       pronunciation_dicts: ["dict_1"],
       session_id: "session-1.a_b",
@@ -52,10 +54,16 @@ describe("smallest-ai.tts happy path", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
-  test("omitting model resolves to the documented lightning_v3.1 default", () => {
+  test("omitting model resolves no pool — it is picked from the voice — and warns nothing", () => {
     const r = tts.safe({ text: "x", voice_id: "magnus" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("lightning_v3.1 still validates, with a deprecated_model warning (retiring 2026-11-30)", () => {
+    const r = tts.safe({ text: "x", voice_id: "magnus", model: "lightning_v3.1" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 
   test("unknown model warns", () => {
@@ -92,35 +100,61 @@ describe("smallest-ai.tts x-expire-content header", () => {
   });
 });
 
-describe("smallest-ai.tts character cap (250 characters)", () => {
+describe("smallest-ai.tts character cap (8000 characters after trim)", () => {
   test("text over the cap is over_output_limit with character meta", () => {
     const text = "a".repeat(MAX_CHARACTERS + 1);
-    const r = tts.safe({ text, voice_id: "meher" });
+    const r = tts.safe({ text, voice_id: "meher", model: "lightning_v3.1_pro" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.errors[0]?.code).toBe("over_output_limit");
       expect(r.errors[0]?.path).toEqual(["text"]);
       expect(r.errors[0]?.message).toContain("characters, not tokens");
-      expect(r.errors[0]?.meta?.limitCharacters).toBe(250);
-      expect(r.errors[0]?.meta?.actualCharacters).toBe(251);
+      expect(r.errors[0]?.meta?.limitCharacters).toBe(8000);
+      expect(r.errors[0]?.meta?.actualCharacters).toBe(8001);
     }
   });
 
   test("text at exactly the cap passes", () => {
-    expect(tts.safe({ text: "a".repeat(MAX_CHARACTERS), voice_id: "v" }).ok).toBe(true);
+    const r = tts.safe({ text: "a".repeat(MAX_CHARACTERS), voice_id: "v", model: "lightning_v3.1_pro" });
+    expect(r.ok).toBe(true);
   });
 
-  test("the endpoint-level cap applies even for unknown models", () => {
-    const r = tts.safe({ text: "a".repeat(300), voice_id: "v", model: "lightning_v9" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors.map((e) => e.code)).toContain("over_output_limit");
+  test("the cap is measured after trim", () => {
+    const text = `  ${"a".repeat(MAX_CHARACTERS)}\n`;
+    expect(tts.safe({ text, voice_id: "v", model: "lightning_v3.1_pro" }).ok).toBe(true);
+  });
+
+  test("over the model cards' 250-character chunk size is a warning, not an error", () => {
+    const r = tts.safe({ text: "a".repeat(251), voice_id: "meher", model: "lightning_v3.1_pro" });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const issue = r.warnings.find((w) => w.code === "over_output_limit");
+      expect(issue?.severity).toBe("warning");
+      expect(issue?.path).toEqual(["text"]);
+      expect(issue?.meta?.chunkCharacters).toBe(250);
+      expect(issue?.meta?.actualCharacters).toBe(251);
+    }
+  });
+
+  test("at or under 250 characters there is no chunk-size warning", () => {
+    const r = tts.safe({ text: "a".repeat(250), voice_id: "meher", model: "lightning_v3.1_pro" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("the endpoint-level cap applies with no model and for unknown models", () => {
+    for (const model of [undefined, "lightning_v9"]) {
+      const r = tts.safe({ text: "a".repeat(MAX_CHARACTERS + 1), voice_id: "v", ...(model && { model }) });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors.map((e) => e.code)).toContain("over_output_limit");
+    }
   });
 
   test("the throwing form throws UnmodelValidationError", () => {
     const unchecked = tts as unknown as (params: unknown) => unknown;
     let caught: unknown;
     try {
-      unchecked({ text: "a".repeat(251), voice_id: "v" });
+      unchecked({ text: "a".repeat(MAX_CHARACTERS + 1), voice_id: "v" });
     } catch (error) {
       caught = error;
     }
@@ -165,27 +199,54 @@ describe("smallest-ai.tts schema enforcement", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
   });
+
+  test("date_format takes EU or US and nothing else", () => {
+    for (const date_format of ["EU", "US"] as const) {
+      expect(tts.safe({ text: "05/03/2024", voice_id: "v", date_format }).ok).toBe(true);
+    }
+    const r = safeUnchecked({ text: "05/03/2024", voice_id: "v", date_format: "ISO" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["date_format"]);
+  });
+
+  test("content_filter takes a boolean `enabled` and a reject/flag/redact `action`", () => {
+    for (const action of ["reject", "flag", "redact"] as const) {
+      expect(tts.safe({ text: "x", voice_id: "v", content_filter: { enabled: true, action } }).ok).toBe(
+        true,
+      );
+    }
+    const badAction = safeUnchecked({ text: "x", voice_id: "v", content_filter: { action: "mute" } });
+    expect(badAction.ok).toBe(false);
+    if (!badAction.ok) expect(badAction.errors[0]?.path).toEqual(["content_filter", "action"]);
+    const badEnabled = safeUnchecked({ text: "x", voice_id: "v", content_filter: { enabled: "true" } });
+    expect(badEnabled.ok).toBe(false);
+  });
 });
 
-describe("smallest-ai.tts per-model gates (doc audit 2026-08-13)", () => {
-  test("word_timestamps is a warning — accepted over HTTP but ignored", () => {
-    const r = tts.safe({ text: "x", voice_id: "v", word_timestamps: true });
-    expect(r.ok).toBe(true);
-    if (r.ok) {
-      const issue = r.warnings.find((w) => w.code === "unsupported_param");
-      expect(issue?.path).toEqual(["word_timestamps"]);
-      expect(issue?.message).toContain("silently ignored");
-      expect(issue?.meta?.ignored).toBe(true);
+describe("smallest-ai.tts per-model gates (doc audit 2026-11-12)", () => {
+  test("word_timestamps is a warning — accepted over HTTP but ignored — with or without a model", () => {
+    for (const model of [undefined, "lightning_v3.1_pro"] as const) {
+      const r = tts.safe({ text: "x", voice_id: "v", word_timestamps: true, ...(model && { model }) });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const issues = r.warnings.filter((w) => w.code === "unsupported_param");
+        expect(issues.length).toBe(1);
+        expect(issues[0]?.path).toEqual(["word_timestamps"]);
+        expect(issues[0]?.message).toContain("silently ignored");
+        expect(issues[0]?.meta?.ignored).toBe(true);
+      }
     }
   });
 
-  test("Pro-only languages are rejected on the standard pool", () => {
+  test("Pro-only languages on lightning_v3.1 are a warning, not an error", () => {
     for (const language of PRO_ONLY_LANGUAGES) {
       const r = tts.safe({ text: "x", voice_id: "v", model: "lightning_v3.1", language });
-      expect(r.ok).toBe(false);
-      if (!r.ok) {
-        expect(r.errors[0]?.code).toBe("invalid_enum_value");
-        expect(r.errors[0]?.path).toEqual(["language"]);
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const issue = r.warnings.find((w) => w.code === "invalid_enum_value");
+        expect(issue?.severity).toBe("warning");
+        expect(issue?.path).toEqual(["language"]);
+        expect(issue?.message).toContain("lightning_v3.1_pro");
       }
     }
   });
@@ -207,9 +268,28 @@ describe("smallest-ai.tts per-model gates (doc audit 2026-08-13)", () => {
   });
 
   test("number_pronunciation_language is gated the same way", () => {
-    const r = tts.safe({ text: "x", voice_id: "v", number_pronunciation_language: "ja" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.path).toEqual(["number_pronunciation_language"]);
+    const r = tts.safe({
+      text: "x",
+      voice_id: "v",
+      model: "lightning_v3.1",
+      number_pronunciation_language: "ja",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const issue = r.warnings.find((w) => w.code === "invalid_enum_value");
+      expect(issue?.path).toEqual(["number_pronunciation_language"]);
+    }
+  });
+
+  test("an omitted model is never language-gated: its pool is picked from the voice", () => {
+    const r = tts.safe({
+      text: "x",
+      voice_id: "meher",
+      language: "ja",
+      number_pronunciation_language: "ja",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
   });
 
   test("constraintsFor exposes the word_timestamps rule with its source", () => {
@@ -226,15 +306,15 @@ describe("smallest-ai cost estimation", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.0039, 10);
   });
 
-  test("lightning_v3.1 has no published per-character rate — no costUSD", () => {
+  test("lightning_v3.1 prices at $17.5/1M characters", () => {
     const r = tts.safe({ text: "a".repeat(200), voice_id: "v", model: "lightning_v3.1" });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.0035, 10);
   });
 
-  // Documents the sharp edge: `model` is optional and defaults to
-  // `lightning_v3.1`, the pool with no published rate — so the most common
-  // request shape yields no estimate and `maxCostUSD` cannot fire on it.
+  // Documents the sharp edge: `model` is optional and an omitted one is
+  // picked from the voice, which the validator cannot see — so the request
+  // resolves no rate, yields no estimate, and `maxCostUSD` cannot fire on it.
   test("omitting `model` yields no costUSD, so maxCostUSD does not fire", () => {
     const r = tts.safe({ text: "a".repeat(250), voice_id: "meher" }, { maxCostUSD: 0.0000001 });
     expect(r.ok).toBe(true);
@@ -293,12 +373,16 @@ describe("smallest-ai lightning_v3.1_pro_10_26 (Pro preview checkpoint, 2026-10-
 });
 
 describe("smallest-ai catalog", () => {
-  test("every catalogued id is TTS-shaped with the 250-character cap", () => {
+  test("every catalogued id is TTS-shaped with the 8000-character cap", () => {
     for (const info of Object.values(models)) {
       expect(info.limit.context).toBe(0);
-      expect(info.limit.characters).toBe(250);
+      expect(info.limit.characters).toBe(8000);
       expect(info.modalities.input).toEqual(["text"]);
       expect(info.modalities.output).toEqual(["audio"]);
     }
+  });
+
+  test("lightning_v3.1 is marked deprecated (retiring 2026-11-30, then served by Pro)", () => {
+    expect(models["lightning_v3.1"].status).toBe("deprecated");
   });
 });

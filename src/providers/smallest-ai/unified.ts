@@ -10,9 +10,9 @@
  * telephony codecs) and there is no bitrate field anywhere, so a canonical
  * bitrate is an error rather than a value dropped.
  *
- * Note the endpoint's 250-character cap and its `accept: audio/wav` header:
- * both are the provider validator's business, and a unified call gets them for
- * free because it ends in that same validator.
+ * Note the endpoint's 8000-character cap: it is the provider validator's
+ * business, and a unified call gets it for free because it ends in that same
+ * validator.
  */
 import {
   applyExtras,

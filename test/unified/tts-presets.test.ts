@@ -190,18 +190,26 @@ function run(ref: string, params: Record<string, unknown>): Outcome {
 }
 
 /**
- * The providers whose off-list language is a **warning** rather than an error.
+ * The providers (or single refs) whose off-list language is a **warning**
+ * rather than an error.
  *
- * One entry, and it is a documentary fact rather than a leniency: Gemini's
- * 78-row table is headed "Supported languages" and states which languages the
- * models *speak*, while the REST reference's own `languageCode` example
- * ("en-US") is a value that table does not carry. So `checkLanguageCode`
- * reports `invalid_enum_value` at `severity: "warning"` — the library never
- * fails a request the API may well fulfil — and the negative half of the
- * completion claim is asserted here as "compiles, and says so" rather than
- * "refused". Enumerated so a second provider cannot join it silently.
+ * Two entries, and each is a documentary fact rather than a leniency:
+ *
+ * - `google`: Gemini's 78-row table is headed "Supported languages" and states
+ *   which languages the models *speak*, while the REST reference's own
+ *   `languageCode` example ("en-US") is a value that table does not carry. So
+ *   `checkLanguageCode` reports `invalid_enum_value` at `severity: "warning"`.
+ * - `smallest-ai/lightning_v3.1`: the reference lists 20 codes for the base
+ *   pool but documents no 400 for the 11 it lists only under Pro, and from
+ *   2026-11-30 the id is served by Pro, which accepts all of them — so
+ *   `checkLanguagePool` warns. One ref, not the provider: its other rows'
+ *   off-list codes are outside the 32-code wire enum and are refused.
+ *
+ * The library never fails a request the API may well fulfil, so the negative
+ * half of the completion claim is asserted here as "compiles, and says so"
+ * rather than "refused". Enumerated so another cell cannot join silently.
  */
-const WARN_ONLY_LANGUAGES: ReadonlySet<string> = new Set(["google"]);
+const WARN_ONLY_LANGUAGES: ReadonlySet<string> = new Set(["google", "smallest-ai/lightning_v3.1"]);
 
 /**
  * The spellings a codec is tried in, in order.
@@ -369,7 +377,7 @@ describe("every declared speech preset is a value the provider accepts", () => {
       off,
       () => {
         const probe = run(ref, { ...base(provider, ref), language: off });
-        if (WARN_ONLY_LANGUAGES.has(provider)) {
+        if (WARN_ONLY_LANGUAGES.has(provider) || WARN_ONLY_LANGUAGES.has(ref)) {
           if (!probe.ok) return `refused, but this provider only warns: ${probe.errors.join("; ")}`;
           return probe.warnings.includes("invalid_enum_value@language")
             ? ""

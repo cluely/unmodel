@@ -523,8 +523,10 @@ type TtsWireBody = Omit<TtsParams, "voice_id" | keyof TtsQuery>;
 
 /**
  * Wire snake_case → `@breeze.blue/sdk` camelCase. Explicit nulls are dropped:
- * the SDK's optionals are non-nullable, and null means "use the provider
- * default", which the SDK expresses by omission.
+ * null means "use the provider default", which the SDK expresses by omission.
+ * Its `modelId`, `languageCode`, `instructions` and `voiceSettings` are
+ * non-nullable; `guidanceScale` alone admits null ("Omitted or null uses the
+ * default 1"), so omitting it is equivalent.
  */
 function buildSdkParams(voiceId: string, query: TtsQuery, body: TtsWireBody): BreezeblueSdkParams {
   const request: BreezeblueSdkRequest = { text: body.text };

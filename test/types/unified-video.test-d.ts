@@ -284,9 +284,12 @@ function extrasNarrowingTests(): void {
   video({ model: "google/veo-2.0-generate-001", prompt: "hi", personGeneration: "dont_allow" });
 
   video({ model: "lightricks/ltx-2-5-fast", prompt: "hi", fps: 48 });
-  // @ts-expect-error — ltx-2-5-pro's matrix has no 48.
   video({ model: "lightricks/ltx-2-5-pro", prompt: "hi", fps: 48 });
-  video({ model: "lightricks/ltx-2-5-pro", prompt: "hi", fps: 50 });
+  // @ts-expect-error — no LTX matrix lists 30fps.
+  video({ model: "lightricks/ltx-2-5-pro", prompt: "hi", fps: 30 });
+  video({ model: "lightricks/ltx-2-5-pro", prompt: "hi", resolution: "4k", aspectRatio: "3:2" });
+  // @ts-expect-error — LTX-2.3 renders 16:9 and 9:16 only.
+  video({ model: "lightricks/ltx-2-3-pro", prompt: "hi", aspectRatio: "1:1" });
 
   video({ model: "bytedance/seedance-1-0-pro-250528", prompt: "hi", frames: 49 });
   // @ts-expect-error — `frames` is the Seedance 1.0 pros'; the 2.x arms deny it.

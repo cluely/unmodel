@@ -16,16 +16,20 @@ import type { LtxCameraMotion } from "./shared";
 /** The four ids with a text-to-video and an image-to-video arm. */
 export const MODELS = ["ltx-2-5-fast", "ltx-2-5-pro", "ltx-2-3-fast", "ltx-2-3-pro"] as const;
 
-/** The two shapes {@link SIZES} is keyed by — LTX publishes 16:9 and nothing else. */
+/** LTX-2.3's shapes — its resolution table has 16:9 and 9:16 columns only. */
 export const RATIOS = ["16:9", "9:16"] as const;
 
+/** LTX-2.5's shapes — every column of the resolution grid. */
+export const RATIOS_2_5 = ["16:9", "9:16", "1:1", "3:2", "2:3"] as const;
+
 /**
- * LTX's per-model surface, read off `SUPPORT_MATRIX` in `./shared.ts`.
+ * LTX's per-model surface, read off `SUPPORT_MATRIX` and `RESOLUTION_SHAPES`
+ * in `./shared.ts`.
  *
- * The `fast` / `pro` split is the whole table: a fast model runs 6 to 20
- * seconds in even steps and reaches every tier, a pro model runs 6, 8 or 10.
- * `ltx-2-5-pro` is the one row that is neither — 720p and 1080p only, and the
- * one model whose `fps` list drops 48.
+ * Two splits make the whole table. `fast` / `pro`: a fast model runs 6 to 20
+ * seconds in even steps, a pro model runs 6, 8 or 10; every model reaches
+ * every tier. And the generation: LTX-2.5 renders all five shapes, LTX-2.3
+ * only 16:9 and 9:16.
  *
  * **These lists are a union, not a product.** `checkSupportMatrix` owns the
  * pairings that a per-field row cannot state: a fast model's 12–20 second
@@ -37,8 +41,8 @@ export const RATIOS = ["16:9", "9:16"] as const;
  * `fps` is typed as the exact per-model union rather than the exported
  * `LtxFps`, which is deliberately open (`| (number & {})`) because the wire
  * field is a bare `z.number().int()`. Here the model's matrix *is* the limit,
- * so the closed union is the truer type and `48` on `ltx-2-5-pro` is a compile
- * error rather than a 400.
+ * so the closed union is the truer type and `30` is a compile error rather
+ * than a 400.
  */
 export const FAST_FPS = [24, 25, 48, 50] as const;
 
@@ -63,17 +67,8 @@ export const PRO_ROW = {
 } as const;
 
 export const LIGHTRICKS_VIDEO_MODEL_PARAMS = {
-  "ltx-2-5-fast": FAST_ROW,
-  "ltx-2-5-pro": {
-    durations: [6, 8, 10],
-    resolutions: ["720p", "1080p"],
-    ratios: RATIOS,
-    extras: {
-      fps: EXTRA as 24 | 25 | 50,
-      generate_audio: EXTRA as boolean,
-      camera_motion: EXTRA as LtxCameraMotion,
-    },
-  },
+  "ltx-2-5-fast": { ...FAST_ROW, ratios: RATIOS_2_5 },
+  "ltx-2-5-pro": { ...PRO_ROW, ratios: RATIOS_2_5 },
   "ltx-2-3-fast": FAST_ROW,
   "ltx-2-3-pro": PRO_ROW,
 } as const satisfies VideoModelParamTable;

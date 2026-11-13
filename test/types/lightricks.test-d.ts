@@ -6,7 +6,7 @@
  * published support matrices, so these cases pin what the preset unions
  * autocomplete and what they still (deliberately) let through.
  */
-import { video, videoFromImage } from "../../src/providers/lightricks";
+import { video, videoFromAudio, videoFromImage } from "../../src/providers/lightricks";
 import type { LtxDuration, LtxFps, LtxResolution } from "../../src/providers/lightricks";
 import { expectAssignable } from "./helpers";
 
@@ -95,4 +95,24 @@ function videoFromImageTypeTests(): void {
   videoFromImage({ model: "ltx-2-3-pro", image_uri: IMG, prompt: "hi", resolution, duration, fps });
 }
 
-export { videoTypeTests, videoFromImageTypeTests };
+function videoFromAudioTypeTests(): void {
+  const AUDIO = "https://example.com/vo.mp3";
+  // The text-to-video resolution and fps unions ride this route too, with the
+  // frame fields text- and image-to-video take.
+  videoFromAudio({
+    audio_uri: AUDIO,
+    image_uri: IMG,
+    last_frame_uri: IMG,
+    model: "ltx-2-5-pro",
+    resolution: "1620x1080",
+    fps: 48,
+    camera_motion: "dolly_in",
+  });
+  videoFromAudio({ audio_uri: AUDIO, prompt: "hi", resolution: "1280x720" });
+  // @ts-expect-error "1080p" is a tier name, not a "WIDTHxHEIGHT"
+  videoFromAudio({ audio_uri: AUDIO, prompt: "hi", resolution: "1080p" });
+  // @ts-expect-error `camera_motion` is a closed enum
+  videoFromAudio({ audio_uri: AUDIO, prompt: "hi", camera_motion: "orbit" });
+}
+
+export { videoTypeTests, videoFromImageTypeTests, videoFromAudioTypeTests };

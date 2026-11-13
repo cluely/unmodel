@@ -2,17 +2,27 @@
  * LTX Audio to Video — POST https://api.ltx.io/v2/audio-to-video (async).
  *
  * Wire notes (verified against https://docs.ltx.io/openapi.json on
- * 2026-08-13):
+ * 2026-11-12, `AudioToVideoRequest`, except where a bullet says otherwise):
  * - Only `audio_uri` is required by the schema, but the field descriptions
  *   pair `image_uri` and `prompt`: each is "required if the other is not
  *   provided", so a body with neither is rejected here.
- * - There is no `duration` field: the audio sets the length, and it must fall
- *   inside the model's window (ltx-2-5-fast 2–20s, ltx-2-5-pro 2–10s,
- *   ltx-2-3-pro 2–20s). unmodel cannot read a remote audio file's length, so
- *   neither the window nor the per-second cost is checked or estimated here.
- * - `resolution` is 1080p-only on this route ("1920x1080" / "1080x1920"), and
- *   `model` defaults to `ltx-2-3-pro`. `ltx-2-3-fast` has no arm.
- * - `guidance_scale` defaults to 5 (text) or 9 (with an image).
+ * - There is no `duration` field: the audio sets the length. It "must be at
+ *   least 2 seconds and must not exceed the maximum the selected model
+ *   supports at the chosen resolution" — 20s for ltx-2-5-fast and ltx-2-3-pro
+ *   at 720p/1080p, 10s for both at 1440p/4K, and 10s for ltx-2-5-pro at every
+ *   tier. unmodel cannot read a remote audio file's length, so neither the
+ *   window nor the per-second cost is checked or estimated here.
+ * - `resolution` and `fps` take the same per-model matrix as text-to-video
+ *   ("Supported resolutions depend on the model … `ltx-2-5-fast`,
+ *   `ltx-2-5-pro`, and `ltx-2-3-pro` support 720p through 4K."), checked by
+ *   `checkSupportMatrix`. An omitted `resolution` follows the image's
+ *   orientation, "If no image is provided, defaults to 1920x1080"; `model`
+ *   defaults to `ltx-2-3-pro`. `ltx-2-3-fast` has no arm.
+ * - `last_frame_uri` "Requires `image_uri`"
+ *   (https://docs.ltx.io/api-documentation/api-reference/async-video-generation/submit-audio-to-video.md).
+ * - `guidance_scale` (5 with text only, 9 with an image) was transcribed on
+ *   2026-08-13. The 2026-11-12 OpenAPI and reference page no longer list it,
+ *   and neither says whether the API now ignores or rejects it.
  * - Auth is `Authorization: Bearer <LTX_API_KEY>`.
  */
 
@@ -26,11 +36,16 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type LightricksModelId } from "./models";
 import {
   AUDIO_TO_VIDEO_MODELS,
+  LTX_CAMERA_MOTIONS,
   LTX_HEADERS,
   OPENAPI_SOURCE,
   checkRouteSupport,
+  checkSupportMatrix,
   ltxUrl,
   uriSchema,
+  type LtxCameraMotion,
+  type LtxFps,
+  type LtxResolution,
 } from "./shared";
 
 export const AUDIO_TO_VIDEO_ENDPOINT = "audio-to-video";
@@ -40,8 +55,15 @@ export const AUDIO_TO_VIDEO_URL = ltxUrl(AUDIO_TO_VIDEO_ENDPOINT);
 /** Server-side default when `model` is omitted (OpenAPI `default`). */
 export const DEFAULT_AUDIO_TO_VIDEO_MODEL = "ltx-2-3-pro";
 
-/** The only resolutions this route offers. */
-export const AUDIO_TO_VIDEO_RESOLUTIONS = ["1920x1080", "1080x1920"] as const;
+/**
+ * What an omitted `resolution` renders at without an image (OpenAPI: "If no
+ * image is provided, defaults to 1920x1080"). A portrait image's default,
+ * 1080x1920, is the same tier, so it allows the same frame rates.
+ */
+const DEFAULT_RESOLUTION = "1920x1080";
+
+const REFERENCE_SOURCE =
+  "https://docs.ltx.io/api-documentation/api-reference/async-video-generation/submit-audio-to-video.md";
 
 export interface AudioToVideoParams {
   /** Soundtrack; its duration sets the video length. Required. */
@@ -50,22 +72,68 @@ export interface AudioToVideoParams {
   image_uri?: string;
   /** Video description. Required when `image_uri` is absent. */
   prompt?: string;
-  /** Defaults to the input image's orientation, else "1920x1080". */
-  resolution?: (typeof AUDIO_TO_VIDEO_RESOLUTIONS)[number];
+  /**
+   * `WIDTHxHEIGHT`; allowed values per model. Defaults to the input image's
+   * orientation, else "1920x1080".
+   */
+  resolution?: LtxResolution;
   /** CFG. Defaults to 5 (text-only) or 9 (with an image). */
   guidance_scale?: number;
   /** Defaults to "ltx-2-3-pro". `ltx-2-3-fast` has no arm here. */
   model?: LightricksModelId | (string & {});
+  /** Frame rate; defaults to 24. Allowed values per model × resolution. */
+  fps?: LtxFps;
+  /** Last frame to interpolate to. Requires `image_uri`. */
+  last_frame_uri?: string;
+  camera_motion?: LtxCameraMotion;
 }
 
 const videoFromAudioSchema = z.looseObject({
   audio_uri: uriSchema,
   image_uri: uriSchema.optional(),
   prompt: z.string().optional(),
-  resolution: z.enum(AUDIO_TO_VIDEO_RESOLUTIONS).optional(),
+  resolution: z.string().min(1).optional(),
   guidance_scale: z.number().optional(),
   model: z.string().optional(),
+  fps: z.number().int().optional(),
+  last_frame_uri: uriSchema.optional(),
+  camera_motion: z.enum(LTX_CAMERA_MOTIONS).optional(),
 });
+
+/**
+ * The text-to-video resolution × fps matrix, minus duration (the audio sets
+ * the length). Only models with an arm here are checked — `checkRouteSupport`
+ * already answers for the rest.
+ */
+function checkAudioMatrix(
+  params: AudioToVideoParams,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const model = params.model ?? DEFAULT_AUDIO_TO_VIDEO_MODEL;
+  if (!(AUDIO_TO_VIDEO_MODELS as readonly string[]).includes(model)) return;
+  checkSupportMatrix(
+    { model, resolution: params.resolution ?? DEFAULT_RESOLUTION, fps: params.fps },
+    info,
+    ctx,
+  );
+}
+
+function checkLastFrameNeedsImage(
+  params: AudioToVideoParams,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.last_frame_uri == null || params.image_uri != null) return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["last_frame_uri"],
+    message:
+      "`last_frame_uri` requires `image_uri` on audio-to-video — the video interpolates from the " +
+      "first frame to the last, so send the first frame as `image_uri`.",
+    meta: { source: REFERENCE_SOURCE },
+  });
+}
 
 function checkPromptOrImage(
   params: AudioToVideoParams,
@@ -113,6 +181,8 @@ const validator = createValidator<AudioToVideoParams, unknown>({
       'use ltx-2-5-fast, ltx-2-5-pro or ltx-2-3-pro — "ltx-2-3-fast" is text/image-to-video only.',
     ),
     checkPromptOrImage,
+    checkAudioMatrix,
+    checkLastFrameNeedsImage,
   ],
   // No estimate: this route bills per second of INPUT audio
   // (https://docs.ltx.io/pricing.md) and the request carries only a URI.

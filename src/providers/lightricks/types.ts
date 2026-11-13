@@ -54,7 +54,7 @@ export type { AudioToVideoParams } from "./video-from-audio";
 
 export type { LtxCameraMotion, LtxDuration, LtxFps, LtxResolution, MatrixRow } from "./shared";
 
-export type { LtxResolutionTier } from "./pricing";
+export type { LtxResolutionShape, LtxResolutionTier } from "./pricing";
 
 export type { LightricksModelId } from "./models";
 

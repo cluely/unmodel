@@ -6,20 +6,22 @@
  *
  * LTX takes `resolution: "1920x1080"` and no aspect-ratio field at all, so one
  * wire param answers both halves of the canonical size decision — which makes
- * this an **S3** size table with an unusually tidy shape, because every
- * documented value is 16:9 in one of its two orientations:
+ * this an **S3** size table, `LTX_RESOLUTION_GRID` in ./pricing.ts:
  *
- * | tier | landscape (`16:9`) | portrait (`9:16`) |
- * |---|---|---|
- * | `720p` | `1280x720` | `720x1280` |
- * | `1080p` | `1920x1080` | `1080x1920` |
- * | `1440p` | `2560x1440` | `1440x2560` |
- * | `4k` | `3840x2160` | `2160x3840` |
+ * | tier | `16:9` | `9:16` | `1:1` | `3:2` | `2:3` |
+ * |---|---|---|---|---|---|
+ * | `720p` | `1280x720` | `720x1280` | `720x720` | `1080x720` | `720x1080` |
+ * | `1080p` | `1920x1080` | `1080x1920` | `1080x1080` | `1620x1080` | `1080x1620` |
+ * | `1440p` | `2560x1440` | `1440x2560` | `1440x1440` | `2160x1440` | `1440x2160` |
+ * | `4k` | `3840x2160` | `2160x3840` | `2160x2160` | `3240x2160` | `2160x3240` |
  *
- * A shape that is not one of those two is an `invalid_enum_value` from
- * {@link toSizeEnum} listing what the tier offers — LTX publishes a list, not
- * a rule, and 4:3 is not on it at any tier. `480p` is likewise absent from
- * every model's matrix, so it errors rather than snapping up to 720p.
+ * LTX-2.5 renders every column; LTX-2.3 only the first two, which its row's
+ * `ratios` says at compile time and `checkSupportMatrix` answers at run time
+ * (remapped onto `aspectRatio`). A shape on no column is an
+ * `invalid_enum_value` from {@link toSizeEnum} listing what the tier offers —
+ * LTX publishes a list, not a rule, and 4:3 is not on it at any tier. `480p`
+ * is likewise absent from every model's matrix, so it errors rather than
+ * snapping up to 720p.
  *
  * Both fields are **required** by the OpenAPI schema, so an omitted
  * `resolution` is filled with `1920x1080` and warned about — the same
@@ -40,9 +42,10 @@
  * `image` (first) is `image_uri` and `role: "last"` is `last_frame_uri`, both
  * on the image-to-video route. There is no reference field — LTX's
  * subject-consistency story is a different product — and no video input on
- * either of these two routes (`/v2/retake`, `/v2/extend` and the two
- * video-to-video routes exist but are not validated here), so both are
- * declared gaps rather than params quietly dropped.
+ * either of these two routes (`/v2/retake`, `/v2/extend`, the two
+ * video-to-video routes, `/v2/video-alpha-gen` and `/v2/video-upscale` exist
+ * but are not validated here), so both are declared gaps rather than params
+ * quietly dropped.
  */
 import {
   applyExtras,
@@ -61,25 +64,14 @@ import type {
   VideoParams,
   VideoResolution,
 } from "../../core/unified/vocabulary/video";
+import { LTX_RESOLUTION_GRID } from "./pricing";
 import { MODELS_SOURCE, type LtxDuration, type LtxResolution } from "./shared";
 import { video as textValidator, type TextToVideoParams } from "./video";
 import { videoFromImage as imageValidator, type ImageToVideoParams } from "./video-from-image";
 import { LIGHTRICKS_VIDEO_MODEL_PARAMS, MODELS } from "./video-params";
 
-/**
- * `resolution` — the published tier table, keyed by the two shapes it comes in.
- *
- * Written out rather than derived from `LTX_RESOLUTION_TIERS` because the pair
- * in that table is ordered (landscape first) and nothing records *which*
- * orientation each entry is; keying by shape is what lets a caller ask for
- * `9:16` and get the portrait one.
- */
-const SIZES: SizeTable<VideoResolution> = {
-  "720p": { "16:9": "1280x720", "9:16": "720x1280" },
-  "1080p": { "16:9": "1920x1080", "9:16": "1080x1920" },
-  "1440p": { "16:9": "2560x1440", "9:16": "1440x2560" },
-  "4k": { "16:9": "3840x2160", "9:16": "2160x3840" },
-};
+/** `resolution` — the published tier × shape grid, read by {@link toSizeEnum}. */
+const SIZES: SizeTable<VideoResolution> = LTX_RESOLUTION_GRID;
 
 /** What a required `resolution` is filled with — the tier every model renders. */
 const DEFAULT_TIER: VideoResolution = "1080p";
@@ -117,8 +109,9 @@ export const video = {
   unsupported: {
     video:
       "POST /v2/text-to-video and /v2/image-to-video generate from a prompt and frames. LTX's " +
-      "video inputs live on /v2/retake, /v2/extend, /v2/video-to-video-hdr and " +
-      "/v2/video-to-video-reframe, none of which unmodel validates yet.",
+      "video inputs live on /v2/retake, /v2/extend, /v2/video-to-video-hdr, " +
+      "/v2/video-to-video-reframe, /v2/video-alpha-gen and /v2/video-upscale, none of which " +
+      "unmodel validates yet.",
     negativePrompt:
       "the LTX generation bodies have no negative-prompt field; describe what to avoid inside " +
       "`prompt`.",

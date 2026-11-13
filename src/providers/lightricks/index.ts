@@ -43,7 +43,6 @@ export {
   videoFromAudio,
   AUDIO_TO_VIDEO_URL,
   AUDIO_TO_VIDEO_ENDPOINT,
-  AUDIO_TO_VIDEO_RESOLUTIONS,
   DEFAULT_AUDIO_TO_VIDEO_MODEL,
 } from "./video-from-audio";
 export type { AudioToVideoParams } from "./video-from-audio";
@@ -59,11 +58,13 @@ export {
   AUDIO_TO_VIDEO_MODELS,
   AUTOMATIC_DURATION_MODELS,
   SUPPORT_MATRIX,
+  RESOLUTION_SHAPES,
   ltxUrl,
 } from "./shared";
 export type { LtxCameraMotion, LtxDuration, LtxFps, LtxResolution, MatrixRow } from "./shared";
 
 export {
+  LTX_RESOLUTION_GRID,
   LTX_RESOLUTION_TIERS,
   VIDEO_USD_PER_SECOND,
   AUDIO_TO_VIDEO_USD_PER_SECOND,
@@ -71,12 +72,13 @@ export {
   resolutionTier,
   videoCostUSD,
 } from "./pricing";
-export type { LtxResolutionTier } from "./pricing";
+export type { LtxResolutionShape, LtxResolutionTier } from "./pricing";
 
 // Every route responds with an async job object; unmodel validates requests
-// only, so this provider ships no response checker. `POST /v2/retake`, `/v2/extend`, `/v2/video-to-video-hdr`,
-// `/v2/video-to-video-reframe` and `POST /v1/upload` are documented but not
-// yet validated here.
+// only, so this provider ships no response checker. `POST /v2/retake`,
+// `/v2/extend`, `/v2/video-to-video-hdr`, `/v2/video-to-video-reframe`,
+// `/v2/video-alpha-gen`, `/v2/video-upscale` and `POST /v1/upload` are
+// documented but not yet validated here.
 export { models, provider } from "./models";
 export type { LightricksModelId } from "./models";
 

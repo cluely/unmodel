@@ -2,7 +2,7 @@
  * Shared wire pieces for the LTX API, transcribed from
  * https://docs.ltx.io/openapi.json (OpenAPI 3.1, server https://api.ltx.io)
  * plus the published support matrices on https://docs.ltx.io/models/ltx-2-5.md
- * and https://docs.ltx.io/models/ltx-2-3.md — verified 2026-08-13.
+ * and https://docs.ltx.io/models/ltx-2-3.md — verified 2026-11-12.
  */
 
 import { z } from "zod";
@@ -11,8 +11,9 @@ import type { ModelInfo } from "../../core/catalog-types";
 import { JSON_HEADERS } from "../../core/request";
 import {
   LTX_RESOLUTIONS,
-  LTX_RESOLUTION_TIERS,
+  LTX_RESOLUTION_GRID,
   resolutionTier,
+  type LtxResolutionShape,
   type LtxResolutionTier,
 } from "./pricing";
 
@@ -47,7 +48,7 @@ export const GENERATION_MODELS = [
 /** Models with an audio-to-video arm — `ltx-2-3-fast` has none. */
 export const AUDIO_TO_VIDEO_MODELS = ["ltx-2-5-fast", "ltx-2-5-pro", "ltx-2-3-pro"] as const;
 
-/** `camera_motion` enum, shared by text-to-video and image-to-video. */
+/** `camera_motion` enum, shared by text-, image- and audio-to-video. */
 export const LTX_CAMERA_MOTIONS = [
   "dolly_in",
   "dolly_out",
@@ -66,8 +67,8 @@ export { LTX_RESOLUTIONS };
 
 /**
  * A `resolution`. The named presets are every value in the published tier
- * tables (720p/1080p/1440p/4k, landscape and portrait) — what a given model
- * accepts is narrower still and is enforced by `checkSupportMatrix`. The
+ * tables (720p/1080p/1440p/4k × 16:9, 9:16, 1:1, 3:2, 2:3) — what a given
+ * model accepts is narrower still and is enforced by `checkSupportMatrix`. The
  * `${number}x${number}` tail is deliberate: a model id newer than
  * `SUPPORT_MATRIX` is not matrix-checked, so a closed union would over-narrow
  * it — but non-size strings are still a compile error.
@@ -123,8 +124,8 @@ const FAST_MATRIX: readonly MatrixRow[] = [
   { tiers: ["1440p", "4k"], fps: [24, 25, 48, 50], durations: SHORT_DURATIONS },
 ];
 
-/** ltx-2-3-pro's row: every tier, every frame rate, the short window. */
-const PRO_2_3_MATRIX: readonly MatrixRow[] = [
+/** The pro row: every tier, every frame rate, the short window. */
+const PRO_MATRIX: readonly MatrixRow[] = [
   { tiers: ["720p", "1080p", "1440p", "4k"], fps: [24, 25, 48, 50], durations: SHORT_DURATIONS },
 ];
 
@@ -137,10 +138,28 @@ const PRO_2_3_MATRIX: readonly MatrixRow[] = [
 export const SUPPORT_MATRIX: Readonly<Record<string, readonly MatrixRow[]>> = {
   "ltx-2-5-fast": FAST_MATRIX,
   "ltx-2-3-fast": FAST_MATRIX,
-  // Pro tops out at 10s everywhere; ltx-2-5-pro also tops out at 1080p and
-  // does not offer 48fps (its table lists 24, 25, 50).
-  "ltx-2-5-pro": [{ tiers: ["720p", "1080p"], fps: [24, 25, 50], durations: SHORT_DURATIONS }],
-  "ltx-2-3-pro": PRO_2_3_MATRIX,
+  // models/ltx-2-5.md, 2026-11-12: "| **ltx-2-5-pro** | 720p | 24, 25, 48, 50
+  // | 6, 8, 10 |", and the same fps and durations at 1080p, 1440p and 4K.
+  "ltx-2-5-pro": PRO_MATRIX,
+  "ltx-2-3-pro": PRO_MATRIX,
+};
+
+const WIDESCREEN: readonly LtxResolutionShape[] = ["16:9", "9:16"];
+const EVERY_SHAPE: readonly LtxResolutionShape[] = ["16:9", "9:16", "1:1", "3:2", "2:3"];
+
+/**
+ * The `resolution` shapes each model renders, at every tier it reaches. LTX-2.5
+ * takes all five: "`ltx-2-5-fast` and `ltx-2-5-pro` now generate 1:1, 3:2, and
+ * 2:3 video at every resolution from 720p to 4K, on text-to-video,
+ * image-to-video, and audio-to-video." (https://docs.ltx.io/api-changelog/2026/10/12.md,
+ * 2026-11-12). LTX-2.3's resolution table has only the "16:9 (landscape) |
+ * 9:16 (portrait)" columns (https://docs.ltx.io/models/ltx-2-3.md).
+ */
+export const RESOLUTION_SHAPES: Readonly<Record<string, readonly LtxResolutionShape[]>> = {
+  "ltx-2-5-fast": EVERY_SHAPE,
+  "ltx-2-5-pro": EVERY_SHAPE,
+  "ltx-2-3-fast": WIDESCREEN,
+  "ltx-2-3-pro": WIDESCREEN,
 };
 
 /** Models whose `duration` may be `null` ("automatic duration"). */
@@ -158,8 +177,9 @@ function unique(values: readonly number[]): number[] {
 }
 
 /**
- * Enforces the published resolution × fps × duration matrix for a model.
- * Unknown models and models with no published matrix are skipped.
+ * Enforces the published resolution × fps × duration matrix for a model, and
+ * the shapes it renders at those tiers. Unknown models and models with no
+ * published matrix are skipped.
  */
 export function checkSupportMatrix<P extends MatrixParams>(
   params: P,
@@ -168,23 +188,25 @@ export function checkSupportMatrix<P extends MatrixParams>(
 ): void {
   if (info === undefined) return;
   const rows = SUPPORT_MATRIX[params.model];
-  if (rows === undefined) return;
+  const shapes = RESOLUTION_SHAPES[params.model];
+  if (rows === undefined || shapes === undefined) return;
   const model = params.model;
   const source = MODELS_SOURCE;
 
   const { resolution } = params;
   if (resolution === undefined) return;
   const tier = resolutionTier(resolution);
-  const allowedResolutions = rows.flatMap((row) =>
-    row.tiers.flatMap((t) => [...LTX_RESOLUTION_TIERS[t]]),
+  const tiers = [...new Set(rows.flatMap((row) => row.tiers))];
+  const allowedResolutions: string[] = tiers.flatMap((t) =>
+    shapes.map((shape) => LTX_RESOLUTION_GRID[t][shape]),
   );
-  if (tier === undefined || !rows.some((row) => row.tiers.includes(tier))) {
+  if (tier === undefined || !allowedResolutions.includes(resolution)) {
     ctx.report({
       code: "invalid_enum_value",
       path: ["resolution"],
       model,
-      message: `\`resolution\` must be one of ${[...new Set(allowedResolutions)].map((v) => JSON.stringify(v)).join(", ")} for "${model}"; got ${JSON.stringify(resolution)}.`,
-      meta: { allowed: [...new Set(allowedResolutions)], value: resolution, source },
+      message: `\`resolution\` must be one of ${allowedResolutions.map((v) => JSON.stringify(v)).join(", ")} for "${model}"; got ${JSON.stringify(resolution)}.`,
+      meta: { allowed: allowedResolutions, value: resolution, source },
     });
     return;
   }

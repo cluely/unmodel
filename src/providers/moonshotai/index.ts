@@ -71,7 +71,7 @@ const { chat, chatUrl, checkChat, estimateChatTokens } =
     catalog: models,
     availability,
     constraints: chatConstraints,
-    extraChecks: [checkForcedToolChoice, checkPromptCacheBreakpoints, checkSvgImages],
+    extraChecks: [checkForcedToolChoice, checkRequiredToolChoice, checkPromptCacheBreakpoints, checkSvgImages],
   });
 
 export { models, provider };
@@ -88,22 +88,44 @@ export const CHAT_COMPLETIONS_URL = chatUrl;
 export { chat, checkChat, estimateChatTokens };
 
 /**
- * The K3 series, which always thinks: the Model Parameter Reference's K3
- * column reads "| `thinking` | Not supported |", and the K3.1 Pro quickstart
- * answers how to turn thinking off with "You can't — K3.1 Pro always thinks."
+ * Models whose thinking cannot be turned off. The K3 series: the Model
+ * Parameter Reference's K3 column reads "| `thinking` | Not supported |", and
+ * the K3.1 Pro quickstart answers how to turn thinking off with "You can't —
+ * K3.1 Pro always thinks." kimi-k2.7-code and its highspeed twin: the
+ * kimi-k2.7-code column reads "Optional. Thinking and Preserved Thinking are
+ * always on.", and https://platform.kimi.ai/docs/openapi.json (checked
+ * 2026-11-12) adds "Thinking is always on for this model." kimi-k2.6 is not
+ * here: it thinks by default but takes `thinking.type: "disabled"`.
  */
 const ALWAYS_THINKING_MODEL_IDS: readonly string[] = [
   "kimi-k3",
   "kimi-k3.1-pro",
   "kimi-k3.1-pro-highspeed",
+  "kimi-k2.7-code",
+  "kimi-k2.7-code-highspeed",
 ] as const satisfies readonly MoonshotaiTextModelId[];
 
 /**
- * A function-object `tool_choice` on a K3-series model. The tool-choice guide:
- * "Forcing a specific tool is currently incompatible with thinking: with
- * thinking enabled, the request returns a 400 error (`tool_choice 'specified'
- * is incompatible with thinking enabled`)." The string forms stay valid —
- * the K3 column lists "`\"auto\"` / `\"none\"` / `\"required\"`".
+ * Models that refuse `tool_choice: "required"`. The Model Parameter
+ * Reference's `tool_choice` row reads "Passing `\"required\"` returns an
+ * error." in both the kimi-k2.7-code and the kimi-k2.6 column, against
+ * "`\"auto\"` / `\"none\"` / `\"required\"`" for the K3 series; and
+ * "`kimi-k2.7-code-highspeed` has the same parameter constraints as
+ * `kimi-k2.7-code`."
+ */
+const REQUIRED_TOOL_CHOICE_REFUSED_MODEL_IDS: readonly string[] = [
+  "kimi-k2.7-code",
+  "kimi-k2.7-code-highspeed",
+  "kimi-k2.6",
+] as const satisfies readonly MoonshotaiTextModelId[];
+
+/**
+ * A function-object `tool_choice` on a model that always thinks. The
+ * tool-choice guide: "Forcing a specific tool is currently incompatible with
+ * thinking: with thinking enabled, the request returns a 400 error
+ * (`tool_choice 'specified' is incompatible with thinking enabled`)." The
+ * fallback the message offers follows the model: the K3 series takes
+ * "required", kimi-k2.7-code(-highspeed) refuses it too.
  */
 function checkForcedToolChoice(
   params: ChatCompletionsBodyBase,
@@ -113,12 +135,32 @@ function checkForcedToolChoice(
   const choice = params.tool_choice;
   if (typeof choice !== "object" || choice.type !== "function") return;
   if (!ALWAYS_THINKING_MODEL_IDS.includes(params.model)) return;
+  const fallback = REQUIRED_TOOL_CHOICE_REFUSED_MODEL_IDS.includes(params.model)
+    ? 'use "auto" or "none"'
+    : 'use "required" to force a tool call, or "auto" / "none"';
   ctx.report({
     code: "unsupported_param",
     path: ["tool_choice"],
     model: params.model,
-    message: `\`tool_choice\` cannot force a specific function on "${params.model}": the K3 series always thinks, and Kimi rejects a forced tool while thinking ("tool_choice 'specified' is incompatible with thinking enabled"); use "required" to force a tool call, or "auto" / "none".`,
+    message: `\`tool_choice\` cannot force a specific function on "${params.model}": thinking is always on for this model, and Kimi rejects a forced tool while thinking ("tool_choice 'specified' is incompatible with thinking enabled"); ${fallback}.`,
     meta: { source: TOOL_CHOICE_GUIDE },
+  });
+}
+
+/** `tool_choice: "required"` on a model in REQUIRED_TOOL_CHOICE_REFUSED_MODEL_IDS. */
+function checkRequiredToolChoice(
+  params: ChatCompletionsBodyBase,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.tool_choice !== "required") return;
+  if (!REQUIRED_TOOL_CHOICE_REFUSED_MODEL_IDS.includes(params.model)) return;
+  ctx.report({
+    code: "unsupported_param",
+    path: ["tool_choice"],
+    model: params.model,
+    message: `\`tool_choice: "required"\` returns an error on "${params.model}"; use "auto" or "none", or a K3-series model (kimi-k3, kimi-k3.1-pro), which takes "required" to force a tool call.`,
+    meta: { source: MODEL_PARAMETER_REFERENCE },
   });
 }
 

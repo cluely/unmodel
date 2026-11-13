@@ -162,14 +162,14 @@ describe("fixed sampling (Model Parameter Reference)", () => {
   });
 });
 
-describe("tool_choice on the always-thinking K3 series", () => {
+describe("tool_choice (tool-choice guide + Model Parameter Reference)", () => {
   const tools = [
     { type: "function" as const, function: { name: "get_weather", parameters: { type: "object" } } },
   ];
   const base = { messages: [{ role: "user" as const, content: "weather?" }], tools };
 
   test.each(["kimi-k3.1-pro", "kimi-k3.1-pro-highspeed", "kimi-k3"] as const)(
-    "%s refuses a forced function",
+    "%s always thinks, so it refuses a forced function and points at \"required\"",
     (model) => {
       const r = chat.safe({
         ...base,
@@ -184,8 +184,53 @@ describe("tool_choice on the always-thinking K3 series", () => {
     },
   );
 
-  test('"required" stays valid', () => {
-    const r = chat.safe({ ...base, model: "kimi-k3.1-pro", tool_choice: "required" });
+  test.each(["kimi-k2.7-code", "kimi-k2.7-code-highspeed"] as const)(
+    "%s always thinks, so it refuses a forced function and offers only \"auto\" / \"none\"",
+    (model) => {
+      const r = chat.safe({
+        ...base,
+        model,
+        tool_choice: { type: "function", function: { name: "get_weather" } },
+      });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors.map((e) => [e.code, e.path])).toEqual([["unsupported_param", ["tool_choice"]]]);
+        expect(r.errors[0]?.message).not.toContain('"required"');
+        expect(r.errors[0]?.message).toContain('"auto"');
+      }
+    },
+  );
+
+  test("kimi-k2.6 can turn thinking off, so a forced function stays valid", () => {
+    const r = chat.safe({
+      ...base,
+      model: "kimi-k2.6",
+      tool_choice: { type: "function", function: { name: "get_weather" } },
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  test.each(["kimi-k2.7-code", "kimi-k2.7-code-highspeed", "kimi-k2.6"] as const)(
+    '%s refuses "required"',
+    (model) => {
+      const r = chat.safe({ ...base, model, tool_choice: "required" });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors.map((e) => [e.code, e.path])).toEqual([["unsupported_param", ["tool_choice"]]]);
+        expect(r.errors[0]?.meta?.source).toContain("platform.kimi.ai/docs/api/models-overview");
+        expect(r.errors[0]?.message).toContain("kimi-k3");
+      }
+    },
+  );
+
+  test.each(["auto", "none"] as const)('kimi-k2.6 accepts "%s"', (tool_choice) => {
+    const r = chat.safe({ ...base, model: "kimi-k2.6", tool_choice });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test.each(["kimi-k3.1-pro", "kimi-k3"] as const)('%s keeps "required" valid', (model) => {
+    const r = chat.safe({ ...base, model, tool_choice: "required" });
     expect(r.ok).toBe(true);
   });
 });

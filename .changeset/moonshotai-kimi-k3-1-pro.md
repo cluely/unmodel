@@ -27,10 +27,17 @@ moonshotai: Kimi K3.1 Pro joins `moonshotai.chat`, six retired Kimi ids leave, a
   `frequency_penalty` must be 0. Passing the fixed value itself still
   validates. Source: https://platform.kimi.ai/docs/api/models-overview.
 - `moonshotai.chat` refuses a function-object `tool_choice` on `kimi-k3`,
-  `kimi-k3.1-pro` and `kimi-k3.1-pro-highspeed`: the K3 series always thinks,
-  and Kimi returns 400 "tool_choice 'specified' is incompatible with thinking
-  enabled". Use `"required"` to force a tool call. Source:
-  https://platform.kimi.ai/docs/guide/use-tool-choice.
+  `kimi-k3.1-pro`, `kimi-k3.1-pro-highspeed`, `kimi-k2.7-code` and
+  `kimi-k2.7-code-highspeed`: thinking is always on for these models, and Kimi
+  returns 400 "tool_choice 'specified' is incompatible with thinking enabled".
+  On the K3 series, use `"required"` to force a tool call; on
+  `kimi-k2.7-code` / `kimi-k2.7-code-highspeed` only `"auto"` / `"none"`
+  remain. Sources: https://platform.kimi.ai/docs/guide/use-tool-choice,
+  https://platform.kimi.ai/docs/api/models-overview.
+- `moonshotai.chat` refuses `tool_choice: "required"` on `kimi-k2.6`,
+  `kimi-k2.7-code` and `kimi-k2.7-code-highspeed`, where Kimi documents
+  "Passing `"required"` returns an error"; the K3 series keeps it. Source:
+  https://platform.kimi.ai/docs/api/models-overview.
 - `moonshotai.chat` refuses `prompt_cache_breakpoint` on content parts (Kimi
   rejects the request with HTTP 400 and caches request prefixes on its own) and
   SVG `data:` URLs in `image_url` parts (Kimi accepts JPEG, PNG, GIF, WebP,

@@ -10,10 +10,10 @@
 //     announces the Ray retirements — see Status below)
 // Verified 2026-11-12.
 //
-// Model coverage: the whole Dream Machine API is these four ids. Every video
-// route (generate / modify / reframe) takes exactly ray-2 | ray-flash-2, and
-// every image route takes photon-1 | photon-flash-1, so no route needs its own
-// model-support table.
+// Model coverage: the public OpenAPI enumerates exactly these four ids. Every
+// video route (generate / modify / reframe) takes exactly ray-2 | ray-flash-2,
+// and every image route takes photon-1 | photon-flash-1, so no route needs its
+// own model-support table.
 //
 // Status: both Ray ids are `deprecated` and still served. The Agents migration
 // guide (https://docs.agents.lumalabs.ai/guides/videos/migration/, verified
@@ -40,8 +40,15 @@
 // count from the wire either — so these endpoints produce no cost estimate,
 // and ./pricing.ts exports the arithmetic for callers who know the dimensions.
 //
-// Ray 3 / Ray 3.2 and Uni 1 / Uni 1 Max are NOT available on the Dream Machine
-// API — they are exposed via the separate Luma Agents API
+// Ray 3 is not in the OpenAPI `VideoModel` enum (ray-2 | ray-flash-2), but
+// the migration guide above lists it among the retiring legacy models and its
+// legacy example sends it in this wire's body shape on "POST
+// .../generations/video": { "model": "ray-3", "prompt": …, "resolution":
+// "720p", "duration": "5s", "aspect_ratio": "16:9" } (verified 2026-11-12).
+// One example is not a published model list, so it is not cataloged here and
+// validates with unknown_model, never a refusal. Nor is it on the Agents API:
+// "legacy identifiers are not accepted by the new API". Ray 3.2 and Uni 1 /
+// Uni 1 Max exist only on the separate Luma Agents API
 // (https://docs.agents.lumalabs.ai, POST /v1/generations) and are out of scope
 // for this provider directory.
 

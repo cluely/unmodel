@@ -7,7 +7,7 @@
  *
  *  1. **The ref union comes from the ten adapters' `as const` model arrays.**
  *     `"kling/kling-v3"` and `"kling/kling-3.0"` are both in it — two route
- *     families, one provider, one union — while `"kling/kling-4.0"` is not,
+ *     families, one provider, one union — while `"kling/kling-9.9"` is not,
  *     and is still *callable*, because a model released after this snapshot
  *     must not need a library upgrade.
  *  2. **The input types carry the route derivation.** `image` is one tagged
@@ -62,8 +62,9 @@ expectAssignable<PackRefs>("luma/ray-2");
 expectAssignable<PackRefs>("kling/kling-v3");
 expectAssignable<PackRefs>("kling/kling-3.0");
 expectAssignable<PackRefs>("kling/kling-3.0-omni");
-// @ts-expect-error — a model no adapter declares is not in the union…
 expectAssignable<PackRefs>("kling/kling-4.0");
+// @ts-expect-error — a model no adapter declares is not in the union…
+expectAssignable<PackRefs>("kling/kling-9.9");
 // @ts-expect-error — …and neither is a provider from another category.
 expectAssignable<PackRefs>("elevenlabs/eleven_v3");
 

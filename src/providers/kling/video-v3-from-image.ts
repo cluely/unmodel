@@ -4,7 +4,8 @@
  *
  * Exported as `kling.videoV3FromImage`. "V3" names the third-generation ROUTE
  * family — the unversioned `/image-to-video/{model}` paths that arrived with
- * Kling 3.0 — not a single model: the family also serves 2.6 and 2.5-turbo.
+ * Kling 3.0 — not a single model: the family also serves 2.6, 2.5-turbo and
+ * Kling 4.0 / 4.0 Flash.
  *
  * EXPERIMENTAL — UNCORROBORATED ROUTE. `POST /image-to-video/{model}` was recovered by
  * EVALUATING THE DOC SITE'S OWN JAVASCRIPT BUNDLE (the SPA's navigation/asset
@@ -27,9 +28,12 @@
  *   and interpolated into `.request.url`.
  * - Inputs ride in one `contents` array of tagged entries —
  *   `{ type: "prompt", text }`, `{ type: "first_frame" | "last_frame", url }`,
- *   `{ type: "element", element_id, id }` and, on Kling 2.6, `voice`. Which
- *   types a model accepts is per model. `first_frame` is required:
- *   "last-frame-only video generation is not supported".
+ *   `{ type: "element", element_id, id }`, on Kling 2.6 `voice` and on
+ *   Kling 4.0 `middle_frame`. Which types a model accepts is per model.
+ *   `first_frame` is required everywhere but Kling 4.0: "last-frame-only video
+ *   generation is not supported", while 4.0 takes "first frame, last frame,
+ *   first-and-last frames, or intermediate frames"
+ *   (https://kling.ai/document-api/api/usage-guide/kling-4-0, 2026-11-12).
  * - There is NO `settings.aspect_ratio` on this route — the input image sets
  *   the frame.
  * - Images: .jpg/.jpeg/.png, ≤50MB, ≥300px per side, aspect ratio within
@@ -48,10 +52,14 @@ import { pathVideoModels, type KlingPathVideoModelId } from "./models";
 import {
   DOCS_BASE,
   DURATIONS_3_15,
+  DURATIONS_3_20,
+  DURATIONS_3_30,
   DURATIONS_5_10,
+  KLING_4_PROMPT_BUDGET,
   KLING_BASE_URL,
   KLING_HEADERS,
   checkContents,
+  checkPrompt,
   checkSettings,
   contentSchema,
   optionsSchema,
@@ -79,22 +87,48 @@ export const IMAGE_TO_VIDEO_V3_RULES: RouteRules = {
     audio: ["native", "off"],
     multiShot: true,
     contentTypes: ["prompt", "first_frame", "last_frame", "element"],
+    requireFirstFrame: true,
   },
   "kling-3.0-turbo": {
     resolutions: ["720p", "1080p"],
     durations: DURATIONS_3_15,
     contentTypes: ["prompt", "first_frame"],
+    requireFirstFrame: true,
   },
   "kling-2.6": {
     resolutions: ["720p", "1080p"],
     durations: DURATIONS_5_10,
     audio: ["native", "off"],
     contentTypes: ["prompt", "first_frame", "last_frame", "voice"],
+    requireFirstFrame: true,
   },
   "kling-2.5-turbo": {
     resolutions: ["720p", "1080p"],
     durations: DURATIONS_5_10,
     contentTypes: ["prompt", "first_frame", "last_frame"],
+    requireFirstFrame: true,
+  },
+  // https://kling.ai/document-api/api/video/4-0/image-to-video (2026-11-12):
+  // "Input type. Supports: prompt, first frame, middle frame and last frame";
+  // `a({resolutions:["720p","1080p"],defaultResolution:"1080p",maxDuration:30`.
+  // No `first_frame` requirement — the usage guide lists "first frame, last
+  // frame, first-and-last frames, or intermediate frames".
+  "kling-4.0": {
+    resolutions: ["720p", "1080p"],
+    durations: DURATIONS_3_30,
+    contentTypes: ["prompt", "first_frame", "middle_frame", "last_frame"],
+    prompt: KLING_4_PROMPT_BUDGET,
+  },
+  // https://kling.ai/document-api/api/video/4-0-flash/image-to-video
+  // (2026-11-12): "Input type. Supports: prompt, first frame" — "Only
+  // first-frame-to-video generation is supported." —
+  // `a({resolutions:["720p"],defaultResolution:"720p",maxDuration:20`.
+  "kling-4.0-flash": {
+    resolutions: ["720p"],
+    durations: DURATIONS_3_20,
+    contentTypes: ["prompt", "first_frame"],
+    requireFirstFrame: true,
+    prompt: KLING_4_PROMPT_BUDGET,
   },
 };
 
@@ -106,16 +140,23 @@ export interface ImageToVideoV3Settings {
    * to "off"; Kling 3.0 / 2.6 only — IMAGE_TO_VIDEO_V3_RULES narrows per model.
    */
   audio?: KlingAudio;
-  /** Defaults to "720p". "4k" is Kling 3.0 only — narrowed per model at runtime. */
+  /**
+   * Defaults to "720p" ("1080p" on Kling 4.0). "4k" is Kling 3.0 only —
+   * narrowed per model at runtime.
+   */
   resolution?: KlingResolution;
-  /** Seconds. Defaults to 5. 2.6 / 2.5-turbo take only 5 or 10 (checked at runtime). */
+  /**
+   * Seconds. Defaults to 5 — on Kling 4.0 / 4.0 Flash to a duration the
+   * prompt states, else 10. 2.6 / 2.5-turbo take only 5 or 10 (checked at
+   * runtime).
+   */
   duration?: KlingDuration;
 }
 
 export interface ImageToVideoV3Params {
   /** URL path segment — stripped from the wire body into `.request.url`. */
   model: KlingPathVideoModelId | (string & {});
-  /** Required. Must include a `first_frame` entry. */
+  /** Required. Must include a `first_frame` entry on every model but Kling 4.0. */
   contents: KlingContent[];
   settings?: ImageToVideoV3Settings;
   options?: KlingOptions;
@@ -178,7 +219,8 @@ const validator = createValidator<ImageToVideoV3Params, unknown>({
   catalog: pathVideoModels,
   checks: [
     checkSettings("image-to-video", IMAGE_TO_VIDEO_V3_RULES, SOURCE),
-    checkContents("image-to-video", IMAGE_TO_VIDEO_V3_RULES, SOURCE, { requireFirstFrame: true }),
+    checkContents("image-to-video", IMAGE_TO_VIDEO_V3_RULES, SOURCE),
+    checkPrompt("image-to-video", IMAGE_TO_VIDEO_V3_RULES, SOURCE),
   ],
   estimate,
   finalize,

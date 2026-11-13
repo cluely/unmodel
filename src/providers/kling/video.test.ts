@@ -4,7 +4,7 @@ import { videoFromImage, IMAGE2VIDEO_MODELS, IMAGE2VIDEO_URL } from "./video-fro
 // The unified adapter derives its nine `/v1/videos/*` rows from the same
 // `V1_MODEL_RULES` these validators narrow their bodies from; the drift suite
 // at the end of this file is what asserts that stays true — for those nine and
-// for the six path-addressed rows beside them.
+// for the path-addressed rows beside them.
 import { video as unifiedVideo } from "./unified-video";
 import { V1_MODE_TIERS, V1_MODEL_RULES, type V1ModelRules } from "./v1-routes";
 import { MODE_RESOLUTION } from "./pricing";
@@ -331,12 +331,12 @@ describe("kling.videoFromImage", () => {
 // compared them, which is exactly why it rotted unnoticed. `V1_MODEL_RULES` is
 // now the one the `/v1/videos/*` types are built from AND the one
 // `./unified-video.ts` derives its nine `kling-v*` rows from; the assertions
-// below tie all fifteen unified rows to their rule tables in BOTH directions,
+// below tie every unified row to its rule tables in BOTH directions,
 // so a value added to either side alone fails here. (The compile-time half
 // lives in test/types/kling.test-d.ts, and the completion lists in
 // test/unified/completions.test.ts.)
 //
-// The six path-addressed rows are asserted but NOT derived: their rule tables
+// The path-addressed rows are asserted but NOT derived: their rule tables
 // were recovered from the doc site's JS bundle rather than read off a served
 // page, so `kling.videoV3` / `videoV3FromImage` / `videoOmni` keep wide bodies
 // on purpose — a compile error a caller cannot work around is the wrong answer
@@ -350,7 +350,7 @@ function sorted(values: readonly (string | number)[] = []): Array<string | numbe
 
 /** One unified row, at the interface type the drift suite compares against. */
 interface Row {
-  durations: readonly number[];
+  durations?: readonly number[];
   resolutions: readonly string[];
   ratios?: readonly string[];
   extras?: Readonly<Record<string, unknown>>;
@@ -494,7 +494,7 @@ describe("kling video: the path-addressed rows match their route rules", () => {
   const pathIds: string[] = Object.keys(pathRules);
 
   test("the unified table is exactly the two families, and nothing else", () => {
-    expect(pathIds.length).toBe(6);
+    expect(pathIds.length).toBe(8);
     expect(sorted(Object.keys(ROWS))).toEqual(
       sorted([...Object.keys(V1_MODEL_RULES), ...pathIds]),
     );
@@ -502,9 +502,21 @@ describe("kling video: the path-addressed rows match their route rules", () => {
 
   test.each(pathIds)("%s: durations, resolutions and ratios are the rule row's", (id) => {
     const rules = pathRules[id]!;
-    expect(ROWS[id]?.durations).toEqual(rules.durations);
+    const durations = ROWS[id]?.durations;
+    if (durations === undefined) {
+      // An absent list means a range (`VideoModelParams.durations`): every
+      // integer from the first to the last, which is what the rule row spells.
+      const first = rules.durations[0]!;
+      expect(rules.durations).toEqual(
+        Array.from({ length: rules.durations.length }, (_, i) => first + i),
+      );
+      expect(rules.durations.length).toBeGreaterThan(15);
+    } else {
+      expect(durations).toEqual(rules.durations);
+    }
     expect(ROWS[id]?.resolutions).toEqual(rules.resolutions);
-    expect(ROWS[id]?.ratios).toEqual(rules.aspectRatios);
+    // `adaptive` is omni's "read it off the inputs", not a shape.
+    expect(ROWS[id]?.ratios).toEqual(rules.aspectRatios?.filter((r) => r !== "adaptive"));
   });
 
   test.each(pathIds)("%s: the text and image arms agree about the same model", (id) => {

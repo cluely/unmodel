@@ -11,7 +11,7 @@
 
 import { EXTRA } from "../../core/unified/derive";
 import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
-import { KLING_ASPECT_RATIOS, type KlingWatermarkInfo } from "./shared";
+import { KLING_4_ASPECT_RATIOS, KLING_ASPECT_RATIOS, type KlingWatermarkInfo } from "./shared";
 import {
   V1_MODEL_RULES,
   V1_MODE_TIERS,
@@ -42,6 +42,9 @@ export const MODELS = [
   "kling-2.5-turbo",
   "kling-3.0-omni",
   "kling-o1",
+  // On all three path-addressed routes; the inputs pick which.
+  "kling-4.0",
+  "kling-4.0-flash",
 ] as const;
 
 /**
@@ -56,11 +59,11 @@ export const MODELS = [
  * them from `V1_MODEL_RULES`, the same table `kling.video` /
  * `kling.videoFromImage` narrow their bodies from, so the two surfaces cannot
  * disagree about a model again (see the block above `rowOf`). The
- * path-addressed family spells its tiers directly and its six rows are still
+ * path-addressed family spells its tiers directly and its rows are still
  * written out — its rule tables come from the doc site's JS bundle rather than
  * a served page, so those wire validators stay deliberately wide and there is
  * nothing there to derive *from* that a reader could check. `480p` and `1440p`
- * are on nothing. `./video.test.ts` ties all fifteen rows to their rule tables
+ * are on nothing. `./video.test.ts` ties every row to its rule tables
  * either way.
  *
  * `ratios: []` marks `kling-v2-1` and `kling-v1-5`: both are **image-to-video
@@ -233,5 +236,19 @@ export const KLING_VIDEO_MODEL_PARAMS = {
     resolutions: ["720p", "1080p"],
     ratios: KLING_ASPECT_RATIOS,
     extras: { ...WATERMARK, audio: EXTRA as "original" | "off" },
+  },
+  // Kling 4.0 / 4.0 Flash take every integer from 3 to 30 / 3 to 20 seconds —
+  // a range, so no `durations` list (see `VideoModelParams.durations`); the
+  // route rule tables carry it and answer at `duration`. `ratios` omits omni's
+  // `adaptive`, which is not a shape. `audio` exists on the omni route only.
+  "kling-4.0": {
+    resolutions: ["720p", "1080p"],
+    ratios: KLING_4_ASPECT_RATIOS,
+    extras: { ...WATERMARK, audio: EXTRA as "native" | "original" },
+  },
+  "kling-4.0-flash": {
+    resolutions: ["720p"],
+    ratios: KLING_4_ASPECT_RATIOS,
+    extras: { ...WATERMARK, audio: EXTRA as "native" | "original" },
   },
 } as const satisfies VideoModelParamTable;

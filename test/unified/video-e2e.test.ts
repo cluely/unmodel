@@ -138,6 +138,41 @@ describe("route derivation", () => {
     expect(url("kling/kling-3.0-omni", frame)).toBe(
       "https://api-singapore.klingai.com/omni-video/kling-3.0-omni",
     );
+    // Kling 4.0 is on all three path routes: text and keyframes stay on their
+    // own, and only what omni alone takes — references, clips — goes there.
+    const reference = { image: [{ url: "https://example.com/a.png", role: "reference" }] };
+    const clip = { video: { url: "https://example.com/clip.mp4" } };
+    expect(url("kling/kling-4.0")).toBe("https://api-singapore.klingai.com/text-to-video/kling-4.0");
+    expect(url("kling/kling-4.0", frame)).toBe(
+      "https://api-singapore.klingai.com/image-to-video/kling-4.0",
+    );
+    expect(url("kling/kling-4.0", reference)).toBe(
+      "https://api-singapore.klingai.com/omni-video/kling-4.0",
+    );
+    expect(url("kling/kling-4.0-flash", clip)).toBe(
+      "https://api-singapore.klingai.com/omni-video/kling-4.0-flash",
+    );
+  });
+
+  test("kling-4.0 compiles its own shapes and durations", () => {
+    const params = video({
+      model: "kling/kling-4.0",
+      prompt: "a fox",
+      duration: 30,
+      aspectRatio: "21:9",
+      resolution: "1080p",
+    }) as unknown as Record<string, unknown>;
+    expect(params["settings"]).toEqual({ duration: 30, resolution: "1080p", aspect_ratio: "21:9" });
+
+    const older = video.safe({ model: "kling/kling-3.0", prompt: "a fox", aspectRatio: "21:9" } as never);
+    expect(older.ok).toBe(false);
+    if (older.ok) return;
+    expect(older.errors[0]).toMatchObject({ path: ["aspectRatio"] });
+
+    const flash = video.safe({ model: "kling/kling-4.0-flash", prompt: "a fox", duration: 21 });
+    expect(flash.ok).toBe(false);
+    if (flash.ok) return;
+    expect(flash.errors[0]!.path).toEqual(["duration"]);
   });
 
   test("a reference is a different route from a first frame, and says so where it is not one", () => {
@@ -516,7 +551,7 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
   test("a model this snapshot has not seen keeps every route open", () => {
     // It has already drawn `unknown_model`; gating it against tables that do
     // not describe it would be a guess dressed as a check.
-    for (const model of ["runway/gen5", "vidu/viduq4", "kling/kling-4.0"]) {
+    for (const model of ["runway/gen5", "vidu/viduq4", "kling/kling-9.9"]) {
       const result = video.safe({
         model,
         prompt: "a fox",

@@ -8,6 +8,7 @@ import {
   v1VideoModels,
   videoModels,
 } from "./models";
+import { videoCostUSD } from "./pricing";
 
 /** Ids that name a video model AND a different image model. */
 const SHADOWED = ["kling-v3", "kling-v2-1", "kling-v1-5", "kling-v1"] as const;
@@ -35,6 +36,16 @@ describe("kling catalog shape", () => {
     }
     const overlap = Object.keys(v1VideoModels).filter((id) => id in pathVideoModels);
     expect(overlap).toEqual([]);
+  });
+
+  test("the Kling 4.0 rows carry their default configuration's rate", () => {
+    // 1080p is 4.0's default and 720p Flash's only tier; no video input.
+    for (const id of ["kling-4.0", "kling-4.0-flash"] as const) {
+      expect(pathVideoModels[id].cost.perVideoSecond, id).toBeCloseTo(
+        videoCostUSD({ model: id, duration: 1 })!,
+        10,
+      );
+    }
   });
 });
 

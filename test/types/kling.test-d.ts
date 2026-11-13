@@ -67,8 +67,12 @@ function pathRouteSettingsTypeTests(): void {
   videoV3({ model: "kling-3.0", prompt: "hi", settings: { resolution: "2k" } });
   // @ts-expect-error banana is not an audio mode (was a bare `string`)
   videoV3({ model: "kling-3.0", prompt: "hi", settings: { audio: "banana" } });
-  // @ts-expect-error 3–15 seconds is the documented range
-  videoV3({ model: "kling-3.0", prompt: "hi", settings: { duration: 20 } });
+  // Kling 4.0's 3–30s is the widest documented range; the rule table narrows it per model.
+  videoV3({ model: "kling-4.0", prompt: "hi", settings: { duration: 30, aspect_ratio: "21:9" } });
+  // @ts-expect-error 3–30 seconds is the widest documented range
+  videoV3({ model: "kling-4.0", prompt: "hi", settings: { duration: 31 } });
+  // @ts-expect-error 4:3 is a shape no Kling video route takes
+  videoV3({ model: "kling-4.0", prompt: "hi", settings: { aspect_ratio: "4:3" } });
 
   const frame = { type: "first_frame", url: "https://e.com/a.png" } as const;
   videoV3FromImage({ model: "kling-3.0", contents: [frame], settings: { resolution: "720p" } });
@@ -86,8 +90,18 @@ function pathRouteSettingsTypeTests(): void {
   videoOmni({ model: "kling-3.0-omni", contents: [prompt], settings: { audio: "banana" } });
   // @ts-expect-error "" is not a resolution (was a bare `string`)
   videoOmni({ model: "kling-3.0-omni", contents: [prompt], settings: { resolution: "" } });
-  // @ts-expect-error 3–15 seconds is the documented range
+  // @ts-expect-error 3–30 seconds is the widest documented range
   videoOmni({ model: "kling-3.0-omni", contents: [prompt], settings: { duration: 0 } });
+  // Kling 4.0's omni route adds `adaptive`, `middle_frame` and `voice` entries.
+  videoOmni({
+    model: "kling-4.0",
+    contents: [
+      prompt,
+      { type: "middle_frame", url: "https://e.com/a.png", id: "m1" },
+      { type: "voice", voice_id: "v1", id: "voice_1" },
+    ],
+    settings: { aspect_ratio: "adaptive", duration: 30, audio: "original" },
+  });
 }
 
 function imageRouteTypeTests(): void {

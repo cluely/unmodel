@@ -4,7 +4,8 @@
  *
  * Exported as `kling.videoV3`. "V3" names the third-generation ROUTE
  * family — the unversioned `/text-to-video/{model}` paths that arrived with
- * Kling 3.0 — not a single model: the family also serves 2.6 and 2.5-turbo.
+ * Kling 3.0 — not a single model: the family also serves 2.6, 2.5-turbo and
+ * Kling 4.0 / 4.0 Flash, which exist on this family alone.
  *
  * EXPERIMENTAL — UNCORROBORATED ROUTE. `POST /text-to-video/{model}` was recovered by
  * EVALUATING THE DOC SITE'S OWN JAVASCRIPT BUNDLE (the SPA's navigation/asset
@@ -26,11 +27,15 @@
  *   params object for ergonomics but is STRIPPED from the wire body and
  *   interpolated into `.request.url`.
  * - `prompt` is the only required body field (≤3072 characters, recommended
- *   ≤2500). Everything else lives under `settings` (output configuration) and
- *   `options` (callback, external id, watermark).
+ *   ≤2500; Kling 4.0 / 4.0 Flash budget 26,000 English or 11,000 non-English
+ *   characters). Everything else lives under `settings` (output
+ *   configuration) and `options` (callback, external id, watermark).
  * - What `settings` offers is per model: only Kling 3.0 has `multi_shot` and
- *   a 4K tier, only 3.0 and 2.6 have `audio`, and 2.6 / 2.5-turbo are limited
- *   to 5s or 10s while the 3.0 family takes 3–15s.
+ *   a 4K tier, only 3.0 and 2.6 have `audio`, only 4.0 / 4.0 Flash take
+ *   `21:9`, and 2.6 / 2.5-turbo are limited to 5s or 10s while the 3.0 family
+ *   takes 3–15s, 4.0 Flash 3–20s and 4.0 3–30s
+ *   (https://kling.ai/document-api/api/video/4-0/text-to-video and
+ *   /4-0-flash/text-to-video, read 2026-11-12).
  * - Async: responds with a task object; poll `GET /tasks` or set
  *   `options.callback_url`. Auth is `Authorization: Bearer <key>`.
  */
@@ -46,18 +51,23 @@ import { pathVideoModels, type KlingPathVideoModelId } from "./models";
 import {
   DOCS_BASE,
   DURATIONS_3_15,
+  DURATIONS_3_20,
+  DURATIONS_3_30,
   DURATIONS_5_10,
+  KLING_4_ASPECT_RATIOS,
+  KLING_4_PROMPT_BUDGET,
   KLING_ASPECT_RATIOS,
   KLING_BASE_URL,
   KLING_HEADERS,
-  PROMPT_MAX_CHARS,
+  PROMPT_BUDGET_3072,
+  checkPrompt,
   checkSettings,
   optionsSchema,
-  type KlingAspectRatio,
   type KlingAudio,
   type KlingDuration,
   type KlingOptions,
   type KlingResolution,
+  type KlingSettingsAspectRatio,
   type RouteRules,
 } from "./shared";
 import { videoCostUSD } from "./pricing";
@@ -77,22 +87,45 @@ export const TEXT_TO_VIDEO_V3_RULES: RouteRules = {
     durations: DURATIONS_3_15,
     audio: ["native", "off"],
     multiShot: true,
+    prompt: PROMPT_BUDGET_3072,
   },
   "kling-3.0-turbo": {
     resolutions: ["720p", "1080p"],
     aspectRatios: KLING_ASPECT_RATIOS,
     durations: DURATIONS_3_15,
+    prompt: PROMPT_BUDGET_3072,
   },
   "kling-2.6": {
     resolutions: ["720p", "1080p"],
     aspectRatios: KLING_ASPECT_RATIOS,
     durations: DURATIONS_5_10,
     audio: ["native", "off"],
+    prompt: PROMPT_BUDGET_3072,
   },
   "kling-2.5-turbo": {
     resolutions: ["720p", "1080p"],
     aspectRatios: KLING_ASPECT_RATIOS,
     durations: DURATIONS_5_10,
+    prompt: PROMPT_BUDGET_3072,
+  },
+  // https://kling.ai/document-api/api/video/4-0/text-to-video (2026-11-12):
+  // `o({resolutions:["720p","1080p"],defaultResolution:"1080p",maxDuration:30,
+  // aspectRatio:{enum:["21:9","16:9","9:16","1:1"],default:"16:9"}`. The route
+  // has no `settings.audio` (audio is always generated) and no `multi_shot`.
+  "kling-4.0": {
+    resolutions: ["720p", "1080p"],
+    aspectRatios: KLING_4_ASPECT_RATIOS,
+    durations: DURATIONS_3_30,
+    prompt: KLING_4_PROMPT_BUDGET,
+  },
+  // https://kling.ai/document-api/api/video/4-0-flash/text-to-video
+  // (2026-11-12): `o({resolutions:["720p"],defaultResolution:"720p",
+  // maxDuration:20,aspectRatio:{enum:["21:9","16:9","9:16","1:1"],default:"16:9"}`.
+  "kling-4.0-flash": {
+    resolutions: ["720p"],
+    aspectRatios: KLING_4_ASPECT_RATIOS,
+    durations: DURATIONS_3_20,
+    prompt: KLING_4_PROMPT_BUDGET,
   },
 };
 
@@ -104,11 +137,18 @@ export interface TextToVideoV3Settings {
    * to "off"; Kling 3.0 / 2.6 only — TEXT_TO_VIDEO_V3_RULES narrows per model.
    */
   audio?: KlingAudio;
-  /** Defaults to "720p". "4k" is Kling 3.0 only — narrowed per model at runtime. */
+  /**
+   * Defaults to "720p" ("1080p" on Kling 4.0). "4k" is Kling 3.0 only —
+   * narrowed per model at runtime.
+   */
   resolution?: KlingResolution;
-  /** Defaults to "16:9". */
-  aspect_ratio?: KlingAspectRatio;
-  /** Seconds. Defaults to 5. 2.6 / 2.5-turbo take only 5 or 10 (checked at runtime). */
+  /** Defaults to "16:9". "21:9" is Kling 4.0 / 4.0 Flash only (checked at runtime). */
+  aspect_ratio?: KlingSettingsAspectRatio;
+  /**
+   * Seconds. Defaults to 5 — on Kling 4.0 / 4.0 Flash to a duration the
+   * prompt states, else 10. 2.6 / 2.5-turbo take only 5 or 10 (checked at
+   * runtime).
+   */
   duration?: KlingDuration;
 }
 
@@ -118,7 +158,11 @@ export interface TextToVideoV3Params {
    * `<base>/text-to-video/<model>`.
    */
   model: KlingPathVideoModelId | (string & {});
-  /** Required. Up to 3072 characters; multi-shot syntax is "shot n, m, words;". */
+  /**
+   * Required. Up to 3072 characters (Kling 4.0 / 4.0 Flash: 26,000 English or
+   * 11,000 non-English — checked per model); multi-shot syntax is
+   * "shot n, m, words;".
+   */
   prompt: string;
   settings?: TextToVideoV3Settings;
   options?: KlingOptions;
@@ -126,7 +170,8 @@ export interface TextToVideoV3Params {
 
 const videoV3Schema = z.looseObject({
   model: z.string().min(1),
-  prompt: z.string().min(1).max(PROMPT_MAX_CHARS),
+  // The length cap is per model — `checkPrompt` reads it off the rule table.
+  prompt: z.string().min(1),
   settings: z
     .looseObject({
       multi_shot: z.boolean().optional(),
@@ -178,7 +223,10 @@ const validator = createValidator<TextToVideoV3Params, unknown>({
   // `model_name` spellings warn as unknown_model here (use the primary
   // `kling.video` for those).
   catalog: pathVideoModels,
-  checks: [checkSettings("text-to-video", TEXT_TO_VIDEO_V3_RULES, SOURCE)],
+  checks: [
+    checkSettings("text-to-video", TEXT_TO_VIDEO_V3_RULES, SOURCE),
+    checkPrompt("text-to-video", TEXT_TO_VIDEO_V3_RULES, SOURCE),
+  ],
   estimate,
   finalize,
 });

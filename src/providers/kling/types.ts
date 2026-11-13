@@ -84,7 +84,9 @@ export type {
   KlingMode,
   KlingOptions,
   KlingResolution,
+  KlingSettingsAspectRatio,
   KlingWatermarkInfo,
+  PromptBudget,
   RouteModelRules,
   RouteRules,
 } from "./shared";

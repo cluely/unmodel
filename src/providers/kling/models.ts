@@ -17,7 +17,14 @@
 //   https://kling.ai/document-api/api/video/2-6/text-to-video             (POST /text-to-video/kling-2.6)
 //   https://kling.ai/document-api/api/video/2-5-turbo/text-to-video       (POST /text-to-video/kling-2.5-turbo)
 //   https://kling.ai/document-api/api/video/o1/video-omni                 (POST /omni-video/kling-o1)
-// Verified 2026-08-13.
+//   https://kling.ai/document-api/api/video/4-0/text-to-video             (POST /text-to-video/kling-4.0)
+//   https://kling.ai/document-api/api/video/4-0/image-to-video            (POST /image-to-video/kling-4.0)
+//   https://kling.ai/document-api/api/video/4-0/video-omni                (POST /omni-video/kling-4.0)
+//   https://kling.ai/document-api/api/video/4-0-flash/text-to-video       (POST /text-to-video/kling-4.0-flash)
+//   https://kling.ai/document-api/api/video/4-0-flash/image-to-video      (POST /image-to-video/kling-4.0-flash)
+//   https://kling.ai/document-api/api/video/4-0-flash/video-omni          (POST /omni-video/kling-4.0-flash)
+//   https://kling.ai/document-api/api/usage-guide/kling-4-0               (Kling 4.0 limits and access)
+// Verified 2026-08-13; the Kling 4.0 / 4.0 Flash rows 2026-11-12.
 //
 // TWO ROUTE FAMILIES / TWO ID SPACES, deliberately kept apart:
 //   - CORROBORATED — `POST /v1/videos/text2video` and `/v1/videos/image2video`
@@ -44,15 +51,16 @@
 // Kling bills prepaid "Units" and the pricing pages print the USD equivalent
 // beside every rate, so the numbers below are transcriptions. Note the unit
 // price differs per resource package: video Units are $0.14 each
-// (0.8 Units = $0.112 /s) while image Units are $0.0035 each
+// (0.8 Units = $0.112 /s), the Kling 4.0 rows' Flagship-pack Units $0.157
+// (1.0 Unit = $0.157 /s), and image Units $0.0035 each
 // (8 Units = $0.028 /image) — which is exactly why unmodel records USD and
 // never multiplies Units itself.
 //
 // Which rate an entry carries: the DEFAULT configuration's rate — `mode`
 // defaults to `std` (720P) on the `/v1/videos/*` routes and
-// `settings.resolution` to `720p` on the path-addressed ones, with audio off
-// by default — and ./pricing.ts carries the full resolution × audio ×
-// video-input tier tables.
+// `settings.resolution` to `720p` on the path-addressed ones (`1080p` on
+// Kling 4.0), with audio off by default and no video input — and
+// ./pricing.ts carries the full resolution × audio × video-input tier tables.
 //
 // Model coverage vs. the artificialanalysis census: every census entry maps to
 // a documented id — Kling 3.0 Pro/Standard and 3.0 Omni Pro/Standard are the
@@ -165,6 +173,47 @@ export const pathVideoModels = {
     modalities: videoModality,
     limit: { context: 0 },
     cost: { perVideoSecond: 0.042 },
+  },
+  // Path-addressed only — there is no `model_name` spelling. "Kling 4.0 API Is
+  // Now Fully Available, with Native Video Generation up to 30s ... Request
+  // paths: /text-to-video/kling-4.0, /image-to-video/kling-4.0, and
+  // /omni-video/kling-4.0." — https://kling.ai/document-api/updates/api
+  // (retrieved 2026-11-12). Pay-gated, not allowlisted: "Purchase a Flagship
+  // resource pack ... Account cash balance > 0."
+  // (https://kling.ai/document-api/api/usage-guide/kling-4-0).
+  "kling-4.0": {
+    id: "kling-4.0",
+    name: "Kling 4.0",
+    family: "kling-4",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: omniModality,
+    limit: { context: 0 },
+    // https://kling.ai/document-api/pricing/base/video (2026-11-12), "No Input
+    // Video": "1.5 Units ($0.235) /s" at the default 1080p; "1.0 Unit
+    // ($0.157) /s" at 720p.
+    cost: { perVideoSecond: 0.235 },
+  },
+  // "Kling 4.0 Flash API Is Now Available, with Native Video Generation up to
+  // 20s ... Request paths: /text-to-video/kling-4.0-flash,
+  // /image-to-video/kling-4.0-flash, and /omni-video/kling-4.0-flash." —
+  // https://kling.ai/document-api/updates/api (11/04/2026, retrieved
+  // 2026-11-12).
+  "kling-4.0-flash": {
+    id: "kling-4.0-flash",
+    name: "Kling 4.0 Flash",
+    family: "kling-4",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: omniModality,
+    limit: { context: 0 },
+    // https://kling.ai/document-api/pricing/base/video (2026-11-12), "No Input
+    // Video": "0.6 Units ($0.094) /s" — 720p is its only tier.
+    cost: { perVideoSecond: 0.094 },
   },
 } as const satisfies Record<string, ModelInfo>;
 

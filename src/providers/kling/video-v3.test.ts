@@ -3,7 +3,7 @@ import { videoV3, textToVideoV3Url, TEXT_TO_VIDEO_V3_RULES } from "./video-v3";
 import { videoV3FromImage, imageToVideoV3Url, IMAGE_TO_VIDEO_V3_RULES } from "./video-v3-from-image";
 import { videoOmni, omniVideoUrl, OMNI_VIDEO_RULES } from "./video-omni";
 import {
-  DURATIONS_3_15,
+  DURATIONS_3_30,
   KLING_AUDIO_MODES,
   KLING_BASE_URL,
   KLING_RESOLUTIONS,
@@ -30,7 +30,7 @@ describe("kling.videoV3 happy path", () => {
   });
 
   test("unknown model warns but validates", () => {
-    const r = videoV3.safe({ model: "kling-4.0", prompt: "hi" });
+    const r = videoV3.safe({ model: "kling-9.9", prompt: "hi" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
@@ -380,8 +380,208 @@ describe("kling.videoOmni", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) {
       const issue = r.errors.find((e) => e.code === "unsupported_capability");
-      expect(issue?.meta?.supported).toEqual(["kling-3.0-omni", "kling-o1"]);
+      expect(issue?.meta?.supported).toEqual([
+        "kling-3.0-omni",
+        "kling-o1",
+        "kling-4.0",
+        "kling-4.0-flash",
+      ]);
     }
+  });
+});
+
+describe("Kling 4.0 / 4.0 Flash", () => {
+  const frame = (type: string, url = "https://example.com/a.png") => ({ type, url });
+  const prompt = { type: "prompt", text: "hi" } as const;
+
+  test("both ids validate on all three routes with no warning", () => {
+    for (const model of ["kling-4.0", "kling-4.0-flash"] as const) {
+      const t2v = videoV3.safe({ model, prompt: "hi", settings: { duration: 10 } });
+      expect(t2v.ok, `${model} text-to-video`).toBe(true);
+      if (t2v.ok) expect(t2v.warnings, model).toEqual([]);
+      expect(t2v.ok && t2v.params.request.url).toBe(textToVideoV3Url(model));
+
+      const i2v = videoV3FromImage.safe({ model, contents: [prompt, frame("first_frame")] });
+      expect(i2v.ok, `${model} image-to-video`).toBe(true);
+      if (i2v.ok) expect(i2v.warnings, model).toEqual([]);
+
+      const omni = videoOmni.safe({ model, contents: [prompt, frame("refer_image")] });
+      expect(omni.ok, `${model} omni-video`).toBe(true);
+      if (omni.ok) expect(omni.warnings, model).toEqual([]);
+    }
+  });
+
+  test("they price per second at their default resolution", () => {
+    // $0.235/s at 4.0's default 1080p; $0.157/s at 720p.
+    const four = videoV3.safe({ model: "kling-4.0", prompt: "hi", settings: { duration: 10 } });
+    expect(four.ok && four.estimate.costUSD).toBeCloseTo(2.35, 10);
+    const four720 = videoV3.safe({
+      model: "kling-4.0",
+      prompt: "hi",
+      settings: { duration: 10, resolution: "720p" },
+    });
+    expect(four720.ok && four720.estimate.costUSD).toBeCloseTo(1.57, 10);
+    // Flash is 720p only: $0.094/s.
+    const flash = videoV3.safe({ model: "kling-4.0-flash", prompt: "hi", settings: { duration: 10 } });
+    expect(flash.ok && flash.estimate.costUSD).toBeCloseTo(0.94, 10);
+  });
+
+  test("an omitted duration has no estimate — the prompt sets it", () => {
+    const r = videoV3.safe({ model: "kling-4.0", prompt: "Generate a 15-second video of a fox" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+  });
+
+  test("a video input bills a total duration of at least output × 2 — a floor", () => {
+    const r = videoOmni.safe({
+      model: "kling-4.0",
+      contents: [prompt, frame("base_video", "https://example.com/clip.mp4")],
+      settings: { duration: 10 },
+    });
+    // $0.141/s × (10 × 2) at 1080p.
+    expect(r.ok && r.estimate.costUSD).toBeCloseTo(2.82, 10);
+    const flash = videoOmni.safe({
+      model: "kling-4.0-flash",
+      contents: [prompt, frame("feature_video", "https://example.com/clip.mp4")],
+      settings: { duration: 10 },
+    });
+    // $0.063/s × (10 × 2).
+    expect(flash.ok && flash.estimate.costUSD).toBeCloseTo(1.26, 10);
+  });
+
+  test("durations run 3–30 on 4.0 and 3–20 on Flash", () => {
+    expect(videoV3.safe({ model: "kling-4.0", prompt: "hi", settings: { duration: 30 } }).ok).toBe(true);
+    const over = safeUnchecked({ model: "kling-4.0", prompt: "hi", settings: { duration: 31 } });
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.path).toEqual(["settings", "duration"]);
+
+    expect(
+      videoV3.safe({ model: "kling-4.0-flash", prompt: "hi", settings: { duration: 20 } }).ok,
+    ).toBe(true);
+    const flash = videoV3.safe({ model: "kling-4.0-flash", prompt: "hi", settings: { duration: 21 } });
+    expect(flash.ok).toBe(false);
+    if (!flash.ok) expect(flash.errors[0]?.meta?.allowed).toHaveLength(18);
+  });
+
+  test("Flash is 720p only, and neither takes 4K", () => {
+    const flash = videoV3.safe({
+      model: "kling-4.0-flash",
+      prompt: "hi",
+      settings: { resolution: "1080p" },
+    });
+    expect(flash.ok).toBe(false);
+    if (!flash.ok) expect(flash.errors[0]?.meta?.allowed).toEqual(["720p"]);
+    expect(
+      videoV3.safe({ model: "kling-4.0", prompt: "hi", settings: { resolution: "4k" } }).ok,
+    ).toBe(false);
+  });
+
+  test("21:9 is theirs, and adaptive is their omni route's", () => {
+    expect(
+      videoV3.safe({ model: "kling-4.0", prompt: "hi", settings: { aspect_ratio: "21:9" } }).ok,
+    ).toBe(true);
+    const older = videoV3.safe({ model: "kling-3.0", prompt: "hi", settings: { aspect_ratio: "21:9" } });
+    expect(older.ok).toBe(false);
+    if (!older.ok) expect(older.errors[0]?.path).toEqual(["settings", "aspect_ratio"]);
+
+    expect(
+      videoOmni.safe({
+        model: "kling-4.0-flash",
+        contents: [prompt],
+        settings: { aspect_ratio: "adaptive" },
+      }).ok,
+    ).toBe(true);
+    const t2v = videoV3.safe({ model: "kling-4.0", prompt: "hi", settings: { aspect_ratio: "adaptive" } });
+    expect(t2v.ok).toBe(false);
+    if (!t2v.ok) expect(t2v.errors[0]?.meta?.allowed).toEqual(["21:9", "16:9", "9:16", "1:1"]);
+  });
+
+  test("omni audio is native or original — there is no off; t2v and i2v have no switch", () => {
+    expect(
+      videoOmni.safe({ model: "kling-4.0", contents: [prompt], settings: { audio: "original" } }).ok,
+    ).toBe(true);
+    const off = videoOmni.safe({ model: "kling-4.0", contents: [prompt], settings: { audio: "off" } });
+    expect(off.ok).toBe(false);
+    if (!off.ok) expect(off.errors[0]?.meta?.allowed).toEqual(["native", "original"]);
+
+    const t2v = videoV3.safe({ model: "kling-4.0", prompt: "hi", settings: { audio: "native" } });
+    expect(t2v.ok).toBe(false);
+    if (!t2v.ok) expect(t2v.errors[0]?.code).toBe("unsupported_param");
+  });
+
+  test("4.0's image route takes middle frames and needs no first frame; Flash needs one", () => {
+    const keyframes = videoV3FromImage.safe({
+      model: "kling-4.0",
+      contents: [prompt, frame("middle_frame"), frame("last_frame")],
+    });
+    expect(keyframes.ok).toBe(true);
+    if (keyframes.ok) expect(keyframes.warnings).toEqual([]);
+
+    const flash = videoV3FromImage.safe({
+      model: "kling-4.0-flash",
+      contents: [prompt, frame("middle_frame")],
+    });
+    expect(flash.ok).toBe(false);
+    if (!flash.ok) {
+      expect(flash.errors.find((e) => e.code === "invalid_enum_value")?.meta?.allowed).toEqual([
+        "prompt",
+        "first_frame",
+      ]);
+      expect(flash.errors.find((e) => e.code === "invalid_shape")?.message).toContain(
+        "first_frame",
+      );
+    }
+  });
+
+  test("4.0's omni route takes voices; Flash's takes none", () => {
+    const voice = { type: "voice", voice_id: "v-1", id: "voice_1" };
+    expect(videoOmni.safe({ model: "kling-4.0", contents: [prompt, voice] }).ok).toBe(true);
+    const flash = videoOmni.safe({ model: "kling-4.0-flash", contents: [prompt, voice] });
+    expect(flash.ok).toBe(false);
+    if (!flash.ok) expect(flash.errors[0]?.path).toEqual(["contents", 1, "type"]);
+  });
+
+  test("their omni route takes up to 7 Elements", () => {
+    const elements = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({ type: "element", element_id: `${i}`, id: `e${i}` }));
+    expect(videoOmni.safe({ model: "kling-4.0", contents: [prompt, ...elements(7)] }).ok).toBe(true);
+    const eight = videoOmni.safe({ model: "kling-4.0-flash", contents: [prompt, ...elements(8)] });
+    expect(eight.ok).toBe(false);
+    if (!eight.ok) expect(eight.errors[0]?.meta?.max).toBe(7);
+  });
+
+  test("the prompt budget is 26,000 English or 11,000 non-English characters, mixed pro rata", () => {
+    expect(videoV3.safe({ model: "kling-4.0", prompt: "a".repeat(26_000) }).ok).toBe(true);
+    const english = videoV3.safe({ model: "kling-4.0", prompt: "a".repeat(26_001) });
+    expect(english.ok).toBe(false);
+    if (!english.ok) expect(english.errors[0]?.path).toEqual(["prompt"]);
+
+    expect(videoV3.safe({ model: "kling-4.0-flash", prompt: "狐".repeat(11_000) }).ok).toBe(true);
+    expect(videoV3.safe({ model: "kling-4.0-flash", prompt: "狐".repeat(11_001) }).ok).toBe(false);
+
+    // 13,000 / 26,000 + 5,500 / 11,000 = 1 exactly — and one more of either is over.
+    expect(
+      videoV3.safe({ model: "kling-4.0", prompt: "a".repeat(13_000) + "狐".repeat(5_500) }).ok,
+    ).toBe(true);
+    const mixed = videoV3.safe({ model: "kling-4.0", prompt: "a".repeat(13_000) + "狐".repeat(5_501) });
+    expect(mixed.ok).toBe(false);
+    if (!mixed.ok) expect(mixed.errors[0]?.meta).toMatchObject({ english: 13_000, nonEnglish: 5_501 });
+
+    // Latin letters with diacritics, punctuation and smart quotes count as English.
+    expect(videoV3.safe({ model: "kling-4.0", prompt: "é’".repeat(13_000) }).ok).toBe(true);
+  });
+
+  test("the budget applies to the prompt entry in contents too", () => {
+    const long = { type: "prompt", text: "狐".repeat(11_001) };
+    const i2v = videoV3FromImage.safe({ model: "kling-4.0", contents: [long, frame("first_frame")] });
+    expect(i2v.ok).toBe(false);
+    if (!i2v.ok) expect(i2v.errors[0]?.path).toEqual(["contents", 0, "text"]);
+    const omni = videoOmni.safe({ model: "kling-4.0-flash", contents: [long] });
+    expect(omni.ok).toBe(false);
+    expect(
+      videoOmni.safe({ model: "kling-4.0", contents: [{ type: "prompt", text: "a".repeat(20_000) }] })
+        .ok,
+    ).toBe(true);
   });
 });
 
@@ -396,7 +596,7 @@ describe("kling settings unions cover the route rule tables", () => {
           expect(KLING_RESOLUTIONS as readonly string[], model).toContain(resolution);
         }
         for (const duration of rules.durations) {
-          expect(DURATIONS_3_15 as readonly number[], model).toContain(duration);
+          expect(DURATIONS_3_30 as readonly number[], model).toContain(duration);
         }
         for (const audio of rules.audio ?? []) {
           expect(KLING_AUDIO_MODES as readonly string[], model).toContain(audio);

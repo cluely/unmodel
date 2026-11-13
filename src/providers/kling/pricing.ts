@@ -1,11 +1,13 @@
 /**
  * Kling pricing — https://kling.ai/document-api/pricing/base/video and
- * /pricing/base/image (verified 2026-08-13).
+ * /pricing/base/image (verified 2026-08-13; the Kling 4.0 / 4.0 Flash rows
+ * 2026-11-12).
  *
  * Kling bills prepaid "Units" and prints the USD equivalent beside every rate,
  * so the tables below are transcriptions rather than conversions. The Unit
  * price is NOT one number across the product: video Units are $0.14
- * (0.8 Units = $0.112 /s) and image Units are $0.0035 (8 Units = $0.028
+ * (0.8 Units = $0.112 /s), the Kling 4.0 rows' Flagship-pack Units $0.157
+ * ("1.0 Unit ($0.157) /s") and image Units $0.0035 (8 Units = $0.028
  * /image), which is why nothing here multiplies Units.
  *
  * Video is billed per second of output, by resolution and by two switches:
@@ -14,6 +16,19 @@
  * `videoCostUSD` takes both and falls back to the most expensive documented
  * tier only where the request leaves the tier open, which it flags by
  * returning undefined instead of guessing.
+ *
+ * Kling 4.0 / 4.0 Flash differ in two ways the request cannot fully state:
+ *   - "With Input Video" bills a TOTAL duration — "When input video duration
+ *     > output video duration: Unit price × (Input video duration + Output
+ *     video duration)", otherwise "Unit price × Output video duration × 2" —
+ *     and "Input video duration includes reference video duration and video
+ *     character elements duration". A URL does not reveal the input's length
+ *     and an `element_id` does not reveal its kind, so a 4.0 estimate with a
+ *     video input is `output × 2 × rate` and one with Elements prices them as
+ *     no video input: both a FLOOR, not a quote.
+ *   - An omitted `settings.duration` is read off the prompt (else `base_video`,
+ *     else 10s) and billed as the task's `usage.output_duration`, so the
+ *     estimate is undefined rather than an assumed 10 seconds.
  *
  * Not modelled: the Motion Control rows (a separate route), Avatar, Lip Sync,
  * audio generation, effects and the e-commerce solutions.
@@ -31,6 +46,18 @@ interface VideoRates {
   readonly audioVoice?: Tier;
   /** With a video input (the Omni / O1 routes). */
   readonly videoInput?: Tier;
+  /** `settings.resolution`'s server default, where it is not {@link DEFAULT_RESOLUTION}. */
+  readonly defaultResolution?: string;
+  /**
+   * An omitted duration is the one the prompt states, so no estimate exists
+   * before the task runs (Kling 4.0 / 4.0 Flash).
+   */
+  readonly durationFromPrompt?: boolean;
+  /**
+   * The `videoInput` tier bills output × 2 seconds at the least (input +
+   * output when the input is longer) — Kling 4.0 / 4.0 Flash.
+   */
+  readonly videoInputBillsTotal?: boolean;
 }
 
 /**
@@ -38,6 +65,34 @@ interface VideoRates {
  * current routes' path segments onto it.
  */
 const VIDEO_RATES: Readonly<Record<string, VideoRates>> = {
+  // https://kling.ai/document-api/pricing/base/video —
+  // `{model:{en:"Kling 4.0"},billingType:{en:"Per second"},feature:{en:"No
+  // Input Video"},price720:{en:"1.0 Unit ($0.157) /s"},price1080:{en:"1.5 Units
+  // ($0.235) /s"},price4k:{en:"-"}` and `feature:{en:"With Input Video"},
+  // price720:{en:"0.6 Units ($0.094) /s"},price1080:{en:"0.9 Units ($0.141)
+  // /s"}` (2026-11-12). There is no audio split — the routes always generate
+  // audio — so one row covers both switches. Resolution defaults to 1080p:
+  // `defaultResolution:"1080p"` (/api/video/4-0/text-to-video).
+  "kling-4.0": {
+    silent: { "720p": 0.157, "1080p": 0.235 },
+    audio: { "720p": 0.157, "1080p": 0.235 },
+    videoInput: { "720p": 0.094, "1080p": 0.141 },
+    defaultResolution: "1080p",
+    durationFromPrompt: true,
+    videoInputBillsTotal: true,
+  },
+  // https://kling.ai/document-api/pricing/base/video —
+  // `{model:{en:"Kling 4.0 Flash"},billingType:{en:"Per second"},feature:{en:
+  // "No Input Video"},price720:{en:"0.6 Units ($0.094) /s"},price1080:{en:"-"}`
+  // and `feature:{en:"With Input Video"},price720:{en:"0.4 Units ($0.063) /s"},
+  // price1080:{en:"-"}` (2026-11-12). 720p only.
+  "kling-4.0-flash": {
+    silent: { "720p": 0.094 },
+    audio: { "720p": 0.094 },
+    videoInput: { "720p": 0.063 },
+    durationFromPrompt: true,
+    videoInputBillsTotal: true,
+  },
   "kling-v3": {
     silent: { "720p": 0.084, "1080p": 0.112, "4k": 0.42 },
     audio: { "720p": 0.126, "1080p": 0.168, "4k": 0.42 },
@@ -98,7 +153,10 @@ export const MODE_RESOLUTION: Readonly<Record<string, string>> = {
   "4k": "4k",
 };
 
-/** Server-side defaults on both route families. */
+/**
+ * Server-side defaults on both route families — except Kling 4.0 / 4.0 Flash,
+ * whose rate rows carry their own (`defaultResolution`, `durationFromPrompt`).
+ */
 export const DEFAULT_RESOLUTION = "720p";
 export const DEFAULT_MODE = "std";
 export const DEFAULT_DURATION = 5;
@@ -106,9 +164,12 @@ export const DEFAULT_DURATION = 5;
 export interface VideoCostInputs {
   /** Either id spelling — path segment or `model_name`. */
   model: string;
-  /** "720p" | "1080p" | "4k". Defaults to 720p, the documented default. */
+  /** "720p" | "1080p" | "4k". Defaults to the model's documented default (720p; Kling 4.0 1080p). */
   resolution?: string;
-  /** Seconds of output. Defaults to 5, the documented default. */
+  /**
+   * Seconds of output. Defaults to 5, the documented default — on Kling 4.0 /
+   * 4.0 Flash an omitted duration has no estimate (the prompt sets it).
+   */
   duration?: number;
   /** Native audio on (`settings.audio` ≠ "off", or `sound: "on"` on /v1). */
   audio?: boolean;
@@ -127,7 +188,8 @@ export interface VideoCostInputs {
 export function videoCostUSD(inputs: VideoCostInputs): number | undefined {
   const rates = VIDEO_RATES[pricingKey(inputs.model)];
   if (rates === undefined) return undefined;
-  const resolution = inputs.resolution ?? DEFAULT_RESOLUTION;
+  const resolution = inputs.resolution ?? rates.defaultResolution ?? DEFAULT_RESOLUTION;
+  if (inputs.duration === undefined && rates.durationFromPrompt === true) return undefined;
   const duration = inputs.duration ?? DEFAULT_DURATION;
   if (!(duration > 0)) return undefined;
 
@@ -138,7 +200,9 @@ export function videoCostUSD(inputs: VideoCostInputs): number | undefined {
   } else tier = rates.silent;
 
   const rate = tier?.[resolution];
-  return rate === undefined ? undefined : rate * duration;
+  if (rate === undefined) return undefined;
+  const billed = inputs.videoInput === true && rates.videoInputBillsTotal === true ? duration * 2 : duration;
+  return rate * billed;
 }
 
 // ---------------------------------------------------------------------------

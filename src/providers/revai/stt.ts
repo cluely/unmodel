@@ -1,7 +1,7 @@
 /**
  * Rev AI asynchronous speech-to-text — POST https://api.rev.ai/speechtotext/v1/jobs
  *
- * Wire notes (verified 2026-08-13 against the OpenAPI bundle Rev AI publishes
+ * Wire notes (verified 2026-11-12 against the OpenAPI bundle Rev AI publishes
  * at https://docs.rev.ai/_bundle/api/asynchronous/reference.yaml — the
  * `SubmitJobMediaUrlOptions` / `SubmitJobOptions` schemas — plus
  * https://docs.rev.ai/api/asynchronous/transcribers):
@@ -14,15 +14,24 @@
  *   from a file).
  * - Auth is `Authorization: Bearer <REV_AI_ACCESS_TOKEN>` — unmodel never
  *   touches keys.
- * - There is no `model` field: `transcriber` selects the engine
- *   (machine | human | low_cost | fusion) and is what the catalog is keyed by.
+ * - There is no `model` field: `transcriber` selects the engine (machine |
+ *   human, plus the deprecated low_cost and fusion) and is what the catalog is
+ *   keyed by.
+ * - Every job option the OpenAPI marks `nullable: true` accepts `null`, which
+ *   the checks read as unset; `verbatim`, `custom_vocabularies`,
+ *   `strict_custom_vocabulary` and `media_url` are not nullable there and
+ *   refuse it.
  * - Billing is per minute of audio ("Rounded up to the nearest second,
  *   15 second minimum"). The body only references media by URL, so declare the
  *   length via `options.media = [{ path: ["source_config", "url"], durationSeconds }]`
  *   (or `["media"]` for a file upload) to get a `costUSD` estimate and
  *   `maxCostUSD` enforcement. The rate depends on `language`, not only on
- *   `transcriber` — see {@link estimateJob}. Human add-ons (rush, verbatim) are
- *   NOT estimated; the per-channel multiplier of `speaker_channels_count` is.
+ *   `transcriber` — see {@link estimateJob}. The per-channel multiplier of
+ *   `speaker_channels_count` is estimated; add-ons are NOT: human rush and
+ *   verbatim, and the per-minute "Forced Alignment $0.003 per minute",
+ *   "Summarization Standard Model: $0.002 per minute Premium Model: $0.025 per
+ *   minute" and "Language Translation" (same two rates) lines of
+ *   https://www.rev.ai/pricing (checked 2026-11-12).
  * - Streaming STT runs over the Rev AI WebSocket API, which unmodel does not
  *   validate.
  */
@@ -48,6 +57,8 @@ export const JOBS_URL = "https://api.rev.ai/speechtotext/v1/jobs";
 
 const REFERENCE_DOCS = "https://docs.rev.ai/api/asynchronous/reference";
 const TRANSCRIBERS_DOCS = "https://docs.rev.ai/api/asynchronous/transcribers";
+/** Where the deprecated `low_cost` transcriber is still documented. */
+const CHANGELOG_DOCS = "https://docs.rev.ai/api/asynchronous/changelog";
 
 /**
  * "Most languages support media files with duration up to 17 hours, with the
@@ -78,13 +89,13 @@ export interface RevaiAuthHeaders {
 export interface RevaiSourceConfig {
   /** Direct download media url (max 2048 chars). */
   url: string;
-  auth_headers?: RevaiAuthHeaders;
+  auth_headers?: RevaiAuthHeaders | null;
 }
 
 export interface RevaiNotificationConfig {
   /** Callback url invoked on completion (max 2048 chars). */
   url: string;
-  auth_headers?: RevaiAuthHeaders;
+  auth_headers?: RevaiAuthHeaders | null;
 }
 
 export interface RevaiSegment {
@@ -105,9 +116,9 @@ export interface RevaiCustomVocabulary {
 
 export interface RevaiSummarizationConfig {
   /** "standard" (default) or "premium". */
-  model?: "standard" | "premium";
+  model?: "standard" | "premium" | null;
   /** "paragraph" (default) or "bullets"; mutually exclusive with `prompt`. */
-  type?: "paragraph" | "bullets";
+  type?: "paragraph" | "bullets" | null;
   /** Custom prompt; mutually exclusive with `type`. */
   prompt?: string | null;
 }
@@ -115,7 +126,7 @@ export interface RevaiSummarizationConfig {
 export interface RevaiTranslationTarget {
   language: string;
   /** "standard" (default) or "premium". */
-  model?: "standard" | "premium";
+  model?: "standard" | "premium" | null;
 }
 
 export interface RevaiTranslationConfig {
@@ -125,59 +136,59 @@ export interface RevaiTranslationConfig {
 
 export interface JobsBody {
   /** Media source; mutually exclusive with the deprecated `media_url`. */
-  source_config?: RevaiSourceConfig;
+  source_config?: RevaiSourceConfig | null;
   /** @deprecated Use `source_config` (auth headers + encrypted storage). */
   media_url?: string;
   /** Free-form job metadata, max 512 characters. */
-  metadata?: string;
+  metadata?: string | null;
   /** @deprecated Use `notification_config`. */
-  callback_url?: string;
-  notification_config?: RevaiNotificationConfig;
+  callback_url?: string | null;
+  notification_config?: RevaiNotificationConfig | null;
   /** Auto-delete delay after completion, 0–2592000 seconds. */
-  delete_after_seconds?: number;
+  delete_after_seconds?: number | null;
   /** Engine to transcribe with; defaults to "machine" (Reverb). */
-  transcriber?: RevaiTranscriber | (string & {});
+  transcriber?: RevaiTranscriber | (string & {}) | null;
   /** Transcribe every syllable; defaults true for machine, false for human. */
   verbatim?: boolean;
   /** Human only: higher priority (+$1.25/min). */
-  rush?: boolean;
+  rush?: boolean | null;
   /** Human only: mock a job without transcribing or charging. */
-  test_mode?: boolean;
+  test_mode?: boolean | null;
   /** Human only: which sections to transcribe (>= 1 minute, non-overlapping). */
-  segments_to_transcribe?: RevaiSegment[];
+  segments_to_transcribe?: RevaiSegment[] | null;
   /** Human only: up to 100 speaker names, 50 characters each. */
-  speaker_names?: RevaiSpeakerName[];
-  skip_diarization?: boolean;
+  speaker_names?: RevaiSpeakerName[] | null;
+  skip_diarization?: boolean | null;
   /** English and Spanish only: skip ITN, casing and punctuation. */
-  skip_postprocessing?: boolean;
-  skip_punctuation?: boolean;
+  skip_postprocessing?: boolean | null;
+  skip_punctuation?: boolean | null;
   /** Machine only: drop 'ums' and 'uhs' (also drops atmospherics). */
-  remove_disfluencies?: boolean;
+  remove_disfluencies?: boolean | null;
   /** Machine only: drop `<laugh>`, `<affirmative>` and friends. */
-  remove_atmospherics?: boolean;
-  filter_profanity?: boolean;
+  remove_atmospherics?: boolean | null;
+  filter_profanity?: boolean | null;
   /** English/Spanish/French, machine only: unique speaker channels, 1–8. */
-  speaker_channels_count?: number;
+  speaker_channels_count?: number | null;
   /** English/Spanish/French, machine only: known number of speakers, >= 1. */
-  speakers_count?: number;
+  speakers_count?: number | null;
   /** "standard" (default) or "premium"; not available for human or low_cost. */
-  diarization_type?: "standard" | "premium";
+  diarization_type?: "standard" | "premium" | null;
   /** Beta: id of a pre-completed custom vocabulary; excludes `custom_vocabularies`. */
-  custom_vocabulary_id?: string;
+  custom_vocabulary_id?: string | null;
   /** 1–50 vocabulary objects; excludes `custom_vocabulary_id`. */
   custom_vocabularies?: RevaiCustomVocabulary[];
   /** Use exact phrases only; enabled by default. */
   strict_custom_vocabulary?: boolean;
   /** Machine only. */
-  summarization_config?: RevaiSummarizationConfig;
+  summarization_config?: RevaiSummarizationConfig | null;
   /** Machine only. */
-  translation_config?: RevaiTranslationConfig;
+  translation_config?: RevaiTranslationConfig | null;
   /** Mixed-language identification; only meaningful with `language: "auto"`. */
-  enable_multilingual?: boolean;
+  enable_multilingual?: boolean | null;
   /** ISO 639-1 code (plus en-us, en-gb, en/es, cmn); defaults to "en". */
-  language?: string;
+  language?: string | null;
   /** Improved per-word timestamps; not available in the low-cost environment. */
-  forced_alignment?: boolean;
+  forced_alignment?: boolean | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -193,47 +204,51 @@ const schema = z
     source_config: z
       .looseObject({
         url: z.string().max(2048).regex(URL_PATTERN, "source_config.url must be an http(s) URL."),
-        auth_headers: authHeaders.optional(),
+        auth_headers: authHeaders.nullable().optional(),
       })
+      .nullable()
       .optional(),
     media_url: z
       .string()
       .max(2048)
       .regex(URL_PATTERN, "media_url must be an http(s) URL.")
       .optional(),
-    metadata: z.string().max(512).optional(),
-    callback_url: z.string().max(1024).optional(),
+    metadata: z.string().max(512).nullable().optional(),
+    callback_url: z.string().max(1024).nullable().optional(),
     notification_config: z
       .looseObject({
         url: z
           .string()
           .max(2048)
           .regex(URL_PATTERN, "notification_config.url must be an http(s) URL."),
-        auth_headers: authHeaders.optional(),
+        auth_headers: authHeaders.nullable().optional(),
       })
+      .nullable()
       .optional(),
-    delete_after_seconds: z.number().int().min(0).max(MAX_DELETE_AFTER_SECONDS).optional(),
-    transcriber: z.string().optional(),
+    delete_after_seconds: z.number().int().min(0).max(MAX_DELETE_AFTER_SECONDS).nullable().optional(),
+    transcriber: z.string().nullable().optional(),
     verbatim: z.boolean().optional(),
-    rush: z.boolean().optional(),
-    test_mode: z.boolean().optional(),
+    rush: z.boolean().nullable().optional(),
+    test_mode: z.boolean().nullable().optional(),
     segments_to_transcribe: z
       .array(z.looseObject({ start: z.number().min(0), end: z.number().min(0) }))
+      .nullable()
       .optional(),
     speaker_names: z
       .array(z.looseObject({ display_name: z.string().min(1).max(50) }))
       .max(100, "speaker_names accepts at most 100 names.")
+      .nullable()
       .optional(),
-    skip_diarization: z.boolean().optional(),
-    skip_postprocessing: z.boolean().optional(),
-    skip_punctuation: z.boolean().optional(),
-    remove_disfluencies: z.boolean().optional(),
-    remove_atmospherics: z.boolean().optional(),
-    filter_profanity: z.boolean().optional(),
-    speaker_channels_count: z.number().int().min(1).max(8).optional(),
-    speakers_count: z.number().int().min(1).optional(),
-    diarization_type: z.enum(["standard", "premium"]).optional(),
-    custom_vocabulary_id: z.string().optional(),
+    skip_diarization: z.boolean().nullable().optional(),
+    skip_postprocessing: z.boolean().nullable().optional(),
+    skip_punctuation: z.boolean().nullable().optional(),
+    remove_disfluencies: z.boolean().nullable().optional(),
+    remove_atmospherics: z.boolean().nullable().optional(),
+    filter_profanity: z.boolean().nullable().optional(),
+    speaker_channels_count: z.number().int().min(1).max(8).nullable().optional(),
+    speakers_count: z.number().int().min(1).nullable().optional(),
+    diarization_type: z.enum(["standard", "premium"]).nullable().optional(),
+    custom_vocabulary_id: z.string().nullable().optional(),
     custom_vocabularies: z
       .array(
         z.looseObject({
@@ -249,10 +264,11 @@ const schema = z
     strict_custom_vocabulary: z.boolean().optional(),
     summarization_config: z
       .looseObject({
-        model: z.enum(["standard", "premium"]).optional(),
-        type: z.enum(["paragraph", "bullets"]).optional(),
+        model: z.enum(["standard", "premium"]).nullable().optional(),
+        type: z.enum(["paragraph", "bullets"]).nullable().optional(),
         prompt: z.string().nullable().optional(),
       })
+      .nullable()
       .optional(),
     translation_config: z
       .looseObject({
@@ -260,21 +276,22 @@ const schema = z
           .array(
             z.looseObject({
               language: z.string().min(1),
-              model: z.enum(["standard", "premium"]).optional(),
+              model: z.enum(["standard", "premium"]).nullable().optional(),
             }),
           )
           .min(1, "translation_config.target_languages needs at least one language.")
           .max(5, "translation_config.target_languages accepts at most 5 languages."),
       })
+      .nullable()
       .optional(),
-    enable_multilingual: z.boolean().optional(),
-    language: z.string().optional(),
-    forced_alignment: z.boolean().optional(),
+    enable_multilingual: z.boolean().nullable().optional(),
+    language: z.string().nullable().optional(),
+    forced_alignment: z.boolean().nullable().optional(),
   })
   .superRefine((params, ctx) => {
     // "Only one of `source_config` and `media_url` may be set." A file upload
     // carries neither, so absence is not an error here — toFormData covers it.
-    if (params.source_config !== undefined && params.media_url !== undefined) {
+    if (params.source_config != null && params.media_url !== undefined) {
       ctx.addIssue({
         code: "custom",
         path: ["source_config"],
@@ -283,7 +300,7 @@ const schema = z
       });
     }
     // "Cannot be set if `callback_url` is set."
-    if (params.notification_config !== undefined && params.callback_url !== undefined) {
+    if (params.notification_config != null && params.callback_url != null) {
       ctx.addIssue({
         code: "custom",
         path: ["notification_config"],
@@ -292,7 +309,7 @@ const schema = z
     }
     // "You cannot use both `custom_vocabulary_id` and `custom_vocabularies` at
     // the same time, and doing so will result in a 400 response."
-    if (params.custom_vocabulary_id !== undefined && params.custom_vocabularies !== undefined) {
+    if (params.custom_vocabulary_id != null && params.custom_vocabularies !== undefined) {
       ctx.addIssue({
         code: "custom",
         path: ["custom_vocabulary_id"],
@@ -302,7 +319,7 @@ const schema = z
     }
     // "`prompt` and `type` parameters are mutually exclusive."
     const summarization = params.summarization_config;
-    if (summarization?.type !== undefined && summarization.prompt != null) {
+    if (summarization?.type != null && summarization.prompt != null) {
       ctx.addIssue({
         code: "custom",
         path: ["summarization_config", "prompt"],
@@ -375,7 +392,11 @@ function checkTranscriberScope(
 /**
  * "This option is not available for human transcription jobs and low-cost
  * environment" (`diarization_type`) and "This option is not available in
- * low-cost environment" (`forced_alignment`).
+ * low-cost environment" (`forced_alignment`) — quoted from the reference on
+ * 2026-08-13. The 2026-11-12 reference no longer documents `low_cost` at all
+ * (the transcriber is deprecated but still served, per {@link CHANGELOG_DOCS}),
+ * so these clauses have no live source; the rule stays for as long as the
+ * transcriber is served.
  */
 function checkLowCost(params: JobsBody, _info: ModelInfo | undefined, ctx: PipelineContext): void {
   if (transcriberOf(params) !== "low_cost") return;
@@ -385,7 +406,7 @@ function checkLowCost(params: JobsBody, _info: ModelInfo | undefined, ctx: Pipel
       path: ["diarization_type"],
       model: "low_cost",
       message: "`diarization_type` is not available in the low-cost environment.",
-      meta: { source: REFERENCE_DOCS },
+      meta: { source: CHANGELOG_DOCS },
     });
   }
   if (params.forced_alignment != null) {
@@ -394,7 +415,7 @@ function checkLowCost(params: JobsBody, _info: ModelInfo | undefined, ctx: Pipel
       path: ["forced_alignment"],
       model: "low_cost",
       message: "`forced_alignment` is not available in the low-cost environment.",
-      meta: { source: REFERENCE_DOCS },
+      meta: { source: CHANGELOG_DOCS },
     });
   }
 }
@@ -406,20 +427,32 @@ function checkLowCost(params: JobsBody, _info: ModelInfo | undefined, ctx: Pipel
  *
  * Rev AI's English codes are `en`, `en-us`, `en-gb`; `en/es` is the
  * multilingual English/Spanish pack, which is not plain English.
+ * `speaker_channels_count` is scoped by {@link SPEAKER_CHANNELS_LANGUAGES}
+ * instead.
  */
 const ENGLISH_LANGUAGES: readonly string[] = ["en", "en-us", "en-gb"];
 const ENGLISH_ONLY_PARAMS: ReadonlyArray<keyof JobsBody> = [
   "skip_punctuation",
   "remove_disfluencies",
   "filter_profanity",
-  "speaker_channels_count",
   "custom_vocabulary_id",
 ];
 
-/** `language` defaults to "en", so an absent language is an English job. */
+/**
+ * `speaker_channels_count`: "**Only available for English, Spanish and French
+ * languages.**" (the field's own description in REFERENCE_DOCS, checked
+ * 2026-11-12). The general non-English list above names it too, but the
+ * field-specific statement is the later one — "Updated Asynchronous
+ * Speech-to-Text API `speaker_channels_count` submission option documentation
+ * to include valid languages (en, es, fr)" (https://docs.rev.ai/api/asynchronous/changelog,
+ * 2023-05-15) — so Spanish and French pass.
+ */
+const SPEAKER_CHANNELS_LANGUAGES: readonly string[] = [...ENGLISH_LANGUAGES, "es", "fr"];
+
+/** `language` defaults to "en", so an absent (or null) language is an English job. */
 function isEnglishJob(params: JobsBody): boolean {
   const language = params.language;
-  return language === undefined || ENGLISH_LANGUAGES.includes(language);
+  return language == null || ENGLISH_LANGUAGES.includes(language);
 }
 
 function checkLanguageScope(
@@ -428,7 +461,7 @@ function checkLanguageScope(
   ctx: PipelineContext,
 ): void {
   const language = params.language;
-  if (isEnglishJob(params)) return;
+  if (language == null || isEnglishJob(params)) return;
   const record = params as unknown as Record<string, unknown>;
   for (const key of ENGLISH_ONLY_PARAMS) {
     if (record[key] == null) continue;
@@ -441,9 +474,19 @@ function checkLanguageScope(
     });
   }
 
+  if (params.speaker_channels_count != null && !SPEAKER_CHANNELS_LANGUAGES.includes(language)) {
+    ctx.report({
+      code: "unsupported_param",
+      path: ["speaker_channels_count"],
+      model: transcriberOf(params),
+      message: `\`speaker_channels_count\` is only available for English, Spanish and French (${SPEAKER_CHANNELS_LANGUAGES.map((code) => `"${code}"`).join(", ")}); \`language\` is "${language}".`,
+      meta: { language, source: REFERENCE_DOCS },
+    });
+  }
+
   // "The `transcriber` option is ignored for non-English transcription
   // requests." (TRANSCRIBERS_DOCS) — worth knowing, but the request succeeds.
-  if (params.transcriber !== undefined) {
+  if (params.transcriber != null) {
     ctx.report({
       code: "unsupported_param",
       severity: "warning",
@@ -543,9 +586,10 @@ function checkMediaLimits(
  *
  * Non-English audio is not billed at the transcriber's catalog rate: it bills
  * at "Reverb Foreign Language Transcription $0.30 per hour" — 1.5x Reverb's
- * $0.20/hr and 3x Reverb Turbo's $0.10/hr (https://www.rev.ai/pricing) —
- * because "The `transcriber` option is ignored for non-English transcription
- * requests" (TRANSCRIBERS_DOCS; {@link checkLanguageScope} warns about it).
+ * $0.20/hr (https://www.rev.ai/pricing) — because "The `transcriber` option
+ * is ignored for non-English transcription requests" (TRANSCRIBERS_DOCS;
+ * {@link checkLanguageScope} warns about it). That holds for a transcriber
+ * with no catalog rate too (the deprecated `low_cost` and `fusion`).
  * Human transcription is a separate product billed at its own, higher
  * per-minute rate, so the catalog rate wins whenever it is above the
  * foreign-language one — an estimate is never talked down by `language`.
@@ -561,8 +605,9 @@ function audioMinuteRateUSD(params: JobsBody, info: ModelInfo | undefined): numb
  * x the per-minute rate for the job ({@link audioMinuteRateUSD} — the catalog
  * rate for English, the foreign-language rate otherwise), multiplied by
  * `speaker_channels_count` when set ("The amount charged will be the duration
- * of the file multiplied by the number of channels specified"). Human add-ons
- * are not included.
+ * of the file multiplied by the number of channels specified"). Add-ons are
+ * not included: human rush and verbatim, nor the per-minute forced
+ * alignment, summarization and translation rates (see the module header).
  */
 function estimateJob(
   params: JobsBody,

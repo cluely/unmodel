@@ -3,11 +3,11 @@
  *
  * `realtimeTranscription` validates the CONFIGURATION MESSAGE — the JSON a
  * client sends as the first message after opening
- * `wss://stt-rt.soniox.com/transcribe-websocket` (verified 2026-08-13 against
- * https://soniox.com/docs/stt/api-reference/websocket-api and
- * https://soniox.com/docs/stt/rt/real-time-transcription; the stt-rt-v6
- * additions re-verified 2026-11-12 against
- * https://docs.soniox.com/api-reference/stt/websocket-api). Everything the
+ * `wss://stt-rt.soniox.com/transcribe-websocket` (verified against
+ * https://docs.soniox.com/api-reference/stt/websocket-api and
+ * https://docs.soniox.com/stt/rt/real-time-transcription — first 2026-08-13;
+ * the stt-rt-v6 fields, audio formats, context cap and auth re-verified
+ * 2026-11-12). Everything the
  * session does — model, audio format, language hints, diarization, endpoint
  * detection, translation — is decided by that one object, which is why it is
  * worth validating even though the socket itself is not.
@@ -19,11 +19,15 @@
  * empty-string end-of-stream marker, and every server token message are
  * lifecycle, and stay out of scope.
  *
- * Auth note: this API authenticates IN BAND — `api_key` is a field of the
- * configuration message, not a header. unmodel never touches keys, so the
- * field is optional here and is passed through untouched if you set it; the
- * documented flow is to merge it in at send time (and to mint a temporary key
- * for browser clients rather than shipping the real one).
+ * Auth note: the key goes on the HANDSHAKE — "Send your API key with the
+ * connection, in the Authorization header or the protocols list."
+ * (WEBSOCKET_DOCS): an `Authorization: Bearer <SONIOX_API_KEY>` header from a
+ * server, or `["soniox-api-key", <temporary key>]` as the
+ * `new WebSocket(url, protocols)` list from a browser, which cannot set
+ * headers. unmodel never touches keys, so `.request.headers` stays empty for
+ * you to fill. The configuration message's own `api_key` field is deprecated
+ * (refused from 15 January 2027 — AUTH_MIGRATION_DOCS); it is still typed and
+ * passed through untouched, with a warning.
  */
 
 import { z } from "zod";
@@ -48,13 +52,15 @@ export const REALTIME_URL = "wss://stt-rt.soniox.com/transcribe-websocket";
 const WEBSOCKET_DOCS = "https://docs.soniox.com/api-reference/stt/websocket-api";
 /** The page that defines `enable_agent_text_input` and what happens on a model without it. */
 const AGENT_TEXT_INPUT_DOCS = "https://docs.soniox.com/stt/rt/agent-text-input";
-const AUDIO_FORMATS_DOCS = "https://soniox.com/docs/speech-to-text/core-concepts/audio-formats";
+const AUDIO_FORMATS_DOCS = "https://docs.soniox.com/stt/rt/real-time-transcription#audio-formats";
 const MODELS_DOCS = "https://docs.soniox.com/stt/models";
 /**
- * The page that defines what `context` is and what its limit counts:
- * "Context size limit — Maximum 8,000 tokens (~10,000 characters)."
+ * The page that defines what `context` is and what its limit counts, under
+ * "Context size limit": "Maximum **8,000 tokens** (about 10,000 characters)."
  */
-const CONTEXT_DOCS = "https://soniox.com/docs/stt/concepts/context";
+const CONTEXT_DOCS = "https://docs.soniox.com/stt/concepts/context";
+/** Why `api_key` in the message is deprecated, and the date it stops working. */
+const AUTH_MIGRATION_DOCS = "https://docs.soniox.com/authentication/migrate-websocket-authentication";
 
 // ---------------------------------------------------------------------------
 // Audio formats — "auto" plus the container formats Soniox can sniff, plus the
@@ -63,8 +69,8 @@ const CONTEXT_DOCS = "https://soniox.com/docs/stt/concepts/context";
 
 /**
  * Formats whose header Soniox reads itself: `"auto"` detects among them, and
- * each may also be named explicitly. "auto — Automatically detect the audio
- * format (aac, aiff, amr, asf, flac, mp3, ogg, wav, webm)".
+ * each may also be named explicitly. "Supported auto formats: aac, aiff, amr,
+ * asf, flac, mp3, ogg, wav, webm" (AUDIO_FORMATS_DOCS, 2026-11-12).
  */
 export const SONIOX_CONTAINER_AUDIO_FORMATS = [
   "auto",
@@ -82,11 +88,18 @@ export const SONIOX_CONTAINER_AUDIO_FORMATS = [
 /**
  * Headerless encodings. "For raw audio streams without headers, you must
  * provide: `audio_format` → encoding type. `sample_rate` → sample rate in Hz.
- * `num_channels` → number of channels." Multi-byte samples carry the byte
- * order in the name (`le`/`be`); the 8-bit forms have none to carry.
+ * `num_channels` → number of channels (e.g. 1 (mono) or 2 (stereo))."
+ * (AUDIO_FORMATS_DOCS, 2026-11-12). The page names families — "PCM (signed):
+ * `pcm_s8`, `pcm_s16`, `pcm_s24`, `pcm_s32` (`le`/`be`)." — and the official
+ * SDK's `AudioFormat` union (@soniox/node 2.5.0) spells out every member,
+ * including both the bare 8-bit names and their `le`/`be` spellings
+ * (`'pcm_s8' | 'pcm_s8le' | 'pcm_s8be' | … | 'pcm_u8' | 'pcm_u8le' |
+ * 'pcm_u8be'`). This list is that union's raw half.
  */
 export const SONIOX_RAW_AUDIO_FORMATS = [
   "pcm_s8",
+  "pcm_s8le",
+  "pcm_s8be",
   "pcm_s16le",
   "pcm_s16be",
   "pcm_s24le",
@@ -94,6 +107,8 @@ export const SONIOX_RAW_AUDIO_FORMATS = [
   "pcm_s32le",
   "pcm_s32be",
   "pcm_u8",
+  "pcm_u8le",
+  "pcm_u8be",
   "pcm_u16le",
   "pcm_u16be",
   "pcm_u24le",
@@ -132,26 +147,29 @@ export const ENDPOINT_SENSITIVITY_MAX = 1;
 export const ENDPOINT_LATENCY_ADJUSTMENT_LEVEL_MIN = 0;
 export const ENDPOINT_LATENCY_ADJUSTMENT_LEVEL_MAX = 3;
 /**
- * Context size cap, in characters of CONTENT.
+ * The context budget in characters of CONTENT — Soniox's own approximation of
+ * its token cap, not a limit the server counts.
  *
- * Two first-party statements pin this down (both re-verified 2026-08-13):
- * - CONTEXT_DOCS, under "Context size limit": "Maximum 8,000 tokens (~10,000
- *   characters)." over the four optional sections (`general`, `text`, `terms`,
- *   `translation_terms`) *combined* — "If you exceed the limit, the API will
- *   return an error → trim or summarize first."
- * - WEBSOCKET_DOCS' error list: "Context is too long (max length 10000)."
+ * Two first-party statements (both checked 2026-11-12):
+ * - CONTEXT_DOCS, under "Context size limit": "Maximum **8,000 tokens** (about
+ *   10,000 characters)." and "If you go over, the API returns an
+ *   `invalid_request` error."
+ * - WEBSOCKET_DOCS' error list: "Context is too long: N tokens, the maximum is
+ *   8000 tokens."
  *
- * So the server enforces a hard character number and rejects — which is why
- * this stays an ERROR rather than a warning. What it is measured OVER is the
- * combined section content: 10,000 characters is the docs' own "~"
- * approximation of an 8,000-token budget, and a token budget cannot include
- * JSON braces, quotes, commas and key names that the model never sees.
+ * The server counts TOKENS, so a character count cannot decide the cap in
+ * either direction, which is why going over this figure is a warning. An error
+ * would refuse dense contexts the API accepts. What the figure is compared
+ * against is the combined section content: a token budget cannot include JSON
+ * braces, quotes, commas and key names that the model never sees.
  * {@link contextLength} therefore sums the content strings. Counting
- * `JSON.stringify(context).length` instead would fail contexts whose actual
+ * `JSON.stringify(context).length` instead would flag contexts whose actual
  * content is comfortably inside the limit — for a `general`-heavy context the
  * serialization overhead alone is ~25 characters per entry.
  */
 export const MAX_CONTEXT_CHARACTERS = 10_000;
+/** "Maximum **8,000 tokens**" (CONTEXT_DOCS) — the cap the server enforces. */
+const CONTEXT_TOKEN_LIMIT = 8_000;
 /** `client_reference_id` — "Max 256 characters". */
 export const MAX_CLIENT_REFERENCE_ID_CHARACTERS = 256;
 
@@ -172,9 +190,12 @@ const AGENT_TEXT_INPUT_MODEL_IDS: ReadonlySet<string> = new Set(["stt-rt-v6"]);
 
 export interface RealtimeTranscriptionConfig {
   /**
-   * "Your Soniox API key." Optional here because unmodel never touches keys:
-   * merge it in at send time, or pass it through and unmodel will leave it
-   * alone. Browser clients should carry a temporary key, not the real one.
+   * **Deprecated** — "Send the API key with the connection instead"
+   * (WEBSOCKET_DOCS): the `Authorization: Bearer <key>` header, or
+   * `["soniox-api-key", key]` as the WebSocket protocols list. "From
+   * **15 January 2027** a connection that sends its key only there is
+   * refused." Still typed so a message that carries it validates (with a
+   * warning); unmodel never adds, reads or strips it.
    */
   api_key?: string;
   /** Real-time model id, e.g. "stt-rt-v6". Async (stt-async-*) ids are not served here. */
@@ -222,9 +243,9 @@ export interface RealtimeTranscriptionConfig {
    */
   enable_agent_text_input?: boolean;
   /**
-   * Structured or free-form customization context. The four sections combined
-   * carry at most {@link MAX_CONTEXT_CHARACTERS} characters of content — see
-   * {@link contextLength} for what is counted.
+   * Structured or free-form customization context, capped at 8,000 tokens —
+   * "about" {@link MAX_CONTEXT_CHARACTERS} characters of content, which is
+   * what unmodel can measure; see {@link contextLength} for what is counted.
    */
   context?: string | SonioxContextObject | null;
   /** "Real-time supports both translation modes" — one-way and two-way. */
@@ -401,8 +422,8 @@ function quoteIds(ids: ReadonlySet<string>): string {
 
 /**
  * Characters of context CONTENT: the string form as-is, or — for the object
- * form — the four documented sections summed (CONTEXT_DOCS: "You provide
- * context through the context object that can include up to four sections").
+ * form — the four documented sections summed (CONTEXT_DOCS: "The `context`
+ * object has four sections. All of them are optional").
  * `general` contributes each `key` and `value`, `terms` each string,
  * `translation_terms` each `source` and `target`, `text` itself. JSON
  * punctuation and the section/field names are structure, not context, and are
@@ -432,10 +453,10 @@ export function contextLength(context: string | SonioxContextObject): number {
 }
 
 /**
- * "Context is too long (max length 10000)" (WEBSOCKET_DOCS' error list) —
- * measured over the combined section content, per CONTEXT_DOCS' "Maximum 8,000
- * tokens (~10,000 characters)". An error, not a warning: the docs state the
- * API rejects an over-long context outright.
+ * Context over CONTEXT_DOCS' "about 10,000 characters" — a `near_context`
+ * warning, not an error. The server's cap is "8,000 tokens" ("Context is too
+ * long: N tokens, the maximum is 8000 tokens.", WEBSOCKET_DOCS), and a
+ * character count can only say the context is probably near or over it.
  */
 function checkContextLength(
   params: RealtimeTranscriptionConfig,
@@ -447,17 +468,42 @@ function checkContextLength(
   const length = contextLength(context);
   if (length > MAX_CONTEXT_CHARACTERS) {
     ctx.report({
-      code: "invalid_shape",
+      code: "near_context",
       path: ["context"],
-      message: `\`context\` carries ${length} characters of content; Soniox caps it at ${MAX_CONTEXT_CHARACTERS} (~8,000 tokens).`,
+      message: `\`context\` carries ${length} characters of content, past the "about ${MAX_CONTEXT_CHARACTERS} characters" Soniox gives for its ${CONTEXT_TOKEN_LIMIT}-token cap; the server counts tokens, so this may still fit — or come back as invalid_request.`,
       meta: {
         limit: MAX_CONTEXT_CHARACTERS,
         actual: length,
+        limitTokens: CONTEXT_TOKEN_LIMIT,
         source: CONTEXT_DOCS,
         wireSource: WEBSOCKET_DOCS,
       },
     });
   }
+}
+
+/**
+ * `api_key` in the message — "The `api_key` field of the start request is
+ * **deprecated**. From **15 January 2027** a connection that sends its key
+ * only there is refused." (WEBSOCKET_DOCS, 2026-11-12). A warning, not an
+ * error: it works until then, and repeating the connection's own key is
+ * allowed ("Send the same key or omit it.").
+ */
+function checkApiKey(
+  params: RealtimeTranscriptionConfig,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.api_key === undefined) return;
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["api_key"],
+    model: params.model,
+    message:
+      "`api_key` in the configuration message is deprecated, and from 15 January 2027 Soniox refuses a connection that sends its key only there. Send the key with the connection: an `Authorization: Bearer <key>` header, or `[\"soniox-api-key\", key]` as the WebSocket protocols list.",
+    meta: { refusedFrom: "2027-01-15", source: AUTH_MIGRATION_DOCS, wireSource: WEBSOCKET_DOCS },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -512,6 +558,7 @@ const validator = createValidator<RealtimeTranscriptionConfig, unknown>({
     checkEndpointTuningParams,
     checkAgentTextInput,
     checkContextLength,
+    checkApiKey,
   ],
   estimate: estimateSession,
   finalize,
@@ -523,8 +570,8 @@ const validator = createValidator<RealtimeTranscriptionConfig, unknown>({
  *
  * The result's enumerable properties are that message; `.request.url` is the
  * socket to open. `.toSdk("soniox")` returns the config unchanged (the web
- * SDK takes the same snake_case shape). `api_key` is a field of this message
- * rather than a header — unmodel leaves it to you, as it does every credential.
+ * SDK takes the same snake_case shape). The key rides on the handshake, not in
+ * this message — unmodel leaves it to you, as it does every credential.
  *
  * Cost estimation: a live session has no length until it ends, so declare the
  * expected one — `options.media = [{ path: [], durationSeconds }]` — to price
@@ -542,8 +589,10 @@ const validator = createValidator<RealtimeTranscriptionConfig, unknown>({
  *   language_hints: ["en", "es"],
  *   enable_endpoint_detection: true,
  * });
- * const socket = new WebSocket(config.request.url);
- * socket.onopen = () => socket.send(JSON.stringify({ ...config, api_key: key }));
+ * // The key goes with the connection: this protocols list from a browser (with
+ * // a temporary key), or an `Authorization: Bearer <key>` header from a server.
+ * const socket = new WebSocket(config.request.url, ["soniox-api-key", key]);
+ * socket.onopen = () => socket.send(JSON.stringify(config));
  * ```
  */
 export const realtimeTranscription = validator as unknown as {

@@ -14,16 +14,25 @@ export const TRANSCRIPTIONS_URL = "https://api.soniox.com/v1/transcriptions";
 export const FILES_URL = "https://api.soniox.com/v1/files";
 
 const CREATE_TRANSCRIPTION_DOCS =
-  "https://soniox.com/docs/api-reference/stt/transcriptions/create_transcription";
-const MODELS_DOCS = "https://soniox.com/docs/stt/models";
+  "https://docs.soniox.com/api-reference/stt/transcriptions/create_transcription";
+/** The OpenAPI document behind CREATE_TRANSCRIPTION_DOCS (`CreateTranscriptionPayload`). */
+const OPENAPI_DOCS = "https://docs.soniox.com/openapi.yaml";
+const MODELS_DOCS = "https://docs.soniox.com/stt/models";
+const ASYNC_LIMITS_DOCS = "https://docs.soniox.com/stt/async/limits-and-quotas";
 
-/** "Both models support audio up to 5 hours" per request (MODELS_DOCS). */
+/**
+ * "| File duration | **300 minutes** | **This limit is fixed and cannot be
+ * increased** |" (ASYNC_LIMITS_DOCS, 2026-11-12) — 5 hours per file.
+ */
 export const MAX_AUDIO_DURATION_SECONDS = 5 * 60 * 60;
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror POST /v1/transcriptions exactly (verified against
-// CREATE_TRANSCRIPTION_DOCS on 2026-08-13). Realtime STT runs over the
-// WebSocket API; its session configuration lives in ./realtime.
+// CREATE_TRANSCRIPTION_DOCS on 2026-08-13; nullability re-verified 2026-11-12
+// against OPENAPI_DOCS, whose `CreateTranscriptionPayload` types every
+// optional field `anyOf: [<type>, {type: 'null'}]`, so explicit `null` is
+// accepted and means "not set"). Realtime STT runs over the WebSocket API; its
+// session configuration lives in ./realtime.
 // ---------------------------------------------------------------------------
 
 export interface SonioxTranslationOneWay {
@@ -56,24 +65,24 @@ export interface TranscriptionsBody {
   /** Async model id, e.g. "stt-async-v6" (max 32 chars). */
   model: SonioxAsyncModelId | (string & {});
   /** HTTPS/HTTP URL of the audio file (max 4096 chars); exclusive with `file_id`. */
-  audio_url?: string;
+  audio_url?: string | null;
   /** Id from a POST /v1/files upload; exclusive with `audio_url`. */
-  file_id?: string;
+  file_id?: string | null;
   /** Expected languages; auto-detected when omitted. */
-  language_hints?: string[];
+  language_hints?: string[] | null;
   /** When true, the model relies more on `language_hints`. */
-  language_hints_strict?: boolean;
-  enable_speaker_diarization?: boolean;
+  language_hints_strict?: boolean | null;
+  enable_speaker_diarization?: boolean | null;
   /** When true, language is detected for each part of the transcription. */
-  enable_language_identification?: boolean;
+  enable_language_identification?: boolean | null;
   translation?: SonioxTranslation | null;
   context?: string | SonioxContextObject | null;
   /** Notified on completion or failure (max 256 chars). */
-  webhook_url?: string;
-  webhook_auth_header_name?: string;
-  webhook_auth_header_value?: string;
+  webhook_url?: string | null;
+  webhook_auth_header_name?: string | null;
+  webhook_auth_header_value?: string | null;
   /** Optional tracking identifier, not required to be unique (max 256 chars). */
-  client_reference_id?: string;
+  client_reference_id?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,12 +98,13 @@ const schema = z
       .string()
       .max(4096)
       .regex(URL_PATTERN, "audio_url must be an http(s) URL without whitespace.")
+      .nullable()
       .optional(),
-    file_id: z.string().optional(),
-    language_hints: z.array(z.string()).optional(),
-    language_hints_strict: z.boolean().optional(),
-    enable_speaker_diarization: z.boolean().optional(),
-    enable_language_identification: z.boolean().optional(),
+    file_id: z.string().nullable().optional(),
+    language_hints: z.array(z.string()).nullable().optional(),
+    language_hints_strict: z.boolean().nullable().optional(),
+    enable_speaker_diarization: z.boolean().nullable().optional(),
+    enable_language_identification: z.boolean().nullable().optional(),
     translation: z
       .union([
         z.looseObject({ type: z.literal("one_way"), target_language: z.string() }),
@@ -107,16 +117,18 @@ const schema = z
       .string()
       .max(256)
       .regex(URL_PATTERN, "webhook_url must be an http(s) URL without whitespace.")
+      .nullable()
       .optional(),
-    webhook_auth_header_name: z.string().max(256).optional(),
-    webhook_auth_header_value: z.string().max(256).optional(),
-    client_reference_id: z.string().max(256).optional(),
+    webhook_auth_header_name: z.string().max(256).nullable().optional(),
+    webhook_auth_header_value: z.string().max(256).nullable().optional(),
+    client_reference_id: z.string().max(256).nullable().optional(),
   })
   .superRefine((params, ctx) => {
     // Exactly one audio source: "Either audio_url or file_id must be
     // provided"; they are mutually exclusive (CREATE_TRANSCRIPTION_DOCS).
-    const hasUrl = params.audio_url !== undefined;
-    const hasFile = params.file_id !== undefined;
+    // `null` is "not set" on both (OPENAPI_DOCS).
+    const hasUrl = params.audio_url != null;
+    const hasFile = params.file_id != null;
     if (hasUrl && hasFile) {
       ctx.addIssue({
         code: "custom",
@@ -137,7 +149,7 @@ const schema = z
 // ---------------------------------------------------------------------------
 
 function audioPath(params: TranscriptionsBody): Array<string | number> {
-  return params.audio_url !== undefined ? ["audio_url"] : ["file_id"];
+  return params.audio_url != null ? ["audio_url"] : ["file_id"];
 }
 
 /**
@@ -167,7 +179,11 @@ function checkAudioDuration(
       path,
       model: params.model,
       message: `audio is declared as ${declared}s; Soniox caps a single transcription at ${MAX_AUDIO_DURATION_SECONDS}s (5 hours) of audio.`,
-      meta: { durationSeconds: declared, limit: MAX_AUDIO_DURATION_SECONDS, source: MODELS_DOCS },
+      meta: {
+        durationSeconds: declared,
+        limit: MAX_AUDIO_DURATION_SECONDS,
+        source: ASYNC_LIMITS_DOCS,
+      },
     });
   }
 }
@@ -282,7 +298,7 @@ export const stt = validator as unknown as {
 
 // ---------------------------------------------------------------------------
 // File upload helper — POST /v1/files is multipart/form-data
-// (https://soniox.com/docs/api-reference/stt/files/upload_file): a required
+// (https://docs.soniox.com/api-reference/stt/files/upload_file): a required
 // `file` part plus an optional `client_reference_id` (max 256 chars).
 // ---------------------------------------------------------------------------
 

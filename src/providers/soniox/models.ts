@@ -12,7 +12,7 @@ export const provider = {
   id: "soniox",
   name: "Soniox",
   env: ["SONIOX_API_KEY"],
-  doc: "https://soniox.com/docs",
+  doc: "https://docs.soniox.com",
 } as const satisfies ProviderInfo;
 
 /**
@@ -68,9 +68,7 @@ const asyncModels = {
     // stt-async-v5 will automatically route to stt-async-v6".
     status: "deprecated",
     modalities: { input: ["audio"], output: ["text"] },
-    // limit.context 0: STT is not token-windowed; the pipeline skips context
-    // checks. Soniox caps a single request at 5 hours of audio — enforced in
-    // transcribe.ts via MAX_AUDIO_DURATION_SECONDS.
+    // limit.context 0, and the same per-file audio cap as stt-async-v6.
     limit: { context: 0 },
     cost: { perAudioMinute: ASYNC_USD_PER_MINUTE },
   },
@@ -83,7 +81,7 @@ const asyncModels = {
     toolCall: false,
     openWeights: false,
     // Retired 2026-06-30; the id still works but auto-routes to stt-async-v5
-    // (https://soniox.com/docs/stt/models).
+    // (https://docs.soniox.com/stt/models).
     status: "deprecated",
     modalities: { input: ["audio"], output: ["text"] },
     limit: { context: 0 },
@@ -129,7 +127,9 @@ const realtimeModels = {
     // requests using stt-rt-v5 will automatically route to stt-rt-v6".
     status: "deprecated",
     modalities: { input: ["audio"], output: ["text"] },
-    // Same 5-hour per-request audio cap as the async models (MODELS_DOCS).
+    // "| Stream duration | **300 minutes** | Each real-time session is capped
+    // at 300 minutes." (https://docs.soniox.com/stt/rt/limits-and-quotas,
+    // 2026-11-12) — the same 5 hours as an async file.
     limit: { context: 0 },
     cost: { perAudioMinute: REALTIME_USD_PER_MINUTE },
   },
@@ -142,7 +142,7 @@ const realtimeModels = {
     toolCall: false,
     openWeights: false,
     // Retired 2026-06-30; the id still works but auto-routes to stt-rt-v5
-    // (https://soniox.com/docs/stt/models).
+    // (https://docs.soniox.com/stt/models).
     status: "deprecated",
     modalities: { input: ["audio"], output: ["text"] },
     limit: { context: 0 },

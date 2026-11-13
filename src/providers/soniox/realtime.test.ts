@@ -46,8 +46,9 @@ describe("soniox.realtimeTranscription happy path", () => {
 
     expect(v.request.url).toBe(REALTIME_URL);
     expect(v.request.url.startsWith("wss://")).toBe(true);
-    // The handshake is an HTTP GET upgrade; this API authenticates in band
-    // (`api_key` inside the message), so there are no headers to carry.
+    // The handshake is an HTTP GET upgrade. Auth rides on it (an
+    // Authorization header or the soniox-api-key protocols-list entry), and
+    // unmodel never touches keys, so it carries no headers of its own.
     expect(v.request.method).toBe("GET");
     expect(v.request.headers).toEqual({});
     expect(v.toSdk("soniox")).toEqual(params);
@@ -55,7 +56,6 @@ describe("soniox.realtimeTranscription happy path", () => {
 
   test("every documented field passes, warning-free", () => {
     const r = realtimeTranscription.safe({
-      api_key: "sk-not-a-real-key",
       model: "stt-rt-v6",
       audio_format: "auto",
       language_hints: ["en"],
@@ -74,15 +74,27 @@ describe("soniox.realtimeTranscription happy path", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
-  test("api_key is passed through untouched when you choose to include it", () => {
-    const v = realtimeTranscription({
+  // https://docs.soniox.com/api-reference/stt/websocket-api (2026-11-12): "The
+  // `api_key` field of the start request is **deprecated**. From **15 January
+  // 2027** a connection that sends its key only there is refused."
+  test("api_key is passed through untouched, with a deprecation warning", () => {
+    const r = realtimeTranscription.safe({
       api_key: "sk-not-a-real-key",
-      model: "stt-rt-v5",
+      model: "stt-rt-v6",
       audio_format: "auto",
     });
-    expect(JSON.parse(JSON.stringify(v)).api_key).toBe("sk-not-a-real-key");
-    // …and omitting it is equally valid: unmodel never requires a credential.
-    expect(realtimeTranscription.safe({ model: "stt-rt-v5", audio_format: "auto" }).ok).toBe(true);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(JSON.parse(JSON.stringify(r.params)).api_key).toBe("sk-not-a-real-key");
+    expect(r.warnings).toHaveLength(1);
+    expect(r.warnings[0]?.code).toBe("unsupported_param");
+    expect(r.warnings[0]?.path).toEqual(["api_key"]);
+    expect(r.warnings[0]?.message).toContain("soniox-api-key");
+    expect(r.warnings[0]?.meta?.refusedFrom).toBe("2027-01-15");
+    // …and omitting it is the documented way: unmodel never requires a credential.
+    const bare = realtimeTranscription.safe({ model: "stt-rt-v6", audio_format: "auto" });
+    expect(bare.ok).toBe(true);
+    if (bare.ok) expect(bare.warnings).toEqual([]);
   });
 
   test("unknown field warns but passes through", () => {
@@ -122,6 +134,24 @@ describe("soniox.realtimeTranscription audio_format", () => {
     }
     // Container formats carry both in their header.
     expect(realtimeTranscription.safe({ model: "stt-rt-v5", audio_format: "wav" }).ok).toBe(true);
+  });
+
+  // The official SDK's AudioFormat union (@soniox/node 2.5.0, 2026-11-12)
+  // carries the le/be spellings of the 8-bit encodings beside the bare ones.
+  test("the 8-bit raw encodings take their le/be spellings too", () => {
+    for (const audio_format of ["pcm_s8le", "pcm_s8be", "pcm_u8le", "pcm_u8be"] as const) {
+      const r = realtimeTranscription.safe({
+        model: "stt-rt-v6",
+        audio_format,
+        sample_rate: 8000,
+        num_channels: 1,
+      });
+      expect(r.ok, audio_format).toBe(true);
+      if (r.ok) expect(r.warnings, audio_format).toEqual([]);
+    }
+    // Raw all the same: the header-less parameters are still required.
+    const bare = realtimeTranscription.safe({ model: "stt-rt-v6", audio_format: "pcm_u8le" });
+    expect(bare.ok).toBe(false);
   });
 
   test("an unknown audio_format is invalid_enum_value", () => {
@@ -196,34 +226,31 @@ describe("soniox.realtimeTranscription bounds + model gate", () => {
     expect(edges.ok).toBe(true);
   });
 
-  test("context caps at 10,000 characters, string or object", () => {
+  // "Maximum **8,000 tokens** (about 10,000 characters)."
+  // https://docs.soniox.com/stt/concepts/context (2026-11-12) — the server
+  // counts tokens, so past ~10,000 characters is a warning, never a refusal.
+  test("context past ~10,000 characters warns, string or object, and still passes", () => {
     expect(MAX_CONTEXT_CHARACTERS).toBe(10_000);
     const long = "x".repeat(MAX_CONTEXT_CHARACTERS + 1);
-    const asString = realtimeTranscription.safe({
-      model: "stt-rt-v5",
-      audio_format: "auto",
-      context: long,
-    });
-    expect(asString.ok).toBe(false);
-    if (!asString.ok) expect(asString.errors[0]?.path).toEqual(["context"]);
+    for (const context of [long, { text: long }]) {
+      const r = realtimeTranscription.safe({ model: "stt-rt-v6", audio_format: "auto", context });
+      expect(r.ok).toBe(true);
+      if (!r.ok) continue;
+      expect(r.warnings.map((w) => w.code)).toEqual(["near_context"]);
+      expect(r.warnings[0]?.path).toEqual(["context"]);
+    }
 
-    const asObject = realtimeTranscription.safe({
-      model: "stt-rt-v5",
+    const within = realtimeTranscription.safe({
+      model: "stt-rt-v6",
       audio_format: "auto",
-      context: { text: long },
+      context: "x".repeat(9_000),
     });
-    expect(asObject.ok).toBe(false);
-
-    expect(
-      realtimeTranscription.safe({ model: "stt-rt-v5", audio_format: "auto", context: "x".repeat(9_000) })
-        .ok,
-    ).toBe(true);
+    expect(within.ok).toBe(true);
+    if (within.ok) expect(within.warnings).toEqual([]);
   });
 
-  // "Context size limit — Maximum 8,000 tokens (~10,000 characters)."
-  // https://soniox.com/docs/stt/concepts/context — the budget is over the four
-  // sections' CONTENT, so JSON punctuation, key names and section names are
-  // not part of the measure.
+  // The budget is over the four sections' CONTENT, so JSON punctuation, key
+  // names and section names are not part of the measure.
   test("the object form is measured over content, not serialized JSON", () => {
     // 400 general entries whose content is 9,600 characters but whose
     // serialization is well past 10,000 — this must NOT be rejected.
@@ -234,12 +261,12 @@ describe("soniox.realtimeTranscription bounds + model gate", () => {
     const context = { general };
     expect(contextLength(context)).toBe(400 * 24);
     expect(JSON.stringify(context).length).toBeGreaterThan(MAX_CONTEXT_CHARACTERS);
-    expect(realtimeTranscription.safe({ model: "stt-rt-v5", audio_format: "auto", context }).ok).toBe(
-      true,
-    );
+    const r = realtimeTranscription.safe({ model: "stt-rt-v6", audio_format: "auto", context });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
   });
 
-  test("content over the cap is still an error, and names the real count", () => {
+  test("content over the approximation warns, and names the real count", () => {
     const context = {
       text: "t".repeat(6_000),
       terms: Array.from({ length: 100 }, () => "x".repeat(41)),
@@ -248,14 +275,16 @@ describe("soniox.realtimeTranscription bounds + model gate", () => {
     };
     // 6000 + 4100 + 2 + 16 = 10,118 characters of content.
     expect(contextLength(context)).toBe(10_118);
-    const r = realtimeTranscription.safe({ model: "stt-rt-v5", audio_format: "auto", context });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "invalid_shape");
+    const r = realtimeTranscription.safe({ model: "stt-rt-v6", audio_format: "auto", context });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const issue = r.warnings.find((w) => w.code === "near_context");
+      expect(issue?.severity).toBe("warning");
       expect(issue?.path).toEqual(["context"]);
       expect(issue?.meta?.actual).toBe(10_118);
       expect(issue?.meta?.limit).toBe(MAX_CONTEXT_CHARACTERS);
-      expect(issue?.meta?.source).toBe("https://soniox.com/docs/stt/concepts/context");
+      expect(issue?.meta?.limitTokens).toBe(8_000);
+      expect(issue?.meta?.source).toBe("https://docs.soniox.com/stt/concepts/context");
     }
   });
 

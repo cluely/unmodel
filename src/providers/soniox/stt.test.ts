@@ -112,7 +112,10 @@ describe("soniox.stt duration + cost", () => {
     if (!r.ok) {
       expect(r.errors[0]?.code).toBe("media_duration_exceeded");
       expect(r.errors[0]?.meta?.limit).toBe(MAX_AUDIO_DURATION_SECONDS);
+      // "| File duration | **300 minutes** | **This limit is fixed …" (2026-11-12).
+      expect(r.errors[0]?.meta?.source).toBe("https://docs.soniox.com/stt/async/limits-and-quotas");
     }
+    expect(MAX_AUDIO_DURATION_SECONDS).toBe(300 * 60);
   });
 
   test("cost: 1 hour of async audio ≈ $0.10 (pricing page rate)", () => {
@@ -179,6 +182,43 @@ describe("soniox.stt stt-async-v6", () => {
 // https://docs.soniox.com/stt/models (2026-11-12): stt-async-v5 is
 // "**Deprecated**<br />Will be removed Dec 15, 2026" and routes to
 // stt-async-v6 after that date — still served, so it validates and prices.
+// https://docs.soniox.com/openapi.yaml (2026-11-12): CreateTranscriptionPayload
+// types every optional field `anyOf: [<type>, {type: 'null'}]`.
+describe("soniox.stt explicit null", () => {
+  test("null on every nullable optional field validates, warning-free", () => {
+    const r = stt.safe({
+      model: "stt-async-v6",
+      audio_url: "https://a.com/x.mp3",
+      file_id: null,
+      language_hints: null,
+      language_hints_strict: null,
+      enable_speaker_diarization: null,
+      enable_language_identification: null,
+      translation: null,
+      context: null,
+      webhook_url: null,
+      webhook_auth_header_name: null,
+      webhook_auth_header_value: null,
+      client_reference_id: null,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("a null audio source counts as absent", () => {
+    const viaFile = stt.safe(
+      { model: "stt-async-v6", audio_url: null, file_id: "0190dcd1-2c3a-7a8b-9c0d-112233445566" },
+      { media: [{ path: ["file_id"], durationSeconds: 3600 }] },
+    );
+    expect(viaFile.ok).toBe(true);
+    if (viaFile.ok) expect(viaFile.estimate.costUSD).toBeCloseTo(0.1, 10);
+
+    const none = stt.safe({ model: "stt-async-v6", audio_url: null, file_id: null });
+    expect(none.ok).toBe(false);
+    if (!none.ok) expect(none.errors[0]?.message).toContain("no audio source");
+  });
+});
+
 describe("soniox.stt stt-async-v5 deprecation", () => {
   test("stt-async-v5 validates with exactly a deprecated_model warning, and still prices", () => {
     expect(models["stt-async-v5"].status).toBe("deprecated");
@@ -222,7 +262,7 @@ describe("soniox.stt realtime gating (doc audit 2026-08-13)", () => {
         const issue = r.errors.find((e) => e.code === "unsupported_capability");
         expect(issue?.path).toEqual(["model"]);
         expect(issue?.message).toContain("WebSocket");
-        expect(String(issue?.meta?.source)).toContain("soniox.com/docs/stt/models");
+        expect(String(issue?.meta?.source)).toBe("https://docs.soniox.com/stt/models");
       }
     }
   });

@@ -31,7 +31,7 @@ import { stt as validator, type TranscriptionsBody } from "./stt";
 import { MODELS, SONIOX_STT_MODEL_PARAMS } from "./stt-params";
 
 const CREATE_DOCS =
-  "https://soniox.com/docs/api-reference/stt/transcriptions/create_transcription";
+  "https://docs.soniox.com/api-reference/stt/transcriptions/create_transcription";
 
 /** The wire body this adapter compiles to. */
 export type SonioxSttWire = TranscriptionsBody;

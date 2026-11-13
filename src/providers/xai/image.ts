@@ -13,7 +13,8 @@
  *   ("1k" | "2k" | "1.5k").
  * - `quality` ("low" | "medium" | "auto", default "auto") is
  *   grok-imagine-image-2.0's: "The parameter is only supported for
- *   `grok-imagine-image-2.0`." (images/generation guide, 2026-11-12).
+ *   `grok-imagine-image-2.0`." (images/generation guide, 2026-11-12). On any
+ *   other id it draws an `unsupported_param` warning ({@link checkQualitySupport}).
  * - `model` is optional on the wire and xAI documents no server-side default,
  *   so an omitted model simply skips the model-dependent checks and produces
  *   no cost estimate. Documented aliases (`IMAGE_MODEL_ALIASES` in
@@ -45,6 +46,7 @@ export const IMAGE_GENERATIONS_URL = "https://api.x.ai/v1/images/generations";
 
 const IMAGE_DOCS = "https://docs.x.ai/developers/model-capabilities/imagine";
 const IMAGE_REFERENCE = "https://docs.x.ai/developers/rest-api-reference/inference/images";
+const IMAGE_GENERATION_DOCS = "https://docs.x.ai/developers/model-capabilities/images/generation";
 
 /** "up to 10 images per request" — the imagine capability page. */
 export const IMAGE_MAX_N = 10;
@@ -101,14 +103,33 @@ export type XaiImageResponseFormat = (typeof IMAGE_RESPONSE_FORMATS)[number];
 // Wire types — mirror the raw JSON body exactly (snake_case).
 // ---------------------------------------------------------------------------
 
+/**
+ * `storage_options.public_url` in its object form — mirrors the OpenAPI
+ * `PublicUrlOptions` exactly (https://docs.x.ai/openapi.json, 2026-11-12).
+ */
+export interface XaiPublicUrlOptions {
+  /**
+   * Seconds until the public URL expires: "Must be between 3600 (1 hour) and
+   * 2592000 (30 days)." Omitted, it inherits the file's `expires_after`, else
+   * never expires.
+   */
+  expires_after?: number;
+}
+
 /** Where generated files land — the REST reference's `storage_options`. */
 export interface XaiStorageOptions {
   /** Required within the object. */
   filename: string;
   /** Seconds until expiry (max 2592000 on the video routes). */
   expires_after?: number;
-  /** Serve the stored file from a public URL. */
-  public_url?: boolean;
+  /**
+   * Serve the stored file from a public URL: `true` = a public URL with
+   * defaults; an object = explicit expiry. "* `public_url` (boolean | object)"
+   * — https://docs.x.ai/developers/rest-api-reference/inference/videos and
+   * .../images (2026-11-12); the OpenAPI `PublicUrlInput` is `oneOf boolean |
+   * PublicUrlOptions`.
+   */
+  public_url?: boolean | XaiPublicUrlOptions;
 }
 
 export interface ImageGenerationsParams {
@@ -150,7 +171,9 @@ const imageSchema = z.looseObject({
     .looseObject({
       filename: z.string(),
       expires_after: z.number().int().optional(),
-      public_url: z.boolean().optional(),
+      public_url: z
+        .union([z.boolean(), z.looseObject({ expires_after: z.number().int().optional() })])
+        .optional(),
     })
     .optional(),
   user: z.string().optional(),
@@ -208,6 +231,43 @@ function checkN(
   });
 }
 
+/** The one id `quality` is documented for. */
+const QUALITY_MODEL = "grok-imagine-image-2.0";
+
+/**
+ * `quality` on any other id: "The parameter is only supported for
+ * `grok-imagine-image-2.0`." (images/generation guide, 2026-11-12). A warning,
+ * not an error: xAI documents no 400 for it, and does not say the field is
+ * ignored either, so the issue claims neither. Keyed on the resolved row, so
+ * the documented alias warns too; an omitted model is never gated.
+ */
+function checkQualitySupport(
+  params: ImageGenerationsParams,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.quality === undefined || info === undefined || info.id === QUALITY_MODEL) return;
+  // "After **November 2, 2026**, requests to `grok-imagine-image-quality` are
+  // served by `grok-imagine-image-2.0` with `quality` set to `low`."
+  // (https://docs.x.ai/developers/migration/imagine-image-quality-nov-2)
+  const retired =
+    info.id === "grok-imagine-image-quality"
+      ? ` The retired slug is served by ${JSON.stringify(QUALITY_MODEL)} with \`quality\` set to "low".`
+      : "";
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["quality"],
+    model: params.model,
+    message:
+      `\`quality\` is documented for ${JSON.stringify(QUALITY_MODEL)} only ("The parameter is only ` +
+      "supported for `grok-imagine-image-2.0`.\"); xAI does not document what " +
+      `${JSON.stringify(params.model)} does with it.${retired} Set ` +
+      `\`model: ${JSON.stringify(QUALITY_MODEL)}\` to choose a quality.`,
+    meta: { value: params.quality, source: IMAGE_GENERATION_DOCS },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Estimation — per-image pricing ("Each generated image incurs a fixed fee")
 // by `resolution` and, on grok-imagine-image-2.0, by `quality`: n × the rate
@@ -260,7 +320,7 @@ const validator = createValidator<ImageGenerationsParams, unknown>({
   // Route-scoped catalog: chat and video ids are not valid here and warn as
   // unknown_model.
   catalog: imageModels,
-  checks: [checkModelEnum, checkN],
+  checks: [checkModelEnum, checkN, checkQualitySupport],
   estimate,
   promptPath: ["prompt"],
   finalize,

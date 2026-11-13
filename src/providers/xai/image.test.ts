@@ -96,6 +96,50 @@ describe("xai.image wire shape", () => {
     const high = safeUnchecked({ model: "grok-imagine-image-2.0", prompt: "hi", quality: "high" });
     expect(high.ok).toBe(false);
   });
+
+  test("quality on any other id warns, never refuses", () => {
+    // "The parameter is only supported for `grok-imagine-image-2.0`." —
+    // images/generation guide (2026-11-12); no 400 is documented.
+    for (const [model, codes] of [
+      ["grok-imagine-image", ["unsupported_param"]],
+      ["grok-imagine-image-2026-03-02", ["unsupported_param"]],
+      ["grok-imagine-image-quality", ["deprecated_model", "unsupported_param"]],
+    ] as const) {
+      const r = image.safe({ model, prompt: "hi", quality: "medium" });
+      expect(r.ok, model).toBe(true);
+      if (!r.ok) continue;
+      expect(r.warnings.map((w) => w.code).sort()).toEqual([...codes]);
+      const quality = r.warnings.find((w) => w.code === "unsupported_param");
+      expect(quality?.path).toEqual(["quality"]);
+      expect(quality?.message).toContain('model: "grok-imagine-image-2.0"');
+    }
+    const retired = image.safe({ model: "grok-imagine-image-quality", prompt: "hi", quality: "low" });
+    expect(retired.ok).toBe(true);
+    if (retired.ok) {
+      expect(retired.warnings.find((w) => w.code === "unsupported_param")?.message).toContain(
+        "retired slug",
+      );
+    }
+    expect(image.safe({ prompt: "hi", quality: "medium" })).toMatchObject({ ok: true, warnings: [] });
+  });
+
+  test("storage_options.public_url takes a boolean or an { expires_after } object", () => {
+    // "* `public_url` (boolean | object)" — REST reference (2026-11-12).
+    for (const public_url of [true, { expires_after: 3600 }, {}]) {
+      const r = image.safe({
+        model: "grok-imagine-image-2.0",
+        prompt: "hi",
+        storage_options: { filename: "a.png", public_url },
+      });
+      expect(r.ok, JSON.stringify(public_url)).toBe(true);
+    }
+    const word = safeUnchecked({
+      model: "grok-imagine-image-2.0",
+      prompt: "hi",
+      storage_options: { filename: "a.png", public_url: "yes" },
+    });
+    expect(word.ok).toBe(false);
+  });
 });
 
 describe("xai.image model gate", () => {
@@ -198,6 +242,7 @@ describe("xai.image pricing", () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
     const twoK = image.safe({ model: "grok-imagine-image", prompt: "hi", resolution: "2k" });
+    expect(twoK.ok).toBe(true);
     if (twoK.ok) expect(twoK.estimate.costUSD).toBeCloseTo(0.02, 10);
   });
 

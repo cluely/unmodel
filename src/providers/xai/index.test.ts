@@ -108,5 +108,14 @@ describe("grok-4.7", () => {
       [["unsupported_param", "presence_penalty"]],
       [["unsupported_param", "stop"]],
     ]);
+    // The cited page states the fact: "* `stop` (array | null) — (Not
+    // supported by reasoning models)".
+    for (const r of refused) {
+      if (!r.ok) {
+        expect(r.errors[0]?.meta?.source).toContain(
+          "https://docs.x.ai/developers/rest-api-reference/inference/chat-completions",
+        );
+      }
+    }
   });
 });

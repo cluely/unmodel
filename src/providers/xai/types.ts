@@ -103,6 +103,7 @@ export type {
   XaiImageResolution,
   XaiImageResponseFormat,
   XaiStorageOptions,
+  XaiPublicUrlOptions,
 } from "./image";
 
 export type {
@@ -111,6 +112,7 @@ export type {
   VideoExtensionsParams,
   XaiMediaInput,
   XaiReferenceAudio,
+  XaiVideoKeyframe,
   XaiVideoOutput,
   XaiVideoResolution,
   XaiVideoAspectRatio,

@@ -22,9 +22,8 @@ export const MODELS = [
 ] as const;
 
 /**
- * The row for grok-imagine-video and grok-imagine-video-1.5: xAI documents a
- * single request surface for the route (the capability page's examples use
- * grok-imagine-video-1.5; the models page prices both).
+ * The row for grok-imagine-video-1.5, the widest request surface on the route
+ * (the capability page's examples all use it).
  *
  * `durations` is absent on purpose: the documented lengths are a *range*
  * (every integer from 1 to 15), which cannot be a list, so `duration` keeps
@@ -64,8 +63,21 @@ export const XAI_VIDEO_LITE_ROW = {
   },
 } as const;
 
+/**
+ * grok-imagine-video: lite's extras (no `reference_audios` — "| Voice
+ * references | Yes: Up to 3 voices | Not supported | Not supported |") and two
+ * resolutions, from the same page's "| Resolution | Yes: 480p, 720p, 1080p |
+ * Yes: 480p, 720p, 1080p | Yes: 480p, 720p |" row (1.5 | lite | classic,
+ * 2026-11-12).
+ */
+export const XAI_VIDEO_CLASSIC_ROW = {
+  resolutions: ["480p", "720p"],
+  ratios: XAI_VIDEO_ROW.ratios,
+  extras: XAI_VIDEO_LITE_ROW.extras,
+} as const;
+
 export const XAI_VIDEO_MODEL_PARAMS = {
-  "grok-imagine-video": XAI_VIDEO_ROW,
+  "grok-imagine-video": XAI_VIDEO_CLASSIC_ROW,
   "grok-imagine-video-1.5": XAI_VIDEO_ROW,
   "grok-imagine-video-1.5-lite": XAI_VIDEO_LITE_ROW,
 } as const satisfies VideoModelParamTable;

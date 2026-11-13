@@ -345,7 +345,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
     resolution: "native",
     aspectRatio: "native",
     imageFirst: "native",
-    imageLast: "refused",
+    // `last_frame` — grok-imagine-video-1.5 only; the other two ids refuse it.
+    imageLast: "native",
     imageReference: "native",
     // A source clip belongs to the separate edits/extensions endpoints, which
     // `xai.videoEdit` / `xai.videoExtend` validate — refused by hand, naming them.

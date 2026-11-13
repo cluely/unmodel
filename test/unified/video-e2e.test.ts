@@ -208,6 +208,49 @@ describe("route derivation", () => {
     ).toBe(true);
   });
 
+  test("xai's closing frame is per model: last_frame on 1.5, refused elsewhere", () => {
+    const image = [
+      { url: "https://example.com/a.png" },
+      { url: "https://example.com/z.png", role: "last" as const },
+    ];
+    const params = video({ model: "xai/grok-imagine-video-1.5", prompt: "hi", image });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "grok-imagine-video-1.5",
+      prompt: "hi",
+      image: { url: "https://example.com/a.png" },
+      last_frame: { url: "https://example.com/z.png" },
+    });
+    for (const model of ["xai/grok-imagine-video", "xai/grok-imagine-video-1.5-lite"] as const) {
+      const refused = video.safe({ model, prompt: "hi", image });
+      expect(refused.ok, model).toBe(false);
+      if (refused.ok) continue;
+      expect(refused.errors[0]).toMatchObject({ code: "unsupported_param", path: ["image"] });
+      expect(refused.errors[0]!.message).toContain("grok-imagine-video-1.5");
+    }
+  });
+
+  test("xai's inline bytes compile to a data URL, and bytes with no type are refused", () => {
+    // "Accepts a public URL, a base64-encoded data URL, or a file_id from the
+    // xAI Files API." — OpenAPI ImageUrl (2026-11-12).
+    const params = video({
+      model: "xai/grok-imagine-video-1.5",
+      prompt: "hi",
+      image: [{ data: "iVBORw0KGgo=", mimeType: "image/png", role: "reference" }],
+    });
+    expect(JSON.parse(JSON.stringify(params))).toMatchObject({
+      reference_images: [{ url: "data:image/png;base64,iVBORw0KGgo=" }],
+    });
+    // The type requires `mimeType` beside `data`; an untyped caller can omit it.
+    const untyped = video.safe({
+      model: "xai/grok-imagine-video-1.5",
+      prompt: "hi",
+      image: { data: "iVBORw0KGgo=" },
+    } as never);
+    expect(untyped.ok).toBe(false);
+    if (untyped.ok) return;
+    expect(untyped.errors[0]).toMatchObject({ code: "invalid_shape", path: ["image"] });
+  });
+
   test("xai's prompt is optional once the request carries an image", () => {
     const params = video({
       model: "xai/grok-imagine-video-1.5",
@@ -328,6 +371,32 @@ describe("a value a model cannot serve is refused, never approximated", () => {
       code: "unsupported_param",
       path: ["negativePrompt"],
     });
+  });
+
+  test("xai's classic model: no 1080p and no voice references, while 1.5 keeps both", () => {
+    // "`grok-imagine-video` supports up to 720p." and "| Voice references |
+    // Yes: Up to 3 voices | Not supported | Not supported |" (2026-11-12).
+    const tier = video.safe({
+      model: "xai/grok-imagine-video",
+      prompt: "hi",
+      resolution: "1080p",
+    } as never);
+    expect(tier.ok).toBe(false);
+    if (!tier.ok) {
+      expect(tier.errors[0]).toMatchObject({ code: "unsupported_capability", path: ["resolution"] });
+    }
+    const voices = { reference_audios: [{ voice_id: "eve" }] };
+    const classic = video.safe({
+      model: "xai/grok-imagine-video",
+      prompt: "<AUDIO_0> speaks",
+      ...voices,
+    } as never);
+    expect(classic.ok).toBe(false);
+    if (!classic.ok) {
+      expect(classic.errors[0]).toMatchObject({ code: "unsupported_param", path: ["reference_audios"] });
+    }
+    const params = video({ model: "xai/grok-imagine-video-1.5", prompt: "<AUDIO_0> speaks", ...voices });
+    expect(JSON.parse(JSON.stringify(params))).toMatchObject(voices);
   });
 
   test("inline bytes at a URL-only provider name the gap rather than smuggling a data: URI", () => {

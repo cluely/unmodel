@@ -119,8 +119,9 @@ export const imageModels = {
 /**
  * Models the `/v1/videos/*` routes accept. All three ids appear (with distinct
  * per-second rates) on https://docs.x.ai/developers/models; the capability
- * docs' examples all use grok-imagine-video-1.5. Which routes each id serves
- * is ./video's `VIDEO_TEXT_IMAGE_ONLY_MODELS`.
+ * docs' examples all use grok-imagine-video-1.5. Which inputs and routes each
+ * id serves is ./video's `VIDEO_TEXT_IMAGE_ONLY_MODELS`,
+ * `VIDEO_VOICE_AND_FRAME_MODELS` and `SOURCE_CLIP_MODELS`.
  */
 export const videoModels = {
   "grok-imagine-video": {

@@ -36,6 +36,7 @@ export type {
   XaiImageQuality,
   XaiImageResponseFormat,
   XaiStorageOptions,
+  XaiPublicUrlOptions,
 } from "./image";
 
 // --- Video (Grok Imagine, POST /v1/videos/*) --------------------------------
@@ -58,7 +59,10 @@ export {
   EXTENSION_MAX_DURATION,
   DEFAULT_EXTENSION_DURATION,
   VIDEO_MAX_REFERENCE_AUDIOS,
+  VIDEO_MAX_KEYFRAMES,
   VIDEO_TEXT_IMAGE_ONLY_MODELS,
+  VIDEO_VOICE_AND_FRAME_MODELS,
+  VIDEO_REFERENCE_LIMITS,
 } from "./video";
 export type {
   VideoGenerationsParams,
@@ -67,6 +71,7 @@ export type {
   XaiVideoPriceOptions,
   XaiMediaInput,
   XaiReferenceAudio,
+  XaiVideoKeyframe,
   XaiVideoOutput,
   XaiVideoResolution,
   XaiVideoAspectRatio,

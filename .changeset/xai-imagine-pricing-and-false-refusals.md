@@ -8,7 +8,7 @@ Pricing — the per-resolution rates live only in the rendered "Imagine" table o
 https://docs.x.ai/developers/pricing, and the estimates now use them:
 
 - Video, per second: grok-imagine-video $0.05 at 480p and $0.07 at 720p (it
-  has no 1080p rate, so a 1080p request has no estimate); grok-imagine-video-1.5
+  serves up to 720p, so it has no 1080p rate); grok-imagine-video-1.5
   $0.08 / $0.14 / $0.25 at 480p / 720p / 1080p; grok-imagine-video-1.5-lite
   $0.02 / $0.03 / $0.14. Each input image (`image` and each `reference_images`
   entry) adds $0.01, or $0.002 on grok-imagine-video. `videoPriceUSD` takes an

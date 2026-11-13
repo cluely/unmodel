@@ -369,12 +369,17 @@ function extrasNarrowingTests(): void {
   // @ts-expect-error — and not "in the low-cost environment".
   stt({ model: "revai/low_cost", audio: { url }, diarization_type: "premium" });
 
-  // Speechmatics' Melia 1 "does not yet support" the intelligence add-ons.
+  // Speechmatics' Melia 1 and Oak 1 "do not yet support" the intelligence add-ons.
   stt({ model: "speechmatics/standard", audio: { url }, summarization_config: {} });
   // @ts-expect-error
   stt({ model: "speechmatics/melia-1", audio: { url }, language: "multi", summarization_config: {} });
+  stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi" });
+  // @ts-expect-error
+  stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi", summarization_config: {} });
   // @ts-expect-error — `domain: "medical"` "requires `model: "enhanced"`".
   stt({ model: "speechmatics/standard", audio: { url }, domain: "medical" });
+  // @ts-expect-error — Oak 1 is the medical model by its id; it takes no `domain`.
+  stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi", domain: "medical" });
   stt({ model: "speechmatics/enhanced", audio: { url }, domain: "medical" });
 
   // ElevenLabs' row differences.

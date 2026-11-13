@@ -4,11 +4,11 @@
 // (last checked 2026-08-13).
 //
 // The catalogued ids are the values of `transcription_config.model`
-// (previously `operating_point`): `enhanced`, `standard`, `melia-1`. The
-// SAME ids are used by the Realtime WebSocket API, which unmodel does not
-// validate, so the per-minute rates below are the BATCH rates. Realtime is
-// billed differently on the same pricing page: Standard $0.24/hr,
-// Enhanced $0.43/hr (Melia 1 is batch-only).
+// (previously `operating_point`): `enhanced`, `standard`, `melia-1`,
+// `oak-1`. The SAME ids are used by the Realtime WebSocket API, which
+// unmodel does not validate, so the per-minute rates below are the BATCH
+// rates. Realtime is billed differently on the same pricing page: Standard
+// $0.24/hr, Enhanced $0.43/hr (Melia 1 is batch-only).
 //
 // Bolt-ons are billed on top of the transcription rate and are NOT folded
 // into estimates: Translation $0.65/hr, Summaries $0.12/hr, Chapters
@@ -28,6 +28,9 @@ export const provider = {
  * `ModelCost.perAudioMinute` is USD per MINUTE, so every rate is `$/hr ÷ 60`.
  */
 const MELIA_USD_PER_MINUTE = 0.129 / 60;
+// https://www.speechmatics.com/pricing.md (2026-11-12), "Speech-to-text list
+// rates (USD per hour)": "| Pre-recorded | Oak 1 | 0.3 | — |".
+const OAK_USD_PER_MINUTE = 0.3 / 60;
 const STANDARD_USD_PER_MINUTE = 0.24 / 60;
 const ENHANCED_USD_PER_MINUTE = 0.4 / 60;
 
@@ -69,6 +72,17 @@ export const models = {
     family: "melia",
     ...STT,
     cost: { perAudioMinute: MELIA_USD_PER_MINUTE },
+  },
+  // https://docs.speechmatics.com/speech-to-text/models.md (2026-11-12):
+  // "| Batch     | `enhanced`, `standard`, `melia-1`, `oak-1` |" — and "Oak 1
+  // is a standalone model for healthcare audio. It is separate from the
+  // Enhanced Medical model". Rate: OAK_USD_PER_MINUTE.
+  "oak-1": {
+    id: "oak-1",
+    name: "Speechmatics Oak 1",
+    family: "oak",
+    ...STT,
+    cost: { perAudioMinute: OAK_USD_PER_MINUTE },
   },
 } as const satisfies Record<string, ModelInfo>;
 

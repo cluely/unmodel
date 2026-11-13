@@ -102,6 +102,7 @@ function audioFor(adapter: Adapter): Record<string, unknown> | undefined {
 /** Per-model params the route marks required with no server default. */
 const REQUIRED: Readonly<Record<string, Record<string, unknown>>> = {
   "speechmatics/melia-1": { language: "multi" },
+  "speechmatics/oak-1": { language: "multi" },
 };
 
 interface Outcome {

@@ -54,6 +54,18 @@ describe("speechmatics.checkJob", () => {
     expect(report.costUSD).toBeCloseTo(0.129 / 60, 10);
   });
 
+  test("an oak-1 job prices at its catalogued rate", () => {
+    const report = checkJob({
+      job: {
+        status: "done",
+        duration: 3600,
+        config: { transcription_config: { model: "oak-1", language: "multi" } },
+      },
+    });
+    // 60 minutes x ($0.30/hr ÷ 60) = $0.30.
+    expect(report.costUSD).toBeCloseTo(0.3, 10);
+  });
+
   test("unknown models and missing durations yield no cost", () => {
     expect(
       checkJob({

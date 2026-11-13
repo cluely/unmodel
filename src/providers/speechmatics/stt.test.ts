@@ -221,6 +221,64 @@ describe("speechmatics.stt melia-1 feature gates", () => {
     if (!identified.ok) expect(identified.errors[0]?.message).toContain("speaker identification");
   });
 
+  test("oak-1 shares melia-1's gates and names itself in every refusal", () => {
+    const ok = stt.safe({
+      type: "transcription",
+      transcription_config: {
+        language: "multi",
+        model: "oak-1",
+        diarization: "speaker",
+        speaker_diarization_config: { speaker_sensitivity: 0.7 },
+      },
+    });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) expect(ok.warnings).toEqual([]);
+
+    const auto = stt.safe({
+      type: "transcription",
+      transcription_config: { language: "auto", model: "oak-1" },
+    });
+    expect(auto.ok).toBe(false);
+    if (!auto.ok) {
+      expect(auto.errors[0]?.code).toBe("invalid_enum_value");
+      expect(auto.errors[0]?.model).toBe("oak-1");
+      expect(auto.errors[0]?.message).toContain("oak-1 is a multilingual model");
+    }
+
+    const gated = stt.safe({
+      type: "transcription",
+      transcription_config: {
+        language: "multi",
+        model: "oak-1",
+        additional_vocab: [{ content: "metformin" }],
+        speaker_diarization_config: { get_speakers: true },
+      },
+      summarization_config: {},
+    });
+    expect(gated.ok).toBe(false);
+    if (!gated.ok) {
+      expect(gated.errors.map((e) => e.path.join("."))).toEqual([
+        "transcription_config.additional_vocab",
+        "summarization_config",
+        "transcription_config.speaker_diarization_config",
+      ]);
+      expect(gated.errors.every((e) => e.code === "unsupported_capability")).toBe(true);
+      expect(gated.errors.every((e) => e.message.includes("oak-1"))).toBe(true);
+    }
+  });
+
+  test('oak-1 with domain "medical" is pointed at what it already is', () => {
+    const r = stt.safe({
+      type: "transcription",
+      transcription_config: { language: "multi", model: "oak-1", domain: "medical" },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("unsupported_capability");
+      expect(r.errors[0]?.message).toContain("oak-1 is itself the multilingual medical model");
+    }
+  });
+
   test('domain "medical" outside enhanced is rejected', () => {
     const r = stt.safe({
       type: "transcription",
@@ -244,6 +302,18 @@ describe("speechmatics.stt media + cost", () => {
     expect(r.ok).toBe(true);
     // 60 minutes x ($0.40/hr ÷ 60) = $0.40.
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.4, 10);
+  });
+
+  test("oak-1 is catalogued and prices at its $0.30/hr batch list rate", () => {
+    const r = stt.safe(
+      { type: "transcription", transcription_config: { language: "multi", model: "oak-1" } },
+      { media: [{ path: ["data_file"], durationSeconds: 3600 }] },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(0.3, 10);
+    }
   });
 
   test("melia-1 is the cheapest catalogued batch rate", () => {

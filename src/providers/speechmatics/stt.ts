@@ -137,16 +137,16 @@ export interface SpeechmaticsSpeakerDiarizationConfig {
 }
 
 export interface SpeechmaticsTranscriptionConfig {
-  /** ISO language code; `multi` for Melia 1, `auto` for language ID. */
+  /** ISO language code; `multi` for Melia 1 and Oak 1, `auto` for language ID. */
   language: string;
   /** Specialized variant of `language`, e.g. "medical" (Enhanced only). */
   domain?: string;
   /** Locale for the transcription output, e.g. "en-US". */
   output_locale?: string;
   /** Model to transcribe with; defaults to "standard". */
-  model?: "standard" | "enhanced" | "melia-1" | (string & {});
+  model?: "standard" | "enhanced" | "melia-1" | "oak-1" | (string & {});
   /** @deprecated Use `model`; kept for backward compatibility. */
-  operating_point?: "standard" | "enhanced" | "melia-1" | (string & {});
+  operating_point?: "standard" | "enhanced" | "melia-1" | "oak-1" | (string & {});
   /** Custom dictionary. */
   additional_vocab?: SpeechmaticsAdditionalVocabEntry[];
   punctuation_overrides?: SpeechmaticsPunctuationOverrides;
@@ -392,8 +392,16 @@ function checkOperatingPoint(
   }
 }
 
-/** Config keys Melia 1 does not support, with the doc's own wording. */
-const MELIA_UNSUPPORTED: ReadonlyArray<{ path: Array<string | number>; feature: string }> = [
+/**
+ * The multilingual models, which share one Batch feature set: "On Batch,
+ * Melia 1 and Oak 1 match the Enhanced and Standard models for core
+ * transcription features [...] They do not yet support the following
+ * features" (MODELS_DOCS, 2026-11-12).
+ */
+const MULTILINGUAL_MODELS: ReadonlySet<string> = new Set(["melia-1", "oak-1"]);
+
+/** Config keys Melia 1 and Oak 1 do not support, with the doc's own wording. */
+const MULTILINGUAL_UNSUPPORTED: ReadonlyArray<{ path: Array<string | number>; feature: string }> = [
   { path: ["transcription_config", "additional_vocab"], feature: "custom dictionary" },
   {
     path: ["transcription_config", "transcript_filtering_config"],
@@ -419,39 +427,47 @@ function readPath(root: unknown, path: Array<string | number>): unknown {
 }
 
 /**
- * Melia 1's documented gaps (MODELS_DOCS): it "does not yet support" custom
- * vocabulary/formatting, entity detection, audio filtering, speaker
- * identification and every speech-intelligence add-on, and it requires
- * `language: "multi"` — "Melia 1 does not support the `auto` language value,
- * which returns an error."
+ * Melia 1's and Oak 1's documented gaps (MODELS_DOCS): they "do not yet
+ * support" custom vocabulary/formatting, entity detection, audio filtering,
+ * speaker identification and every speech-intelligence add-on, and each
+ * requires `language: "multi"` — "Melia 1 does not support the `auto` language
+ * value, which returns an error", and "Oak 1 does not support the `auto`
+ * language value, which returns an error. Set `language` to `multi`."
  */
-function checkMelia(config: JobConfig, _info: ModelInfo | undefined, ctx: PipelineContext): void {
-  if (resolveModel(config) !== "melia-1") return;
+function checkMultilingual(
+  config: JobConfig,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const model = resolveModel(config);
+  if (!MULTILINGUAL_MODELS.has(model)) return;
   const tc = config.transcription_config;
 
   if (tc?.language !== undefined && tc.language !== "multi") {
     ctx.report({
       code: tc.language === "auto" ? "invalid_enum_value" : "invalid_shape",
       path: ["transcription_config", "language"],
-      model: "melia-1",
-      message: `melia-1 is a multilingual model and requires \`language: "multi"\`; got ${JSON.stringify(tc.language)}${tc.language === "auto" ? ' — "auto" returns an error for this model' : ""}.`,
+      model,
+      message: `${model} is a multilingual model and requires \`language: "multi"\`; got ${JSON.stringify(tc.language)}${tc.language === "auto" ? ' — "auto" returns an error for this model' : ""}.`,
       meta: { allowed: ["multi"], value: tc.language, source: MODELS_DOCS },
     });
   }
 
-  for (const { path, feature } of MELIA_UNSUPPORTED) {
+  for (const { path, feature } of MULTILINGUAL_UNSUPPORTED) {
     if (readPath(config, path) == null) continue;
     ctx.report({
       code: "unsupported_capability",
       path,
-      model: "melia-1",
-      message: `\`${path.join(".")}\` (${feature}) is not supported by melia-1 yet; use "standard" or "enhanced".`,
+      model,
+      message: `\`${path.join(".")}\` (${feature}) is not supported by ${model} yet; use "standard" or "enhanced".`,
       meta: { source: MODELS_DOCS },
     });
   }
 
-  // Diarization itself works on Melia; SPEAKER IDENTIFICATION (labelled
-  // speakers / returned identifiers) does not.
+  // Diarization itself works on both; SPEAKER IDENTIFICATION (labelled
+  // speakers / returned identifiers) does not — "Not supported by Melia 1 and
+  // Oak 1", on both `get_speakers` and `speakers`
+  // (https://docs.speechmatics.com/api-ref/batch/create-a-new-job.md, 2026-11-12).
   const diarization = tc?.speaker_diarization_config;
   const identification =
     diarization?.speakers !== undefined || diarization?.get_speakers !== undefined;
@@ -459,9 +475,8 @@ function checkMelia(config: JobConfig, _info: ModelInfo | undefined, ctx: Pipeli
     ctx.report({
       code: "unsupported_capability",
       path: ["transcription_config", "speaker_diarization_config"],
-      model: "melia-1",
-      message:
-        "speaker identification (`speakers` / `get_speakers`) is not supported by melia-1 yet; plain speaker diarization is.",
+      model,
+      message: `speaker identification (\`speakers\` / \`get_speakers\`) is not supported by ${model} yet; plain speaker diarization is.`,
       meta: { source: MODELS_DOCS },
     });
   }
@@ -469,7 +484,10 @@ function checkMelia(config: JobConfig, _info: ModelInfo | undefined, ctx: Pipeli
 
 /**
  * "The Enhanced Medical model" is an Enhanced variant: `domain: "medical"` is
- * documented only alongside `model: "enhanced"` (MODELS_DOCS).
+ * documented only alongside `model: "enhanced"` (MODELS_DOCS). Oak 1 is the
+ * other medical model, selected by its id alone: "Oak 1 is a standalone model
+ * for healthcare audio. It is separate from the Enhanced Medical model"
+ * (MODELS_DOCS, 2026-11-12).
  */
 function checkMedicalDomain(
   config: JobConfig,
@@ -484,7 +502,10 @@ function checkMedicalDomain(
     code: "unsupported_capability",
     path: ["transcription_config", "domain"],
     model,
-    message: `\`domain: "medical"\` selects the Enhanced Medical model and requires \`model: "enhanced"\`; got "${model}".`,
+    message:
+      model === "oak-1"
+        ? '`domain: "medical"` selects the Enhanced Medical model and requires `model: "enhanced"`; oak-1 is itself the multilingual medical model — drop `domain`, or use `model: "enhanced"` for single-language medical audio.'
+        : `\`domain: "medical"\` selects the Enhanced Medical model and requires \`model: "enhanced"\`; got "${model}".`,
     meta: { source: MODELS_DOCS },
   });
 }
@@ -569,7 +590,7 @@ const validator = createValidator<JobConfig, unknown>({
   schema,
   modelId: resolveModel,
   catalog: models,
-  checks: [checkOperatingPoint, checkMelia, checkMedicalDomain, checkDataFileSize],
+  checks: [checkOperatingPoint, checkMultilingual, checkMedicalDomain, checkDataFileSize],
   // The audio arrives as a `data_file` FORM PART alongside this JSON config, so
   // a declaration addressed to it names a real coordinate that is not a key of
   // `JobConfig`. Same list `declaredAudio` reads, so the two cannot disagree.

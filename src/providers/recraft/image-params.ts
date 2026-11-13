@@ -102,8 +102,9 @@ export const MODELS = [
  * `style_reference_urls`, `style_match`) follow the "Parameter support by
  * model family" matrix of https://www.recraft.ai/docs/api-reference/agents:
  * none of them on V4.1 Flash, `style_match` `regular` on V2/V3 and
- * `flexible` / `precise` on the V4 line, and `style_id` on V2/V3 and the
- * V4 Styles line, which requires it or `style_reference_urls`.
+ * `flexible` / `precise` on the V4 line, and `style_id` /
+ * `style_reference_urls` everywhere else — the V4 Styles line requires one
+ * of the two.
  */
 export const RECRAFT_SHARED_EXTRAS = {
   // Closed, matching the wire body: `checkSpecEnums` refuses an off-list
@@ -126,6 +127,7 @@ export const STYLE_REFERENCE_URLS = EXTRA as string[] | null;
 
 /** The V4 line's custom-style inputs, V4.1 Flash excepted. */
 export const V4_STYLE_EXTRAS = {
+  style_id: STYLE_ID,
   style_reference_urls: STYLE_REFERENCE_URLS,
   style_match: EXTRA as Exclude<RecraftStyleMatch, "regular"> | null,
   ...RECRAFT_SHARED_EXTRAS,
@@ -139,7 +141,7 @@ export const V2_V3_STYLE_EXTRAS = {
   ...RECRAFT_SHARED_EXTRAS,
 } as const;
 
-/** V4 / V4.1: no `style`, no `style_id`, no `text_layout`. */
+/** V4 / V4.1 / V4 Styles: custom styles, but no curated `style` and no `text_layout`. */
 export const V4_STANDARD_ROW = {
   sizes: V4_STANDARD_SIZES,
   ratios: ASPECT_RATIOS,
@@ -162,29 +164,6 @@ export const V4_1_FLASH_ROW = {
   ratios: ASPECT_RATIOS,
   tiers: ["1k"],
   extras: RECRAFT_SHARED_EXTRAS,
-} as const;
-
-/** The V4 Styles line: `style_id` or `style_reference_urls` is required. */
-const V4_STYLES_EXTRAS = { style_id: STYLE_ID, ...V4_STYLE_EXTRAS } as const;
-
-export const V4_STYLES_ROW = {
-  sizes: V4_STANDARD_SIZES,
-  ratios: ASPECT_RATIOS,
-  tiers: ["1k"],
-  extras: V4_STYLES_EXTRAS,
-} as const;
-
-export const V4_STYLES_PRO_ROW = {
-  sizes: V4_PRO_SIZES,
-  ratios: ASPECT_RATIOS,
-  tiers: ["2k"],
-  extras: V4_STYLES_EXTRAS,
-} as const;
-
-export const V4_STYLES_VECTOR_ROW = {
-  ratios: ASPECT_RATIOS,
-  tiers: [],
-  extras: V4_STYLES_EXTRAS,
 } as const;
 
 export const V2_V3_RASTER_SIZES = [...V2_V3_SIZES, ...UNATTRIBUTED_SIZE_VALUES] as const;
@@ -231,12 +210,14 @@ export const RECRAFT_IMAGE_MODEL_PARAMS = {
   recraftv4_pro_vector: V4_VECTOR_ROW,
   recraftv4_1_flash: V4_1_FLASH_ROW,
   recraftv4_1_flash_raster: V4_1_FLASH_ROW,
-  recraftv4_styles: V4_STYLES_ROW,
-  recraftv4_styles_raster: V4_STYLES_ROW,
-  recraftv4_styles_pro: V4_STYLES_PRO_ROW,
-  recraftv4_styles_pro_raster: V4_STYLES_PRO_ROW,
-  recraftv4_styles_vector: V4_STYLES_VECTOR_ROW,
-  recraftv4_styles_pro_vector: V4_STYLES_VECTOR_ROW,
+  // The V4 Styles line shares the V4 rows; what it adds — a required
+  // `style_id` or `style_reference_urls` — is `checkV4StylesStyle`'s to say.
+  recraftv4_styles: V4_STANDARD_ROW,
+  recraftv4_styles_raster: V4_STANDARD_ROW,
+  recraftv4_styles_pro: V4_PRO_ROW,
+  recraftv4_styles_pro_raster: V4_PRO_ROW,
+  recraftv4_styles_vector: V4_VECTOR_ROW,
+  recraftv4_styles_pro_vector: V4_VECTOR_ROW,
   recraftv3: RECRAFT_V3_ROW,
   recraftv3_raster: RECRAFT_V3_ROW,
   recraftv3_vector: {

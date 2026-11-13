@@ -78,13 +78,9 @@
  * `style` / `style_id` / `text_layout`, which have no canonical spelling and
  * reach the body through `providerOptions.recraft`.
  *
- * `image_format` deserves one caveat, taken from the endpoint module's own
- * header: it is one of seven params Recraft's API accepts but its rendered
- * parameter table omits, and its value list survives from an earlier revision
- * of an internal spec document. The module types it and validates it, so the
- * adapter emits it — but a reader deciding whether to depend on
- * `outputFormat` here should know the provenance is thinner than the rest of
- * this table.
+ * `outputDelivery` maps onto two of `response_format`'s three values:
+ * `multipart` (a `multipart/form-data` answer) is not a canonical delivery,
+ * and stays reachable through `providerOptions.recraft`.
  *
  * There are **no provider-wide gaps**: every canonical field has a home on
  * this route, so `unsupported` is absent and every refusal below is
@@ -190,7 +186,7 @@ export interface RecraftImageWire {
   random_seed?: number;
   negative_prompt?: string;
   image_format?: RecraftImageFormat;
-  response_format?: "url" | "b64_json";
+  response_format?: "url" | "b64_json" | "multipart";
   // The per-model extras, spelled out rather than reached through an index
   // signature: `GenerationsParams` has none, and an open tail here would make
   // `ExactKeys` demand `never` for every key and stop `recraft.image.safe`

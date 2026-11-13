@@ -54,6 +54,11 @@ function generationsSizeTypeTests(): void {
 
   // null still means "let Recraft pick from the prompt".
   image({ prompt: "hi", size: null });
+
+  // `response_format` takes the documented third value.
+  image({ prompt: "hi", response_format: "multipart" });
+  // @ts-expect-error — not a `response_format` value.
+  image({ prompt: "hi", response_format: "hex" });
 }
 
 function outpaintSizeTypeTests(): void {

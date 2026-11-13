@@ -293,6 +293,11 @@ function extrasNarrowingTests(): void {
   // splits V2/V3 (`regular`) from the V4 line (`flexible` / `precise`).
   image({ model: "recraft/recraftv4_styles", prompt: "hi", style_id: "abc", style_match: "precise" });
   image({ model: "recraft/recraftv4_styles_raster", prompt: "hi", style_reference_urls: ["https://x/a.png"] });
+  // Every V4 / V4.1 model takes a custom style too, at its own price.
+  image({ model: "recraft/recraftv4_1", prompt: "hi", style_id: "abc", style_match: "flexible" });
+  // …but never a curated one.
+  // @ts-expect-error — curated `style` names are V2 / V3 only.
+  image({ model: "recraft/recraftv4_1", prompt: "hi", style: "Watercolor" });
   // @ts-expect-error — V4.1 Flash refuses style references.
   image({ model: "recraft/recraftv4_1_flash", prompt: "hi", style_reference_urls: ["https://x/a.png"] });
   // @ts-expect-error — `regular` is the V2/V3 value; the V4 line refuses it.

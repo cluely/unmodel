@@ -4,12 +4,12 @@
  * outpaint,replaceBackground,generateBackground}
  *
  * Wire notes (ground truth for every rule below:
- * https://www.recraft.ai/docs/api-reference/endpoints, re-verified 2026-08-13
- * — it documents each route's params, its model compatibility and its input
- * limits. Recraft's Swagger document at
- * https://external.api.recraft.ai/doc/spec/api/api.yaml is NOT a source here:
- * it is an internal backend spec that declares no paths and none of these
- * request schemas):
+ * https://www.recraft.ai/docs/api-reference/endpoints and the per-route pages
+ * under https://www.recraft.ai/docs/api-reference/tools/ (image-to-image,
+ * inpainting, outpainting, background), re-verified 2026-11-12 — they
+ * document each route's params, its model compatibility and its input limits;
+ * the docs-generated https://www.recraft.ai/docs/api-reference/openapi.json
+ * types the same request bodies):
  * - DUAL-FORMAT endpoints. Every image field has a JSON counterpart:
  *   `image` ⇄ `image_url`, `mask` ⇄ `mask_url` (a public URL or a `data:`
  *   URL). unmodel models both on one params type and enforces
@@ -28,9 +28,13 @@
  *   target `size`, never both, and `zoom_out_percentage` (0–100, exclusive
  *   upper bound) can accompany either or stand alone; at least one of the
  *   three must be present.
- * - Input-image limits ("< 10 MB, < 16 MP, max dimension < 4096 px, min
- *   dimension ≥ 256 px") are documented per route; only the byte limit is
- *   checkable from a Blob without decoding it, so that is what is enforced.
+ * - Input-image limits ("The input image must be PNG, JPG, WEBP, or SVG,
+ *   under 20 MB, up to 16 MP, with sides between 256 and 4096 px.") are
+ *   documented per route; only the byte limit is checkable from a Blob
+ *   without decoding it, so that is what is enforced.
+ * - `response_format` is `url`, `b64_json` or `multipart` ("`url`,
+ *   `b64_json`, or `multipart`" on every route page); `multipart` answers
+ *   with `multipart/form-data`, which the OpenAI SDK path cannot read.
  * - Auth is `Authorization: Bearer <token>` — unmodel never touches keys.
  * - Billing is per generated image; the pricing page itemizes the V3 rows for
  *   these operations at exactly the V3 generation rates ($0.04 raster /
@@ -64,8 +68,11 @@ export const DEFAULT_IMAGE_TO_IMAGE_MODEL_ID = "recraftv4_1";
 /** Default `model` on the V3-only editing routes. */
 export const DEFAULT_V3_EDIT_MODEL_ID = "recraftv3";
 
-/** "must be less than 10 MB in size" — every editing route's input image. */
-export const MAX_INPUT_IMAGE_BYTES = 10 * 1024 * 1024;
+/**
+ * Every editing route's input image and mask — appendix (2026-11-12): "| File
+ * size | Under 20 MB |"; image-to-image page: "under 20 MB, up to 16 MP".
+ */
+export const MAX_INPUT_IMAGE_BYTES = 20 * 1024 * 1024;
 
 /** `expand_*` bounds on the outpaint route (docs: "must be in range [0, 4096]"). */
 export const MAX_OUTPAINT_EXPAND_PIXELS = 4096;
@@ -105,8 +112,8 @@ interface RecraftTransformCommon<M extends string = string> {
   negative_prompt?: string | null;
   /** Seed for reproducible generation. */
   random_seed?: number | null;
-  /** "url" (default) or "b64_json". */
-  response_format?: "url" | "b64_json" | null;
+  /** "url" (default), "b64_json" or "multipart". */
+  response_format?: "url" | "b64_json" | "multipart" | null;
   /** Spatial/textual attributes for text elements. */
   text_layout?: RecraftTextLayoutElement[] | null;
   /** Generation tweaks; artistic_level / no_text are V3-only. */
@@ -256,7 +263,7 @@ const replaceBackgroundSchema = z.looseObject(commonShape);
 // Shared checks
 // ---------------------------------------------------------------------------
 
-const RESPONSE_FORMATS = ["url", "b64_json"] as const;
+const RESPONSE_FORMATS = ["url", "b64_json", "multipart"] as const;
 
 function makeResolveModel(fallback: string) {
   return (params: { model?: string | null }): string => params.model ?? fallback;
@@ -307,7 +314,7 @@ function checkMaskSource(
   checkFilePair(params as unknown as Record<string, unknown>, "mask", "mask_url", true, ctx);
 }
 
-/** "must be less than 10 MB in size" — the only limit checkable from a Blob. */
+/** "under 20 MB" — the only input limit checkable from a Blob. */
 function checkImageBytes(
   params: RecraftTransformCommon,
   _info: ModelInfo | undefined,
@@ -321,8 +328,8 @@ function checkImageBytes(
     ctx.report({
       code: "media_too_large",
       path: [field],
-      message: `\`${field}\` is ${blob.size} bytes; Recraft caps editing inputs at ${MAX_INPUT_IMAGE_BYTES} bytes (10 MB).`,
-      meta: { bytes: blob.size, limit: MAX_INPUT_IMAGE_BYTES, source: ENDPOINTS_DOCS_URL },
+      message: `\`${field}\` is ${blob.size} bytes; Recraft caps editing inputs at ${MAX_INPUT_IMAGE_BYTES} bytes (20 MB).`,
+      meta: { bytes: blob.size, limit: MAX_INPUT_IMAGE_BYTES, source: APPENDIX_DOCS_URL },
     });
   }
 }
@@ -337,7 +344,7 @@ function checkResponseFormat(
   ctx.report({
     code: "invalid_enum_value",
     path: ["response_format"],
-    message: `\`response_format\` must be one of "url", "b64_json"; got ${JSON.stringify(format)}.`,
+    message: `\`response_format\` must be one of "url", "b64_json", "multipart"; got ${JSON.stringify(format)}.`,
     meta: { allowed: [...RESPONSE_FORMATS], value: format, source: ENDPOINTS_DOCS_URL },
   });
 }

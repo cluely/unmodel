@@ -267,7 +267,7 @@ describe("the provider's own checks reach the canonical path", () => {
     expect(result.ok).toBe(true);
   });
 
-  test("Ideogram's 25 MB cap and Recraft's 10 MB one, both at `image`", () => {
+  test("Ideogram's 25 MB cap and Recraft's 20 MB one, both at `image`", () => {
     const ideogram = imageEdit.safe({
       operation: "edit",
       model: "ideogram/ideogram-3.0-default",
@@ -281,7 +281,7 @@ describe("the provider's own checks reach the canonical path", () => {
       operation: "edit",
       model: "recraft/recraftv4_1",
       prompt: PROMPT,
-      image: { file: png(11 * 1024 * 1024) },
+      image: { file: png(21 * 1024 * 1024) },
       strength: 0.5,
     } as never);
     expect(recraft.ok).toBe(false);

@@ -2,29 +2,34 @@
  * Recraft image generation — POST https://external.api.recraft.ai/v1/images/generations
  *
  * Wire notes (ground truth: https://www.recraft.ai/docs/api-reference/endpoints,
- * .../styles, .../pricing and .../appendix, re-verified 2026-08-13):
- * - Seven params the API accepts are absent from the rendered parameter
- *   table: `substyle`, `creativity`, `image_format`, `upscale`, `block_nsfw`,
- *   `calculate_features` and `expire`. They are typed here so they validate
- *   instead of warning as unknown params, and their provenance is recorded
- *   per param. Recraft's Swagger document
- *   (https://external.api.recraft.ai/doc/spec/api/api.yaml) is an INTERNAL
- *   backend spec — re-downloaded 2026-08-13: zero paths, no /v1/images
- *   request schema — so it backs only `upscale` (its `UpscaleMode` enum) and
- *   `substyle` (the style suffixes of its `ImageType` enum). The `creativity`
- *   and `image_format` value lists come from an earlier revision of that
- *   document and are not re-verifiable against anything Recraft publishes
- *   today; they are kept because they are narrower than passing anything
- *   through, and are flagged as such on the rules that use them.
+ * .../styles, .../pricing and .../appendix, re-verified 2026-11-12; secondary:
+ * the docs-generated https://www.recraft.ai/docs/api-reference/openapi.json
+ * and the backend https://external.api.recraft.ai/doc/spec/external-api.yaml
+ * it is built from):
+ * - `image_format` is on the endpoints table ("Must be one of `webp` or
+ *   `png`"), and `upscale` is declared on `GenerateImageRequestBase` in both
+ *   specs (`UpscaleMode`). Five more params are typed from the internal spec
+ *   this module was first written against
+ *   (https://external.api.recraft.ai/doc/spec/api/api.yaml, read 2026-08-13;
+ *   "404 page not found" on 2026-11-12): `substyle`, `creativity`,
+ *   `block_nsfw`, `calculate_features` and `expire`. No current Recraft
+ *   source — neither docs page nor either spec — declares them; their
+ *   provenance is recorded on the rules that use them.
  * - OpenAI-images-flavored JSON body. Auth is `Authorization: Bearer <token>`
  *   — unmodel never touches keys; add the header yourself when fetching.
- * - `model` defaults to `recraftv4_1` server-side, or to `recraftv4_styles`
- *   when `style_reference_urls` are attached; model-dependent checks run
- *   against that default when `model` is omitted.
+ * - `model` defaults to `recraftv4_1` server-side, unless style references
+ *   are attached (→ `recraftv4_styles`) or `style` names a V3 / V2 curated
+ *   style (→ that model, V3 first); model-dependent checks run against the
+ *   resolved default when `model` is omitted.
+ * - `response_format` is `url`, `b64_json` or `multipart`. `multipart` answers
+ *   with `multipart/form-data` — a `response` JSON part plus one part per
+ *   image — which the OpenAI Python library behind `.toSdk("recraft")` cannot
+ *   read ("only reads JSON responses, so use `url` or `b64_json` with it").
  * - The current API takes curated style NAMES in `style` (e.g. "Photorealism",
  *   "Vector art") — the old `style`/`substyle` enum pairs are gone from the
- *   docs. Styles are V2/V3-only; the per-model name lists live in styles.ts
- *   and the style ↔ model cross-check reports invalid_enum_value.
+ *   docs. Curated styles are V2/V3-only (the V4 line takes custom styles via
+ *   `style_id` / style references); the per-model name lists live in
+ *   styles.ts and the style ↔ model cross-check reports invalid_enum_value.
  * - `style` and `style_id` cannot be used together (docs: "Specify one or the
  *   other, not both"), and neither can `style_id` and style references.
  * - Style references: `style_reference_urls` (JSON, 1–10 URLs or data URLs)
@@ -81,9 +86,11 @@ export {
 export const IMAGES_GENERATIONS_URL = "https://external.api.recraft.ai/v1/images/generations";
 
 /**
- * Server-side default when `model` is omitted —
- * https://www.recraft.ai/docs/api-reference/endpoints ("default is
- * `recraftv4_1`"). Model-dependent checks run against this default.
+ * Server-side default when `model` is omitted and neither style references
+ * nor a V3 / V2 curated `style` pick another —
+ * https://www.recraft.ai/docs/api-reference/models/overview (2026-11-12):
+ * "When no `model` is specified, Generate image defaults to `recraftv4_1`."
+ * Model-dependent checks run against the resolved default.
  */
 export const DEFAULT_MODEL_ID = "recraftv4_1";
 
@@ -194,11 +201,10 @@ export interface RecraftTextLayoutElement {
 }
 
 /**
- * `substyle` values. The rendered endpoints page does not document
- * `substyle`, so these are the style suffixes of the `ImageType` enum in
- * Recraft's internal Swagger document (`digital_illustration_pixel_art` →
- * `pixel_art`), which is where the pairs `style` + `substyle` come from.
- * Typed here rather than dropped into `unknown_param`.
+ * `substyle` values. No current Recraft source documents `substyle`; these
+ * are the style suffixes of the `ImageType` enum in the internal spec read on
+ * 2026-08-13 (`digital_illustration_pixel_art` → `pixel_art`), which is where
+ * the pairs `style` + `substyle` come from — see `INTERNAL_SPEC_SOURCE`.
  */
 export const SUBSTYLES = [
   "2d_art_poster", "3d", "80s", "glow", "grain", "hand_drawn", "infantile_sketch", "kawaii",
@@ -222,7 +228,11 @@ export const SUBSTYLES = [
 ] as const;
 export type RecraftSubstyle = (typeof SUBSTYLES)[number];
 
-/** `image_format` values. No jpeg. Legacy list — see LEGACY_SPEC_SOURCE. */
+/**
+ * `image_format` values — endpoints doc (2026-11-12): "The file format of the
+ * returned raster images. Must be one of `webp` or `png`" (OpenAPI
+ * `ImageFormat`). No jpeg.
+ */
 export const IMAGE_FORMATS = ["webp", "png"] as const;
 export type RecraftImageFormat = (typeof IMAGE_FORMATS)[number];
 
@@ -236,13 +246,17 @@ export type RecraftImageFormat = (typeof IMAGE_FORMATS)[number];
 export const STYLE_MATCHES = ["regular", "precise", "flexible"] as const;
 export type RecraftStyleMatch = (typeof STYLE_MATCHES)[number];
 
-/** `upscale` values — the `UpscaleMode` enum of Recraft's Swagger document. */
+/**
+ * `upscale` values — the `UpscaleMode` enum (`upscale4mp`, `upscale16mp`) that
+ * types `upscale` on `GenerateImageRequestBase` in both openapi.json and
+ * external-api.yaml (2026-11-12). No docs page describes the param.
+ */
 export const UPSCALE_MODES = ["upscale4mp", "upscale16mp"] as const;
 export type RecraftUpscaleMode = (typeof UPSCALE_MODES)[number];
 
 /**
- * `creativity` values — a named tier, not a number. Legacy list; no source
- * Recraft publishes today declares it (see LEGACY_SPEC_SOURCE).
+ * `creativity` values — a named tier, not a number. No source Recraft
+ * publishes today declares it (see `LEGACY_SPEC_SOURCE`).
  */
 export const CREATIVITY_LEVELS = ["simple", "standard", "eccentric"] as const;
 export type RecraftCreativity = (typeof CREATIVITY_LEVELS)[number];
@@ -279,7 +293,11 @@ export interface GenerationsParams<M extends RecraftModelInput = RecraftModelInp
   prompt: string;
   /** Number of images, 1–6. Default 1. Billed per image. */
   n?: number | null;
-  /** Defaults to "recraftv4_1" server-side. */
+  /**
+   * Defaults to "recraftv4_1" server-side — "recraftv4_styles" when
+   * `style_reference_urls` are attached, or the V3 / V2 model whose curated
+   * list holds `style`.
+   */
   model?: M | null;
   /** Curated style name (V2/V3 models only). Cannot be combined with style_id. */
   style?: StyleFor<M> | null;
@@ -294,9 +312,9 @@ export interface GenerationsParams<M extends RecraftModelInput = RecraftModelInp
    */
   substyle?: RecraftSubstyle | null;
   /**
-   * Style UUID used as a visual reference (V2/V3 models and the V4 Styles
-   * line, which requires it unless `style_reference_urls` are attached).
-   * Cannot be combined with `style` or with `style_reference_urls`.
+   * Style UUID used as a visual reference — every model except V4.1 Flash;
+   * the V4 Styles line requires it unless `style_reference_urls` are
+   * attached. Cannot be combined with `style` or with `style_reference_urls`.
    */
   style_id?: string | null;
   /**
@@ -321,8 +339,11 @@ export interface GenerationsParams<M extends RecraftModelInput = RecraftModelInp
   negative_prompt?: string | null;
   /** Seed for reproducible generation. */
   random_seed?: number | null;
-  /** "url" (default) or "b64_json". */
-  response_format?: "url" | "b64_json" | null;
+  /**
+   * "url" (default), "b64_json" or "multipart" — the last answers with
+   * `multipart/form-data`, which the OpenAI SDK path cannot read.
+   */
+  response_format?: "url" | "b64_json" | "multipart" | null;
   /** Spatial/textual attributes for text elements (V3 models only). */
   text_layout?: RecraftTextLayoutElement[] | null;
   /** Generation tweaks; artistic_level / no_text are V3-only. */
@@ -331,14 +352,14 @@ export interface GenerationsParams<M extends RecraftModelInput = RecraftModelInp
    * Creativity tier: "simple" | "standard" | "eccentric" (undocumented param).
    *
    * Closed against `CREATIVITY_LEVELS` — see `substyle`. The list comes from an
-   * earlier revision of the Swagger document (`LEGACY_SPEC_SOURCE`), which is
-   * an argument for loosening BOTH layers, not for letting the type accept what
+   * earlier revision of the internal spec (`LEGACY_SPEC_SOURCE`), which is an
+   * argument for loosening BOTH layers, not for letting the type accept what
    * `checkSpecEnums` then refuses.
    */
   creativity?: RecraftCreativity | null;
-  /** Raster output container: "webp" or "png" (undocumented param). Closed — see `substyle`. */
+  /** Raster output container: "webp" (default) or "png"; ignored for vector output. Closed — see `substyle`. */
   image_format?: RecraftImageFormat | null;
-  /** Post-generation upscale tier (Swagger `UpscaleMode`). Closed — see `substyle`. */
+  /** Post-generation upscale tier (OpenAPI `UpscaleMode`). Closed — see `substyle`. */
   upscale?: RecraftUpscaleMode | null;
   /** Reject NSFW results server-side. */
   block_nsfw?: boolean | null;
@@ -415,12 +436,32 @@ const generationsSchema = z.looseObject({
 // Checks
 // ---------------------------------------------------------------------------
 
-const RESPONSE_FORMATS = ["url", "b64_json"] as const;
+/**
+ * Endpoints doc (2026-11-12): "Must be one of `url`, `b64_json` or
+ * `multipart`" (OpenAPI `ResponseFormat`).
+ */
+const RESPONSE_FORMATS = ["url", "b64_json", "multipart"] as const;
 const ASPECT_RATIO_SET = new Set<string>(ASPECT_RATIOS);
+
+/**
+ * The models a curated `style` resolves to when `model` is omitted, in the
+ * server's order — styles doc (2026-11-12): "If a style name is supported by
+ * multiple models, the API defaults to Recraft V3 (if supported, to Recraft
+ * V2 otherwise)."; V3 page: "Without it the API uses `recraftv4_1`, unless
+ * `style` names a V3 style." The raster and vector lists are disjoint within
+ * each generation, so the first list holding the name is the model.
+ */
+const STYLE_DEFAULT_MODELS = ["recraftv3", "recraftv3_vector", "recraftv2", "recraftv2_vector"] as const;
 
 function resolvedModelId(params: GenerationsParams): string {
   if (params.model != null) return params.model;
-  return params.style_reference_urls != null ? DEFAULT_STYLE_REFERENCES_MODEL_ID : DEFAULT_MODEL_ID;
+  if (params.style_reference_urls != null) return DEFAULT_STYLE_REFERENCES_MODEL_ID;
+  const style = params.style;
+  if (style != null) {
+    const styled = STYLE_DEFAULT_MODELS.find((id) => STYLE_NAMES[id]?.includes(style));
+    if (styled !== undefined) return styled;
+  }
+  return DEFAULT_MODEL_ID;
 }
 
 function checkResponseFormat(
@@ -433,34 +474,37 @@ function checkResponseFormat(
   ctx.report({
     code: "invalid_enum_value",
     path: ["response_format"],
-    message: `\`response_format\` must be one of "url", "b64_json"; got ${JSON.stringify(format)}.`,
+    message: `\`response_format\` must be one of "url", "b64_json", "multipart"; got ${JSON.stringify(format)}.`,
     meta: { allowed: [...RESPONSE_FORMATS], value: format, source: ENDPOINTS_DOCS_URL },
   });
 }
 
+/** The docs-generated OpenAPI — the current spec for this endpoint's request body. */
+const OPENAPI_URL = "https://www.recraft.ai/docs/api-reference/openapi.json";
 /**
- * Recraft's internal backend Swagger document. NOT the public /v1/images
- * spec — as of 2026-08-13 it declares zero paths and no request schema for
- * this endpoint — but it still declares two of the enums below.
+ * The internal backend spec two of the lists below were read from on
+ * 2026-08-13. It answers "404 page not found" as of 2026-11-12, and neither
+ * current spec nor any docs page declares these params.
  */
-const SPEC_URL = "https://external.api.recraft.ai/doc/spec/api/api.yaml";
-/** Enum values kept from an earlier revision of SPEC_URL; unverifiable today. */
-const LEGACY_SPEC_SOURCE = `${SPEC_URL} (earlier revision — neither the document served on 2026-08-13 nor any recraft.ai docs page declares this param)`;
+const INTERNAL_SPEC_URL = "https://external.api.recraft.ai/doc/spec/api/api.yaml";
+const INTERNAL_SPEC_SOURCE = `${INTERNAL_SPEC_URL} (\`ImageType\` enum suffixes, read 2026-08-13; the document is 404 and no current Recraft source declares \`substyle\`, 2026-11-12)`;
+/** Enum values kept from an earlier revision of the internal spec; unverifiable today. */
+const LEGACY_SPEC_SOURCE = `${INTERNAL_SPEC_URL} (earlier revision — no current Recraft source declares this param, 2026-11-12)`;
 
 /**
- * Enum params the API accepts that the rendered parameter table omits. A bad
- * value reports `invalid_enum_value` instead of silently reaching the API;
- * each rule carries the source its value list actually came from.
+ * Enum params outside the docs' style vocabulary. A bad value reports
+ * `invalid_enum_value` instead of silently reaching the API; each rule
+ * carries the source its value list actually came from.
  */
 const SPEC_ENUM_CHECKS: ReadonlyArray<{
   param: "substyle" | "creativity" | "image_format" | "upscale";
   allowed: readonly string[];
   source: string;
 }> = [
-  { param: "substyle", allowed: SUBSTYLES, source: `${SPEC_URL} (\`ImageType\` enum suffixes)` },
+  { param: "substyle", allowed: SUBSTYLES, source: INTERNAL_SPEC_SOURCE },
   { param: "creativity", allowed: CREATIVITY_LEVELS, source: LEGACY_SPEC_SOURCE },
-  { param: "image_format", allowed: IMAGE_FORMATS, source: LEGACY_SPEC_SOURCE },
-  { param: "upscale", allowed: UPSCALE_MODES, source: `${SPEC_URL} (\`UpscaleMode\` enum)` },
+  { param: "image_format", allowed: IMAGE_FORMATS, source: ENDPOINTS_DOCS_URL },
+  { param: "upscale", allowed: UPSCALE_MODES, source: `${OPENAPI_URL} (\`UpscaleMode\` enum)` },
 ];
 
 function checkSpecEnums(

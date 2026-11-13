@@ -1,9 +1,8 @@
 import type { DenyRule, FamilyRule } from "../../core/constraint-types";
 
-const STYLES_DOCS_URL = "https://www.recraft.ai/docs/api-reference/styles";
 const ENDPOINTS_DOCS_URL = "https://www.recraft.ai/docs/api-reference/endpoints";
+const AGENTS_DOCS_URL = "https://www.recraft.ai/docs/api-reference/agents";
 const V4_1_FLASH_DOCS_URL = "https://www.recraft.ai/docs/api-reference/models/recraft-v4-1-flash";
-const V4_STYLES_DOCS_URL = "https://www.recraft.ai/docs/api-reference/models/recraft-v4-styles";
 
 /** Recraft V4.1 Flash and its `_raster` alias — the one line that takes no style at all. */
 export function isV41FlashModel(modelId: string): boolean {
@@ -39,63 +38,45 @@ const FLASH_DENY: DenyRule = {
 
 /**
  * Family rules for POST /v1/images/generations. Every rule carries a reason +
- * source per the constraint-table contract. The generations parameter table
- * marks `style`/`style_id` as "V2 / V3 styles", `negative_prompt` as
- * "V2 / V3 models", and `text_layout` as "V3 models only"; the styles doc
- * states "Styles are not yet supported for V4 models" (which covers the whole
- * V4/V4.1 line, per its model-by-model list).
+ * source per the constraint-table contract. The source for the V4 line is the
+ * "Parameter support by model family" matrix of
+ * https://www.recraft.ai/docs/api-reference/agents (2026-11-12), which puts
+ * V4.1 / V4 and V4 Styles in one column pattern: "| `style_id`,
+ * `style_reference_urls`, `style_references` | no | yes | yes, one is
+ * required | yes | yes |", and "no" for curated `style`, `negative_prompt` and
+ * `text_layout`. The model pages say the same: "Not supported by V4.1:
+ * `negative_prompt`, `style` (curated styles), `text_layout`, and the
+ * `artistic_level` and `no_text` controls." (V4 identical; V4 Styles "> Not
+ * supported: `negative_prompt`, `style` (curated styles), `text_layout`.").
  *
- * V4.1 Flash and the V4 Styles line are split out of the `recraftv4` prefix
- * because their pages document different lists: Flash takes no style input of
- * any kind, and V4 Styles requires one (`checkV4StylesStyle` in image.ts).
+ * One page disagrees on curated `style`: the endpoints table's compatibility
+ * column reads "All models except V4.1 Flash" for it — the same wording as the
+ * `style_id` row beside it. The matrix, the three model pages and the styles
+ * doc ("V2 / V3 Styles") all say V2/V3 only, so the deny stands on those.
+ *
+ * V4.1 Flash is split out of the `recraftv4` prefix because its page documents
+ * a different list — no style input of any kind — and the V4 Styles line
+ * shares the rule but additionally requires a style (`checkV4StylesStyle` in
+ * image.ts).
  */
 export const imageFamilyRules: readonly FamilyRule[] = [
   {
-    family: "Recraft V4 / V4.1 models",
-    match: (modelId) =>
-      modelId.startsWith("recraftv4") && !isV41FlashModel(modelId) && !isV4StylesModel(modelId),
+    family: "Recraft V4 / V4.1 / V4 Styles models",
+    match: (modelId) => modelId.startsWith("recraftv4") && !isV41FlashModel(modelId),
     enums: { style_match: V4_STYLE_MATCHES },
     deny: {
       style: {
         reason:
-          "styles are not yet supported for V4 / V4.1 models — use a Recraft V2/V3 model to pick a curated style",
-        source: STYLES_DOCS_URL,
-      },
-      style_id: {
-        reason:
-          "styles are not yet supported for V4 / V4.1 models — use a Recraft V2/V3 model to reference a custom style",
-        source: STYLES_DOCS_URL,
+          "curated `style` names are V2 / V3 only — the V4 line takes a custom style through `style_id` or `style_reference_urls`; use a Recraft V2/V3 model for a curated style",
+        source: AGENTS_DOCS_URL,
       },
       negative_prompt: {
         reason: "`negative_prompt` is supported by V2 / V3 models only",
-        source: ENDPOINTS_DOCS_URL,
+        source: AGENTS_DOCS_URL,
       },
       text_layout: {
         reason: "`text_layout` is supported by Recraft V3 and Recraft V3 Vector models only",
-        source: ENDPOINTS_DOCS_URL,
-      },
-    },
-  },
-  {
-    // V4 Styles page (2026-11-12): "> Not supported: `negative_prompt`, `style`
-    // (curated styles), `text_layout`." — and `style_id` is one of its two
-    // ways to supply the style it requires.
-    family: "Recraft V4 Styles models",
-    match: isV4StylesModel,
-    enums: { style_match: V4_STYLE_MATCHES },
-    deny: {
-      style: {
-        reason:
-          "the V4 Styles line takes a custom style (`style_id` or `style_reference_urls`), not a curated `style` name — use a Recraft V2/V3 model for curated styles",
-        source: V4_STYLES_DOCS_URL,
-      },
-      negative_prompt: {
-        reason: "`negative_prompt` is supported by V2 / V3 models only",
-        source: V4_STYLES_DOCS_URL,
-      },
-      text_layout: {
-        reason: "`text_layout` is supported by Recraft V3 and Recraft V3 Vector models only",
-        source: V4_STYLES_DOCS_URL,
+        source: AGENTS_DOCS_URL,
       },
     },
   },

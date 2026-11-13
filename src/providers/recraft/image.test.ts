@@ -86,8 +86,8 @@ describe("recraft.image happy path", () => {
 });
 
 describe("recraft.image styles", () => {
-  test("style on the default (V4.1) model is denied — styles are V2/V3 only", () => {
-    const r = image.safe({ prompt: "x", style: "Photorealism" });
+  test("a style no curated list holds lands on the default (V4.1) model, which denies it", () => {
+    const r = image.safe({ prompt: "x", style: "Not a curated style" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.errors[0]?.code).toBe("unsupported_param");
@@ -97,7 +97,14 @@ describe("recraft.image styles", () => {
     }
   });
 
-  test("style_id and negative_prompt are denied on V4 models", () => {
+  test("style_id validates on the V4 / V4.1 line; negative_prompt is still denied", () => {
+    // "Every V4 and V4.1 model (except V4.1 Flash) also accepts `style_id` or
+    // style references, at that model's own price." — V4 Styles page.
+    for (const model of ["recraftv4_pro", "recraftv4_1", "recraftv4_1_utility_vector"] as const) {
+      const ok = image.safe({ prompt: "x", model, style_id: "b9af225b-6b98-43d0-a4b3-16343641e852" });
+      expect(ok.ok, model).toBe(true);
+      if (ok.ok) expect(ok.warnings, model).toEqual([]);
+    }
     const r = image.safe({
       prompt: "x",
       model: "recraftv4_pro",
@@ -105,11 +112,26 @@ describe("recraft.image styles", () => {
       negative_prompt: "blurry",
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const paths = r.errors.map((e) => e.path[0]);
-      expect(paths).toContain("style_id");
-      expect(paths).toContain("negative_prompt");
-    }
+    if (!r.ok) expect(r.errors.map((e) => e.path[0])).toEqual(["negative_prompt"]);
+  });
+
+  test("with no model, a curated style picks its V3 / V2 model as the server does", () => {
+    // Recraft's own text_layout example: `{prompt, style: "Illustration", text_layout}`.
+    const layout = [{ text: "HI", bbox: [[0.3, 0.45], [0.6, 0.45], [0.6, 0.55], [0.3, 0.55]] }];
+    const v3 = image.safe({ prompt: "cute red panda with a sign", style: "Illustration", text_layout: layout });
+    expect(v3.ok).toBe(true);
+    if (v3.ok) expect(v3.estimate.costUSD).toBeCloseTo(0.04, 10);
+    const vector = image.safe({ prompt: "x", style: "Vector art" });
+    expect(vector.ok).toBe(true);
+    if (vector.ok) expect(vector.estimate.costUSD).toBeCloseTo(0.08, 10);
+    // "3D render" is on V2's list only: "to Recraft V2 otherwise".
+    const v2 = image.safe({ prompt: "x", style: "3D render" });
+    expect(v2.ok).toBe(true);
+    if (v2.ok) expect(v2.estimate.costUSD).toBeCloseTo(0.022, 10);
+    // Resolved to recraftv2, which denies text_layout.
+    const v2Layout = image.safe({ prompt: "x", style: "3D render", text_layout: layout });
+    expect(v2Layout.ok).toBe(false);
+    if (!v2Layout.ok) expect(v2Layout.errors[0]?.model).toBe("recraftv2");
   });
 
   test("a V3 style passes on recraftv3 but not on recraftv3_vector", () => {
@@ -163,7 +185,6 @@ describe("recraft.image styles", () => {
     expect(Object.keys(rules[0]?.deny ?? {}).sort()).toEqual([
       "negative_prompt",
       "style",
-      "style_id",
       "text_layout",
     ]);
     // V3 denies nothing; its one family rule narrows `style_match`.
@@ -517,14 +538,18 @@ describe("recraft.image shape and controls", () => {
     if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
   });
 
-  test("response_format is narrowed to url | b64_json", () => {
+  test("response_format is narrowed to url | b64_json | multipart", () => {
     const r = safeUnchecked({ prompt: "x", response_format: "hex" });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.errors[0]?.code).toBe("invalid_enum_value");
       expect(r.errors[0]?.path).toEqual(["response_format"]);
+      expect(r.errors[0]?.meta?.allowed).toEqual(["url", "b64_json", "multipart"]);
     }
     expect(image.safe({ prompt: "x", response_format: "b64_json" }).ok).toBe(true);
+    // The Flash page recommends it; the endpoints doc: "Must be one of `url`, `b64_json` or `multipart`".
+    expect(image.safe({ prompt: "x", model: "recraftv4_1_flash", response_format: "multipart" }).ok)
+      .toBe(true);
   });
 
   test("controls.artistic_level and no_text are V3-only", () => {

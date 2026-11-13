@@ -144,7 +144,8 @@ describe("recraft.imageEdit", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.12, 10);
   });
 
-  test("inputs over 10 MB are media_too_large", () => {
+  test("inputs over 20 MB are media_too_large; a 15 MB input passes", () => {
+    expect(MAX_INPUT_IMAGE_BYTES).toBe(20 * 1024 * 1024);
     const r = (imageEdit.safe as unknown as Unchecked)({
       image: png(MAX_INPUT_IMAGE_BYTES + 1),
       prompt: "w",
@@ -152,6 +153,25 @@ describe("recraft.imageEdit", () => {
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors.some((e) => e.code === "media_too_large")).toBe(true);
+    expect(imageEdit.safe({ image: png(15 * 1024 * 1024), prompt: "w", strength: 0.2 }).ok).toBe(true);
+    expect(
+      imageEditInpaint.safe({ image: png(), mask: png(15 * 1024 * 1024), prompt: "w" }).ok,
+    ).toBe(true);
+  });
+
+  test("response_format takes url | b64_json | multipart on every route", () => {
+    expect(imageEdit.safe({ image: png(), prompt: "w", strength: 0.2, response_format: "multipart" }).ok)
+      .toBe(true);
+    expect(imageEditReplaceBackground.safe({ image: png(), prompt: "w", response_format: "multipart" }).ok)
+      .toBe(true);
+    const r = (imageEditInpaint.safe as unknown as Unchecked)({
+      image: png(),
+      mask: png(),
+      prompt: "w",
+      response_format: "hex",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.allowed).toEqual(["url", "b64_json", "multipart"]);
   });
 });
 

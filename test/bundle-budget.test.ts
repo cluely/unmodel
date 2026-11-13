@@ -1397,24 +1397,10 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // in above this, re-pin from that number and say so here, per the
   // Linux-figure rule in CLAUDE.md.
   //
-  // 527.3 measured (macOS), 2026-11-12: the google TTS hand rows gained a
-  // `status` and `google.chat`'s overlay now takes those rows wholesale, and
-  // rolldown-plugin-dts co-locates the grown row declarations in the
-  // `voice-design-*` chunk this walker counts for sfx — chunking, not a new
-  // edge (sfx's own graph imports nothing from google). Pinned at ~1.10 of the
-  // measurement.
-  //
-  // 526.5 measured, 2026-11-12 (macOS and linux/amd64 alike): the cartesia
-  // per-model language types regrouped the dts chunks, so sfx now pulls the
-  // tts/voice-design chunks instead of the image ones (516.7 before).
-  //
-  // 526.5 measured, 2026-11-12 (macOS; 516.7 before): deepgram's new
-  // language_hint/redact_usage types moved a rolldown-plugin-dts chunk
-  // boundary — the graph swapped image chunks for tts ones, no deepgram in reach.
-  //
-  // 535.3 measured, 2026-11-12 (from 519.0): the elevenlabs model wave re-chunked that provider's declarations, so its model-id types now ride in a chunk shared with tts/voice-design.
-  //
-  // 526.5 measured on macOS, 448.7 on linux/amd64, 2026-11-12: chunk reassignment only — dropping one Recraft catalog row moved the tts / voice-design declaration chunks into this graph on macOS; no module joined.
+  // 590 after the 2026-11-12 model wave: google, cartesia, deepgram, elevenlabs and
+  // recraft each moved sfx by a few KiB on one build or another without a module
+  // joining its graph (sfx imports nothing from those providers) — the dts
+  // chunk boundaries move, see the header. Measured 462.7–535.3 over five builds.
   sfx: 590,
   // `unmodel/sts`: 349.0 measured on macOS — the cheapest declaration in the
   // table by a wide margin, below `sfx`'s 442.4. Five canonical words, one

@@ -261,6 +261,15 @@ describe("gladia.stt solaria-3 gates", () => {
     const unified = createStt([gladiaAdapter]);
     const audio = { url: AUDIO };
 
+    const none = unified.safe({ model: "gladia/solaria-3", audio });
+    expect(none.ok).toBe(true);
+    if (none.ok) {
+      expect(none.warnings.map((w) => [w.code, w.path.join(".")])).toEqual([
+        ["unsupported_capability", "language"],
+      ]);
+      expect(none.warnings[0]?.message).toContain("(compiled from `language_config.languages`)");
+    }
+
     const several = unified.safe({ model: "gladia/solaria-3", audio, languages: ["en", "fr"] });
     expect(several.ok).toBe(true);
     if (several.ok) {

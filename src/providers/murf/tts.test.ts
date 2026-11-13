@@ -326,28 +326,30 @@ describe("murf.ttsStream", () => {
     }
   });
 
-  test("gen2 on the streaming route prices at the Gen2 rate", () => {
-    const r = ttsStream.safe({ text: "a".repeat(1000), voiceId: "v", model: "gen2" });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo((1000 * 30) / 1_000_000, 12);
+  test("gen2 is decommissioned on the streaming route and the error names murf.tts", () => {
+    expect(STREAM_MODEL_IDS).not.toContain("gen2");
+    const r = ttsStream.safe({ text: "hi", voiceId: "v", model: "gen2" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      const err = r.errors.find((e) => e.path[0] === "model");
+      expect(err?.code).toBe("invalid_enum_value");
+      expect(err?.message).toContain("/v1/speech/generate");
+      expect(err?.meta).toMatchObject({ allowed: [...STREAM_MODEL_IDS], replacement: "murf.tts" });
+    }
+    // The row itself stays, for the generate route.
+    expect(tts.safe({ text: "hi", voiceId: "v", modelVersion: "GEN2" }).ok).toBe(true);
   });
 
-  test("variation on every Falcon spelling warns as a silent no-op", () => {
-    for (const model of ["falcon-2.1", "falcon-2", "falcon2", "FALCON"] as const) {
-      const r = ttsStream.safe({ text: "hi", voiceId: "v", model, variation: 3 });
+  test("variation is a Synthesize (Gen 2) field, not a stream one", () => {
+    for (const model of STREAM_MODEL_IDS) {
+      const r = safeStream({ text: "hi", voiceId: "v", model, variation: 3 });
       expect(r.ok).toBe(true);
       if (r.ok) {
-        const warn = r.warnings.find((w) => w.path[0] === "variation");
-        expect(warn?.code).toBe("unsupported_param");
-        expect(warn?.meta?.ignored).toBe(true);
+        expect(r.warnings.map((w) => `${w.code} @ ${w.path.join(".")}`)).toEqual([
+          "unknown_param @ variation",
+        ]);
       }
     }
-  });
-
-  test("variation on gen2 is clean", () => {
-    const r = ttsStream.safe({ text: "hi", voiceId: "v", model: "gen2", variation: 3 });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings).toEqual([]);
   });
 
   test("an unknown model warns rather than erroring", () => {

@@ -10,13 +10,15 @@
  * - TWO MODEL SPELLINGS, ONE CATALOG: `/v1/speech/generate` selects the model
  *   with `modelVersion: "GEN2"` (upper-case, and GEN2 is its only documented
  *   value); `/v1/speech/stream` uses a lower-case `model` — `"falcon-2.1"`,
- *   one of the earlier identifiers Murf still accepts for it (`falcon-2`,
- *   `falcon2`, `FALCON`), or `"gen2"`. The catalog keys on the lower-case
+ *   or one of the earlier identifiers Murf still accepts for it
+ *   (`falcon-2`, `falcon2`, `FALCON`). The catalog keys on the lower-case
  *   spelling, the generate validator lower-cases `modelVersion` for lookup,
  *   and the stream validator resolves `falcon2` / `FALCON` to the
  *   `falcon-2.1` row, so both routes price and gate against the same
- *   entries. Asking `/v1/speech/generate` for Falcon is an
- *   `invalid_enum_value` error pointing at the streaming endpoint.
+ *   entries. Each route refuses the other's model with an
+ *   `invalid_enum_value` error naming the route that serves it: Falcon on
+ *   `/v1/speech/generate`, and `gen2` on `/v1/speech/stream`, where "The
+ *   Gen2 model has been decommissioned for the Streaming API."
  * - CHARACTER CAP: "The API supports up to 3,000 characters per request."
  *   A breach is reported as `over_output_limit` — there is no
  *   character-specific issue code, so the message and meta
@@ -53,6 +55,7 @@ import {
   MURF_MAX_CHARACTERS,
   GENERATE_MODEL_VERSIONS,
   STREAM_MODEL_ALIASES,
+  STREAM_MODEL_IDS,
   type MurfStreamModelId,
 } from "./models";
 
@@ -65,6 +68,7 @@ const GENERATE_DOCS = "https://murf.ai/api/docs/api-reference/text-to-speech/gen
 const STREAM_DOCS = "https://murf.ai/api/docs/api-reference/text-to-speech/stream";
 const CUSTOMIZATION_DOCS = "https://murf.ai/api/docs/text-to-speech/speech-customization";
 const TTS_OVERVIEW_DOCS = "https://murf.ai/api/docs/text-to-speech/overview";
+const GEN2_STREAM_DECOMMISSION_DOCS = "https://murf.ai/api/docs/changelog/2026/10/5";
 
 /**
  * Server-side default of the streaming `model` field: "`model` (enum,
@@ -89,7 +93,7 @@ export type MurfGenerateSampleRate = (typeof GENERATE_SAMPLE_RATES)[number];
 
 /**
  * `sampleRate` values POST /v1/speech/stream accepts — the streaming
- * endpoint adds 16000. Default 24000 for Falcon 2, 44100 for Gen2.
+ * endpoint adds 16000. Default 24000.
  */
 export const STREAM_SAMPLE_RATES = [8000, 16000, 24000, 44100, 48000] as const;
 export type MurfStreamSampleRate = (typeof STREAM_SAMPLE_RATES)[number];
@@ -153,13 +157,13 @@ interface SpeechCommon {
   channelType?: MurfChannelType;
   /** Language code, e.g. "en-US", "es-ES". Gen2 only. */
   locale?: string;
-  /** "A higher variation value results in a more dynamic voice output"; 0–5, default 1. Gen2 only. */
-  variation?: number;
 }
 
 export interface SpeechGenerateBody extends SpeechCommon {
   /** Hz; default 44100. */
   sampleRate?: MurfGenerateSampleRate;
+  /** "A higher variation value results in a more dynamic voice output"; 0–5, default 1. Gen2 only. */
+  variation?: number;
   /** "Set to true to receive audio in response as Base64 encoded string" (zero server retention). */
   encodeAsBase64?: boolean;
   /** Target length in seconds; 0 ignores it. "~150 words/1000 characters … around 60 seconds". Gen2 only. */
@@ -178,7 +182,7 @@ export interface SpeechStreamBody extends SpeechCommon {
    * falcon-2, falcon2 and FALCON are still accepted and use Falcon 2.1."
    */
   model?: MurfStreamModelId | (string & {});
-  /** Hz; default 24000 for Falcon 2, 44100 for Gen2. */
+  /** Hz; default 24000. */
   sampleRate?: MurfStreamSampleRate;
   /**
    * "Adjusts loudness relative to the model's default output, from -50 to
@@ -205,13 +209,13 @@ const commonShape = {
   format: z.string().optional(),
   channelType: z.string().optional(),
   locale: z.string().optional(),
-  variation: z.number().int().min(VARIATION_MIN).max(VARIATION_MAX).optional(),
 };
 
 const generateSchema = z.looseObject({
   ...commonShape,
   // Closed list, not a range.
   sampleRate: z.literal(GENERATE_SAMPLE_RATES).optional(),
+  variation: z.number().int().min(VARIATION_MIN).max(VARIATION_MAX).optional(),
   encodeAsBase64: z.boolean().optional(),
   audioDuration: z.number().min(0).optional(),
   modelVersion: z.string().optional(),
@@ -416,11 +420,26 @@ function checkStream(
   checkVolumeOffset(params, model, ctx);
   checkMultiNativeLocale(params, model, ctx, STREAM_DOCS);
 
-  // No model-kind gate here: every id in STREAM_MODEL_IDS resolves to a
-  // catalog row, so an id the catalog does not know already draws the
-  // pipeline's `unknown_model` warning — the right severity for a value that
-  // may simply be newer than this catalog. The live gate is on
-  // /v1/speech/generate, whose `modelVersion` enum genuinely excludes Falcon.
+  // One model-kind gate: `gen2` keeps its catalog row for
+  // /v1/speech/generate, so here it would resolve and price at the Gen2 rate
+  // for a model this route no longer serves — "The Gen2 model has been
+  // decommissioned for the Streaming API." Any other id the catalog does not
+  // know already draws the pipeline's `unknown_model` warning, the right
+  // severity for a value that may simply be newer than this catalog.
+  if (model === "gen2") {
+    ctx.report({
+      code: "invalid_enum_value",
+      path: ["model"],
+      model,
+      message: `\`model\` "gen2" has been decommissioned on POST /v1/speech/stream, which serves ${STREAM_MODEL_IDS.map((v) => JSON.stringify(v)).join(", ")}. Gen2 remains available on POST /v1/speech/generate (\`murf.tts\` with \`modelVersion: "GEN2"\`).`,
+      meta: {
+        allowed: [...STREAM_MODEL_IDS],
+        value: params.model,
+        replacement: "murf.tts",
+        source: GEN2_STREAM_DECOMMISSION_DOCS,
+      },
+    });
+  }
 
   // Every Falcon stream id is Falcon 2.1 — `falcon-2`, `falcon2` and `FALCON`
   // "keep working and now use Falcon 2.1" (changelog 2026-10-19) — so the
@@ -437,20 +456,6 @@ function checkStream(
       model,
       message: `Falcon 2.1 voices speak in a single style, ${JSON.stringify(FALCON_STYLE)}; got ${JSON.stringify(params.style)}. Style control is a Gen2 feature of POST /v1/speech/generate.`,
       meta: { allowed: [FALCON_STYLE], value: params.style, source: CUSTOMIZATION_DOCS },
-    });
-  }
-
-  // "variation … (Gen2 only)" — Falcon accepts the request and ignores it,
-  // so the requested dynamism is silently not applied.
-  if (params.variation !== undefined) {
-    ctx.report({
-      code: "unsupported_param",
-      severity: "warning",
-      path: ["variation"],
-      model,
-      message:
-        "`variation` is documented as Gen2 only; Falcon 2.1 accepts the request but the requested pause/pitch/speed variation is not applied.",
-      meta: { ignored: true, source: CUSTOMIZATION_DOCS },
     });
   }
 }
@@ -581,7 +586,9 @@ export const tts = generateValidator as unknown as {
  * Validates params for Murf `POST /v1/speech/stream` — the low-latency route
  * and the only one that serves Falcon 2.1. The response is an audio stream, so
  * there is no response checker. `encodeAsBase64` is deliberately absent from
- * the params type: it is "Not available for Streaming API".
+ * the params type: it is "Not available for Streaming API". So is
+ * `variation`, which the Stream Speech schema does not declare: "variations
+ * are Synthesize (Gen 2) only".
  *
  * ```ts
  * const params = murf.ttsStream({ text: "Hello", voiceId: "en-US-natalie", model: "falcon-2.1" });

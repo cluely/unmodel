@@ -96,6 +96,10 @@ export const models = {
   // "The most customizable model, designed for studio-quality speech
   // synthesis" — the only model POST /v1/speech/generate serves, and the
   // only one that honours `variation`, `audioDuration` and `locale`.
+  // GENERATE ONLY: "The Gen2 model has been decommissioned for the Streaming
+  // API." (https://murf.ai/api/docs/changelog/2026/10/5, 2026-11-12) — "Gen2
+  // remains available via Synthesize or non-streaming (Gen2)"
+  // (https://murf.ai/api/docs/introduction/overview, 2026-11-12).
   gen2: {
     id: "gen2",
     name: "Murf Speech Gen 2",
@@ -116,10 +120,11 @@ export type MurfTtsModelId = MurfModelId;
 
 /**
  * `model` values POST /v1/speech/stream accepts: its enum value
- * `falcon-2.1`, the earlier identifiers that "are still accepted and use
- * Falcon 2.1", and `gen2`.
+ * `falcon-2.1` and the earlier identifiers that "are still accepted and use
+ * Falcon 2.1". Not `gen2`: "The Gen2 model has been decommissioned for the
+ * Streaming API." (https://murf.ai/api/docs/changelog/2026/10/5, 2026-11-12)
  */
-export const STREAM_MODEL_IDS = ["falcon-2.1", "falcon-2", "falcon2", "FALCON", "gen2"] as const;
+export const STREAM_MODEL_IDS = ["falcon-2.1", "falcon-2", "falcon2", "FALCON"] as const;
 export type MurfStreamModelId = (typeof STREAM_MODEL_IDS)[number];
 /**
  * Stream `model` spellings with no row of their own → the row they resolve to

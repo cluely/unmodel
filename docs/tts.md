@@ -203,9 +203,10 @@ wired rather than absent so a published cap becomes a catalog edit, not a code c
 (`https://global.api.murf.ai/v1/speech/stream`) plus eleven regional hosts. `.request.url`
 targets the documented default host; swap the origin yourself if you route regionally.
 Note also the two model spellings across the two routes — `modelVersion: "GEN2"` on
-generate, `model: "falcon-2.1" | "gen2"` on stream — resolved against one catalog. The
-stream route also accepts Falcon 2.1's earlier identifiers `falcon-2`, `falcon2` and
-`FALCON`, which price and validate as `falcon-2.1`.
+generate, `model: "falcon-2.1"` on stream — resolved against one catalog. The stream route
+also accepts Falcon 2.1's earlier identifiers `falcon-2`, `falcon2` and `FALCON`, which
+price and validate as `falcon-2.1`. Gen2 is decommissioned on the stream route, so
+`model: "gen2"` there is an error naming `murf.tts`.
 
 **Fish Audio — `references` is MessagePack-only.** The endpoint accepts
 `application/json` or `application/msgpack` and unmodel finalizes to JSON. The field

@@ -11,6 +11,8 @@ export {
   SPEECH_OUTPUT_FORMATS,
   STREAM_OUTPUT_FORMATS,
   STREAM_ACCEPT_VALUES,
+  MAX_PRONUNCIATIONS,
+  PRONUNCIATION_LANGUAGES,
 } from "./tts";
 export type {
   AudioSpeechBody,
@@ -22,6 +24,9 @@ export type {
   SpeechifyStreamOutputFormat,
   SpeechifyStreamAccept,
   SpeechifyOptions,
+  SpeechifyPronunciation,
+  SpeechifyPronunciationIpa,
+  SpeechifyPronunciationAlias,
 } from "./tts";
 
 export {

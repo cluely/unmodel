@@ -12,8 +12,14 @@
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 
-/** The four Simba rows — the ref union for `speechify/…`. */
-export const MODELS = ["simba-english", "simba-multilingual", "simba-3.0", "simba-3.2"] as const;
+/** The five Simba rows — the ref union for `speechify/…`. */
+export const MODELS = [
+  "simba-english",
+  "simba-multilingual",
+  "simba-3.0",
+  "simba-3.2",
+  "simba-3.5",
+] as const;
 
 export const SPEC_URL = "https://docs.speechify.ai/openapi/api-reference.json";
 
@@ -46,11 +52,16 @@ export const FORMAT: AudioFormatSpec = {
  * `simba-3.2` is English only — the provider's `checkLanguage` refuses anything
  * that does not start `en`, citing the 400 it would otherwise return — so its
  * row says `languages: ["en"]` and an editor completes exactly that. The other
- * three carry no list: `simba-3.0`'s six extra locales and
+ * four carry no list: `simba-3.0`'s six extra locales and
  * `simba-multilingual`'s "30+" are documented in prose rather than as an enum,
  * and `checkLanguage` deliberately does not gate them ("the docs say 30+ and do
  * not enumerate"). A completion list with no authority behind it would be a
- * guess dressed as a capability.
+ * guess dressed as a capability. `simba-3.5` publishes its 48 languages in
+ * GET /v1/audio/models and still carries no list: "A language outside this
+ * list is not rejected, but it is not validated either"
+ * (docs.speechify.ai/build/guides/text-to-speech/language-support, 2026-11-12),
+ * so the validator reports nothing for one, while a row's list promises that
+ * the provider check refuses or flags whatever the list leaves out.
  *
  * The two extras are `options`' members, nested through
  * {@link OPTIONS_NESTING}: loudness normalization to −14 LUFS, and the
@@ -70,6 +81,7 @@ export const SPEECHIFY_TTS_MODEL_PARAMS = {
   "simba-multilingual": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
   "simba-3.0": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
   "simba-3.2": { codecs: CODECS, languages: ["en"], extras: SPEECHIFY_EXTRAS },
+  "simba-3.5": { codecs: CODECS, extras: SPEECHIFY_EXTRAS },
 } as const satisfies TtsModelParamTable;
 
 /**

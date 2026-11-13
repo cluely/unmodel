@@ -2,22 +2,28 @@
 // https://docs.speechify.ai/build/guides/concepts/models,
 // https://docs.speechify.ai/build/guides/concepts/api-limits,
 // https://docs.speechify.ai/openapi/api-reference.json (the live OpenAPI 3.1
-// spec behind the API reference) and https://speechify.ai/pricing
-// (last checked 2026-08-24).
+// spec behind the API reference), https://docs.speechify.ai/build/changelog
+// and https://speechify.ai/pricing (last checked 2026-11-12).
 //
 // MODEL IDS: the `model` body param is a closed enum in the OpenAPI spec —
-// `simba-english`, `simba-multilingual`, `simba-3.0`, `simba-3.2`. There is
-// no separate id for the "Simba 1.0" generation: the two legacy ids above are
-// documented as "the legacy Simba 1.6 models". `GET /v1/audio/models` returns
-// the same four ids at runtime plus the dialogue-only `simba-dialogue-1.0`,
-// which is not accepted on /v1/audio/speech or /v1/audio/stream and is
-// therefore absent here.
+// GetSpeechRequestModel and GetStreamRequestModel are both
+// "enum":["simba-3.0","simba-3.2","simba-3.5"] (2026-11-12). The legacy
+// Simba 1.6 ids `simba-english` and `simba-multilingual` left that enum at API
+// version 2026-09-21 and keep their rows for the reason stated on them.
+// `GET /v1/audio/models` also lists `simba-dialogue-1.0`, in a separate
+// `dialogue_models` array: "Multi-speaker models arrive in a separate
+// `dialogue_models` array because they are valid only on POST
+// /v1/audio/dialogue." That route is absent from the OpenAPI `paths` and its
+// reference page reads "This page does not exist." (2026-11-12), so there is
+// no request schema to validate it against and the id is not catalogued.
 //
-// PRICING: Speechify publishes plan-based, not per-model, character rates —
-// $10/1M (Starter), $8/1M (Pro), $6/1M (Scale), volume-discounted on
-// Enterprise. Every model bills at the same rate, so `perMillionCharacters`
-// carries the Starter (entry paid plan) rate: the highest published rate, i.e.
-// the worst case a budget check should assume.
+// PRICING: per model and per plan. "Simba 3.5 lists at $15/$12/$10 per 1M
+// characters on Starter/Pro/Scale , billed at $10/$8/$6 until 21 Nov 2026 .
+// Simba 3.0 and 3.2 bill $10/$8/$6 per 1M characters." (speechify.ai/pricing,
+// 2026-11-12), volume-discounted on Enterprise. `perMillionCharacters` carries
+// the Starter (entry paid plan) LIST rate: the highest published rate, i.e.
+// the worst case a budget check should assume — a launch price that ends on a
+// published date does not lower it.
 //
 // LIMITS: the character cap is per ROUTE, not per model — 2,000 on
 // /v1/audio/speech and 20,000 on /v1/audio/stream. `limit.characters` carries
@@ -35,8 +41,33 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 const ttsModels = {
-  // "Streaming-native model with the lowest time-to-first-byte and richest
-  // expressivity, English only today." Recommended for new English work.
+  // The recommended model: "Streaming-native model covering 48 languages under
+  // one model id, on every plan. The recommended model since 18 October 2026."
+  // (docs.speechify.ai/build/guides/concepts/models, 2026-11-12). Launched with
+  // its price on 2026-10-21: "`simba-3.5`, the recommended model since the
+  // 2026-10-18 entry, launches today." (docs.speechify.ai/build/changelog/2026/10/21).
+  // Rate: "Simba 3.5 List price $15 launch price $10 per 1M characters · Launch
+  // price until 21 Nov" (speechify.ai/pricing, Starter, 2026-11-12); "From 22
+  // November it bills at the new list price" (changelog 2026/11/9).
+  "simba-3.5": {
+    id: "simba-3.5",
+    name: "Simba 3.5",
+    family: "simba-3",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2026-10-21",
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0, characters: 20000 },
+    cost: { perMillionCharacters: 15 },
+  },
+  // "Streaming-native English model. Serves every English voice in the
+  // catalog, your workspace's own cloned voices included. Use `simba-3.5` for
+  // any other language." (the GET /v1/audio/models response on
+  // docs.speechify.ai/build/guides/concepts/models, 2026-11-12). Not
+  // deprecated — "both stay available and are not deprecated" — and for
+  // English-only text it "keeps today's price" (changelog 2026/11/10).
   "simba-3.2": {
     id: "simba-3.2",
     name: "Simba 3.2",
@@ -131,4 +162,5 @@ export const SPEECHIFY_MODEL_IDS = [
   "simba-multilingual",
   "simba-3.0",
   "simba-3.2",
+  "simba-3.5",
 ] as const satisfies readonly SpeechifyTtsModelId[];

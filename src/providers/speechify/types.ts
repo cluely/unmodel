@@ -56,6 +56,9 @@ export type {
   SpeechifyStreamOutputFormat,
   SpeechifyStreamAccept,
   SpeechifyOptions,
+  SpeechifyPronunciation,
+  SpeechifyPronunciationIpa,
+  SpeechifyPronunciationAlias,
 } from "./tts";
 
 export type { CreateVoiceParams, SpeechifyVoiceGender } from "./voice-clone";

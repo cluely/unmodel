@@ -87,6 +87,34 @@ export const STREAM_MAX_CHARACTERS = 20000;
 const SPEC_URL = "https://docs.speechify.ai/openapi/api-reference.json";
 const LIMITS_DOCS = "https://docs.speechify.ai/build/guides/concepts/api-limits";
 const MODELS_DOCS = "https://docs.speechify.ai/build/guides/concepts/models";
+const PRONUNCIATION_DOCS = "https://docs.speechify.ai/build/guides/text-to-speech/pronunciation";
+
+/**
+ * "At most 200 entries." — OpenAPI `Pronunciations` (2026-11-12); API Limits:
+ * "| Entries per request | 200 |".
+ */
+export const MAX_PRONUNCIATIONS = 200;
+
+/**
+ * Each model's `pronunciation_languages` in GET /v1/audio/models
+ * (docs.speechify.ai/build/guides/concepts/models, 2026-11-12): the languages
+ * in which it applies `pronunciations`. `simba-3.0` and `simba-3.2` publish
+ * `"pronunciation_languages": []`; `simba-3.5` publishes its 48 languages but
+ * English — "Simba 3.5 (`simba-3.5`) applies pronunciations in every language
+ * it speaks except English, which is not supported yet." (pronunciation
+ * guide). The legacy Simba 1.6 ids publish no value, so they have no entry and
+ * are not gated.
+ */
+export const PRONUNCIATION_LANGUAGES = {
+  "simba-3.0": [],
+  "simba-3.2": [],
+  "simba-3.5": [
+    "ar", "be", "bn", "bs", "ca", "cs", "da", "de", "el", "es", "fa", "fi",
+    "fr", "gu", "he", "hi", "hr", "hu", "id", "it", "ja", "ka", "kk", "ko",
+    "la", "mr", "ms", "my", "nl", "no", "pl", "pt", "ro", "ru", "sk", "sl",
+    "sr", "sv", "ta", "te", "th", "tl", "tr", "uk", "ur", "vi", "zh",
+  ],
+} as const satisfies Partial<Record<SpeechifyTtsModelId, readonly string[]>>;
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror the raw JSON bodies exactly (snake_case).
@@ -154,6 +182,38 @@ export interface SpeechifyOptions {
   text_normalization?: boolean;
 }
 
+/**
+ * One `pronunciations` entry that says `text` with phones — mirrors OpenAPI
+ * `PronunciationIpa` exactly ("Set `text` and exactly one of `ipa` or
+ * `alias`.").
+ */
+export interface SpeechifyPronunciationIpa {
+  /** One word as it appears in `input`: 1-64 characters, no whitespace, no control characters. */
+  text: string;
+  /** 1 to 64 phones from the model's phone set, separated by spaces or `|`. */
+  ipa: string;
+  alias?: never;
+  /** Match `text` only with the same capitalization. Default false. */
+  case_sensitive?: boolean;
+}
+
+/**
+ * One `pronunciations` entry that says `alias` in place of `text` — mirrors
+ * OpenAPI `PronunciationAlias` exactly.
+ */
+export interface SpeechifyPronunciationAlias {
+  /** As it appears in `input`: 1-64 characters, no control characters, not only whitespace. */
+  text: string;
+  /** Plain text spoken instead: 1-160 characters, no control characters. */
+  alias: string;
+  ipa?: never;
+  /** Match `text` only with the same capitalization. Default false. */
+  case_sensitive?: boolean;
+}
+
+/** OpenAPI `Pronunciation`: a `oneOf` of the two entry kinds. */
+export type SpeechifyPronunciation = SpeechifyPronunciationIpa | SpeechifyPronunciationAlias;
+
 export interface AudioSpeechBody {
   /** Plain text or SSML. Capped at 2,000 characters on this route. */
   input: string;
@@ -168,6 +228,11 @@ export interface AudioSpeechBody {
   /** `codec_sampleRate_bitrate`; takes precedence over `audio_format`. */
   output_format?: SpeechifyOutputFormat;
   options?: SpeechifyOptions;
+  /**
+   * At most 200 entries, applied only in the model's `pronunciation_languages`
+   * ({@link PRONUNCIATION_LANGUAGES}). An empty array is accepted by every model.
+   */
+  pronunciations?: SpeechifyPronunciation[];
 }
 
 export interface AudioStreamParams {
@@ -179,6 +244,8 @@ export interface AudioStreamParams {
   /** `codec_sampleRate_bitrate`; no `wav_*` values on this route. */
   output_format?: SpeechifyStreamOutputFormat;
   options?: SpeechifyOptions;
+  /** The same field and rules as {@link AudioSpeechBody.pronunciations}. */
+  pronunciations?: SpeechifyPronunciation[];
   /**
    * HEADER param — stripped from the wire body onto `.request.headers.accept`.
    * Selects the container when `output_format` is unset.
@@ -204,6 +271,16 @@ const optionsSchema = z.looseObject({
   text_normalization: z.boolean().optional(),
 });
 
+/** Types only: the bounds, patterns and `ipa`/`alias` exclusivity are `checkPronunciationEntries`. */
+const pronunciationsSchema = z.array(
+  z.looseObject({
+    text: z.string(),
+    ipa: z.string().optional(),
+    alias: z.string().optional(),
+    case_sensitive: z.boolean().optional(),
+  }),
+);
+
 const ttsSchema = z.looseObject({
   input: z.string().min(1, "input must not be empty."),
   voice_id: z.string().min(1, "voice_id must not be empty."),
@@ -212,6 +289,7 @@ const ttsSchema = z.looseObject({
   audio_format: z.enum(AUDIO_FORMATS).optional(),
   output_format: z.string().optional(),
   options: optionsSchema.optional(),
+  pronunciations: pronunciationsSchema.optional(),
 });
 
 const streamSchema = z.looseObject({
@@ -221,6 +299,7 @@ const streamSchema = z.looseObject({
   language: z.string().optional(),
   output_format: z.string().optional(),
   options: optionsSchema.optional(),
+  pronunciations: pronunciationsSchema.optional(),
   accept: z.string().optional(),
 });
 
@@ -293,8 +372,195 @@ function checkModelLanguage(
     code: "unsupported_capability",
     path: ["language"],
     model,
-    message: `\`language\` is ${JSON.stringify(language)}, but "simba-3.2" is English only — a non-English request returns 400. Use "simba-3.0" (English + de-DE, es-ES, es-MX, fr-FR, it-IT, pt-BR) or "simba-multilingual" (30+ locales).`,
+    message: `\`language\` is ${JSON.stringify(language)}, but "simba-3.2" is English only — a non-English request returns 400. Use "simba-3.5" (48 languages) or "simba-3.0" (English + de-DE, es-ES, es-MX, fr-FR, it-IT, pt-BR).`,
     meta: { value: language, source: MODELS_DOCS },
+  });
+}
+
+/** OpenAPI `PronunciationIpaText` "^[^\\s\\x00-\\x1F\\x7F-\\x9F]+$": one word. */
+const IPA_TEXT_PATTERN = /^[^\s\x00-\x1F\x7F-\x9F]+$/;
+/** OpenAPI `PronunciationText`: no control characters, not only whitespace. */
+const ALIAS_TEXT_PATTERN = /^[^\x00-\x1F\x7F-\x9F]*[^\s\x00-\x1F\x7F-\x9F][^\x00-\x1F\x7F-\x9F]*$/;
+/** OpenAPI `PronunciationAlias.alias` "^[^\\x00-\\x1F\\x7F-\\x9F]*$". */
+const ALIAS_PATTERN = /^[^\x00-\x1F\x7F-\x9F]*$/;
+/** "| `text` of one entry | 64 characters |" — API Limits. */
+const MAX_PRONUNCIATION_TEXT = 64;
+/** "| `ipa` of one entry | 64 phones |" — API Limits. */
+const MAX_PRONUNCIATION_PHONES = 64;
+/** "| `alias` of one entry | 160 characters |" — API Limits. */
+const MAX_PRONUNCIATION_ALIAS = 160;
+
+/**
+ * The shape rules of `pronunciations` every model shares: "A malformed entry,
+ * a phone outside the model's phone set, an `ipa` entry whose `text` is more
+ * than one word, or two entries for the same `text` returns `400
+ * validation_failed`" (OpenAPI `Pronunciations`, 2026-11-12).
+ *
+ * Lengths count code points, as JSON Schema's `maxLength` does. Phones are
+ * counted as the runs between spaces and `|`, the two documented separators,
+ * so the count never exceeds the server's. The phone set itself, and the
+ * 20,000-character cap on `input` "with every alias in place of its text"
+ * (counted "per part where SSML splits it"), need the model's inventory and an
+ * SSML parser, so they stay the API's to enforce.
+ */
+function checkPronunciationEntries(
+  params: AnyParams,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const entries = params.pronunciations;
+  if (entries === undefined) return;
+  if (entries.length > MAX_PRONUNCIATIONS) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["pronunciations"],
+      message: `\`pronunciations\` has ${entries.length} entries; Speechify takes at most ${MAX_PRONUNCIATIONS} per request.`,
+      meta: { max: MAX_PRONUNCIATIONS, actual: entries.length, source: LIMITS_DOCS },
+    });
+    return;
+  }
+  entries.forEach((entry, index) => checkPronunciationEntry(entry, index, ctx));
+  checkDuplicateTexts(entries, ctx);
+}
+
+function checkPronunciationEntry(
+  entry: SpeechifyPronunciation,
+  index: number,
+  ctx: PipelineContext,
+): void {
+  const at = `pronunciations[${index}]`;
+  if ((entry.ipa === undefined) === (entry.alias === undefined)) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["pronunciations", index],
+      message: `\`${at}\` must set \`text\` and exactly one of \`ipa\` (the phones to say it with) or \`alias\` (plain text to say in its place).`,
+      meta: { source: SPEC_URL },
+    });
+    return;
+  }
+  const textLength = [...entry.text].length;
+  const textPattern = entry.ipa !== undefined ? IPA_TEXT_PATTERN : ALIAS_TEXT_PATTERN;
+  if (textLength < 1 || textLength > MAX_PRONUNCIATION_TEXT) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["pronunciations", index, "text"],
+      message: `\`${at}.text\` is ${textLength} characters; it takes 1 to ${MAX_PRONUNCIATION_TEXT}.`,
+      meta: { min: 1, max: MAX_PRONUNCIATION_TEXT, actual: textLength, source: LIMITS_DOCS },
+    });
+  } else if (!textPattern.test(entry.text)) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["pronunciations", index, "text"],
+      message:
+        entry.ipa !== undefined
+          ? `\`${at}.text\` ${JSON.stringify(entry.text)} must be one word with no whitespace or control characters: give a phrase one \`ipa\` entry per word, or use an \`alias\`.`
+          : `\`${at}.text\` ${JSON.stringify(entry.text)} must have no control characters and must not be only whitespace.`,
+      meta: { source: SPEC_URL },
+    });
+  }
+  if (entry.ipa !== undefined) {
+    const phones = entry.ipa.split(/[ |]+/).filter((phone) => phone !== "").length;
+    if (phones < 1 || phones > MAX_PRONUNCIATION_PHONES) {
+      ctx.report({
+        code: "invalid_shape",
+        path: ["pronunciations", index, "ipa"],
+        message: `\`${at}.ipa\` has ${phones} phones; it takes 1 to ${MAX_PRONUNCIATION_PHONES}, separated by spaces or \`|\`.`,
+        meta: { min: 1, max: MAX_PRONUNCIATION_PHONES, actual: phones, source: LIMITS_DOCS },
+      });
+    }
+    return;
+  }
+  const alias = entry.alias;
+  const aliasLength = [...alias].length;
+  if (aliasLength < 1 || aliasLength > MAX_PRONUNCIATION_ALIAS) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["pronunciations", index, "alias"],
+      message: `\`${at}.alias\` is ${aliasLength} characters; it takes 1 to ${MAX_PRONUNCIATION_ALIAS}.`,
+      meta: { min: 1, max: MAX_PRONUNCIATION_ALIAS, actual: aliasLength, source: LIMITS_DOCS },
+    });
+  } else if (!ALIAS_PATTERN.test(alias)) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["pronunciations", index, "alias"],
+      message: `\`${at}.alias\` must have no control characters.`,
+      meta: { source: SPEC_URL },
+    });
+  }
+}
+
+/**
+ * "Two entries with the same `text` return `400 validation_failed`; texts
+ * compare case-insensitively unless both entries are `case_sensitive`."
+ * (OpenAPI `PronunciationText`). Reported once, on the later entry.
+ */
+function checkDuplicateTexts(
+  entries: readonly SpeechifyPronunciation[],
+  ctx: PipelineContext,
+): void {
+  entries.forEach((entry, later) => {
+    const earlier = entries.slice(0, later).findIndex((other) => sameText(other, entry));
+    if (earlier === -1) return;
+    ctx.report({
+      code: "invalid_shape",
+      path: ["pronunciations", later, "text"],
+      message: `\`pronunciations[${later}].text\` ${JSON.stringify(entry.text)} repeats \`pronunciations[${earlier}]\`: texts compare case-insensitively unless both entries are \`case_sensitive\`, and a repeat returns 400 validation_failed.`,
+      meta: { duplicateOf: earlier, source: SPEC_URL },
+    });
+  });
+}
+
+function sameText(a: SpeechifyPronunciation, b: SpeechifyPronunciation): boolean {
+  return a.case_sensitive === true && b.case_sensitive === true
+    ? a.text === b.text
+    : a.text.toLowerCase() === b.text.toLowerCase();
+}
+
+/**
+ * "A request whose model or language is not listed refuses the field with
+ * `400 pronunciations_unsupported` rather than ignoring it.", "An empty
+ * `pronunciations` list is the same as none, on every model." and "A request
+ * that omits `model` gets the default model" (pronunciation guide, 2026-11-12).
+ *
+ * A model that lists no language (`simba-3.0`, `simba-3.2`) is an error. A
+ * `simba-3.5` request whose explicit `language` is not listed is a WARNING:
+ * the gap today is English, which the guide calls "not supported yet" ("Simba
+ * 3.5 refuses pronunciations in English for now."), and the OpenAPI says the
+ * set "reflects current capability and can grow over time". With `language`
+ * omitted the voice's locale decides, which unmodel cannot see.
+ */
+function checkPronunciationSupport(
+  params: AnyParams,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.pronunciations === undefined || params.pronunciations.length === 0) return;
+  const model = params.model ?? DEFAULT_MODEL_ID;
+  if (!Object.hasOwn(PRONUNCIATION_LANGUAGES, model)) return;
+  const listed: readonly string[] =
+    PRONUNCIATION_LANGUAGES[model as keyof typeof PRONUNCIATION_LANGUAGES];
+  if (listed.length === 0) {
+    ctx.report({
+      code: "unsupported_capability",
+      path: ["pronunciations"],
+      model,
+      message: `"${model}" applies no \`pronunciations\` (its \`pronunciation_languages\` is empty), so a non-empty list returns 400 pronunciations_unsupported. Use "simba-3.5", which applies them in every language it speaks except English; send \`[]\`; or spell the word out with SSML \`<sub alias>\` in \`input\`.`,
+      meta: { source: PRONUNCIATION_DOCS },
+    });
+    return;
+  }
+  const language = params.language;
+  if (language === undefined) return;
+  // The list holds primary subtags; `language` usually carries a region ("es-MX").
+  const primary = language.toLowerCase().replace(/[-_].*$/s, "");
+  if (listed.includes(primary)) return;
+  ctx.report({
+    code: "unsupported_capability",
+    severity: "warning",
+    path: ["pronunciations"],
+    model,
+    message: `\`language\` is ${JSON.stringify(language)}, which is not among the ${listed.length} languages "${model}" applies \`pronunciations\` in (English is "not supported yet"), so Speechify answers 400 pronunciations_unsupported today. Drop \`pronunciations\`, or spell the word out with SSML \`<sub alias>\` in \`input\`.`,
+    meta: { value: language, allowed: [...listed], source: PRONUNCIATION_DOCS },
   });
 }
 
@@ -385,6 +651,8 @@ const ttsValidator = createValidator<
     checkInputLength("speech", SPEECH_MAX_CHARACTERS),
     checkOutputFormat(SPEECH_OUTPUT_FORMATS, SPEECH_OUTPUT_FORMAT_SET, "speech"),
     checkModelLanguage,
+    checkPronunciationEntries,
+    checkPronunciationSupport,
   ],
   estimate,
   finalize: finalizeTts,
@@ -412,6 +680,8 @@ const streamValidator = createValidator<AudioStreamParams, unknown>({
     checkInputLength("stream", STREAM_MAX_CHARACTERS),
     checkOutputFormat(STREAM_OUTPUT_FORMATS, STREAM_OUTPUT_FORMAT_SET, "stream"),
     checkModelLanguage,
+    checkPronunciationEntries,
+    checkPronunciationSupport,
     checkNoAudioFormat,
     checkAccept,
   ],

@@ -31,16 +31,16 @@
  *   stays reproducible the day a 2K scale appears. Asking for `2k` or `4k` is
  *   an `invalid_enum_value` naming the one tier that exists — never a downgrade.
  * - `aspectRatio` → an **error**. The OpenAPI document marks `aspect_ratio`
- *   required, lists eight values and documents no default, so there is nothing
+ *   required, lists nine values and documents no default, so there is nothing
  *   to send unless the caller chooses. `resolveAudioFormat` answers this exact
  *   situation the same way ("there is nothing honest to invent"), and one
  *   library must not have two answers to it. A square would not be a neutral
- *   choice; it would be one of eight, made quietly, by the wrong party.
+ *   choice; it would be one of nine, made quietly, by the wrong party.
  *
  * Second, **the wire body is closed**, so nothing may be emitted speculatively.
  * `krea2Schema` is a `z.strictObject` — the one place in this repo where an
  * unknown key is an error rather than a warning, because
- * `additionalProperties: false` makes it a certain 400 — and this adapter
+ * `additionalProperties: false` makes it a certain 422 — and this adapter
  * therefore writes exactly five keys and no more. Everything else Krea 2 offers
  * (`creativity`, the `intensity` / `complexity` / `movement` sliders, `styles`,
  * `image_style_references`, `moodboards`, `image_url` + `strength`) reaches the
@@ -51,7 +51,7 @@
  *
  * | canonical | wire | class |
  * |---|---|---|
- * | `aspectRatio` | `aspect_ratio` | **S1** — a closed eight-value enum |
+ * | `aspectRatio` | `aspect_ratio` | **S1** — a closed nine-value enum |
  * | `resolution` | `resolution` | **S6** — a table of exactly one row |
  * | `dimensions` | `aspect_ratio` | lossy: pixels → the nearest offered shape, always warned |
  *
@@ -146,7 +146,7 @@ export const image = {
     outputFormat:
       "The Krea 2 request schema has no output-format field — the encoding of a finished job " +
       "is Krea's to choose and is reported on `GET /jobs/{job_id}`, so a format could only be " +
-      "dropped. The body is `additionalProperties: false`, so sending one anyway is a 400.",
+      "dropped. The body is `additionalProperties: false`, so sending one anyway is a 422.",
     outputDelivery:
       "POST /generate/image/krea/krea-2/{variant} is an async-job API: it answers with " +
       "`{ job_id, status, … }` and the image arrives from `GET /jobs/{job_id}` or the " +
@@ -186,7 +186,7 @@ export const image = {
       // Required, and Krea documents no default. `resolveAudioFormat` answers
       // this exact situation with an `invalid_shape` — "there is nothing
       // honest to invent" — and one library must not have two answers to it.
-      // A square is not a neutral choice, it is a choice: eight shapes are on
+      // A square is not a neutral choice, it is a choice: nine shapes are on
       // offer and picking one on the caller's behalf is precisely the kind of
       // decision this surface exists to stop making quietly.
       ctx.fail({

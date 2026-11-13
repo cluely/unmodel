@@ -1,11 +1,11 @@
 // Hand-maintained — Krea is not in models.dev; refresh from
-//   https://api.krea.ai/openapi.json                          (routes + request schemas; ground truth)
+//   https://api.krea.ai/openapi.json                          (routes + request schemas + `x-krea-pricing`; ground truth)
 //   https://www.krea.ai/docs/api-reference/krea/krea-2-medium (per-variant billing tiers)
 //   https://www.krea.ai/docs/api-reference/krea/krea-2-large
-//   https://www.krea.ai/docs/api-reference/krea/krea-2-medium-turbo
-//   https://www.krea.ai/docs/developers/krea-2/overview       (pricing table + parameter notes)
+//   https://www.krea.ai/docs/api-reference/krea/krea-2-turbo
+//   https://www.krea.ai/docs/developers/krea-2/overview       (Medium + Large pricing table + parameter notes)
 //   https://www.krea.ai/docs/llms.txt                         (docs index)
-// Verified 2026-08-13.
+// Verified 2026-11-12.
 //
 // Catalog modeling: the Krea API has no `model` body field — the model IS the
 // route (`POST https://api.krea.ai/generate/image/krea/krea-2/{variant}`), so
@@ -14,7 +14,12 @@
 // price differs.
 //
 // Pricing (USD per generated image, "Fixed API prices in USD" on each model's
-// API-reference page). Krea bills a request at ONE of three tiers:
+// API-reference page, identical to each route's `x-krea-pricing` price points
+// in the served spec; 2026-11-12). Turbo's rates come from
+// api-reference/krea/krea-2-turbo — "| Text to image | $0.015 | | Style
+// references | $0.0175 | | Moodboards | $0.02 |" — not from the overview,
+// whose table lists Medium and Large only. Krea bills a request at ONE of
+// three tiers:
 //   tier            medium    large     medium-turbo
 //   text to image   $0.030    $0.060    $0.0150
 //   style refs      $0.035    $0.065    $0.0175
@@ -71,10 +76,13 @@ export const models = {
     limit: { context: 0 },
     cost: { perImage: 0.06 },
   },
+  // Display name per the route's OpenAPI `"summary":"Krea 2 Turbo"` and the
+  // https://www.krea.ai/docs/api-reference/krea/krea-2-turbo H1 "# Krea 2 Turbo"
+  // (2026-11-12); the route tail is still `krea-2/medium-turbo`.
   "krea-2/medium-turbo": {
     ...base,
     id: "krea-2/medium-turbo",
-    name: "Krea 2 Medium Turbo",
+    name: "Krea 2 Turbo",
     family: "krea-2",
     limit: { context: 0 },
     cost: { perImage: 0.015 },
@@ -94,8 +102,9 @@ export interface KreaBillingTiers {
 }
 
 /**
- * Per-variant billing tiers — https://www.krea.ai/docs/developers/krea-2/overview
- * ("Pricing") and each variant's API-reference page ("K2 Billing Tier").
+ * Per-variant billing tiers — each variant's API-reference page ("K2 Billing
+ * Tier") and route `x-krea-pricing`; https://www.krea.ai/docs/developers/krea-2/overview
+ * ("Pricing") covers Medium and Large only. Verified 2026-11-12.
  */
 export const KREA_BILLING_TIERS: Readonly<Record<KreaModelId, KreaBillingTiers>> = {
   "krea-2/medium": { textToImage: 0.03, styleReferences: 0.035, moodboards: 0.04 },

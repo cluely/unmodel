@@ -4,7 +4,7 @@
  *
  * Wire notes (verified against https://api.krea.ai/openapi.json — the spec the
  * API itself serves — and https://www.krea.ai/docs/developers/krea-2/overview
- * on 2026-08-13):
+ * on 2026-11-12):
  * - There is no `model` body field: the model IS the route. unmodel takes
  *   `model` as a pseudo-param for catalog lookup, STRIPS it from the wire body
  *   and interpolates it into `.request.url`. One `image()` endpoint fn covers
@@ -15,7 +15,10 @@
  *   loose-schema convention. The Krea 2 request body ends
  *   `"required": ["prompt","aspect_ratio","resolution"], "additionalProperties":
  *   false` (identically on all three variant routes), so an unknown top-level
- *   key is a CERTAIN 400, not the silent no-op most providers give it.
+ *   key is a CERTAIN 422, not the silent no-op most providers give it.
+ *   https://www.krea.ai/docs/developers/errors-and-debugging (2026-11-12):
+ *   "Invalid JSON (`400`) and validation (`422`) use `{ "error" }`", the
+ *   unknown-key detail carrying `"code": "unrecognized_keys"`.
  *   Everywhere else unmodel keeps schemas loose and downgrades an unknown key
  *   to an `unknown_param` warning, on the reasoning that a param may simply be
  *   newer than the catalog; that reasoning does not hold against a closed
@@ -132,9 +135,9 @@ export interface Krea2Params {
   /** Text prompt. REQUIRED. */
   prompt: string;
   /**
-   * Output aspect ratio. REQUIRED. CLOSED enum — the 8 values are the whole
-   * documented space, and the body is `additionalProperties: false`, so
-   * anything else is a certain 400 (no `(string & {})` escape hatch).
+   * Output aspect ratio. REQUIRED. CLOSED enum — the 9 values are the whole
+   * served space, and the body is `additionalProperties: false`, so
+   * anything else is a certain 422 (no `(string & {})` escape hatch).
    */
   aspect_ratio: KreaAspectRatio;
   /**
@@ -150,7 +153,7 @@ export interface Krea2Params {
   image_style_references?: KreaImageStyleReference[];
   /**
    * Prompt-expansion mode; `raw` disables expansion. CLOSED enum — the 4 values
-   * are the whole documented space, so anything else is a certain 400.
+   * are the whole documented space, so anything else is a certain 422.
    */
   creativity?: KreaCreativity;
   /** K2 Intensity slider, −100…100. 0 = neutral. */
@@ -170,7 +173,7 @@ export interface Krea2Params {
 // ---------------------------------------------------------------------------
 // Schema — STRICT at the top level (see the module JSDoc: the Krea 2 request
 // schema is `additionalProperties: false`, so an unknown key is a guaranteed
-// 400 and unmodel refuses it here rather than warning). Nested item objects
+// 422 and unmodel refuses it here rather than warning). Nested item objects
 // stay loose: the spec leaves those open. Enum-ish fields stay z.string() so a
 // bad value reports invalid_enum_value from the checks.
 // ---------------------------------------------------------------------------
@@ -198,7 +201,7 @@ const krea2Schema = z.strictObject(
   {
     error: (issue) =>
       issue.code === "unrecognized_keys"
-        ? `${issue.keys.map((key) => `\`${key}\``).join(", ")} ${issue.keys.length === 1 ? "is not a Krea 2 body param" : "are not Krea 2 body params"}. The request schema Krea serves at ${OPENAPI_URL} is \`additionalProperties: false\`, so the API rejects the whole request with a 400 rather than ignoring the key — check the spelling.`
+        ? `${issue.keys.map((key) => `\`${key}\``).join(", ")} ${issue.keys.length === 1 ? "is not a Krea 2 body param" : "are not Krea 2 body params"}. The request schema Krea serves at ${OPENAPI_URL} is \`additionalProperties: false\`, so the API rejects the whole request with a 422 (\`unrecognized_keys\`) rather than ignoring the key — check the spelling.`
         : undefined,
   },
 );
@@ -545,7 +548,7 @@ const validator = createValidator<Krea2Params, unknown>({
  *
  * Unlike most unmodel endpoints, an unknown top-level key is an ERROR here, not
  * a warning: Krea's request schema is `additionalProperties: false`, so the API
- * would answer a typo with a 400 (see the module JSDoc).
+ * would answer a typo with a 422 (see the module JSDoc).
  *
  * ```ts
  * const params = krea.image({

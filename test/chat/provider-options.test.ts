@@ -320,7 +320,7 @@ describe("the bucket key set", () => {
       (key) => classifyRef(key).kind !== "unknown-provider",
     );
     expect(tolerated.sort()).toEqual([...KEYS].sort());
-    expect(KEYS).toHaveLength(37);
+    expect(KEYS).toHaveLength(38);
   });
 
   test("a typo'd key is a compile error AND a runtime warning", () => {

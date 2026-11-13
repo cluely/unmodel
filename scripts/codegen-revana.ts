@@ -506,6 +506,37 @@ function chatSurcharges(model: ChatModel): string[] {
   return notes;
 }
 
+/** Chat discovery uses the same snapshot and permissive flags as the wire catalog.
+ * Revana publishes no per-model capability flags; these are not capability guarantees.
+ */
+export function chatDiscoveryModels(snapshot: unknown): Array<{
+  id: string;
+  name: string;
+  attachment: boolean;
+  reasoning: boolean;
+  tool_call: boolean;
+  open_weights: boolean;
+  modalities: { input: Array<"text" | "image">; output: Array<"text"> };
+  limit: { context: number; output: number | undefined };
+  cost: { input: number; output: number; cache_read: number; cache_write: number };
+}> {
+  return catalogSchema.parse(snapshot).data
+    .filter((model): model is ChatModel => model.kind === "text")
+    .sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+    .map((model) => ({
+      id: model.id,
+      name: model.name,
+      attachment: true,
+      reasoning: true,
+      tool_call: true,
+      open_weights: false,
+      modalities: { input: ["text", "image"], output: ["text"] },
+      limit: { context: model.context_tokens ?? 0, output: model.max_output_tokens },
+      cost: { input: model.price.input, output: model.price.output,
+        cache_read: model.price.cached_input, cache_write: model.price.cache_write },
+    }));
+}
+
 function lowerChatRow(model: ChatModel): string {
   const surcharges = chatSurcharges(model);
   const lines: string[] = [];

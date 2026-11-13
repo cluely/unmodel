@@ -188,6 +188,7 @@ const OPENAI_CHAT_URLS: Readonly<Record<string, string>> = Object.freeze({
   openai: "https://api.openai.com/v1/chat/completions",
   openrouter: "https://openrouter.ai/api/v1/chat/completions",
   perplexity: "https://api.perplexity.ai/chat/completions",
+  revana: "https://api.revana.si/v1/chat/completions",
   sarvam: "https://api.sarvam.ai/v1/chat/completions",
   scaleway: "https://api.scaleway.ai/v1/chat/completions",
   siliconflow: "https://api.siliconflow.com/v1/chat/completions",

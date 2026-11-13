@@ -340,7 +340,7 @@ const MEDIA_RETARGET_MODULES = [
 ];
 
 /**
- * `unmodel/chat` is the ready-made 32-provider pack. It carries every concrete
+ * `unmodel/chat` is the ready-made 33-provider pack. It carries every concrete
  * provider validator, its catalog and (where offered) availability table so
  * provider `.toApi` survives the unified call — asserted for real, across a
  * dialect boundary, in `test/chat/compile.test.ts`. It also retains the public
@@ -375,7 +375,7 @@ const CHAT_FACTORY_BUDGET_KIB = 158;
  * gate: types erase, so no JS budget moves, `tsc` stays clean and every test
  * passes. This entry shipped at 891.9 KiB until `chat` was annotated with
  * `ChatValidator<ChatProviderValidatorRegistry>` — without the annotation
- * `const`-inference emits the whole 32-provider registry expansion twice, and
+ * `const`-inference emits the whole 33-provider registry expansion twice, and
  * the second copy was 48% of the file. 455.0 KiB measured.
  */
 const CHAT_DECLARATION_BUDGET_KIB = 500;
@@ -1854,7 +1854,7 @@ describe("unmodel/chat", () => {
    * `google/constraints.ts` re-exports every name, so those bytes were already
    * in this graph — inside `constraints.ts` — and this line is where they went.
    */
-  test("its provider graph is exactly the enumerated 55 modules", () => {
+  test("its provider graph is exactly the enumerated 58 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
       "src/providers/alibaba/chat.ts",
@@ -1913,6 +1913,9 @@ describe("unmodel/chat", () => {
       "src/providers/openai/constraints.ts",
       "src/providers/openrouter/index.ts",
       "src/providers/perplexity/index.ts",
+      "src/providers/revana/chat.ts",
+      "src/providers/revana/gen/models-chat.gen.ts",
+      "src/providers/revana/urls.ts",
       "src/providers/sarvam/index.ts",
       "src/providers/scaleway/index.ts",
       "src/providers/siliconflow/index.ts",

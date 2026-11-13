@@ -289,7 +289,7 @@ describe("retarget", () => {
  *   of generated data; the moment a second entry imports it, that entry's
  *   budget silently triples.
  * - **A4** concrete validator imports are isolated to the registry and cover
- *   all 32 statically addressable providers. Those validators deliberately
+ *   all 33 statically addressable providers. Those validators deliberately
  *   bring their ordinary `.toApi` surfaces with them.
  */
 describe("chat (amendment A1)", () => {
@@ -334,6 +334,7 @@ describe("chat (amendment A1)", () => {
   const CHAT_REGISTRY_IMPORTS = new Set([
     "src/providers/alibaba/chat.ts",
     "src/providers/stepfun/chat.ts",
+    "src/providers/revana/chat.ts",
     "src/providers/xai/chat.ts",
     "src/providers/anthropic/chat.ts",
     "src/providers/google/chat.ts",
@@ -485,7 +486,7 @@ describe("chat (amendment A1)", () => {
         .map((ref) => providerOf(ref.target))
         .filter((provider): provider is string => provider !== undefined),
     );
-    expect(providers.size).toBe(32);
+    expect(providers.size).toBe(33);
 
     // Counting *directories* is not enough: `../providers/openai` and
     // `../providers/openai/image` both count as "openai". The exact modules
@@ -942,7 +943,7 @@ describe("value entries (amendment A9)", () => {
     // The canonical arrays, and — re-exported from that same module —
     // `CANONICAL_KEY_LISTS`. One door, so the hub names one core module.
     "src/core/unified/values.ts",
-    "src/chat/refs.ts", // CHAT_PROVIDERS, 32 strings
+    "src/chat/refs.ts", // CHAT_PROVIDERS, 33 strings
     "src/catalog/chat-refs-values.gen.ts", // CHAT_MODEL_REFS, on its own entry
   ]);
 

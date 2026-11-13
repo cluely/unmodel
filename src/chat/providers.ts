@@ -33,6 +33,7 @@ import { chat as nvidiaChat } from "../providers/nvidia";
 import { chat as openaiChat } from "../providers/openai/chat";
 import { chat as openrouterChat } from "../providers/openrouter";
 import { chat as perplexityChat } from "../providers/perplexity";
+import { chat as revanaChat } from "../providers/revana/chat";
 import { chat as sarvamChat } from "../providers/sarvam";
 import { chat as scalewayChat } from "../providers/scaleway";
 import { chat as siliconflowChat } from "../providers/siliconflow";
@@ -68,6 +69,7 @@ export const CHAT_PROVIDER_VALIDATORS = {
   openai: openaiChat,
   openrouter: openrouterChat,
   perplexity: perplexityChat,
+  revana: revanaChat,
   sarvam: sarvamChat,
   scaleway: scalewayChat,
   siliconflow: siliconflowChat,

@@ -568,7 +568,7 @@ describe("unmodel/values — the canonical hub", () => {
     const hub = (await import(join(ROOT, "src", "values", "index.ts"))) as Record<string, unknown>;
     const refs = (await import(join(ROOT, "src", "chat", "refs.ts"))) as Record<string, unknown>;
     expect(hub["CHAT_PROVIDERS"]).toBe(refs["CHAT_PROVIDERS"]);
-    expect((hub["CHAT_PROVIDERS"] as readonly string[]).length).toBe(32);
+    expect((hub["CHAT_PROVIDERS"] as readonly string[]).length).toBe(33);
   });
 
   test("the hub does NOT carry the 1,330 chat refs — they are their own subpath", async () => {

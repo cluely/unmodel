@@ -1030,8 +1030,8 @@ seen to want one.
 
 **What is not here, and why.**
 
-- `revana.chat` is **not** an `unmodel/chat` ref and has no `.toApi`. Both are derived from
-  models.dev, which does not carry Revana. It is reachable by name, wire-exact.
+- `revana.chat` is registered in `unmodel/chat` as `revana/<model>`. Its discovery
+  rows come from the committed Revana snapshot; calls delegate to the wire validator.
 - Revana publishes no per-model capability flags for language models, so the generated chat rows
   state the endpoint's envelope (text and image in, function tools) rather than a per-model claim.
 - The three fal alias paths on the queue route (`/v1/queue/fal-ai/nano-banana-2` and two
@@ -1066,7 +1066,7 @@ of a valid request and the wire-exact subpaths stay the substrate and the escape
 See `docs/decisions.md` for why that layering is fixed.
 
 `unmodel/chat` is the one entry that can be asked for *any* provider from a bare
-`"provider/model"` string, so its ready form composes all 32 validators (~1.7 MB, and it
+`"provider/model"` string, so its ready form composes all 33 validators (~1.7 MB, and it
 is the whole of what a chat result's `.toApi` / `.toSdk` are built from). The composition
 is the same either way: `unmodel/chat/factory`'s `createChat({ … })` builds the identical
 surface from only the validators an application registers (~144 KiB plus those), and the
@@ -1076,7 +1076,7 @@ leaves rather than whole validators.
 
 | Entry | Function(s) | Adapters | Providers covered |
 |---|---|---|---|
-| `unmodel/chat` | `chat` | n/a — three dialect codecs, composed with all 32 concrete provider `chat` validators | 32: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
+| `unmodel/chat` | `chat` | n/a — three dialect codecs, composed with all 33 concrete provider `chat` validators | 33: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
 | `unmodel/chat/factory` | `createChat` | the same three codecs, no registry | whichever provider validators you register: `createChat({ anthropic, openai })` |
 | `unmodel/image` | `image`, `createImage` | 18 | black-forest-labs, bria, bytedance, fal, google, ideogram, kling, krea, leonardo, luma, openai, recraft, revana, reve, runway, stability, vidu, xai |
 | `unmodel/tts` | `tts`, `createTts` | 20 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume, inworld, lmnt, minimax, murf, openai, resemble, revana, rime, smallest-ai, speechify, stepfun |
@@ -1120,8 +1120,8 @@ The tables are the **same objects** the adapter compiles with, which is why they
 import-free `<category>-params.ts` leaves that both read: one import from a values entry costs
 ~1 KiB (19.4 KiB at the worst, runway's) instead of the 30–82 KiB a validator would drag.
 `unmodel/values` is the canonical hub (the closed unions as arrays, `CANONICAL_KEY_LISTS`,
-`CHAT_PROVIDERS`) and `unmodel/values/chat-refs` carries the 1,330 chat refs on their own
-subpath because they are 45 KiB. `test/values-entries.test.ts` measures every export against a
+`CHAT_PROVIDERS`) and `unmodel/values/chat-refs` carries the 1,506 chat refs on their own
+subpath to keep the model list out of unrelated imports. `test/values-entries.test.ts` measures every export against a
 real build and asserts the tables by reference.
 
 **Contract, identical in every media category.** A param a provider cannot express is an **error**

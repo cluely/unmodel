@@ -55,5 +55,30 @@ function elementsArmTypeTests(): void {
   image({ model: "lucid-origin", parameters: { prompt: "hi", guidances: { edge: [] } } });
 }
 
+function guidanceScaleTypeTests(): void {
+  // Content guidance takes ULTRA everywhere; image references can be a URL or
+  // inline base64.
+  image({
+    model: "lucid-origin",
+    parameters: {
+      prompt: "hi",
+      guidances: {
+        content: [{ image: { type: "BASE64", data: "iVBORw0KGgo=" }, strength: "ULTRA" }],
+        style: [{ image: { type: "URL", url: "https://example.com/a.png" }, strength: "MAX" }],
+      },
+    },
+  });
+
+  image({
+    model: "phoenix-v1.0",
+    parameters: {
+      prompt: "hi",
+      // @ts-expect-error — character guidance stops at HIGH
+      guidances: { character: [{ image: { id: "a" }, strength: "ULTRA" }] },
+    },
+  });
+}
+
 void generationsBodyAliasTypeTests;
 void elementsArmTypeTests;
+void guidanceScaleTypeTests;

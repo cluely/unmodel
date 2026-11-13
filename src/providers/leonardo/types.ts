@@ -76,6 +76,7 @@ export type {
   LeonardoContrast,
   LeonardoImageType,
   LeonardoStyleStrength,
+  LeonardoContentStrength,
   LeonardoGuidanceStrength,
 } from "./model-rules";
 

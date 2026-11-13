@@ -2,33 +2,35 @@
  * Per-model rule tables for `POST /v2/generations`.
  *
  * Leonardo's v2 request body is a discriminated union: `model` selects one of
- * ~74 `…GenerationRequest` schemas, each with its OWN `parameters` object.
+ * 87 `…GenerationRequest` schemas, each with its OWN `parameters` object.
  * Because the differing params are nested under `parameters` (not top-level),
  * they cannot ride on the pipeline's generic `EndpointConstraints` deny/enum
  * tables — this file holds the equivalent data and image.ts applies it.
  *
  * Ground truth: the OpenAPI v2 spec embedded in
- * https://docs.leonardo.ai/reference/creategeneration-1 (fetch the raw
- * document as `…/creategeneration-1.md`), cross-checked against the prose
- * tables on https://docs.leonardo.ai/docs/lucid-origin and
- * https://docs.leonardo.ai/docs/phoenix. Verified 2026-08-13.
+ * https://docs.leonardo.ai/reference/creategeneration (fetch the raw
+ * document as `…/creategeneration.md`; updatedAt 2026-09-01), cross-checked
+ * against the prose tables on https://docs.leonardo.ai/docs/lucid-origin and
+ * https://docs.leonardo.ai/docs/phoenix. Verified 2026-11-12.
  *
  * Tabled here: the Lucid and Phoenix models, and the nine Elements models
  * (`kino-xl` … `lightning-xl`, see ELEMENTS_PARAMETERS) — image models no other
- * provider in unmodel serves. The same endpoint also routes ~60 third-party
- * models (FLUX, Imagen, Seedream, Veo, Kling, …) and Leonardo's
- * video/audio/3D models; those belong to their own providers' catalogs and
- * each carries a different `parameters` schema, so unmodel treats them as
- * unknown models on this endpoint (warning + no per-param checks) rather than
+ * provider in unmodel serves. The same endpoint also routes 74 more ids:
+ * third-party image, video and 3D models (FLUX, Imagen, Seedream, Veo, Kling,
+ * …) and the Motion video, upscaler, background-removal and audio models. The
+ * third-party ones belong to their own providers' catalogs, and every one
+ * carries a different `parameters` schema, so unmodel treats them as unknown
+ * models on this endpoint (warning + no per-param checks) rather than
  * pretending to validate them.
  */
 
-export const LEONARDO_DOCS_URL = "https://docs.leonardo.ai/reference/creategeneration-1";
+export const LEONARDO_DOCS_URL = "https://docs.leonardo.ai/reference/creategeneration";
 
 /**
- * The Lucid Origin prose page. Cite this — not the OpenAPI reference — for the
- * limits that exist only in Leonardo's written parameter tables. The Phoenix
- * page (https://docs.leonardo.ai/docs/phoenix) repeats the same wording.
+ * The Lucid Origin prose page — the citation for the 1-style limit, which the
+ * reference states only in prose (its `style_ids` descriptions say "(limited
+ * to 1 style)" but carry no `maxItems`). The Phoenix page
+ * (https://docs.leonardo.ai/docs/phoenix) repeats the same wording.
  */
 export const LEONARDO_STYLE_LIMIT_DOCS_URL = "https://docs.leonardo.ai/docs/lucid-origin";
 
@@ -40,21 +42,44 @@ export type LeonardoPromptEnhance = (typeof LEONARDO_PROMPT_ENHANCE)[number];
 export const LEONARDO_CONTRASTS = ["LOW", "MEDIUM", "HIGH"] as const;
 export type LeonardoContrast = (typeof LEONARDO_CONTRASTS)[number];
 
-/** `image.type` on a guidance reference. */
+/**
+ * `image.type` on a guidance reference — the published enum, identical on all
+ * 189 image-reference schemas of LEONARDO_DOCS_URL:
+ * `"enum": ["UPLOADED", "GENERATED", "VARIATION", "URL", "BASE64"]`.
+ * `URL` pairs with `image.url` ("Required when type is URL."), `BASE64` with
+ * `image.data` ("Base64-encoded image bytes. Required when type is BASE64.").
+ */
 export const LEONARDO_IMAGE_TYPES = [
-  "INIT",
-  "GENERATION",
   "UPLOADED",
   "GENERATED",
   "VARIATION",
+  "URL",
+  "BASE64",
 ] as const;
-export type LeonardoImageType = (typeof LEONARDO_IMAGE_TYPES)[number];
+
+/**
+ * `INIT` and `GENERATION` are absent from the published enum, and no page
+ * says whether the API still takes them. image.ts accepts them with a warning
+ * rather than refusing a value the API may serve.
+ */
+export const LEONARDO_UNLISTED_IMAGE_TYPES = ["INIT", "GENERATION"] as const;
+
+export type LeonardoImageType =
+  | (typeof LEONARDO_IMAGE_TYPES)[number]
+  | (typeof LEONARDO_UNLISTED_IMAGE_TYPES)[number];
 
 /** Strength scale for style guidance (two extra steps beyond the others). */
 export const LEONARDO_STYLE_STRENGTHS = ["LOW", "MID", "HIGH", "ULTRA", "MAX"] as const;
-/** Strength scale for every guidance kind but `style`. */
+/**
+ * Strength scale for content guidance — `"enum": ["LOW", "MID", "HIGH",
+ * "ULTRA"]` on all 15 content schemas of LEONARDO_DOCS_URL. The prose tables
+ * still list LOW / MID / HIGH; the schema is the wire.
+ */
+export const LEONARDO_CONTENT_STRENGTHS = ["LOW", "MID", "HIGH", "ULTRA"] as const;
+/** Strength scale for every guidance kind but `style` and `content`. */
 export const LEONARDO_GUIDANCE_STRENGTHS = ["LOW", "MID", "HIGH"] as const;
 export type LeonardoStyleStrength = (typeof LEONARDO_STYLE_STRENGTHS)[number];
+export type LeonardoContentStrength = (typeof LEONARDO_CONTENT_STRENGTHS)[number];
 export type LeonardoGuidanceStrength = (typeof LEONARDO_GUIDANCE_STRENGTHS)[number];
 
 /**
@@ -63,11 +88,11 @@ export type LeonardoGuidanceStrength = (typeof LEONARDO_GUIDANCE_STRENGTHS)[numb
  * the Phoenix page.
  *
  * ADVISORY, not a wire constraint. The OpenAPI document embedded in
- * LEONARDO_DOCS_URL gives `style_ids` an `items.enum` but NO `maxItems` (210
- * `maxItems` occurrences in that document, none of them on any of the 58
- * `style_ids` schemas), so the API accepts a longer array. image.ts
- * therefore reports going over this as a WARNING, and cites the prose page —
- * the reference page does not support the claim.
+ * LEONARDO_DOCS_URL gives `style_ids` an `items.enum` but NO `maxItems` (none
+ * of its 36 `style_ids` array schemas has one), so the API accepts a longer
+ * array. Its descriptions say "An array of style UUIDs for image models
+ * (limited to 1 style)." without enforcing it, so image.ts reports going over
+ * this as a WARNING and cites the prose page.
  */
 export const LEONARDO_MAX_STYLE_IDS = 1;
 
@@ -320,12 +345,12 @@ export interface LeonardoModelRule {
 
 const IMAGE_GUIDANCE = {
   style: { maxItems: 1, strengths: LEONARDO_STYLE_STRENGTHS },
-  content: { maxItems: 1, strengths: LEONARDO_GUIDANCE_STRENGTHS },
+  content: { maxItems: 1, strengths: LEONARDO_CONTENT_STRENGTHS },
 } as const;
 
 const PHOENIX_GUIDANCE = {
   style: { maxItems: 4, strengths: LEONARDO_STYLE_STRENGTHS },
-  content: { maxItems: 1, strengths: LEONARDO_GUIDANCE_STRENGTHS },
+  content: { maxItems: 1, strengths: LEONARDO_CONTENT_STRENGTHS },
   character: { maxItems: 1, strengths: LEONARDO_GUIDANCE_STRENGTHS },
   image_to_image: { maxItems: 1, strengths: LEONARDO_GUIDANCE_STRENGTHS },
 } as const;

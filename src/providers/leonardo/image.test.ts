@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { image, LEONARDO_GENERATIONS_URL } from "./image";
 import {
   LEONARDO_DEFAULT_STYLE_ID,
+  LEONARDO_DOCS_URL,
   LEONARDO_MODEL_RULES,
   LEONARDO_STYLE_LIMIT_DOCS_URL,
 } from "./model-rules";
@@ -68,6 +69,42 @@ describe("leonardo.image happy path", () => {
     });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.some((w) => w.code === "unknown_model")).toBe(true);
+  });
+
+  // remove-bg requires only `guidances` and the aurora upscalers
+  // `guidances` + `width` + `height`; neither schema has a `prompt` property.
+  test.each([
+    {
+      model: "remove-bg",
+      parameters: {
+        size: "full",
+        channels: "rgba",
+        quantity: 1,
+        guidances: { image_reference: [{ image: { id: "img", type: "UPLOADED" } }] },
+      },
+    },
+    {
+      model: "aurora-upscaler-precise",
+      parameters: {
+        width: 128,
+        height: 128,
+        quantity: 1,
+        upscale_mode: "detailed",
+        upscale_factor: 2,
+        guidances: { image_reference: [{ image: { id: "img", type: "GENERATED" } }] },
+      },
+    },
+  ])("an untabled model with no prompt ($model) is not refused", (body) => {
+    const r = safeUnchecked(body);
+    expect(r.ok, r.ok ? "" : JSON.stringify(r.errors)).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+
+  test("issues cite the canonical reference URL", () => {
+    expect(LEONARDO_DOCS_URL).toBe("https://docs.leonardo.ai/reference/creategeneration");
+    const r = safeUnchecked({ model: "lucid-origin", parameters: { prompt: "x", mode: "TURBO" } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.["source"]).toBe(LEONARDO_DOCS_URL);
   });
 
   test("the catalog holds the tabled image models, each with a rule", () => {
@@ -422,6 +459,28 @@ describe("leonardo.image style ids and guidances", () => {
     ]);
   });
 
+  test("content guidance takes ULTRA on every tabled model; character and image_to_image do not", () => {
+    for (const model of ["lucid-origin", "lucid-realism", "phoenix-v1.0", "phoenix-v0.9", "kino-xl"]) {
+      const r = safeUnchecked({
+        model,
+        parameters: {
+          prompt: "x",
+          guidances: { content: [{ image: { id: "a" }, strength: "ULTRA" }] },
+        },
+      });
+      expect(r.ok, model).toBe(true);
+    }
+
+    for (const kind of ["character", "image_to_image"]) {
+      const r = safeUnchecked({
+        model: "phoenix-v1.0",
+        parameters: { prompt: "x", guidances: { [kind]: [{ image: { id: "a" }, strength: "ULTRA" }] } },
+      });
+      expect(r.ok, kind).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.meta?.["allowed"]).toEqual(["LOW", "MID", "HIGH"]);
+    }
+  });
+
   test("Phoenix takes 4 style guidances, Lucid only 1", () => {
     const four = [0, 1, 2, 3].map((i) => ({ image: { id: `img-${i}` }, strength: "MID" as const }));
     expect(
@@ -454,6 +513,44 @@ describe("leonardo.image style ids and guidances", () => {
       "image",
       "type",
     ]);
+  });
+
+  test("an image reference can be a URL or inline base64 data", () => {
+    const r = image.safe({
+      model: "lucid-origin",
+      parameters: {
+        prompt: "x",
+        guidances: {
+          style: [{ image: { type: "URL", url: "https://example.com/a.png" }, strength: "MID" }],
+          content: [{ image: { type: "BASE64", data: "iVBORw0KGgo=" }, strength: "HIGH" }],
+        },
+      },
+    });
+    expect(r.ok, r.ok ? "" : JSON.stringify(r.errors)).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("INIT and GENERATION are off the published enum: passed through with a warning", () => {
+    for (const type of ["INIT", "GENERATION"] as const) {
+      const r = image.safe({
+        model: "phoenix-v1.0",
+        parameters: {
+          prompt: "x",
+          guidances: { image_to_image: [{ image: { id: "a", type }, strength: "MID" }] },
+        },
+      });
+      expect(r.ok, type).toBe(true);
+      if (!r.ok) continue;
+      const warning = r.warnings.find((w) => w.path.join(".").endsWith("image.type"));
+      expect(warning?.severity, type).toBe("warning");
+      expect(warning?.meta?.["allowed"], type).toEqual([
+        "UPLOADED",
+        "GENERATED",
+        "VARIATION",
+        "URL",
+        "BASE64",
+      ]);
+    }
   });
 
   test("a guidance entry without strength is reported", () => {

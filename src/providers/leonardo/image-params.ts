@@ -23,9 +23,10 @@ import type { LeonardoContrast, LeonardoPromptEnhance } from "./model-rules";
  * The tabled image models on `POST /v2/generations` — the whole of
  * `./models.ts`.
  *
- * The same endpoint routes ~60 third-party models (FLUX, Imagen, Seedream,
- * Kling, Veo, …), each with a different `parameters` schema. They belong to
- * their own providers' catalogs, so they are deliberately absent: a ref like
+ * The same endpoint routes 74 more ids — third-party models (FLUX, Imagen,
+ * Seedream, Kling, Veo, …) among them — each with a different `parameters`
+ * schema. The third-party ones belong to their own providers' catalogs, so
+ * they are deliberately absent: a ref like
  * `leonardo/flux-dev` draws an `unknown_model` warning and compiles against the
  * shape below, which is honest about being a guess.
  */

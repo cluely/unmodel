@@ -1,17 +1,17 @@
 // Hand-maintained — Leonardo.Ai is not in models.dev; refresh from
-//   https://docs.leonardo.ai/reference/creategeneration-1 (OpenAPI v2 for POST /generations; ground truth)
-//   https://docs.leonardo.ai/docs/lucid-origin              (Lucid Origin param table + style ids)
-//   https://docs.leonardo.ai/docs/phoenix                   (Phoenix param table + style ids)
-//   https://docs.leonardo.ai/docs/payg-guide                (Pay-As-You-Go billing)
-//   https://docs.leonardo.ai/llms.txt                       (docs index)
-//   https://docs.leonardo.ai/reference/creategeneration     (the Elements rows; read 2026-11-12)
-// Verified 2026-08-13 (Lucid, Phoenix) and 2026-11-12 (the Elements rows).
+//   https://docs.leonardo.ai/reference/creategeneration (OpenAPI v2 for POST /generations; ground truth)
+//   https://docs.leonardo.ai/docs/lucid-origin            (Lucid Origin param table + style ids)
+//   https://docs.leonardo.ai/docs/phoenix                 (Phoenix param table + style ids)
+//   https://docs.leonardo.ai/docs/payg-guide              (Pay-As-You-Go billing)
+//   https://docs.leonardo.ai/llms.txt                     (docs index)
+// Verified 2026-11-12.
 //
 // Scope: the image models on the v2 generations endpoint that no other
 // provider in unmodel serves — Lucid, Phoenix, and the nine Elements models
-// below. The same endpoint routes ~60 third-party models (FLUX, Imagen,
-// Ideogram, Seedream, GPT Image, Kling, Veo, …) plus Leonardo's video/audio/3D
-// models; those belong to their own providers' catalogs and each carries a
+// below. The same endpoint routes 74 more ids: third-party image, video and 3D
+// models (FLUX, Imagen, Ideogram, Seedream, GPT Image, Kling, Veo, …) plus the
+// Motion video, upscaler, background-removal and audio models. The third-party
+// ones belong to their own providers' catalogs, and every one carries a
 // different `parameters` schema, so they are deliberately absent here.
 //
 // NO PRICING IS RECORDED, on purpose. Leonardo bills API generations from a
@@ -35,7 +35,7 @@ export const provider = {
   id: "leonardo",
   name: "Leonardo.Ai",
   env: ["LEONARDO_API_KEY"],
-  doc: "https://docs.leonardo.ai/reference/creategeneration-1",
+  doc: "https://docs.leonardo.ai/reference/creategeneration",
   api: "https://cloud.leonardo.ai/api/rest/v2",
 } as const satisfies ProviderInfo;
 

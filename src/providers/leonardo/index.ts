@@ -33,7 +33,9 @@ export {
   LEONARDO_PROMPT_ENHANCE,
   LEONARDO_CONTRASTS,
   LEONARDO_IMAGE_TYPES,
+  LEONARDO_UNLISTED_IMAGE_TYPES,
   LEONARDO_STYLE_STRENGTHS,
+  LEONARDO_CONTENT_STRENGTHS,
   LEONARDO_GUIDANCE_STRENGTHS,
   LEONARDO_MAX_STYLE_IDS,
   LEONARDO_MAX_ELEMENTS,
@@ -48,6 +50,7 @@ export type {
   LeonardoContrast,
   LeonardoImageType,
   LeonardoStyleStrength,
+  LeonardoContentStrength,
   LeonardoGuidanceStrength,
 } from "./model-rules";
 

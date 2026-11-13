@@ -126,7 +126,7 @@ function hasNegativePrompt(model: string): boolean {
  * `providerOptions` and are checked, per model, by `checkParameters`.
  */
 export interface LeonardoImageWireParameters {
-  /** REQUIRED on every documented arm. */
+  /** Required on every tabled arm; always compiled from the canonical `prompt`. */
   prompt: string;
   /** Multiple of 8, within the model's own bounds. */
   width?: number;

@@ -1,18 +1,26 @@
 // Hand-maintained — Cartesia is not in models.dev; refresh from
-// https://docs.cartesia.ai/api-reference/tts/bytes,
-// https://docs.cartesia.ai/api-reference/stt/transcribe,
-// https://docs.cartesia.ai/build-with-cartesia/tts-models/{latest,preview,older-models},
-// and https://docs.cartesia.ai/pricing (last checked 2026-08-24).
+// https://docs.cartesia.ai/2026-03-01/api-reference/tts/bytes and
+// https://docs.cartesia.ai/2026-03-01/api-reference/stt/transcribe (the
+// version the TTS and STT validators pin — the unversioned api-reference
+// pages render Cartesia-Version 2026-08-14),
+// https://docs.cartesia.ai/build-with-cartesia/tts-models/{latest,older-models,api-changes},
+// https://docs.cartesia.ai/build-with-cartesia/stt/{latest,older-models},
+// and https://docs.cartesia.ai/pricing (last checked 2026-11-12).
 //
 // PRICING: Cartesia bills in credits, not USD — standard TTS is ~1 credit per
 // character (Pro Voice Clone ~1.5), batch STT with ink-whisper is 1 credit per
-// 2 seconds of audio, and realtime ink-2 is 3 credits per second
-// (docs.cartesia.ai/pricing). The USD value of a credit depends on the plan
-// (Free $0/20K, Pro $5/100K, Startup $49/1.25M, Scale $299/8M credits —
-// cartesia.ai/pricing) and no pay-as-you-go USD rate is published, so there is
-// no defensible USD-per-character/-minute conversion; `cost` is deliberately
-// omitted rather than guessed. Cost estimation therefore returns no `costUSD`
-// for Cartesia models.
+// 2 seconds of audio, realtime ink-2 is 3 credits per second, and realtime
+// ink-whisper is 1 credit per second ("/stt/websocket | 3 credits per second
+// of audio | 1 credit per second of audio", the same on /stt/turns/websocket —
+// docs.cartesia.ai/pricing, 2026-11-12). The USD value of a credit depends on
+// the plan (Free $0/20K, Pro $5/100K, Startup $49/1.25M, Scale $299/8M credits
+// — cartesia.ai/pricing), and so does the overage rate: "Paid plans can turn
+// on overages and keep going past a zero balance, at a rate set by tier:" —
+// Pro $65, Startup $45, Scale $38 per 1M credits, plus an Ink STT figure of
+// "$0.39 per hour on the Scale plan" (cartesia.ai/pricing, 2026-11-12). No
+// rate holds across plans, so there is no defensible USD-per-character/-minute
+// conversion; `cost` is deliberately omitted rather than guessed. Cost
+// estimation therefore returns no `costUSD` for Cartesia models.
 //
 // NOT LISTED (deliberate): `sonic-english` and `sonic-multilingual` appear on
 // third-party leaderboards but are absent from every reachable Cartesia doc
@@ -30,12 +38,12 @@
 // its `model` query param. Guessing an id would be worse than omitting it.
 //
 // NO VOICE CHANGER (deliberate, and the reason is a date). Cartesia's
-// speech-to-speech routes are SUNSET: docs.cartesia.ai/llms-full.txt, from
-// https://docs.cartesia.ai/build-with-cartesia/deprecations, carries them in
-// the "Breaking API changes" table — "These endpoints are being sunset.
-// Requests after an endpoint's sunset date return an error." —
+// speech-to-speech routes are SUNSET:
+// https://docs.cartesia.ai/build-with-cartesia/tts-models/api-changes carries
+// them in its endpoint table — "These endpoints have been sunset. Requests
+// after an endpoint's sunset date return an error." (2026-11-12) —
 // `POST /voice-changer/bytes` and `POST /voice-changer/sse`, replacement "—",
-// sunset date **August 20, 2026** (fetched 2026-08-31). Both are also gone from
+// sunset date **August 20, 2026** (first read 2026-08-31). Both are also gone from
 // the api-reference index (109 reference stubs, neither among them). So
 // `cartesia.sts` does not exist and Cartesia is not a witness for
 // `unmodel/sts`, even though `@cartesia/cartesia-js` 4.1.0 (published
@@ -62,7 +70,7 @@ export const models = {
   // ---------------------------------------------------------------------
   // TTS — the tts/bytes model_id enum for Cartesia-Version 2026-03-01 is
   // sonic-3.5 | sonic-3 | sonic-preview | sonic-latest
-  // (docs.cartesia.ai/api-reference/tts/bytes).
+  // (https://docs.cartesia.ai/2026-03-01/api-reference/tts/bytes).
   // ---------------------------------------------------------------------
   // "Sonic 3.6 is an update to Sonic 3.5 — generally available from August 27
   // on `sonic-3.6`." (https://docs.cartesia.ai/changelog/2026, 2026-11-12).
@@ -208,7 +216,7 @@ export const models = {
   },
   // ---------------------------------------------------------------------
   // STT (Ink) — batch POST /stt accepts only ink-whisper; ink-2 is
-  // realtime-WebSocket-only (docs.cartesia.ai/api-reference/stt/transcribe,
+  // realtime-WebSocket-only (docs.cartesia.ai/2026-03-01/api-reference/stt/transcribe,
   // docs.cartesia.ai/api-reference/stt/stt).
   // ---------------------------------------------------------------------
   "ink-whisper": {
@@ -297,10 +305,11 @@ export type CartesiaVoiceCloneModelId = Extract<CartesiaModelId, "voice-clone">;
 /**
  * The `model_id` enum POST /tts/bytes publishes for Cartesia-Version
  * 2026-03-01 — "sonic-3.5", "sonic-3", "sonic-preview", "sonic-latest"
- * (https://docs.cartesia.ai/api-reference/tts/bytes). The catalog carries
- * more sonic ids than this (dated snapshots and the "older models" listed on
- * docs.cartesia.ai/build-with-cartesia/models); those are off-enum and the
- * endpoint may refuse them, so tts.ts warns rather than passing them silently.
+ * (https://docs.cartesia.ai/2026-03-01/api-reference/tts/bytes). The catalog
+ * carries more sonic ids than this (`sonic-3.6`, the dated snapshots and the
+ * deprecated aliases of https://docs.cartesia.ai/build-with-cartesia/tts-models/latest
+ * and …/older-models); those are off-enum and the endpoint may refuse them, so
+ * tts.ts warns rather than passing them silently.
  */
 export const TTS_MODEL_IDS = [
   "sonic-3.5",
@@ -372,7 +381,7 @@ export const CARTESIA_TTS_LANGUAGES_BY_MODEL = {
 
 /**
  * The `language` enum POST /stt publishes (Cartesia-Version 2026-03-01) —
- * https://docs.cartesia.ai/api-reference/stt/transcribe, transcribed in doc
+ * https://docs.cartesia.ai/2026-03-01/api-reference/stt/transcribe, transcribed in doc
  * order. Note this is a DIFFERENT, much larger set than the 42-code TTS list:
  * batch STT is Whisper-backed and adds its long tail (cy, haw, yue, …).
  */

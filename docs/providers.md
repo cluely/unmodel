@@ -732,10 +732,10 @@ returns `undefined` — "Unverifiable → caveat, never catalog". (The page's se
 "Speech-to-speech" row is flagged `eviToggle` and belongs to EVI, the realtime product.)
 
 **Excluded: cartesia — the route was SUNSET eleven days before this wave landed.**
-`docs.cartesia.ai/llms-full.txt`, from the deprecations page, lists
-`POST /voice-changer/bytes` and `POST /voice-changer/sse` in the "Breaking API changes" table —
-"These endpoints are being sunset. Requests after an endpoint's sunset date return an error." —
-replacement "—", sunset date **August 20, 2026** (fetched 2026-08-31). Both are also gone from
+`docs.cartesia.ai/build-with-cartesia/tts-models/api-changes` lists
+`POST /voice-changer/bytes` and `POST /voice-changer/sse` in its endpoint table —
+"These endpoints have been sunset. Requests after an endpoint's sunset date return an error."
+(2026-11-12) — replacement "—", sunset date **August 20, 2026** (first read 2026-08-31). Both are also gone from
 the api-reference index. `@cartesia/cartesia-js` 4.1.0, published 2026-08-26 (six days *after*
 the sunset), still ships an undeprecated `VoiceChanger` resource, and the OpenAPI spec is
 login-gated so the disagreement cannot be settled from outside — but the docs state the sunset

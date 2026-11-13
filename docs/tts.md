@@ -70,7 +70,7 @@ not of the endpoint, so it does not vary by route:
 | --- | --- | --- |
 | `openai` | `authorization` | `Bearer <key>` |
 | `elevenlabs` | `xi-api-key` | bare key |
-| `cartesia` | `X-API-Key` | bare key |
+| `cartesia` | `Authorization` | `Bearer <key>` |
 | `deepgram` | `Authorization` | `Token <key>` |
 | `google` | `x-goog-api-key` | bare key (or `?key=` on the URL) |
 | `hume` | `X-Hume-Api-Key` | bare key |

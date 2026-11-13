@@ -7,11 +7,12 @@
  * not the socket itself. Opening the connection, interleaving `flush`, reading
  * `chunk` / `timestamps` / `done` frames back, and the cancel-context message
  * (`{ context_id, cancel: true }`) are transport and stay out of scope, as is
- * auth (`X-API-Key` header from a server, or an `access_token` query param from
- * a browser — unmodel never touches credentials).
+ * auth (an `Authorization: Bearer <api_key>` header from a server, or an
+ * `access_token` query param from a browser — unmodel never touches
+ * credentials).
  *
  * Wire notes (verified 2026-08-13 against
- * https://docs.cartesia.ai/api-reference/tts/websocket, Cartesia-Version
+ * https://docs.cartesia.ai/2026-03-01/api-reference/tts/websocket, Cartesia-Version
  * 2026-03-01):
  * - VERSIONING DIFFERS FROM REST. The batch endpoints take a `Cartesia-Version`
  *   HEADER; this socket takes a `cartesia_version` QUERY param, which
@@ -278,8 +279,8 @@ function checkTtsModelKind(
 /**
  * Builds the TTS socket address. `cartesia_version` is a QUERY param on this
  * endpoint (the REST endpoints take it as the `Cartesia-Version` header); auth
- * is deliberately absent — send an `X-API-Key` header, or append your own
- * `access_token` query param when connecting from a browser.
+ * is deliberately absent — send an `Authorization: Bearer <api_key>` header, or
+ * append your own `access_token` query param when connecting from a browser.
  */
 export function ttsWebsocketUrl(cartesiaVersion: string = CARTESIA_VERSION): string {
   return `${TTS_WEBSOCKET_URL}?cartesia_version=${encodeURIComponent(cartesiaVersion)}`;
@@ -312,7 +313,7 @@ const validator = createValidator<TtsWebsocketMessage>({
  *
  * ```ts
  * const ws = new WebSocket(ttsWebsocketUrl(), {
- *   headers: { "X-API-Key": process.env.CARTESIA_API_KEY! },
+ *   headers: { Authorization: `Bearer ${process.env.CARTESIA_API_KEY}` },
  * });
  * const message = cartesia.ttsWebsocket({
  *   model_id: "sonic-3.5",

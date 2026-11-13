@@ -7,12 +7,12 @@
  * what this module validates. The audio you then stream (binary frames of raw
  * PCM in the declared `encoding` / `sample_rate`), the `finalize` and `close`
  * text commands, and the `transcript` / `flush_done` / `done` frames coming
- * back are transport and stay out of scope — as is auth (`X-API-Key` header
- * from a server, or an `access_token` query param from a browser; unmodel never
- * touches credentials).
+ * back are transport and stay out of scope — as is auth (an `Authorization:
+ * Bearer <api_key>` header from a server, or an `access_token` query param
+ * from a browser; unmodel never touches credentials).
  *
  * Wire notes (verified 2026-08-13 against
- * https://docs.cartesia.ai/api-reference/stt/websocket, Cartesia-Version
+ * https://docs.cartesia.ai/2026-03-01/api-reference/stt/websocket, Cartesia-Version
  * 2026-03-01):
  * - VERSIONING DIFFERS FROM REST. Batch POST /stt takes a `Cartesia-Version`
  *   HEADER; this socket takes a required `cartesia_version` QUERY param, which
@@ -265,7 +265,8 @@ function checkKeyterms(
  * Builds the realtime STT socket address from validated params, appending the
  * required `cartesia_version` query param (the REST endpoints carry the same
  * value as the `Cartesia-Version` header) and repeating `keyterm` once per
- * term. Auth is deliberately absent — send an `X-API-Key` header, or append
+ * term. Auth is deliberately absent — send an `Authorization: Bearer <api_key>`
+ * header, or append
  * your own `access_token` query param when connecting from a browser.
  */
 export function sttWebsocketUrl(
@@ -323,7 +324,7 @@ const validator = createValidator<SttWebsocketParams>({
  *   keyterm: ["Cartesia", "Ink 2"],
  * });
  * const ws = new WebSocket(sttWebsocketUrl(session), {
- *   headers: { "X-API-Key": process.env.CARTESIA_API_KEY! },
+ *   headers: { Authorization: `Bearer ${process.env.CARTESIA_API_KEY}` },
  * });
  * ```
  */

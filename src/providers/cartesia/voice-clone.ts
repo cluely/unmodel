@@ -24,8 +24,10 @@
  * - PRICING: Cartesia bills cloned-voice USAGE in credits (Pro Voice Clone
  *   ~1.5 credits/character, see ./models); no rate is published for the
  *   clone call itself, so there is no estimate.
- * - Auth is an `X-API-Key` header — unmodel never touches keys; add it
- *   yourself when fetching.
+ * - Auth is an `Authorization: Bearer <api_key>` header ("Include
+ *   `Authorization: Bearer <api_key>` in the headers of your requests." —
+ *   https://docs.cartesia.ai/use-the-api/api-conventions) — unmodel never
+ *   touches keys; add it yourself when fetching.
  */
 
 import { z } from "zod";
@@ -223,7 +225,7 @@ function checkAccess(
  * const params = cartesia.voiceClone({ clip: blob, name: "Narrator", language: "en" });
  * await fetch(params.request.url, {
  *   method: "POST",
- *   headers: { ...params.request.headers, "X-API-Key": process.env.CARTESIA_API_KEY! },
+ *   headers: { ...params.request.headers, Authorization: `Bearer ${process.env.CARTESIA_API_KEY}` },
  *   body: cartesia.voiceCloneToFormData(params),
  * });
  * ```
@@ -288,7 +290,7 @@ const validator = createValidator<
  * `Cartesia-Version` header from `.request.headers` — never
  * `JSON.stringify`. The response `VoiceMetadata.id` is the created voice,
  * usable as `voice.id` on POST /tts/bytes. Auth is your job: add an
- * `X-API-Key` header when fetching.
+ * `Authorization: Bearer <api_key>` header when fetching.
  */
 export const voiceClone = validator as unknown as {
   <T extends VoicesCloneParams>(

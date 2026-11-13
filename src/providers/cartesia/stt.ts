@@ -1,7 +1,7 @@
 /**
  * Cartesia Batch Speech-to-Text (Ink) — POST https://api.cartesia.ai/stt
  *
- * Wire reference: https://docs.cartesia.ai/api-reference/stt/transcribe
+ * Wire reference: https://docs.cartesia.ai/2026-03-01/api-reference/stt/transcribe
  * (Cartesia-Version 2026-03-01, verified 2026-08-13). This endpoint is
  * multipart/form-data, not JSON: the params object holds the form fields
  * (with `file` as a Blob/File, or a string you resolve yourself), the
@@ -127,7 +127,7 @@ function checkBatchModel(
 const STT_LANGUAGE_SET = new Set<string>(CARTESIA_STT_LANGUAGES);
 
 /**
- * `language` is a closed 75-value enum in the transcribe reference; the SDK
+ * `language` is a closed 100-value enum in the transcribe reference; the SDK
  * types it as a bare string, so an unsupported code only fails at request
  * time.
  */
@@ -252,13 +252,14 @@ const validator = createValidator<
  * send `toFormData(validated)` as the fetch body instead. `.toSdk("cartesia")`
  * returns the params unchanged (note: `@cartesia/cartesia-js` passes the
  * file as a separate positional argument — re-shape at the call site if you
- * use the SDK). Auth is your job: add an `X-API-Key` header.
+ * use the SDK). Auth is your job: add an `Authorization: Bearer <api_key>`
+ * header.
  *
  * ```ts
  * const params = cartesia.stt({ file, model: "ink-whisper" });
  * await fetch(params.request.url, {
  *   method: params.request.method,
- *   headers: { ...params.request.headers, "X-API-Key": process.env.CARTESIA_API_KEY! },
+ *   headers: { ...params.request.headers, Authorization: `Bearer ${process.env.CARTESIA_API_KEY}` },
  *   body: toFormData(params),
  * });
  * ```

@@ -1,7 +1,7 @@
 /**
  * Cartesia Text-to-Speech (Bytes) — POST https://api.cartesia.ai/tts/bytes
  *
- * Wire reference: https://docs.cartesia.ai/api-reference/tts/bytes
+ * Wire reference: https://docs.cartesia.ai/2026-03-01/api-reference/tts/bytes
  * (Cartesia-Version 2026-03-01, verified 2026-08-13). Params mirror the wire
  * body exactly. The response is raw audio bytes, so there is no response
  * checker for this endpoint.
@@ -508,15 +508,17 @@ const validator = createValidator<TtsBytesBody, Validated<TtsBytesBody, TtsSdkTa
 /**
  * Validates params for POST /tts/bytes. The result's enumerable properties
  * are the exact fetch JSON body; `.request` carries the URL, method, and the
- * REQUIRED static `Cartesia-Version` header (auth is your job: add an
- * `X-API-Key` header). `.toSdk("cartesia")` returns the body unchanged — the
- * official `@cartesia/cartesia-js` SDK takes wire-shaped (snake_case) params.
+ * REQUIRED static `Cartesia-Version` header (auth is your job: "Include
+ * `Authorization: Bearer <api_key>` in the headers of your requests." —
+ * https://docs.cartesia.ai/use-the-api/api-conventions). `.toSdk("cartesia")`
+ * returns the body unchanged — the official `@cartesia/cartesia-js` SDK takes
+ * wire-shaped (snake_case) params.
  *
  * ```ts
  * const params = cartesia.tts({ model_id: "sonic-3.5", transcript: "…", voice: …, output_format: … });
  * await fetch(params.request.url, {
  *   method: params.request.method,
- *   headers: { ...params.request.headers, "X-API-Key": process.env.CARTESIA_API_KEY! },
+ *   headers: { ...params.request.headers, Authorization: `Bearer ${process.env.CARTESIA_API_KEY}` },
  *   body: JSON.stringify(params),
  * });
  * ```

@@ -328,11 +328,53 @@ The three fal alias paths (`/v1/queue/fal-ai/nano-banana-2`,
 migration aid for fal clients over the same three models, whose canonical
 paths take the full input. Declined in `data/revana/curation.json`.
 
+## What comes back
+
+Recorded 2026-11-13 (UTC), with one paid job (`z-image`, $0.01) and two that
+failed for nothing.
+
+- **A job can be made to fail for free.** Admission checks that a reference
+  DOWNLOADS, and that it is not a web page (`cannot use image …: the link opens
+  a web page, not the picture itself`); it does not check that the bytes are a
+  picture. `recraft-crisp-upscale` on 64 random bytes was accepted on both
+  routes and failed in the model: `status: "failed"`, `cost_usd: 0`,
+  `error: { code: "invalid_input", message: "A reference image could not be
+  used (is not in a supported format). … You were not charged.", retryable:
+  false }`. That is the recorded failed arm of `Generation`.
+- **The same failure on the queue is `COMPLETED`.** Its status document is
+  `status: "COMPLETED"` with `error` (the generation's `error.message`) and
+  `error_type` (its `error.code`); its `response_url` answers `422` with that
+  sentence as both `detail` and `error.message`.
+- **`max_wait_s` is checked at admission.** `max_wait_s: 1` on `z-image`
+  answers `503 model_unavailable` — "z-image has no route that can answer
+  within max_wait_s right now." — on both routes, before anything is created.
+  It is not a way to make a job time out.
+- **A delivery, as it arrives.** `POST`, `Content-Type: application/json`,
+  `User-Agent: Revana-Webhooks/1.0`, and three headers: `Revana-Signature:
+  t=<unix seconds>,v1=<64 hex digits>`, `Revana-Webhook-Id: wh_<request id>`,
+  and `X-Revana-Request-Id: <request id>`, which no page mentions. The body is
+  the documented one: `{ status: "OK", payload: { images: [ … ], description:
+  "" }, request_id, gateway_request_id }`, and for a failure `{ error, status:
+  "ERROR", payload: { detail, error_type }, request_id, gateway_request_id }`.
+- **The HMAC key is the secret's text.** The page says "keyed with your
+  account's signing secret" and not how. Both recorded signatures match
+  HMAC-SHA256 over `"<t>.<raw body>"` with the secret's UTF-8 bytes as the key,
+  and match neither its hex nor its base64 decoding. `GET /v1/webhooks/secret`
+  answers `{ object: "webhook_secret", secret, version: 1, algorithm:
+  "HMAC-SHA256", header, id_header, signed_payload: "<t>.<raw body>",
+  tolerance_s: 300 }`.
+
+unmodel's `verifyWebhook` was run once against both recorded deliveries with
+the account's real secret and took both; the secret is not in the repository,
+so the committed tests sign the recorded bodies with a stand-in.
+
 ## Not addressed
 
 - `POST /v1/queue/fal-ai/{alias}` — see above.
 - `POST /v1/videos` — no published shape.
 - Polling, downloads, uploads, balance — transport. The URLs are exported.
+- Receiving a webhook — the server and the route are the caller's.
+  `verifyWebhook` reads a delivery; it does not listen for one.
 
 ## Verification
 

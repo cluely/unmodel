@@ -916,6 +916,25 @@ the generation route's own sentences, so it is one battery over the same tables,
 fields the queue reads its own way (`num_images` only as 1; `duration` also as `"8"` / `"8s"`)
 and the webhook's URL rules, all of them established against the live route.
 
+**What comes back is typed by its own verdict.** A `Generation` is a union on `status`
+(`output` and a numeric `cost_usd` exist on `"succeeded"`, `error` on `"failed"`), and each arm
+is a recorded response. The queue's envelope needs it more: a request that failed is
+`COMPLETED` too, "with `error` and `error_type`", so `QueueEnvelope` is a union that narrows on
+`error`, and `revana.checkQueueStatus` reports that outcome as `ERROR` — the webhook's own word
+for it — so that `finishReason === "COMPLETED"` means the request worked.
+`revana.checkGeneration` reports the charge the document states (`cost_usd`: the charge, or
+`0` for a failure), never the listed price. Neither route's result is typed from the model id:
+which document a request answers is the kind of file it made, and the upscaler is a picture
+model that also takes a clip.
+
+**The webhook's receiving end is `revana.verifyWebhook`.** The caller owns the server, the
+route and the 2xx; what unmodel does is check `Revana-Signature` (HMAC-SHA256 over
+`"<t>.<raw body>"`, within 300 seconds) with WebCrypto and return the delivery typed. Two real
+deliveries fixed the one thing the page does not say — the key is the signing secret's own
+text. That secret is the only one any unmodel function is handed, and it is not the API key: it
+can check a delivery and nothing else. A signature that holds over a body unmodel does not know
+is reported as authentic and unrecognised, not as a forgery.
+
 **Generated from the catalog, not the OpenAPI document.** Revana's OpenAPI declares one
 `ModelInput` for 135 models with `resolution`, `quality` and `aspect_ratio` as bare strings —
 "Which fields and values a model takes … are in /data/models.json". `scripts/codegen-revana.ts`
@@ -1020,10 +1039,11 @@ seen to want one.
   `/v1/videos` are declined by name in `data/revana/curation.json`.
 - The queue addresses are not unified refs. `revana/<model>` in a pack compiles to
   `POST /v1/generations`; a caller who wants the webhook reaches `revana.*Queue` by name.
-- No response checker for generations: the POST answers a queued job, and the finished
-  `Generation` carries its own verdict and its own exact charge. Nor for the queue route, whose
-  result states no charge at all — its `request_id` is a generation id, and
-  `generationUrl(request_id)` is where the charge is read.
+- No checker for the queue's RESULT document, and no cost on `checkQueueStatus`: no queue
+  document states a charge. A queue `request_id` is a generation id, so
+  `generationUrl(request_id)` is where it is read, and `checkGeneration` reads it.
+- The eight undocumented second names (`start_image_url`, `reference_images` …) are read as
+  the API reads them and are not typed: nothing published says they will go on being taken.
 
 Revana resells weights unmodel already reaches natively — `veo-3.1` is also `google.video`,
 `seedance-2.5` also `bytedance.video`, `elevenlabs-v3` also `elevenlabs.tts` — through a

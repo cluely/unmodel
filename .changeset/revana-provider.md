@@ -44,4 +44,20 @@ body.request.url; // "https://api.revana.si/v1/queue/revana/veo-3.1?fal_webhook=
 JSON.stringify(body); // {"prompt":"A fox walks through snow","duration":8}
 ```
 
-Also exported: `generationUrl(id)` / `generationContentUrl(id, n)` for polling and download; `queueUrl`, `queueStatusUrl`, `queueResultUrl` and `WEBHOOKS_SECRET_URL` for the queue route, with its `QueueEnvelope`, `QueueResult` and `QueueWebhookDelivery` types and the two signature header names; the `Generation` / `Quote` response types; the shape and price tables; and `REVANA_VOICES`.
+What comes back is typed by its own verdict, and checked:
+
+- `Generation` is a union on `status`: `output.urls` and a numeric `cost_usd` exist on `"succeeded"`, `error` on `"failed"`. `revana.checkGeneration` reports `status` and the charge the document states.
+- On the queue route a request that failed is `COMPLETED` too. `QueueEnvelope` narrows on `error`, and `revana.checkQueueStatus` reports that outcome as `ERROR`, so `finishReason === "COMPLETED"` means it worked. `QueueResult` is `images`, `video` or `audio`, each arm ruling the others out.
+- `revana.verifyWebhook({ body, headers, secret })` is the receiving end of `fal_webhook`: it checks `Revana-Signature` (HMAC-SHA256, 300-second tolerance, WebCrypto) and returns the delivery typed. It takes the raw body and the account's signing secret — not the API key — and tells a forgery (`authentic: false`) from a genuine delivery it does not recognise.
+
+```ts
+import { verifyWebhook } from "unmodel/revana";
+
+// POST https://your-app.example/revana
+const verdict = await verifyWebhook({ body: await request.text(), headers: request.headers, secret });
+if (!verdict.authentic) return new Response(verdict.message, { status: 400 });
+if (verdict.ok && verdict.delivery.status === "OK") save(verdict.delivery.request_id, verdict.delivery.payload);
+return new Response(null, { status: 204 });
+```
+
+Also exported: `generationUrl(id)` / `generationContentUrl(id, n)` for polling and download; `queueUrl`, `queueStatusUrl`, `queueResultUrl` and `WEBHOOKS_SECRET_URL` for the queue route, with its `QueueEnvelope`, `QueueResult` and `QueueWebhookDelivery` types and the two signature header names; the `Generation` / `Quote` response types and the `RevanaErrorCode` union; the shape and price tables; and `REVANA_VOICES`.

@@ -92,9 +92,9 @@ import {
 export const SPEECH_TO_SPEECH_BASE_URL = "https://api.elevenlabs.io/v1/speech-to-speech";
 
 const STS_DOCS_URL = "https://elevenlabs.io/docs/api-reference/speech-to-speech/convert";
-const CAPABILITY_DOCS_URL = "https://elevenlabs.io/docs/capabilities/voice-changer";
-const CONTROLS_DOCS_URL = "https://elevenlabs.io/docs/best-practices/prompting/controls";
-const MODELS_DOCS_URL = "https://elevenlabs.io/docs/models";
+const CAPABILITY_DOCS_URL = "https://elevenlabs.io/docs/overview/capabilities/voice-changer";
+const CONTROLS_DOCS_URL = "https://elevenlabs.io/docs/overview/capabilities/text-to-speech/best-practices";
+const MODELS_DOCS_URL = "https://elevenlabs.io/docs/overview/models";
 
 /**
  * Server-side default `model_id` — the ENGLISH model. Checks run against it

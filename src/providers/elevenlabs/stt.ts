@@ -14,7 +14,7 @@
  *   provided. A string `file` value is treated as a URL: `toFormData` and
  *   `.toSdk("elevenlabs")` send it as `source_url` (the API's field for hosted media) —
  *   a string appended under `file` would be rejected as it is not a file part.
- * - Cost is billed per minute of audio ($0.22/hour for Scribe). The duration
+ * - Cost is billed per minute of audio ($0.20/hour for batch Scribe). The duration
  *   of a Blob cannot be inspected from bytes, so declare it out-of-band via
  *   `options.media = [{ path: ["file"], durationSeconds }]` to get a
  *   `costUSD` estimate (and `maxCostUSD` enforcement). Surcharges
@@ -54,12 +54,13 @@ import {
 export const SPEECH_TO_TEXT_URL = "https://api.elevenlabs.io/v1/speech-to-text";
 
 const STT_DOCS_URL = "https://elevenlabs.io/docs/api-reference/speech-to-text/convert";
-const MODELS_DOCS_URL = "https://elevenlabs.io/docs/models";
+const MODELS_DOCS_URL = "https://elevenlabs.io/docs/overview/models";
 
 /**
  * Documented `keyterms` limits — STT_DOCS_URL: "The number of keyterms cannot
- * exceed 1000. The length of each keyterm must be less than 50 characters.
- * Keyterms can contain at most 5 words (after normalisation)."
+ * exceed 1000." and, on https://api.elevenlabs.io/openapi.json (2026-11-12),
+ * "The length of each keyterm must be at most 50 characters. Keyterms can
+ * contain at most 5 words (after normalisation)."
  *
  * The numbers themselves live in `./keyterms.ts`, because Dubbing publishes
  * the identical three and two copies is two chances to update one of them.
@@ -105,14 +106,19 @@ export interface SpeechToTextParams {
   file_format?: "pcm_s16le_16" | "other";
   /** Process asynchronously and deliver the result via webhook. */
   webhook?: boolean;
-  /** Specific webhook id to deliver to (only with webhook=true). */
-  webhook_id?: string;
+  /**
+   * Specific webhook id to deliver to (only with webhook=true). `webhook_id`,
+   * `temperature` and `seed` are `anyOf[…, null]` on
+   * https://api.elevenlabs.io/openapi.json (2026-11-12): `null` keeps the
+   * provider default.
+   */
+  webhook_id?: string | null;
   /** Custom metadata echoed in the webhook response (JSON string or object, ≤16KB). */
   webhook_metadata?: string | Record<string, unknown>;
   /** Sampling randomness, 0.0–2.0. */
-  temperature?: number;
+  temperature?: number | null;
   /** Best-effort deterministic sampling; integer 0–2147483647. */
-  seed?: number;
+  seed?: number | null;
   /** Transcribe each channel independently (max 5; billed per channel). */
   use_multi_channel?: boolean;
   /** Response shape for multi-channel: "separate" (default) or "combined". */
@@ -206,10 +212,10 @@ const speechToTextSchema = z.looseObject({
   additional_formats: z.array(z.looseObject({})).optional(),
   file_format: z.enum(["pcm_s16le_16", "other"]).optional(),
   webhook: z.boolean().optional(),
-  webhook_id: z.string().optional(),
+  webhook_id: z.string().nullable().optional(),
   webhook_metadata: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
-  temperature: z.number().min(0).max(2).optional(),
-  seed: z.number().int().min(0).max(2147483647).optional(),
+  temperature: z.number().min(0).max(2).nullable().optional(),
+  seed: z.number().int().min(0).max(2147483647).nullable().optional(),
   use_multi_channel: z.boolean().optional(),
   multichannel_output_style: z.enum(["separate", "combined"]).optional(),
   entity_detection: z.union([z.string(), z.array(z.string())]).optional(),
@@ -305,7 +311,7 @@ function checkPairings(
       });
     }
   }
-  if (params.webhook_id !== undefined && params.webhook !== true) {
+  if (params.webhook_id != null && params.webhook !== true) {
     ctx.report({
       code: "invalid_shape",
       path: ["webhook_id"],
@@ -340,13 +346,14 @@ function checkPairings(
 
 /**
  * Per-keyterm limits the count-only zod cap cannot express: "The length of
- * each keyterm must be less than 50 characters. Keyterms can contain at most
- * 5 words (after normalisation)." (STT_DOCS_URL).
+ * each keyterm must be at most 50 characters. Keyterms can contain at most 5
+ * words (after normalisation)." (`keyterms` on the served spec, 2026-11-12).
  *
  * The battery is shared with Dubbing (`./keyterms.ts`), which publishes the
  * same two rules and one more. `disallowedCharacters` is deliberately NOT
- * passed here: the `<>{}[]\` refusal is documented on the dubbing route only,
- * and applying it here would reject a request ElevenLabs accepts.
+ * passed here: this route says the `<>{}[]\` characters "are not supported"
+ * without saying the request is refused — only the dubbing route states a
+ * refusal — and applying it here could reject a request ElevenLabs accepts.
  */
 function checkKeyterms(
   params: SpeechToTextParams,

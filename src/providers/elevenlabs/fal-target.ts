@@ -142,7 +142,7 @@ function refuseUniversal(
       "publishes no language-specific normalization switch, and it changes how Japanese is read",
     );
   }
-  if (params.use_pvc_as_ivc !== undefined) {
+  if (params.use_pvc_as_ivc != null) {
     refuseParam(
       ctx,
       ["use_pvc_as_ivc"],

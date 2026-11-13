@@ -90,6 +90,22 @@ describe("elevenlabs.sfx wire shape", () => {
     }
   });
 
+  test("the seven wav_* NonStreamingOutputFormats are accepted (2026-10-19 changelog)", () => {
+    const wav = SOUND_EFFECTS_OUTPUT_FORMATS.filter((format) => format.startsWith("wav_"));
+    expect(wav).toEqual([
+      "wav_8000",
+      "wav_16000",
+      "wav_22050",
+      "wav_24000",
+      "wav_32000",
+      "wav_44100",
+      "wav_48000",
+    ]);
+    const result = sfx.safe({ text: "hum", output_format: "wav_48000" });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.params.request.url).toBe(`${SOUND_EFFECTS_URL}?output_format=wav_48000`);
+  });
+
   test("every SOUND_EFFECTS_OUTPUT_FORMATS preset validates cleanly", () => {
     for (const format of SOUND_EFFECTS_OUTPUT_FORMATS) {
       const result = safeUnchecked({ text: "hum", output_format: format });
@@ -148,6 +164,19 @@ describe("elevenlabs.sfx model gate", () => {
     if (!result.ok) return;
     expect(result.warnings.map((issue) => issue.code)).toEqual(["unknown_model"]);
     expect(safeUnchecked({ text: "hum", loop: true }).ok).toBe(true);
+  });
+});
+
+describe("elevenlabs.sfx deprecations (models refresh 2026-11-12)", () => {
+  test("eleven_text_to_sound_v2 is deprecated, and an omitted model_id (the server default) says so", () => {
+    expect(models.eleven_text_to_sound_v2.status).toBe("deprecated");
+    for (const params of [{ text: "hum", model_id: "eleven_text_to_sound_v2" }, { text: "hum" }]) {
+      const result = sfx.safe(params);
+      expect(result.ok).toBe(true);
+      if (!result.ok) continue;
+      expect(result.warnings.map((issue) => issue.code)).toEqual(["deprecated_model"]);
+      expect(result.warnings[0]?.model).toBe("eleven_text_to_sound_v2");
+    }
   });
 });
 

@@ -101,7 +101,7 @@ describe("elevenlabs.music wire shape", () => {
     // checkOutputFormat or autocomplete would offer formats the API rejects.
     expect(MUSIC_OUTPUT_FORMATS.length).toBe(26);
     for (const output_format of MUSIC_OUTPUT_FORMATS) {
-      const r = music.safe({ prompt: "hi", output_format });
+      const r = music.safe({ prompt: "hi", output_format, model_id: "music_v2" });
       expect(r.ok, `preset ${output_format} should validate`).toBe(true);
       if (r.ok) expect(r.warnings, `preset ${output_format} should be warning-free`).toEqual([]);
     }
@@ -152,11 +152,13 @@ describe("elevenlabs.music prompt / composition_plan rules", () => {
     // a request the API fulfils.
     expect(r.ok).toBe(true);
     if (r.ok) {
-      expect(r.warnings.map((w) => w.path[0]).sort()).toEqual([
+      // music_v1 itself also draws its `deprecated_model` notice.
+      const ignored = r.warnings.filter((w) => w.code !== "deprecated_model");
+      expect(ignored.map((w) => w.path[0]).sort()).toEqual([
         "force_instrumental",
         "music_length_ms",
       ]);
-      expect(r.warnings.every((w) => w.meta?.ignored === true)).toBe(true);
+      expect(ignored.every((w) => w.meta?.ignored === true)).toBe(true);
     }
   });
 
@@ -236,12 +238,12 @@ describe("elevenlabs.music ignored-param warnings", () => {
   });
 
   test("seed alongside prompt warns but passes", () => {
-    const r = music.safe({ prompt: "hi", seed: 42 });
+    const r = music.safe({ prompt: "hi", seed: 42, model_id: "music_v2" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings[0]?.path).toEqual(["seed"]);
     // With a plan instead of a prompt there is nothing to warn about.
     expect(
-      music.safe({ composition_plan: sectionsPlan, model_id: "music_v1", seed: 42 }).warnings ?? [],
+      music.safe({ composition_plan: chunksPlan, model_id: "music_v2", seed: 42 }).warnings ?? [],
     ).toEqual([]);
   });
 });
@@ -284,7 +286,7 @@ describe("elevenlabs.music shape bounds", () => {
   });
 
   test("unknown body params warn but pass through", () => {
-    const r = safeUnchecked({ prompt: "hi", lyrics_text: "la la la" });
+    const r = safeUnchecked({ prompt: "hi", lyrics_text: "la la la", model_id: "music_v2" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_param"]);
   });
@@ -357,6 +359,27 @@ describe("elevenlabs.music finetune_strength / use_phonetic_names", () => {
     const r = safeUnchecked({ prompt: "hi", use_phonetic_names: "yes" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["use_phonetic_names"]);
+  });
+});
+
+describe("elevenlabs.music deprecations (models refresh 2026-11-12)", () => {
+  test("music_v1 is deprecated, and an omitted model_id (the server default) says so", () => {
+    expect(models.music_v1.status).toBe("deprecated");
+    for (const params of [{ prompt: "hi", model_id: "music_v1" }, { prompt: "hi" }]) {
+      const r = music.safe(params);
+      expect(r.ok).toBe(true);
+      if (!r.ok) continue;
+      expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+      expect(r.warnings[0]?.model).toBe("music_v1");
+    }
+  });
+
+  test("its replacements carry no deprecation", () => {
+    for (const model_id of ["music_v2", "music_v2_5"] as const) {
+      const r = music.safe({ prompt: "hi", model_id });
+      expect(r.ok, model_id).toBe(true);
+      if (r.ok) expect(r.warnings, model_id).toEqual([]);
+    }
   });
 });
 

@@ -153,7 +153,9 @@ describe("the documented cross-field rules", () => {
   });
 
   test("the keyterm battery — the Scribe rules, plus the characters dubbing refuses", () => {
-    const long = dub.safe({ source_url: SOURCE_URL, keyterms: ["x".repeat(50)] });
+    // "each term at most 50 characters" — 50 is the last length that passes.
+    expect(dub.safe({ source_url: SOURCE_URL, keyterms: ["x".repeat(50)] }).ok).toBe(true);
+    const long = dub.safe({ source_url: SOURCE_URL, keyterms: ["x".repeat(51)] });
     expect(long.ok).toBe(false);
 
     const wordy = dub.safe({ source_url: SOURCE_URL, keyterms: ["a b c d e f"] });
@@ -167,9 +169,10 @@ describe("the documented cross-field rules", () => {
       expect(bracketed.errors[0]?.meta?.found).toEqual(["<", ">"]);
     }
 
-    // …and Scribe does NOT get that rule, because ElevenLabs does not publish
-    // it there. Verified by the stt suite staying green; asserted here as the
-    // shape of the shared battery.
+    // …and Scribe does NOT get that rule, because its route says only that the
+    // characters "are not supported", without stating a refusal. Verified by
+    // the stt suite staying green; asserted here as the shape of the shared
+    // battery.
     expect(dub.safe({ source_url: SOURCE_URL, keyterms: ["Unmodel"] }).ok).toBe(true);
   });
 });

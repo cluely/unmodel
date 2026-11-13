@@ -1,20 +1,24 @@
 // Hand-maintained — ElevenLabs is not in models.dev; refresh from
-//   https://elevenlabs.io/docs/models            (model ids, per-request character limits, deprecations)
+//   https://elevenlabs.io/docs/overview/models   (model ids, per-request character limits, deprecations)
 //   https://elevenlabs.io/pricing/api            (usage-based API rates, billed in USD)
 //   https://elevenlabs.io/docs/api-reference/speech-to-text/convert (batch STT model ids)
-// Verified 2026-08-24.
+// Verified 2026-08-24; rates, limits and deprecations re-verified 2026-11-12.
 //
-// Pricing conversions (documented so the arithmetic never rots unexplained):
-// - TTS Multilingual v2 / v3 class: $0.10 per 1,000 characters
-//   → 0.10 × 1,000 = $100 per 1M characters (ModelCost.perMillionCharacters).
-// - TTS Flash / Turbo class: $0.05 per 1,000 characters
-//   → 0.05 × 1,000 = $50 per 1M characters.
-// - STT Scribe (batch): $0.22 per hour of transcribed audio
-//   → 0.22 / 60 ≈ $0.003667 per minute (ModelCost.perAudioMinute).
-//   The pricing page does not differentiate scribe_v1 from scribe_v2, so both
-//   carry the same rate.
-// - STT Scribe v2 Realtime: $0.39 per hour → 0.39 / 60 = $0.0065 per minute.
-//   elevenlabs.io/pricing/api prices it separately from batch Scribe.
+// Pricing conversions (documented so the arithmetic never rots unexplained).
+// Every rate below is quoted from https://elevenlabs.io/pricing/api, 2026-11-12:
+// - TTS multilingual class (v4, v3, Multilingual v2): "Text to Speech $0.08
+//   per 1,000 characters (multilingual models) or $0.04 (Flash/Turbo)."
+//   → 0.08 × 1,000 = $80 per 1M characters (ModelCost.perMillionCharacters).
+// - TTS Flash / Turbo class: $0.04 per 1,000 characters (same sentence)
+//   → 0.04 × 1,000 = $40 per 1M characters. v3 Conversational's own card
+//   carries the same $0.04.
+// - STT Scribe (batch): "Speech to Text $0.20 per hour (Scribe) or $0.22 per
+//   hour (Scribe realtime)" → 0.20 / 60 ≈ $0.003333 per minute
+//   (ModelCost.perAudioMinute). The Scribe v3, Scribe v2 and Scribe v2 Medical
+//   cards each say "Price per hour" $0.20. No Scribe v1 card exists; it carries
+//   the sentence's generic "(Scribe)" rate.
+// - STT Scribe realtime (v2 Realtime, v3 Live): $0.22 per hour, the same
+//   sentence and each model's own card → 0.22 / 60 ≈ $0.003667 per minute.
 // - Eleven Music: $0.15 per minute of GENERATED audio (elevenlabs.io/pricing/api,
 //   "Music" row). It rides on ModelCost.perAudioMinute — the only per-minute
 //   audio unit the catalog has — but note the direction: for Scribe that field
@@ -57,17 +61,17 @@ export const provider = {
   id: "elevenlabs",
   name: "ElevenLabs",
   env: ["ELEVENLABS_API_KEY"],
-  doc: "https://elevenlabs.io/docs/models",
+  doc: "https://elevenlabs.io/docs/overview/models",
 } as const satisfies ProviderInfo;
 
-/** $0.10 per 1k characters → USD per 1M characters. */
-const TTS_STANDARD_PER_MILLION_CHARACTERS = 100;
-/** $0.05 per 1k characters → USD per 1M characters. */
-const TTS_FLASH_PER_MILLION_CHARACTERS = 50;
-/** $0.22 per hour → USD per minute of transcribed audio. */
-const SCRIBE_PER_AUDIO_MINUTE = 0.22 / 60;
-/** $0.39 per hour → USD per minute (realtime Scribe). */
-const SCRIBE_REALTIME_PER_AUDIO_MINUTE = 0.39 / 60;
+/** $0.08 per 1k characters (multilingual models) → USD per 1M characters. */
+const TTS_STANDARD_PER_MILLION_CHARACTERS = 80;
+/** $0.04 per 1k characters (Flash/Turbo) → USD per 1M characters. */
+const TTS_FLASH_PER_MILLION_CHARACTERS = 40;
+/** $0.20 per hour → USD per minute of transcribed audio (batch Scribe). */
+const SCRIBE_PER_AUDIO_MINUTE = 0.2 / 60;
+/** $0.22 per hour → USD per minute (realtime Scribe). */
+const SCRIBE_REALTIME_PER_AUDIO_MINUTE = 0.22 / 60;
 /** Eleven Music: $0.15 per minute of generated audio. */
 export const MUSIC_PER_AUDIO_MINUTE = 0.15;
 /**
@@ -117,9 +121,7 @@ const ttsModels = {
     // 10,000 characters per request — https://elevenlabs.io/docs/overview/models (2026-11-12):
     // "| `eleven_v4` | 10,000 | ~10 minutes |".
     limit: { context: 0, characters: 10000 },
-    // https://elevenlabs.io/pricing/api (2026-11-12): "Text to Speech $0.08 per 1,000 characters
-    // (multilingual models) or $0.04 (Flash/Turbo)." → 0.08 × 1,000 = $80 per 1M characters.
-    cost: { perMillionCharacters: 80 },
+    cost: { perMillionCharacters: TTS_STANDARD_PER_MILLION_CHARACTERS },
   },
   eleven_v3: {
     id: "eleven_v3",
@@ -208,18 +210,23 @@ const ttsModels = {
     openWeights: false,
     status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
-    limit: { context: 0 },
+    // 10,000 characters per request — https://elevenlabs.io/docs/overview/models
+    // (2026-11-12): "| `eleven_multilingual_v1` | 10,000 | ~10 minutes |".
+    limit: { context: 0, characters: 10000 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 /**
  * WebSocket-only TTS. "Our most expressive, realtime speech synthesis model
- * (~280ms)" — elevenlabs.io/docs/models (2026-08-24). Served over the
- * realtime Text to Dialogue WebSocket, which unmodel does not validate;
- * listed for catalog completeness, and the unary text-to-speech validator
- * rejects it because POST /v1/text-to-speech/{voice_id} cannot serve it.
- * elevenlabs.io/pricing/api publishes no separate USD rate, so `cost` is
- * omitted.
+ * (~165ms†)" — https://elevenlabs.io/docs/overview/models (2026-11-12; the
+ * pricing card still says "Low latency (~280ms)"). Served over the realtime
+ * Text to Dialogue WebSocket, which unmodel does not validate; listed for
+ * catalog completeness, and the unary text-to-speech validator rejects it
+ * because POST /v1/text-to-speech/{voice_id} cannot serve it.
+ *
+ * Priced at the Flash/Turbo class rate — https://elevenlabs.io/pricing/api
+ * (2026-11-12): "v3 Conversational | Text to Speech | $0.04 | Price per 1K
+ * characters".
  */
 const realtimeTtsModels = {
   eleven_v3_conversational: {
@@ -231,6 +238,7 @@ const realtimeTtsModels = {
     openWeights: false,
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
+    cost: { perMillionCharacters: TTS_FLASH_PER_MILLION_CHARACTERS },
   },
 } as const satisfies Record<string, ModelInfo>;
 
@@ -249,9 +257,7 @@ const sttModels = {
     openWeights: false,
     modalities: { input: ["audio"], output: ["text"] },
     limit: { context: 0 },
-    // https://elevenlabs.io/pricing/api (2026-11-12): Scribe v3 "Price per hour" $0.20
-    // → 0.20 / 60 per minute of transcribed audio.
-    cost: { perAudioMinute: 0.2 / 60 },
+    cost: { perAudioMinute: SCRIBE_PER_AUDIO_MINUTE },
   },
   scribe_v2: {
     id: "scribe_v2",
@@ -275,9 +281,7 @@ const sttModels = {
     openWeights: false,
     modalities: { input: ["audio"], output: ["text"] },
     limit: { context: 0 },
-    // https://elevenlabs.io/pricing/api (2026-11-12): Scribe v2 Medical "Price per hour" $0.20
-    // → 0.20 / 60 per minute of transcribed audio.
-    cost: { perAudioMinute: 0.2 / 60 },
+    cost: { perAudioMinute: SCRIBE_PER_AUDIO_MINUTE },
   },
   scribe_v1: {
     id: "scribe_v1",
@@ -323,9 +327,7 @@ const realtimeSttModels = {
     openWeights: false,
     modalities: { input: ["audio"], output: ["text"] },
     limit: { context: 0 },
-    // https://elevenlabs.io/pricing/api (2026-11-12): "Scribe v3 Live | Speech to Text | New |
-    // $0.22 | Price per hour" → 0.22 / 60 per minute.
-    cost: { perAudioMinute: 0.22 / 60 },
+    cost: { perAudioMinute: SCRIBE_REALTIME_PER_AUDIO_MINUTE },
   },
 } as const satisfies Record<string, ModelInfo>;
 
@@ -377,7 +379,9 @@ const speechToSpeechModels = {
     openWeights: false,
     status: "deprecated",
     modalities: { input: ["audio"], output: ["audio"] },
-    limit: { context: 0 },
+    // 10,000 characters (a billing quota, as above) — https://elevenlabs.io/docs/overview/models
+    // (2026-11-12): "| `eleven_english_sts_v1` | 10,000 | ~10 minutes |".
+    limit: { context: 0, characters: 10000 },
     cost: { perAudioMinute: VOICE_CHANGER_PER_AUDIO_MINUTE },
   },
 } as const satisfies Record<string, ModelInfo>;
@@ -418,9 +422,11 @@ const textToVoiceModels = {
  * PROVENANCE, because these two are the exception to the COVERAGE note above:
  * `dubbing_v1` and `dubbing_v2` are NOT listed on elevenlabs.io/docs/models.
  * They come from the `model_id` enum of the dubbing project-create body
- * (https://elevenlabs.io/docs/api-reference/dubbing/project/create, the only
+ * (https://elevenlabs.io/docs/api-reference/dubbing/create-project, the only
  * place either id is selectable) and their rates from the API pricing table
- * (https://elevenlabs.io/pricing/api). Both verified 2026-08-26.
+ * (https://elevenlabs.io/pricing/api). Both verified 2026-08-26; rates
+ * re-verified unchanged 2026-11-12 ("Dubbing v2 | Dubbing | $2.20 | Price per
+ * minute"; Dubbing v1 "Price per minute (without watermark)" $0.50).
  *
  * The rates are per minute of SOURCE media, and they are spent once per
  * language target: the help centre's formula is model × duration × number of
@@ -523,6 +529,10 @@ const generativeAudioModels = {
     limit: { context: 0 },
     cost: { perAudioMinute: MUSIC_PER_AUDIO_MINUTE },
   },
+  // "The `music_v1` model is deprecated and will be removed on **January 31,
+  // 2027**." — https://elevenlabs.io/docs/overview/models (2026-11-12), which
+  // names `music_v2_5` the replacement. Still served, and still the `/v1/music`
+  // default (`MusicModelID` "default":"music_v1", flagged `deprecated: true`).
   music_v1: {
     id: "music_v1",
     name: "Eleven Music v1",
@@ -530,10 +540,14 @@ const generativeAudioModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
+    status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
     cost: { perAudioMinute: MUSIC_PER_AUDIO_MINUTE },
   },
+  // "`eleven_text_to_sound_v2` is still the default but is deprecated and will
+  // be removed on March 1, 2027." — https://elevenlabs.io/docs/overview/models
+  // (2026-11-12); the replacement is `eleven_text_to_sound_v3`.
   eleven_text_to_sound_v2: {
     id: "eleven_text_to_sound_v2",
     name: "Eleven Text to Sound v2",
@@ -541,6 +555,7 @@ const generativeAudioModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
+    status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
     cost: { perAudioMinute: SOUND_EFFECTS_PER_AUDIO_MINUTE },

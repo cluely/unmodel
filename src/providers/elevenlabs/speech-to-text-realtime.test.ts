@@ -117,9 +117,10 @@ describe("elevenlabs.speechToTextRealtime happy path", () => {
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.warnings).toEqual([]);
     }
-    // $0.39 per hour → per-minute rate, distinct from batch Scribe's $0.22/h.
+    // $0.22 per hour → per-minute rate, distinct from batch Scribe's $0.20/h.
     const realtime = models.scribe_v2_realtime.cost?.perAudioMinute;
-    expect(realtime).toBeCloseTo(0.39 / 60, 10);
+    expect(realtime).toBeCloseTo(0.22 / 60, 10);
+    expect(models.scribe_v3_live.cost.perAudioMinute).toBe(realtime);
     expect(realtime).not.toBe(models.scribe_v2.cost?.perAudioMinute);
   });
 

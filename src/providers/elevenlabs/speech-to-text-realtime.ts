@@ -40,7 +40,7 @@
  *   `min_speech_duration_ms`, `min_silence_duration_ms`) publish no numeric
  *   ranges or defaults, so none are invented; only the two `*_ms` fields are
  *   typed as integers, which the reference states.
- * - Realtime Scribe is billed at $0.39 per hour (catalog `perAudioMinute`), but
+ * - Realtime Scribe is billed at $0.22 per hour (catalog `perAudioMinute`), but
  *   the length of a live session is unknowable at connect time, so this
  *   validator produces no cost estimate.
  * - There is no `.request`: a WebSocket URL is not fetchable, and unmodel's
@@ -72,7 +72,7 @@ export const SPEECH_TO_TEXT_REALTIME_WS_URL = "wss://api.elevenlabs.io/v1/speech
 
 const REALTIME_DOCS_URL =
   "https://elevenlabs.io/docs/api-reference/speech-to-text/v-1-speech-to-text-realtime";
-const MODELS_DOCS_URL = "https://elevenlabs.io/docs/models";
+const MODELS_DOCS_URL = "https://elevenlabs.io/docs/overview/models";
 /**
  * The capabilities page, which is where the per-keyterm length caps are
  * published (the realtime AsyncAPI reference states only the 50-term count).
@@ -112,8 +112,8 @@ export const REALTIME_STT_KEYTERMS_MAX = 50;
  * "…realtime supports up to 50 keyterms (20 characters each)"
  * (CAPABILITIES_DOCS_URL). Read as INCLUSIVE — "20 characters each" states the
  * allowance, not an exclusive bound, so a 20-character term passes and 21
- * fails. (The batch reference words its cap differently — "must be less than
- * 50 characters" — and ./speech-to-text enforces that one exclusively.)
+ * fails — the same reading the batch cap gets ("must be at most 50
+ * characters", enforced inclusively by ./keyterms).
  */
 export const REALTIME_STT_KEYTERM_MAX_CHARACTERS = 20;
 

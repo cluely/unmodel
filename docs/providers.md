@@ -627,9 +627,10 @@ creak. Each route refuses the other's ids by name.
 **ElevenLabs — `elevenlabs.sfx`, 2 models** (`eleven_text_to_sound_v2`, `eleven_text_to_sound_v3`). Tier: **native**.
 `POST https://api.elevenlabs.io/v1/sound-generation`, JSON body, `xi-api-key` header. `text` is
 the only required field; `output_format` is a **query param** (the `/v1/music` placement, and
-the same trap: sending it in the body is a silent no-op) whose 21-member enum is NOT the music
-one — there is no 48 kHz MP3 arm here, so a shared constant would have accepted four values
-this endpoint rejects. The catalog row already existed and gains its $0.12-per-generated-minute
+the same trap: sending it in the body is a silent no-op) whose 28 values (the 21-member
+`AllowedOutputFormats` enum plus seven `wav_*` rates) are NOT the music list — there is no
+48 kHz MP3 arm here, so a shared constant would have accepted four values this endpoint
+rejects. `eleven_text_to_sound_v2` is the server default and deprecated, removal 2027-03-01. The catalog row already existed and gains its $0.12-per-generated-minute
 rate; the endpoint answers raw audio bytes plus a `character-cost` header, so there is no
 response checker.
 

@@ -97,7 +97,7 @@ export type ElevenlabsOptimizeStreamingLatency =
 
 /**
  * Documented bounds of `voice_settings.speed` —
- * https://elevenlabs.io/docs/best-practices/prompting/controls
+ * https://elevenlabs.io/docs/overview/capabilities/text-to-speech/best-practices
  * ("Values below 1.0 will slow the voice down, to a minimum of 0.7. Values
  * above 1.0 will speed up the voice, to a maximum of 1.2."). The API
  * reference itself publishes no bounds, so this is the only documented
@@ -186,8 +186,13 @@ export interface TextToSpeechParams {
   apply_text_normalization?: "auto" | "on" | "off";
   /** Language-specific text normalization (currently Japanese only; adds latency). */
   apply_language_text_normalization?: boolean;
-  /** @deprecated Temporary latency workaround — use the IVC voice version. */
-  use_pvc_as_ivc?: boolean;
+  /**
+   * "Whether to use the IVC version of a professional voice. This may improve
+   * expressiveness and reduce latency." Nullable with no declared default on
+   * https://api.elevenlabs.io/openapi.json (2026-11-12), and not deprecated on
+   * this route — the deprecation is Text to Dialogue's.
+   */
+  use_pvc_as_ivc?: boolean | null;
   /**
    * QUERY param — stripped from the wire body and appended to `.request.url`
    * as `?output_format=…`. Default mp3_44100_128.
@@ -298,7 +303,7 @@ const textToSpeechSchema = z.looseObject({
     .optional(),
   apply_text_normalization: z.enum(["auto", "on", "off"]).optional(),
   apply_language_text_normalization: z.boolean().optional(),
-  use_pvc_as_ivc: z.boolean().optional(),
+  use_pvc_as_ivc: z.boolean().nullable().optional(),
   output_format: z.string().optional(),
   enable_logging: z.boolean().optional(),
   // "0 - default mode … 4 - max latency optimizations" — the documented
@@ -312,8 +317,8 @@ const textToSpeechSchema = z.looseObject({
 
 const OUTPUT_FORMAT_SET = new Set<string>(TTS_OUTPUT_FORMATS);
 const TTS_DOCS_URL = "https://elevenlabs.io/docs/api-reference/text-to-speech/convert";
-const MODELS_DOCS_URL = "https://elevenlabs.io/docs/models";
-const CONTROLS_DOCS_URL = "https://elevenlabs.io/docs/best-practices/prompting/controls";
+const MODELS_DOCS_URL = "https://elevenlabs.io/docs/overview/models";
+const CONTROLS_DOCS_URL = "https://elevenlabs.io/docs/overview/capabilities/text-to-speech/best-practices";
 
 const TTS_MODEL_ID_SET = new Set<string>(TTS_MODEL_IDS);
 

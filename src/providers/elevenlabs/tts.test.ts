@@ -169,6 +169,41 @@ describe("elevenlabs.tts eleven_v4 (models refresh 2026-11-12)", () => {
   });
 });
 
+describe("elevenlabs.tts catalog corrections (models refresh 2026-11-12)", () => {
+  test("every multilingual-class row is $80 and every Flash/Turbo row $40 per 1M characters", () => {
+    for (const id of ["eleven_v4", "eleven_v3", "eleven_multilingual_v2"] as const) {
+      expect(models[id].cost.perMillionCharacters, id).toBe(80);
+    }
+    for (const id of [
+      "eleven_flash_v2_5",
+      "eleven_flash_v2",
+      "eleven_turbo_v2_5",
+      "eleven_turbo_v2",
+      "eleven_v3_conversational",
+    ] as const) {
+      expect(models[id].cost.perMillionCharacters, id).toBe(40);
+    }
+  });
+
+  test("eleven_multilingual_v1 carries its published 10,000-character cap", () => {
+    expect(models.eleven_multilingual_v1.limit.characters).toBe(10000);
+    const r = tts.safe({
+      voice_id: "abc123",
+      text: "x".repeat(10001),
+      model_id: "eleven_multilingual_v1",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("over_output_limit");
+  });
+
+  test("use_pvc_as_ivc accepts null (nullable, no default) and drops it from the SDK view", () => {
+    const v = tts({ voice_id: "abc123", text: "hi", use_pvc_as_ivc: null });
+    expect(v.use_pvc_as_ivc).toBeNull();
+    expect(v.toSdk("elevenlabs").request).toEqual({ text: "hi" });
+    expect(tts.safe({ voice_id: "abc123", text: "hi", use_pvc_as_ivc: true }).ok).toBe(true);
+  });
+});
+
 describe("elevenlabs.tts character limits", () => {
   test("text over the per-model cap is over_output_limit with character meta", () => {
     const limit = models.eleven_v3.limit.characters;
@@ -218,25 +253,25 @@ describe("elevenlabs.tts character limits", () => {
 });
 
 describe("elevenlabs.tts cost estimation", () => {
-  test("multilingual v2 class is $0.10 per 1k characters", () => {
-    // 1,000 chars × $100 / 1M chars = $0.10
+  test("multilingual v2 class is $0.08 per 1k characters", () => {
+    // 1,000 chars × $80 / 1M chars = $0.08
     const r = tts.safe({
       voice_id: "abc123",
       text: "x".repeat(1000),
       model_id: "eleven_multilingual_v2",
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.1, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.08, 10);
   });
 
-  test("flash class is $0.05 per 1k characters", () => {
+  test("flash class is $0.04 per 1k characters", () => {
     const r = tts.safe({
       voice_id: "abc123",
       text: "x".repeat(1000),
       model_id: "eleven_flash_v2_5",
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.05, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.04, 10);
   });
 
   test("maxCostUSD under the estimate is over_budget", () => {
@@ -244,7 +279,7 @@ describe("elevenlabs.tts cost estimation", () => {
       { voice_id: "abc123", text: "x".repeat(2000), model_id: "eleven_v3" },
       { maxCostUSD: 0.1 },
     );
-    // 2,000 chars × $100 / 1M = $0.20 > $0.10
+    // 2,000 chars × $80 / 1M = $0.16 > $0.10
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.code).toBe("over_budget");
   });
@@ -429,7 +464,7 @@ describe("elevenlabs.tts voice_settings bounds (doc audit 2026-08-13)", () => {
       expect(issue?.path).toEqual(["voice_settings", "speed"]);
       expect(issue?.meta?.min).toBe(TTS_SPEED_MIN);
       expect(issue?.meta?.max).toBe(TTS_SPEED_MAX);
-      expect(String(issue?.meta?.source)).toContain("prompting/controls");
+      expect(String(issue?.meta?.source)).toContain("text-to-speech/best-practices");
     }
   });
 

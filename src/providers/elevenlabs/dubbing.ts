@@ -3,7 +3,7 @@
  *
  * Wire notes (verified against `https://api.elevenlabs.io/openapi.json`
  * — `dubbing_project_create` — the reference page at
- * https://elevenlabs.io/docs/api-reference/dubbing/project/create, the
+ * https://elevenlabs.io/docs/api-reference/dubbing/create-project, the
  * capabilities page at
  * https://elevenlabs.io/docs/overview/capabilities/dubbing, and
  * `@elevenlabs/elevenlabs-js@2.65.0`, on 2026-08-26):
@@ -90,7 +90,7 @@ import {
 
 export const DUBBING_PROJECT_URL = "https://api.elevenlabs.io/v1/dubbing/project";
 
-const DUBBING_DOCS_URL = "https://elevenlabs.io/docs/api-reference/dubbing/project/create";
+const DUBBING_DOCS_URL = "https://elevenlabs.io/docs/api-reference/dubbing/create-project";
 const DUBBING_LANGUAGES_DOCS_URL = "https://elevenlabs.io/docs/overview/capabilities/dubbing";
 
 /** "Optional free-form string (max 500 characters) to identify the project on your end." */

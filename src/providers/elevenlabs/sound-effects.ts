@@ -13,11 +13,13 @@
  *   `/v1/music` uses, and the same trap: sending it in the JSON body is a
  *   silent no-op. It is stripped from the wire body and appended to
  *   `.request.url`. Default `mp3_44100_128`.
- * - The `AllowedOutputFormats` enum here is NOT the music one. It has 21
- *   members against music's 26: no `"auto"`, and no 48 kHz MP3 arm at all
- *   (`mp3_48000_128` and its siblings exist at `/v1/music` and not here). A
- *   single shared list would therefore accept four values this endpoint
- *   rejects, which is why the constant is declared per endpoint.
+ * - `output_format` is `anyOf[NonStreamingOutputFormats, AllowedOutputFormats]`
+ *   (2026-11-12): the seven `wav_*` values plus the 21-member
+ *   `AllowedOutputFormats` enum, which is NOT the music one — no `"auto"`, and
+ *   no 48 kHz MP3 arm at all (`mp3_48000_128` and its siblings exist at
+ *   `/v1/music` and not here). A single shared list would therefore accept
+ *   four values this endpoint rejects, which is why the constant is declared
+ *   per endpoint.
  * - `duration_seconds` is `anyOf[number, null]`, 0.5–30. **Absent (or explicit
  *   `null`) means the model guesses a length from the prompt** — the API's own
  *   words are "If set to None we will guess the optimal duration using the
@@ -64,7 +66,10 @@ export const DEFAULT_SFX_MODEL_ID = "eleven_text_to_sound_v2";
 
 /**
  * `output_format` query values ("codec_sample_rate[_bitrate]") — the
- * `AllowedOutputFormats` component.
+ * `AllowedOutputFormats` component plus the seven `NonStreamingOutputFormats`
+ * WAV values, "`output_format` adds `wav_8000`, `wav_16000`, `wav_22050`,
+ * `wav_24000`, `wav_32000`, `wav_44100` and `wav_48000`"
+ * (https://elevenlabs.io/docs/changelog/2026/10/19, read 2026-11-12).
  *
  * **Not the same list `/v1/music` takes.** There is no `"auto"` here, and no
  * 48 kHz MP3 arm: `mp3_48000_128`, `mp3_48000_192`, `mp3_48000_240` and
@@ -94,6 +99,13 @@ export const SOUND_EFFECTS_OUTPUT_FORMATS = [
   "opus_48000_96",
   "opus_48000_128",
   "opus_48000_192",
+  "wav_8000",
+  "wav_16000",
+  "wav_22050",
+  "wav_24000",
+  "wav_32000",
+  "wav_44100",
+  "wav_48000",
 ] as const;
 export type ElevenlabsSoundEffectsOutputFormat = (typeof SOUND_EFFECTS_OUTPUT_FORMATS)[number];
 

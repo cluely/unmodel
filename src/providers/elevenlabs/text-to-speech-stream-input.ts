@@ -81,7 +81,7 @@ export const STREAM_INPUT_WS_BASE_URL = "wss://api.elevenlabs.io/v1/text-to-spee
 const STREAM_INPUT_DOCS_URL =
   "https://elevenlabs.io/docs/api-reference/text-to-speech/v-1-text-to-speech-voice-id-stream-input";
 const CONVERT_DOCS_URL = "https://elevenlabs.io/docs/api-reference/text-to-speech/convert";
-const MODELS_DOCS_URL = "https://elevenlabs.io/docs/models";
+const MODELS_DOCS_URL = "https://elevenlabs.io/docs/overview/models";
 /** Where the socket's `eleven_v3` / `eleven_v4` refusal is published. */
 const REALTIME_TTS_GUIDE_URL =
   "https://elevenlabs.io/docs/eleven-api/guides/how-to/websockets/realtime-tts";

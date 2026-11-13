@@ -46,8 +46,8 @@ export const MODELS = ["scribe_v3", "scribe_v2", "scribe_v2_medical", "scribe_v1
 export const SCRIBE_EXTRAS = {
   tag_audio_events: EXTRA as boolean,
   keyterms: EXTRA as string[],
-  temperature: EXTRA as number,
-  seed: EXTRA as number,
+  temperature: EXTRA as number | null,
+  seed: EXTRA as number | null,
   file_format: EXTRA as "pcm_s16le_16" | "other",
   additional_formats: EXTRA as Array<Record<string, unknown>>,
   diarization_threshold: EXTRA as number | null,

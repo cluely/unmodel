@@ -2,26 +2,27 @@
  * The `keyterms` rules ElevenLabs applies on more than one route.
  *
  * Speech to Text and Dubbing publish BYTE-IDENTICAL caps — at most 1000 terms,
- * each under 50 characters and at most 5 words after normalisation — and they
+ * each at most 50 characters and at most 5 words after normalisation — and they
  * are the same product decision rather than a coincidence: both bias the same
  * transcription model toward the same kind of proper noun. Two copies of three
  * numbers is two chances to update one of them, so they live here and both
  * validators read them.
  *
- * Dubbing adds one rule Speech to Text does not publish: "the characters
- * `<>{}[]\` are not allowed". It rides as an opt-in flag rather than as a
- * fourth constant applied everywhere, because applying it to Speech to Text
- * would refuse a request ElevenLabs accepts.
+ * Dubbing states one more rule as a refusal: "the characters `<>{}[]\` are not
+ * allowed". It rides as an opt-in flag rather than as a fourth constant applied
+ * everywhere: Speech to Text's description says only that those characters
+ * "are not supported", which does not say the request is refused, so applying
+ * it there could refuse a request ElevenLabs accepts.
  *
- * Sources, both verified 2026-08-26:
- * - https://elevenlabs.io/docs/api-reference/speech-to-text/convert — "The
- *   number of keyterms cannot exceed 1000. The length of each keyterm must be
- *   less than 50 characters. Keyterms can contain at most 5 words (after
- *   normalisation)."
- * - https://elevenlabs.io/docs/api-reference/dubbing/project/create — "Key
- *   terms to bias transcription/translation toward (e.g. product or brand
- *   names). At most 1000 terms; each term at most 50 characters and 5 words;
- *   the characters `<>{}[]\` are not allowed."
+ * Sources, both read 2026-11-12:
+ * - `keyterms` on POST /v1/speech-to-text, https://api.elevenlabs.io/openapi.json
+ *   — "The length of each keyterm must be at most 50 characters. Keyterms can
+ *   contain at most 5 words (after normalisation). … The following characters
+ *   are not supported: `<`, `>`, `{`, `}`, `[`, `]`, `\`." (and "cannot exceed
+ *   1000" on the reference page, verified 2026-08-26).
+ * - https://elevenlabs.io/docs/api-reference/dubbing/create-project — "At most
+ *   1,000 terms; each term at most 50 characters and 5 words; the characters
+ *   `<>{}[]\` are not allowed."
  *
  * Zero runtime dependencies beyond a type-only `PipelineContext` import: this
  * is a leaf, so both graphs pay three numbers and one loop.
@@ -31,7 +32,7 @@ import type { PipelineContext } from "../../core/pipeline";
 
 /** "The number of keyterms cannot exceed 1000." */
 export const KEYTERMS_MAX = 1000;
-/** "The length of each keyterm must be less than 50 characters." */
+/** "The length of each keyterm must be at most 50 characters." — inclusive. */
 export const KEYTERM_MAX_CHARACTERS = 50;
 /** "Keyterms can contain at most 5 words (after normalisation)." */
 export const KEYTERM_MAX_WORDS = 5;
@@ -63,11 +64,11 @@ export function checkKeytermRules(
   const field = options.path ?? "keyterms";
   keyterms.forEach((term, index) => {
     if (typeof term !== "string") return;
-    if (term.length >= KEYTERM_MAX_CHARACTERS) {
+    if (term.length > KEYTERM_MAX_CHARACTERS) {
       ctx.report({
         code: "invalid_shape",
         path: [field, index],
-        message: `keyterm ${JSON.stringify(term)} is ${term.length} characters; each keyterm must be less than ${KEYTERM_MAX_CHARACTERS} characters.`,
+        message: `keyterm ${JSON.stringify(term)} is ${term.length} characters; each keyterm can be at most ${KEYTERM_MAX_CHARACTERS} characters.`,
         meta: { limit: KEYTERM_MAX_CHARACTERS, actual: term.length, source: options.source },
       });
     }

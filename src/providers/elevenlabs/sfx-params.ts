@@ -29,14 +29,16 @@ export const SFX_DOCS = "https://elevenlabs.io/docs/api-reference/text-to-sound-
  *
  * PCM, μ-law and A-law are uncompressed, so the composite has no bitrate slot
  * for them; μ-law and A-law are bare telephony streams at 8 kHz with no
- * container of their own, which is what `"raw"` says.
+ * container of their own, which is what `"raw"` says. 16-bit PCM comes both
+ * bare (`pcm_<rate>`) and in a WAV header (`wav_<rate>`, at the same seven
+ * rates), the arrangement the TTS spec already has.
  */
 export const FORMAT: AudioFormatSpec = {
   codecs: { mp3: "mp3", opus: "opus", pcm_s16le: "pcm", pcm_mulaw: "ulaw", pcm_alaw: "alaw" },
   containers: {
     mp3: ["mp3"],
     opus: ["ogg"],
-    pcm_s16le: ["raw"],
+    pcm_s16le: ["wav", "raw"],
     pcm_mulaw: ["raw"],
     pcm_alaw: ["raw"],
   },

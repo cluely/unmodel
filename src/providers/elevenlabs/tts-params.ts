@@ -123,7 +123,7 @@ export const TTS_EXTRAS = {
   next_request_ids: EXTRA as string[] | null,
   apply_text_normalization: EXTRA as "auto" | "on" | "off",
   apply_language_text_normalization: EXTRA as boolean,
-  use_pvc_as_ivc: EXTRA as boolean,
+  use_pvc_as_ivc: EXTRA as boolean | null,
 } as const;
 
 export const ROW = {

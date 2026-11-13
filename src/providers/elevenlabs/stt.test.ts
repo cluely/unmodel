@@ -168,6 +168,26 @@ describe("elevenlabs.stt source exclusivity", () => {
   });
 });
 
+describe("elevenlabs.stt explicit nulls (models refresh 2026-11-12)", () => {
+  test("webhook_id, temperature and seed accept null, as the served spec types them", () => {
+    const r = stt.safe({
+      model_id: "scribe_v2",
+      file: audio,
+      webhook_id: null,
+      temperature: null,
+      seed: null,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([]);
+    // null = provider default → omitted from the form and the SDK view.
+    const form = toFormData(r.params);
+    expect(form.get("webhook_id")).toBeNull();
+    expect(form.get("temperature")).toBeNull();
+    expect(r.params.toSdk("elevenlabs")).toEqual({ modelId: "scribe_v2", file: audio });
+  });
+});
+
 describe("elevenlabs.stt pairing rules", () => {
   test("diarization_threshold without diarize is invalid_shape", () => {
     const r = stt.safe({ model_id: "scribe_v2", file: audio, diarization_threshold: 0.3 });
@@ -242,22 +262,22 @@ describe("elevenlabs.stt enums and shape", () => {
 });
 
 describe("elevenlabs.stt cost estimation (declared duration)", () => {
-  test("declared durationSeconds prices at $0.22 per hour", () => {
+  test("declared durationSeconds prices at $0.20 per hour", () => {
     const r = stt.safe(
       { model_id: "scribe_v2", file: audio },
       { media: [{ path: ["file"], durationSeconds: 3600 }] },
     );
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.22, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.2, 10);
   });
 
-  test("10 minutes of audio costs 0.22/6", () => {
+  test("10 minutes of audio costs 0.20/6", () => {
     const r = stt.safe(
       { model_id: "scribe_v2", file: audio },
       { media: [{ path: ["file"], durationSeconds: 600 }] },
     );
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.22 / 6, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.2 / 6, 10);
   });
 
   test("no declaration means no estimate", () => {
@@ -348,11 +368,11 @@ describe("elevenlabs.toFormData", () => {
 });
 
 describe("elevenlabs.stt keyterm limits (doc audit 2026-08-13)", () => {
-  test("a keyterm of 50+ characters is invalid_shape with the doc source", () => {
+  test("a keyterm over 50 characters is invalid_shape with the doc source", () => {
     const r = stt.safe({
       model_id: "scribe_v2",
       file: audio,
-      keyterms: ["x".repeat(50)],
+      keyterms: ["x".repeat(51)],
     });
     expect(r.ok).toBe(false);
     if (!r.ok) {
@@ -362,8 +382,8 @@ describe("elevenlabs.stt keyterm limits (doc audit 2026-08-13)", () => {
     }
   });
 
-  test("49 characters is fine (the cap is exclusive: 'less than 50')", () => {
-    const r = stt.safe({ model_id: "scribe_v2", file: audio, keyterms: ["x".repeat(49)] });
+  test("exactly 50 characters is fine (the cap is inclusive: 'at most 50')", () => {
+    const r = stt.safe({ model_id: "scribe_v2", file: audio, keyterms: ["x".repeat(50)] });
     expect(r.ok).toBe(true);
   });
 
@@ -458,8 +478,8 @@ describe("elevenlabs.stt model gating (doc audit 2026-08-13)", () => {
     }
   });
 
-  test("scribe_v2_realtime is catalogued with its published $0.39/hr rate", () => {
-    expect(models.scribe_v2_realtime.cost.perAudioMinute).toBeCloseTo(0.39 / 60, 10);
+  test("scribe_v2_realtime is catalogued with its published $0.22/hr rate", () => {
+    expect(models.scribe_v2_realtime.cost.perAudioMinute).toBeCloseTo(0.22 / 60, 10);
   });
 });
 

@@ -77,11 +77,11 @@ export const availability = {
   },
   "gemini-3.1-flash-lite-image": {
     "google": "gemini-3.1-flash-lite-image",
+    "google-vertex": "gemini-3.1-flash-lite-image",
     "openrouter": "google/gemini-3.1-flash-lite-image",
   },
   "gemini-3.1-flash-lite-preview": {
     "google": "gemini-3.1-flash-lite-preview",
-    "google-vertex": "gemini-3.1-flash-lite-preview",
     "openrouter": "google/gemini-3.1-flash-lite-preview",
   },
   "gemini-3.1-flash-live-preview": {
@@ -130,27 +130,28 @@ export const availability = {
   },
   "gemini-4-argon": {
     "google": "gemini-4-argon",
+    "google-vertex": "gemini-4-argon",
     "openrouter": "google/gemini-4-argon",
     "vercel": { id: "google/gemini-4-argon", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-4-carbon": {
     "google": "gemini-4-carbon",
+    "google-vertex": "gemini-4-carbon",
     "openrouter": "google/gemini-4-carbon",
     "vercel": { id: "google/gemini-4-carbon", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-4-hydrogen": {
     "google": "gemini-4-hydrogen",
+    "google-vertex": "gemini-4-hydrogen",
     "openrouter": "google/gemini-4-hydrogen",
     "vercel": { id: "google/gemini-4-hydrogen", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "gemini-flash-latest": {
     "google": "gemini-flash-latest",
-    "google-vertex": "gemini-flash-latest",
     "openrouter": "~google/gemini-flash-latest",
   },
   "gemini-flash-lite-latest": {
     "google": "gemini-flash-lite-latest",
-    "google-vertex": "gemini-flash-lite-latest",
   },
   "gemini-pro-latest": {
     "google": "gemini-pro-latest",
@@ -160,6 +161,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/google/gemma-4-26b-a4b-it", narrows: { context: 256000 } },
     "deepinfra": "google/gemma-4-26B-A4B-it",
     "google": "gemma-4-26b-a4b-it",
+    "google-vertex": { id: "google/gemma-4-26b-a4b-it-maas", endpoint: "google-vertex.chatMaas" },
     "huggingface": "google/gemma-4-26B-A4B-it",
     "novita-ai": "google/gemma-4-26b-a4b-it",
     "openrouter": "google/gemma-4-26b-a4b-it",

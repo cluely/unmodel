@@ -121432,6 +121432,7 @@
     "models": {
       "claude-fable-5-1@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-fable-5-1",
         "cost": {
           "cache_read": 0.25,
           "cache_write": 12.5,
@@ -121480,8 +121481,77 @@
         "temperature": false,
         "tool_call": true
       },
+      "claude-fable-5-2@default": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-fable-5-2",
+        "cost": {
+          "cache_read": 0.2,
+          "cache_write": 10,
+          "input": 8,
+          "output": 40
+        },
+        "description": "Claude model for demanding reasoning and long-horizon agentic work",
+        "experimental": {
+          "modes": {
+            "fast": {
+              "cost": {
+                "cache_read": 0.4,
+                "cache_write": 20,
+                "input": 16,
+                "output": 80
+              },
+              "provider": {
+                "body": {
+                  "speed": "fast"
+                }
+              }
+            }
+          }
+        },
+        "family": "claude-fable",
+        "id": "claude-fable-5-2@default",
+        "knowledge": "2026-06",
+        "last_updated": "2026-11-09",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Fable 5.2",
+        "open_weights": false,
+        "provider": {
+          "npm": "@ai-sdk/google-vertex/anthropic"
+        },
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-11-09",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
       "claude-fable-5@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-fable-5",
         "cost": {
           "cache_read": 1,
           "cache_write": 12.5,
@@ -121526,11 +121596,13 @@
           }
         ],
         "release_date": "2026-06-09",
+        "structured_output": true,
         "temperature": false,
         "tool_call": true
       },
       "claude-haiku-4-5@20251001": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-haiku-4-5-20251001",
         "cost": {
           "cache_read": 0.1,
           "cache_write": 1.25,
@@ -121569,11 +121641,79 @@
           }
         ],
         "release_date": "2025-10-15",
+        "structured_output": true,
         "temperature": true,
+        "tool_call": true
+      },
+      "claude-haiku-5-5@default": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-haiku-5-5",
+        "cost": {
+          "cache_read": 0.01,
+          "cache_write": 0.125,
+          "input": 0.1,
+          "output": 0.5,
+          "tiers": [
+            {
+              "cache_read": 0.05,
+              "cache_write": 0.625,
+              "input": 0.5,
+              "output": 2.5,
+              "tier": {
+                "size": 100000,
+                "type": "context"
+              }
+            }
+          ]
+        },
+        "description": "Fast Claude model for responsive assistance, classification, and lightweight agents",
+        "family": "claude-haiku",
+        "id": "claude-haiku-5-5@default",
+        "knowledge": "2026-06",
+        "last_updated": "2026-10-07",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Haiku 5.5",
+        "open_weights": false,
+        "provider": {
+          "npm": "@ai-sdk/google-vertex/anthropic"
+        },
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "toggle"
+          },
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-10-07",
+        "structured_output": true,
+        "temperature": false,
         "tool_call": true
       },
       "claude-opus-4-1@20250805": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-1-20250805",
         "cost": {
           "cache_read": 1.5,
           "cache_write": 18.75,
@@ -121613,11 +121753,13 @@
         ],
         "release_date": "2025-08-05",
         "status": "deprecated",
+        "structured_output": false,
         "temperature": true,
         "tool_call": true
       },
       "claude-opus-4-5@20251101": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-5-20251101",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
@@ -121628,7 +121770,7 @@
         "family": "claude-opus",
         "id": "claude-opus-4-5@20251101",
         "knowledge": "2025-05",
-        "last_updated": "2025-11-01",
+        "last_updated": "2025-11-24",
         "limit": {
           "context": 200000,
           "output": 64000
@@ -121663,35 +121805,19 @@
             "type": "budget_tokens"
           }
         ],
-        "release_date": "2025-11-01",
+        "release_date": "2025-11-24",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "claude-opus-4-6@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-6",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
-          "context_over_200k": {
-            "cache_read": 1,
-            "cache_write": 12.5,
-            "input": 10,
-            "output": 37.5
-          },
           "input": 5,
-          "output": 25,
-          "tiers": [
-            {
-              "cache_read": 1,
-              "cache_write": 12.5,
-              "input": 10,
-              "output": 37.5,
-              "tier": {
-                "size": 200000,
-                "type": "context"
-              }
-            }
-          ]
+          "output": 25
         },
         "description": "High-end Claude for difficult coding, planning, and slower expert reasoning",
         "family": "claude-opus",
@@ -121734,34 +121860,18 @@
           }
         ],
         "release_date": "2026-02-05",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "claude-opus-4-7@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-7",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
-          "context_over_200k": {
-            "cache_read": 1,
-            "cache_write": 12.5,
-            "input": 10,
-            "output": 37.5
-          },
           "input": 5,
-          "output": 25,
-          "tiers": [
-            {
-              "cache_read": 1,
-              "cache_write": 12.5,
-              "input": 10,
-              "output": 37.5,
-              "tier": {
-                "size": 200000,
-                "type": "context"
-              }
-            }
-          ]
+          "output": 25
         },
         "description": "Stronger Opus tier for advanced software work and high-stakes reasoning",
         "family": "claude-opus",
@@ -121801,34 +121911,18 @@
           }
         ],
         "release_date": "2026-04-16",
+        "structured_output": true,
         "temperature": false,
         "tool_call": true
       },
       "claude-opus-4-8@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-8",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
-          "context_over_200k": {
-            "cache_read": 1,
-            "cache_write": 12.5,
-            "input": 10,
-            "output": 37.5
-          },
           "input": 5,
-          "output": 25,
-          "tiers": [
-            {
-              "cache_read": 1,
-              "cache_write": 12.5,
-              "input": 10,
-              "output": 37.5,
-              "tier": {
-                "size": 200000,
-                "type": "context"
-              }
-            }
-          ]
+          "output": 25
         },
         "description": "Top Claude Opus tier for the hardest reasoning, coding, and long-horizon agents",
         "family": "claude-opus",
@@ -121868,11 +121962,13 @@
           }
         ],
         "release_date": "2026-05-28",
+        "structured_output": true,
         "temperature": false,
         "tool_call": true
       },
       "claude-opus-4@20250514": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-20250514",
         "cost": {
           "cache_read": 1.5,
           "cache_write": 18.75,
@@ -121912,11 +122008,64 @@
         ],
         "release_date": "2025-05-22",
         "status": "deprecated",
+        "structured_output": false,
         "temperature": true,
+        "tool_call": true
+      },
+      "claude-opus-5-5@default": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-5-5",
+        "cost": {
+          "cache_read": 0.2,
+          "cache_write": 5,
+          "input": 4,
+          "output": 20
+        },
+        "description": "Claude model for long-running agentic coding and knowledge work",
+        "family": "claude-opus",
+        "id": "claude-opus-5-5@default",
+        "knowledge": "2026-06",
+        "last_updated": "2026-09-22",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Opus 5.5",
+        "open_weights": false,
+        "provider": {
+          "npm": "@ai-sdk/google-vertex/anthropic"
+        },
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-09-22",
+        "structured_output": true,
+        "temperature": false,
         "tool_call": true
       },
       "claude-opus-5@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-5",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
@@ -121961,11 +122110,13 @@
           }
         ],
         "release_date": "2026-07-24",
+        "structured_output": true,
         "temperature": false,
         "tool_call": true
       },
       "claude-sonnet-4-5@20250929": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-4-5-20250929",
         "cost": {
           "cache_read": 0.3,
           "cache_write": 3.75,
@@ -122004,34 +122155,19 @@
           }
         ],
         "release_date": "2025-09-29",
+        "status": "deprecated",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "claude-sonnet-4-6@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-4-6",
         "cost": {
           "cache_read": 0.3,
           "cache_write": 3.75,
-          "context_over_200k": {
-            "cache_read": 0.6,
-            "cache_write": 7.5,
-            "input": 6,
-            "output": 22.5
-          },
           "input": 3,
-          "output": 15,
-          "tiers": [
-            {
-              "cache_read": 0.6,
-              "cache_write": 7.5,
-              "input": 6,
-              "output": 22.5,
-              "tier": {
-                "size": 200000,
-                "type": "context"
-              }
-            }
-          ]
+          "output": 15
         },
         "description": "Claude workhorse for coding agents, careful analysis, and production cost control",
         "family": "claude-sonnet",
@@ -122074,11 +122210,13 @@
           }
         ],
         "release_date": "2026-02-17",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "claude-sonnet-4@20250514": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-4-20250514",
         "cost": {
           "cache_read": 0.3,
           "cache_write": 3.75,
@@ -122118,11 +122256,64 @@
         ],
         "release_date": "2025-05-22",
         "status": "deprecated",
+        "structured_output": false,
         "temperature": true,
+        "tool_call": true
+      },
+      "claude-sonnet-5-5@default": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-5-5",
+        "cost": {
+          "cache_read": 0.1,
+          "cache_write": 2.5,
+          "input": 2,
+          "output": 10
+        },
+        "description": "Fast Claude model for everyday coding, agents, and knowledge work",
+        "family": "claude-sonnet",
+        "id": "claude-sonnet-5-5@default",
+        "knowledge": "2026-06",
+        "last_updated": "2026-09-28",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Sonnet 5.5",
+        "open_weights": false,
+        "provider": {
+          "npm": "@ai-sdk/google-vertex/anthropic"
+        },
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-09-28",
+        "structured_output": true,
+        "temperature": false,
         "tool_call": true
       },
       "claude-sonnet-5@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-5",
         "cost": {
           "cache_read": 0.2,
           "cache_write": 2.5,
@@ -122170,7 +122361,43 @@
           }
         ],
         "release_date": "2026-06-30",
+        "structured_output": true,
         "temperature": false,
+        "tool_call": true
+      },
+      "codestral-2": {
+        "attachment": false,
+        "canonical_model_id": "mistral/codestral-2508",
+        "cost": {
+          "input": 0.3,
+          "output": 0.9
+        },
+        "description": "Mistral code model for low-latency completion, fill-in-the-middle, and code generation",
+        "family": "codestral",
+        "id": "codestral-2",
+        "last_updated": "2025-07-30",
+        "limit": {
+          "context": 128000,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Codestral 2",
+        "open_weights": false,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/publishers/mistralai/models",
+          "npm": "@ai-sdk/mistral"
+        },
+        "reasoning": false,
+        "release_date": "2025-07-30",
+        "structured_output": true,
+        "temperature": true,
         "tool_call": true
       },
       "deepseek-ai/deepseek-v3.1-maas": {
@@ -122190,8 +122417,7 @@
         },
         "modalities": {
           "input": [
-            "text",
-            "pdf"
+            "text"
           ],
           "output": [
             "text"
@@ -122204,7 +122430,11 @@
           "npm": "@ai-sdk/openai-compatible"
         },
         "reasoning": true,
-        "reasoning_options": [],
+        "reasoning_options": [
+          {
+            "type": "toggle"
+          }
+        ],
         "release_date": "2025-08-28",
         "status": "deprecated",
         "structured_output": true,
@@ -122221,6 +122451,9 @@
         "description": "DeepSeek chat model for instruction following, coding, and analysis",
         "family": "deepseek",
         "id": "deepseek-ai/deepseek-v3.2-maas",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
         "last_updated": "2026-04-04",
         "limit": {
           "context": 163840,
@@ -122228,8 +122461,7 @@
         },
         "modalities": {
           "input": [
-            "text",
-            "pdf"
+            "text"
           ],
           "output": [
             "text"
@@ -122242,7 +122474,11 @@
           "npm": "@ai-sdk/openai-compatible"
         },
         "reasoning": true,
-        "reasoning_options": [],
+        "reasoning_options": [
+          {
+            "type": "toggle"
+          }
+        ],
         "release_date": "2025-12-17",
         "status": "deprecated",
         "structured_output": true,
@@ -122292,11 +122528,14 @@
           }
         ],
         "release_date": "2025-06-17",
+        "status": "deprecated",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "gemini-2.5-flash-image": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-2.5-flash-image",
         "cost": {
           "input": 0.3,
           "output": 30
@@ -122313,7 +122552,8 @@
         "modalities": {
           "input": [
             "text",
-            "image"
+            "image",
+            "pdf"
           ],
           "output": [
             "text",
@@ -122325,10 +122565,12 @@
         "reasoning": false,
         "release_date": "2025-08-26",
         "temperature": true,
-        "tool_call": false
+        "tool_call": false,
+        "type": "image"
       },
       "gemini-2.5-flash-lite": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-2.5-flash-lite",
         "cost": {
           "cache_read": 0.01,
           "input": 0.1,
@@ -122370,11 +122612,14 @@
           }
         ],
         "release_date": "2025-06-17",
+        "status": "deprecated",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "gemini-2.5-flash-tts": {
         "attachment": false,
+        "canonical_model_id": "google/gemini-2.5-flash-tts",
         "cost": {
           "input": 0.5,
           "output": 10
@@ -122386,6 +122631,7 @@
         "last_updated": "2025-12-10",
         "limit": {
           "context": 32768,
+          "input": 8192,
           "output": 16384
         },
         "modalities": {
@@ -122401,10 +122647,12 @@
         "reasoning": false,
         "release_date": "2025-09-30",
         "temperature": false,
-        "tool_call": false
+        "tool_call": false,
+        "type": "speech"
       },
       "gemini-2.5-pro": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-2.5-pro",
         "cost": {
           "cache_read": 0.125,
           "context_over_200k": {
@@ -122458,11 +122706,14 @@
           }
         ],
         "release_date": "2025-06-17",
+        "status": "deprecated",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "gemini-2.5-pro-tts": {
         "attachment": false,
+        "canonical_model_id": "google/gemini-2.5-pro-tts",
         "cost": {
           "input": 1,
           "output": 20
@@ -122474,6 +122725,7 @@
         "last_updated": "2025-12-10",
         "limit": {
           "context": 32768,
+          "input": 8192,
           "output": 16384
         },
         "modalities": {
@@ -122489,10 +122741,12 @@
         "reasoning": false,
         "release_date": "2025-09-30",
         "temperature": false,
-        "tool_call": false
+        "tool_call": false,
+        "type": "speech"
       },
       "gemini-3-flash-preview": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3-flash-preview",
         "cost": {
           "cache_read": 0.05,
           "input": 0.5,
@@ -122535,12 +122789,14 @@
           }
         ],
         "release_date": "2025-12-17",
+        "status": "beta",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "gemini-3-pro-image": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3-pro-image",
         "cost": {
           "cache_read": 0.2,
           "input": 2,
@@ -122558,7 +122814,8 @@
         "modalities": {
           "input": [
             "text",
-            "image"
+            "image",
+            "pdf"
           ],
           "output": [
             "text",
@@ -122571,10 +122828,12 @@
         "reasoning_options": [],
         "release_date": "2026-05-28",
         "temperature": true,
-        "tool_call": false
+        "tool_call": false,
+        "type": "image"
       },
       "gemini-3.1-flash-image": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3.1-flash-image",
         "cost": {
           "cache_read": 0.05,
           "input": 0.5,
@@ -122615,10 +122874,12 @@
         ],
         "release_date": "2026-05-28",
         "temperature": true,
-        "tool_call": false
+        "tool_call": false,
+        "type": "image"
       },
       "gemini-3.1-flash-lite": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3.1-flash-lite",
         "cost": {
           "cache_read": 0.025,
           "input": 0.25,
@@ -122665,36 +122926,36 @@
         "temperature": true,
         "tool_call": true
       },
-      "gemini-3.1-flash-lite-preview": {
+      "gemini-3.1-flash-lite-image": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3.1-flash-lite-image",
         "cost": {
           "cache_read": 0.025,
           "input": 0.25,
-          "input_audio": 0.5,
-          "output": 1.5
+          "output": 30
         },
-        "description": "Low-latency Gemini model for high-volume multimodal and agent workloads",
+        "description": "Fastest, most cost-efficient Gemini image model for high-volume 1K generation and editing",
         "family": "gemini-flash-lite",
-        "id": "gemini-3.1-flash-lite-preview",
+        "id": "gemini-3.1-flash-lite-image",
         "knowledge": "2025-01",
-        "last_updated": "2026-03-03",
+        "last_updated": "2026-06-30",
         "limit": {
-          "context": 1048576,
-          "output": 65536
+          "context": 65536,
+          "output": 4096
         },
         "modalities": {
           "input": [
             "text",
             "image",
             "video",
-            "audio",
             "pdf"
           ],
           "output": [
-            "text"
+            "text",
+            "image"
           ]
         },
-        "name": "Gemini 3.1 Flash Lite Preview",
+        "name": "Nano Banana 2 Lite",
         "open_weights": false,
         "reasoning": true,
         "reasoning_options": [
@@ -122702,20 +122963,19 @@
             "type": "effort",
             "values": [
               "minimal",
-              "low",
-              "medium",
               "high"
             ]
           }
         ],
-        "release_date": "2026-03-03",
-        "status": "deprecated",
-        "structured_output": true,
+        "release_date": "2026-06-30",
+        "structured_output": false,
         "temperature": true,
-        "tool_call": true
+        "tool_call": true,
+        "type": "image"
       },
       "gemini-3.1-pro-preview": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3.1-pro-preview",
         "cost": {
           "cache_read": 0.2,
           "context_over_200k": {
@@ -122772,12 +123032,14 @@
           }
         ],
         "release_date": "2026-02-19",
+        "status": "beta",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "gemini-3.1-pro-preview-customtools": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3.1-pro-preview-customtools",
         "cost": {
           "cache_read": 0.2,
           "context_over_200k": {
@@ -122834,12 +123096,14 @@
           }
         ],
         "release_date": "2026-02-19",
+        "status": "beta",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "gemini-3.5-flash": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3.5-flash",
         "cost": {
           "cache_read": 0.15,
           "input": 1.5,
@@ -122888,6 +123152,7 @@
       },
       "gemini-3.5-flash-lite": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3.5-flash-lite",
         "cost": {
           "cache_read": 0.03,
           "input": 0.3,
@@ -122935,6 +123200,7 @@
       },
       "gemini-3.6-flash": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3.6-flash",
         "cost": {
           "cache_read": 0.075,
           "input": 0.75,
@@ -122977,12 +123243,14 @@
           }
         ],
         "release_date": "2026-07-21",
+        "status": "deprecated",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "gemini-3.7-flash": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3.7-flash",
         "cost": {
           "cache_read": 0.075,
           "input": 0.75,
@@ -123030,6 +123298,7 @@
       },
       "gemini-3.8-flash": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-3.8-flash",
         "cost": {
           "cache_read": 0.075,
           "input": 0.75,
@@ -123074,8 +123343,154 @@
         "temperature": true,
         "tool_call": true
       },
+      "gemini-4-argon": {
+        "attachment": true,
+        "canonical_model_id": "google/gemini-4-argon",
+        "cost": {
+          "cache_read": 0.1,
+          "input": 2,
+          "input_audio": 2,
+          "output": 10
+        },
+        "description": "Google's flagship reasoning model for complex software engineering, deep math and science, and long-horizon autonomous agents",
+        "family": "gemini",
+        "id": "gemini-4-argon",
+        "knowledge": "2026-03",
+        "last_updated": "2026-10-13",
+        "limit": {
+          "context": 1048576,
+          "output": 65536
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "video",
+            "audio",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Gemini 4 Argon",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        ],
+        "release_date": "2026-10-13",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
+      "gemini-4-carbon": {
+        "attachment": true,
+        "canonical_model_id": "google/gemini-4-carbon",
+        "cost": {
+          "cache_read": 0.1,
+          "input": 2,
+          "input_audio": 2,
+          "output": 10
+        },
+        "description": "Google's most capable reasoning model for complex software engineering, deep math and science, high factual accuracy, and long-horizon autonomous agents",
+        "family": "gemini",
+        "id": "gemini-4-carbon",
+        "knowledge": "2026-03",
+        "last_updated": "2026-11-10",
+        "limit": {
+          "context": 1048576,
+          "output": 65536
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "video",
+            "audio",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Gemini 4 Carbon",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        ],
+        "release_date": "2026-11-10",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
+      "gemini-4-hydrogen": {
+        "attachment": true,
+        "canonical_model_id": "google/gemini-4-hydrogen",
+        "cost": {
+          "cache_read": 0.075,
+          "input": 1.5,
+          "input_audio": 1.5,
+          "output": 7.5
+        },
+        "description": "Google's Gemini 4 model for everyday coding and agentic workflows, with four thinking levels and a 1M-token context window",
+        "family": "gemini",
+        "id": "gemini-4-hydrogen",
+        "knowledge": "2026-03",
+        "last_updated": "2026-11-12",
+        "limit": {
+          "context": 1048576,
+          "output": 65536
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "video",
+            "audio",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Gemini 4 Hydrogen",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh"
+            ]
+          }
+        ],
+        "release_date": "2026-11-12",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
       "gemini-embedding-001": {
         "attachment": false,
+        "canonical_model_id": "google/gemini-embedding-001",
         "cost": {
           "input": 0.15,
           "output": 0
@@ -123102,38 +123517,38 @@
         "reasoning": false,
         "release_date": "2025-05-20",
         "temperature": false,
-        "tool_call": false
+        "tool_call": false,
+        "type": "embedding"
       },
-      "gemini-flash-latest": {
+      "gemini-nano-banana-2.1": {
         "attachment": true,
+        "canonical_model_id": "google/gemini-nano-banana-2.1",
         "cost": {
           "cache_read": 0.15,
           "input": 1.5,
-          "input_audio": 1.5,
-          "output": 9
+          "output": 30
         },
-        "description": "High-efficiency Gemini model for agentic workflows, coding, and multimodal reasoning",
+        "description": "Image model for prompt-driven generation, multi-turn editing, and visual design workflows",
         "family": "gemini-flash",
-        "id": "gemini-flash-latest",
-        "knowledge": "2026-03",
-        "last_updated": "2026-08-13",
+        "id": "gemini-nano-banana-2.1",
+        "last_updated": "2026-10-06",
         "limit": {
-          "context": 1048576,
-          "output": 65536
+          "context": 131072,
+          "output": 32768
         },
         "modalities": {
           "input": [
             "text",
             "image",
             "video",
-            "audio",
             "pdf"
           ],
           "output": [
-            "text"
+            "text",
+            "image"
           ]
         },
-        "name": "Gemini Flash Latest",
+        "name": "Nano Banana 2.1",
         "open_weights": false,
         "reasoning": true,
         "reasoning_options": [
@@ -123141,61 +123556,56 @@
             "type": "effort",
             "values": [
               "minimal",
-              "low",
               "medium",
               "high"
             ]
           }
         ],
-        "release_date": "2026-08-13",
-        "structured_output": true,
-        "temperature": true,
-        "tool_call": true
+        "release_date": "2026-10-06",
+        "structured_output": false,
+        "temperature": false,
+        "tool_call": false,
+        "type": "image"
       },
-      "gemini-flash-lite-latest": {
+      "google/gemma-4-26b-a4b-it-maas": {
         "attachment": true,
+        "canonical_model_id": "google/gemma-4-26b-a4b-it",
         "cost": {
-          "cache_read": 0.025,
-          "input": 0.25,
-          "input_audio": 0.5,
-          "output": 1.5
+          "cache_read": 0.015,
+          "input": 0.15,
+          "output": 0.6
         },
-        "description": "Fast Gemini model balancing multimodal reasoning, tool use, and cost",
-        "family": "gemini-flash-lite",
-        "id": "gemini-flash-lite-latest",
-        "knowledge": "2026-03",
-        "last_updated": "2026-07-21",
+        "description": "Open Gemma instruction model for efficient chat and self-hosted deployments",
+        "family": "gemma",
+        "id": "google/gemma-4-26b-a4b-it-maas",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
+        "last_updated": "2026-04-02",
         "limit": {
-          "context": 1048576,
-          "output": 65536
+          "context": 262144,
+          "output": 128000
         },
         "modalities": {
           "input": [
             "text",
-            "image",
-            "video",
-            "audio",
-            "pdf"
+            "image"
           ],
           "output": [
             "text"
           ]
         },
-        "name": "Gemini Flash-Lite Latest",
-        "open_weights": false,
+        "name": "Gemma 4 26B A4B IT",
+        "open_weights": true,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
         "reasoning": true,
-        "reasoning_options": [
-          {
-            "type": "effort",
-            "values": [
-              "minimal",
-              "low",
-              "medium",
-              "high"
-            ]
-          }
-        ],
-        "release_date": "2026-07-21",
+        "reasoning_options": [],
+        "release_date": "2026-04-02",
+        "status": "alpha",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
@@ -123271,6 +123681,116 @@
         "temperature": true,
         "tool_call": true
       },
+      "meta/llama-4-scout-17b-16e-instruct-maas": {
+        "attachment": true,
+        "canonical_model_id": "meta/llama-4-scout-17b-instruct",
+        "cost": {
+          "input": 0.25,
+          "output": 0.7
+        },
+        "description": "Open Llama with long-context vision for efficient multimodal agents",
+        "family": "llama",
+        "id": "meta/llama-4-scout-17b-16e-instruct-maas",
+        "knowledge": "2024-08",
+        "last_updated": "2025-04-05",
+        "limit": {
+          "context": 1310720,
+          "output": 8192
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Llama 4 Scout 17B Instruct",
+        "open_weights": true,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
+        "reasoning": false,
+        "release_date": "2025-04-05",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "mistral-medium-3": {
+        "attachment": true,
+        "canonical_model_id": "mistral/mistral-medium-2505",
+        "cost": {
+          "input": 0.4,
+          "output": 2
+        },
+        "description": "Mistral model for multilingual chat, reasoning, and tool-assisted workflows",
+        "family": "mistral-medium",
+        "id": "mistral-medium-3",
+        "knowledge": "2025-05",
+        "last_updated": "2025-05-07",
+        "limit": {
+          "context": 131072,
+          "output": 131072
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Mistral Medium 3",
+        "open_weights": false,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/publishers/mistralai/models",
+          "npm": "@ai-sdk/mistral"
+        },
+        "reasoning": false,
+        "release_date": "2025-05-07",
+        "temperature": true,
+        "tool_call": true
+      },
+      "mistral-small-2503": {
+        "attachment": true,
+        "canonical_model_id": "mistral/mistral-small-3-1-24b-instruct-2503",
+        "cost": {
+          "input": 0.1,
+          "output": 0.3
+        },
+        "description": "Efficient multimodal model for instruction following, coding, reasoning, and function calling",
+        "family": "mistral-small",
+        "id": "mistral-small-2503",
+        "knowledge": "2024-06",
+        "last_updated": "2025-03-17",
+        "limit": {
+          "context": 128000,
+          "output": 16384
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Mistral Small 3.1 24B",
+        "open_weights": true,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/publishers/mistralai/models",
+          "npm": "@ai-sdk/mistral"
+        },
+        "reasoning": false,
+        "release_date": "2025-03-17",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
       "moonshotai/kimi-k2-thinking-maas": {
         "attachment": false,
         "cost": {
@@ -123314,17 +123834,19 @@
       },
       "openai/gpt-oss-120b-maas": {
         "attachment": false,
+        "canonical_model_id": "openai/gpt-oss-120b",
         "cost": {
           "input": 0.09,
           "output": 0.36
         },
-        "description": "Open-weight GPT model for self-hosted reasoning and instruction-following workloads",
+        "description": "Open GPT reasoning model for self-hosted agents and controllable deployments",
         "family": "gpt-oss",
         "id": "openai/gpt-oss-120b-maas",
+        "knowledge": "2024-06",
         "last_updated": "2025-08-05",
         "limit": {
           "context": 131072,
-          "output": 32768
+          "output": 131072
         },
         "modalities": {
           "input": [
@@ -123336,6 +123858,10 @@
         },
         "name": "GPT OSS 120B",
         "open_weights": true,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
         "reasoning": true,
         "reasoning_options": [
           {
@@ -123348,6 +123874,7 @@
           }
         ],
         "release_date": "2025-08-05",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
@@ -123376,6 +123903,10 @@
         },
         "name": "GPT OSS 20B",
         "open_weights": true,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
         "reasoning": true,
         "reasoning_options": [
           {
@@ -123389,6 +123920,7 @@
         ],
         "release_date": "2025-08-05",
         "status": "deprecated",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
@@ -123420,10 +123952,377 @@
           "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
           "npm": "@ai-sdk/openai-compatible"
         },
-        "reasoning": true,
-        "reasoning_options": [],
+        "reasoning": false,
         "release_date": "2025-08-13",
         "status": "deprecated",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "xai/grok-4.1-fast-non-reasoning": {
+        "attachment": true,
+        "canonical_model_id": "xai/grok-4.1-fast",
+        "cost": {
+          "cache_read": 0.05,
+          "input": 0.2,
+          "output": 0.5
+        },
+        "description": "Fast Grok model for responsive chat, tool-assisted work, and low-latency responses",
+        "family": "grok",
+        "id": "xai/grok-4.1-fast-non-reasoning",
+        "last_updated": "2025-11-19",
+        "limit": {
+          "context": 128000,
+          "output": 30000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4.1 Fast",
+        "open_weights": false,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
+        "reasoning": false,
+        "release_date": "2025-11-19",
+        "status": "deprecated",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "xai/grok-4.1-fast-reasoning": {
+        "attachment": true,
+        "canonical_model_id": "xai/grok-4.1-fast-reasoning",
+        "cost": {
+          "cache_read": 0.05,
+          "input": 0.2,
+          "output": 0.5
+        },
+        "description": "Fast Grok model for responsive chat, reasoning, and tool-assisted work",
+        "family": "grok",
+        "id": "xai/grok-4.1-fast-reasoning",
+        "last_updated": "2025-11-19",
+        "limit": {
+          "context": 128000,
+          "output": 30000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4.1 Fast (Reasoning)",
+        "open_weights": false,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
+        "reasoning": true,
+        "reasoning_options": [],
+        "release_date": "2025-11-19",
+        "status": "deprecated",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "xai/grok-4.20-non-reasoning": {
+        "attachment": true,
+        "canonical_model_id": "xai/grok-4.20-0309-non-reasoning",
+        "cost": {
+          "cache_read": 0.2,
+          "context_over_200k": {
+            "cache_read": 0.4,
+            "input": 2.5,
+            "output": 5
+          },
+          "input": 1.25,
+          "output": 2.5,
+          "tiers": [
+            {
+              "cache_read": 0.4,
+              "input": 2.5,
+              "output": 5,
+              "tier": {
+                "size": 200000,
+                "type": "context"
+              }
+            }
+          ]
+        },
+        "description": "Grok model for agentic tool use, reasoning, coding, and live assistance",
+        "family": "grok",
+        "id": "xai/grok-4.20-non-reasoning",
+        "last_updated": "2026-03-09",
+        "limit": {
+          "context": 2000000,
+          "output": 30000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4.20 (Non-Reasoning)",
+        "open_weights": false,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
+        "reasoning": false,
+        "release_date": "2026-03-09",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "xai/grok-4.20-reasoning": {
+        "attachment": true,
+        "canonical_model_id": "xai/grok-4.20-0309-reasoning",
+        "cost": {
+          "cache_read": 0.2,
+          "context_over_200k": {
+            "cache_read": 0.4,
+            "input": 2.5,
+            "output": 5
+          },
+          "input": 1.25,
+          "output": 2.5,
+          "tiers": [
+            {
+              "cache_read": 0.4,
+              "input": 2.5,
+              "output": 5,
+              "tier": {
+                "size": 200000,
+                "type": "context"
+              }
+            }
+          ]
+        },
+        "description": "Reasoning Grok for document-heavy analysis and long-horizon tool use",
+        "family": "grok",
+        "id": "xai/grok-4.20-reasoning",
+        "last_updated": "2026-03-09",
+        "limit": {
+          "context": 2000000,
+          "output": 30000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4.20 (Reasoning)",
+        "open_weights": false,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
+        "reasoning": true,
+        "reasoning_options": [],
+        "release_date": "2026-03-09",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "xai/grok-4.3": {
+        "attachment": true,
+        "canonical_model_id": "xai/grok-4.3",
+        "cost": {
+          "cache_read": 0.2,
+          "context_over_200k": {
+            "cache_read": 0.4,
+            "input": 2.5,
+            "output": 5
+          },
+          "input": 1.25,
+          "output": 2.5,
+          "tiers": [
+            {
+              "cache_read": 0.4,
+              "input": 2.5,
+              "output": 5,
+              "tier": {
+                "size": 200000,
+                "type": "context"
+              }
+            }
+          ]
+        },
+        "description": "xAI's default Grok for chat, coding, agentic tools, and lower hallucination risk",
+        "family": "grok",
+        "id": "xai/grok-4.3",
+        "last_updated": "2026-04-17",
+        "limit": {
+          "context": 200000,
+          "output": 30000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4.3",
+        "open_weights": false,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
+        "reasoning": true,
+        "reasoning_options": [],
+        "release_date": "2026-04-17",
+        "status": "beta",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "xai/grok-4.6": {
+        "attachment": true,
+        "canonical_model_id": "xai/grok-4.6",
+        "cost": {
+          "cache_read": 0.5,
+          "context_over_200k": {
+            "cache_read": 1,
+            "input": 4,
+            "output": 12
+          },
+          "input": 2,
+          "output": 6,
+          "tiers": [
+            {
+              "cache_read": 1,
+              "input": 4,
+              "output": 12,
+              "tier": {
+                "size": 200000,
+                "type": "context"
+              }
+            }
+          ]
+        },
+        "description": "xAI's frontier model for long-running agents, coding, knowledge work, and visual projects",
+        "family": "grok",
+        "id": "xai/grok-4.6",
+        "knowledge": "2026-02-01",
+        "last_updated": "2026-08-12",
+        "limit": {
+          "context": 524288,
+          "output": 500000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4.6",
+        "open_weights": false,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        ],
+        "release_date": "2026-08-12",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "xai/grok-4.7": {
+        "attachment": true,
+        "canonical_model_id": "xai/grok-4.7",
+        "cost": {
+          "cache_read": 0.5,
+          "context_over_200k": {
+            "cache_read": 1,
+            "input": 4,
+            "output": 12
+          },
+          "input": 2,
+          "output": 6,
+          "tiers": [
+            {
+              "cache_read": 1,
+              "input": 4,
+              "output": 12,
+              "tier": {
+                "size": 200000,
+                "type": "context"
+              }
+            }
+          ]
+        },
+        "description": "xAI's frontier model for long-running agents, coding, knowledge work, and visual projects",
+        "family": "grok",
+        "id": "xai/grok-4.7",
+        "knowledge": "2026-05",
+        "last_updated": "2026-09-21",
+        "limit": {
+          "context": 524288,
+          "output": 500000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Grok 4.7",
+        "open_weights": false,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        ],
+        "release_date": "2026-09-21",
+        "status": "beta",
         "structured_output": true,
         "temperature": true,
         "tool_call": true
@@ -123435,7 +124334,7 @@
           "input": 0.6,
           "output": 2.2
         },
-        "description": "GLM vision model for visual reasoning, documents, and multimodal agents",
+        "description": "GLM model for coding, tool use, and complex reasoning",
         "family": "glm",
         "id": "zai-org/glm-4.7-maas",
         "interleaved": {
@@ -123449,8 +124348,7 @@
         },
         "modalities": {
           "input": [
-            "text",
-            "pdf"
+            "text"
           ],
           "output": [
             "text"
@@ -123476,21 +124374,22 @@
       },
       "zai-org/glm-5-maas": {
         "attachment": false,
+        "canonical_model_id": "zhipuai/glm-5",
         "cost": {
           "cache_read": 0.1,
           "input": 1,
           "output": 3.2
         },
-        "description": "Flagship GLM model for hybrid reasoning, coding, and agentic engineering",
+        "description": "General GLM flagship for coding, analysis, and tool-heavy engineering workflows",
         "family": "glm",
         "id": "zai-org/glm-5-maas",
         "interleaved": {
           "field": "reasoning_content"
         },
-        "last_updated": "2026-02-11",
+        "last_updated": "2026-02-12",
         "limit": {
-          "context": 202752,
-          "output": 131072
+          "context": 200000,
+          "output": 128000
         },
         "modalities": {
           "input": [
@@ -123512,8 +124411,54 @@
             "type": "toggle"
           }
         ],
-        "release_date": "2026-02-11",
+        "release_date": "2026-02-12",
         "status": "deprecated",
+        "structured_output": true,
+        "temperature": true,
+        "tool_call": true
+      },
+      "zai-org/glm-5.2-maas": {
+        "attachment": false,
+        "canonical_model_id": "zhipuai/glm-5.2",
+        "cost": {
+          "cache_read": 0.14,
+          "input": 1.4,
+          "output": 4.4
+        },
+        "description": "Open flagship GLM for long-horizon coding agents and million-token context work",
+        "family": "glm",
+        "id": "zai-org/glm-5.2-maas",
+        "interleaved": {
+          "field": "reasoning_content"
+        },
+        "last_updated": "2026-06-13",
+        "limit": {
+          "context": 1000000,
+          "output": 64000
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "GLM-5.2",
+        "open_weights": true,
+        "provider": {
+          "api": "https://${GOOGLE_VERTEX_ENDPOINT}/v1/projects/${GOOGLE_VERTEX_PROJECT}/locations/${GOOGLE_VERTEX_LOCATION}/endpoints/openapi",
+          "npm": "@ai-sdk/openai-compatible"
+        },
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "toggle"
+          }
+        ],
+        "release_date": "2026-06-13",
+        "status": "beta",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       }
@@ -123532,6 +124477,7 @@
     "models": {
       "claude-fable-5-1@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-fable-5-1",
         "cost": {
           "cache_read": 0.25,
           "cache_write": 12.5,
@@ -123577,8 +124523,74 @@
         "temperature": false,
         "tool_call": true
       },
+      "claude-fable-5-2@default": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-fable-5-2",
+        "cost": {
+          "cache_read": 0.2,
+          "cache_write": 10,
+          "input": 8,
+          "output": 40
+        },
+        "description": "Claude model for demanding reasoning and long-horizon agentic work",
+        "experimental": {
+          "modes": {
+            "fast": {
+              "cost": {
+                "cache_read": 0.4,
+                "cache_write": 20,
+                "input": 16,
+                "output": 80
+              },
+              "provider": {
+                "body": {
+                  "speed": "fast"
+                }
+              }
+            }
+          }
+        },
+        "family": "claude-fable",
+        "id": "claude-fable-5-2@default",
+        "knowledge": "2026-06",
+        "last_updated": "2026-11-09",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Fable 5.2",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-11-09",
+        "structured_output": true,
+        "temperature": false,
+        "tool_call": true
+      },
       "claude-fable-5@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-fable-5",
         "cost": {
           "cache_read": 1,
           "cache_write": 12.5,
@@ -123620,11 +124632,13 @@
           }
         ],
         "release_date": "2026-06-09",
+        "structured_output": true,
         "temperature": false,
         "tool_call": true
       },
       "claude-haiku-4-5@20251001": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-haiku-4-5-20251001",
         "cost": {
           "cache_read": 0.1,
           "cache_write": 1.25,
@@ -123660,11 +124674,76 @@
           }
         ],
         "release_date": "2025-10-15",
+        "structured_output": true,
         "temperature": true,
+        "tool_call": true
+      },
+      "claude-haiku-5-5@default": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-haiku-5-5",
+        "cost": {
+          "cache_read": 0.01,
+          "cache_write": 0.125,
+          "input": 0.1,
+          "output": 0.5,
+          "tiers": [
+            {
+              "cache_read": 0.05,
+              "cache_write": 0.625,
+              "input": 0.5,
+              "output": 2.5,
+              "tier": {
+                "size": 100000,
+                "type": "context"
+              }
+            }
+          ]
+        },
+        "description": "Fast Claude model for responsive assistance, classification, and lightweight agents",
+        "family": "claude-haiku",
+        "id": "claude-haiku-5-5@default",
+        "knowledge": "2026-06",
+        "last_updated": "2026-10-07",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Haiku 5.5",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "toggle"
+          },
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-10-07",
+        "structured_output": true,
+        "temperature": false,
         "tool_call": true
       },
       "claude-opus-4-1@20250805": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-1-20250805",
         "cost": {
           "cache_read": 1.5,
           "cache_write": 18.75,
@@ -123701,11 +124780,13 @@
         ],
         "release_date": "2025-08-05",
         "status": "deprecated",
+        "structured_output": false,
         "temperature": true,
         "tool_call": true
       },
       "claude-opus-4-5@20251101": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-5-20251101",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
@@ -123716,7 +124797,7 @@
         "family": "claude-opus",
         "id": "claude-opus-4-5@20251101",
         "knowledge": "2025-05",
-        "last_updated": "2025-11-01",
+        "last_updated": "2025-11-24",
         "limit": {
           "context": 200000,
           "output": 64000
@@ -123748,35 +124829,19 @@
             "type": "budget_tokens"
           }
         ],
-        "release_date": "2025-11-01",
+        "release_date": "2025-11-24",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "claude-opus-4-6@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-6",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
-          "context_over_200k": {
-            "cache_read": 1,
-            "cache_write": 12.5,
-            "input": 10,
-            "output": 37.5
-          },
           "input": 5,
-          "output": 25,
-          "tiers": [
-            {
-              "cache_read": 1,
-              "cache_write": 12.5,
-              "input": 10,
-              "output": 37.5,
-              "tier": {
-                "size": 200000,
-                "type": "context"
-              }
-            }
-          ]
+          "output": 25
         },
         "description": "High-end Claude for difficult coding, planning, and slower expert reasoning",
         "family": "claude-opus",
@@ -123816,34 +124881,18 @@
           }
         ],
         "release_date": "2026-02-05",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "claude-opus-4-7@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-7",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
-          "context_over_200k": {
-            "cache_read": 1,
-            "cache_write": 12.5,
-            "input": 10,
-            "output": 37.5
-          },
           "input": 5,
-          "output": 25,
-          "tiers": [
-            {
-              "cache_read": 1,
-              "cache_write": 12.5,
-              "input": 10,
-              "output": 37.5,
-              "tier": {
-                "size": 200000,
-                "type": "context"
-              }
-            }
-          ]
+          "output": 25
         },
         "description": "Stronger Opus tier for advanced software work and high-stakes reasoning",
         "family": "claude-opus",
@@ -123880,34 +124929,18 @@
           }
         ],
         "release_date": "2026-04-16",
+        "structured_output": true,
         "temperature": false,
         "tool_call": true
       },
       "claude-opus-4-8@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-8",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
-          "context_over_200k": {
-            "cache_read": 1,
-            "cache_write": 12.5,
-            "input": 10,
-            "output": 37.5
-          },
           "input": 5,
-          "output": 25,
-          "tiers": [
-            {
-              "cache_read": 1,
-              "cache_write": 12.5,
-              "input": 10,
-              "output": 37.5,
-              "tier": {
-                "size": 200000,
-                "type": "context"
-              }
-            }
-          ]
+          "output": 25
         },
         "description": "Top Claude Opus tier for the hardest reasoning, coding, and long-horizon agents",
         "family": "claude-opus",
@@ -123944,11 +124977,13 @@
           }
         ],
         "release_date": "2026-05-28",
+        "structured_output": true,
         "temperature": false,
         "tool_call": true
       },
       "claude-opus-4@20250514": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-4-20250514",
         "cost": {
           "cache_read": 1.5,
           "cache_write": 18.75,
@@ -123985,11 +125020,61 @@
         ],
         "release_date": "2025-05-22",
         "status": "deprecated",
+        "structured_output": false,
         "temperature": true,
+        "tool_call": true
+      },
+      "claude-opus-5-5@default": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-5-5",
+        "cost": {
+          "cache_read": 0.2,
+          "cache_write": 5,
+          "input": 4,
+          "output": 20
+        },
+        "description": "Claude model for long-running agentic coding and knowledge work",
+        "family": "claude-opus",
+        "id": "claude-opus-5-5@default",
+        "knowledge": "2026-06",
+        "last_updated": "2026-09-22",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Opus 5.5",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-09-22",
+        "structured_output": true,
+        "temperature": false,
         "tool_call": true
       },
       "claude-opus-5@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-opus-5",
         "cost": {
           "cache_read": 0.5,
           "cache_write": 6.25,
@@ -124031,11 +125116,13 @@
           }
         ],
         "release_date": "2026-07-24",
+        "structured_output": true,
         "temperature": false,
         "tool_call": true
       },
       "claude-sonnet-4-5@20250929": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-4-5-20250929",
         "cost": {
           "cache_read": 0.3,
           "cache_write": 3.75,
@@ -124071,34 +125158,19 @@
           }
         ],
         "release_date": "2025-09-29",
+        "status": "deprecated",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "claude-sonnet-4-6@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-4-6",
         "cost": {
           "cache_read": 0.3,
           "cache_write": 3.75,
-          "context_over_200k": {
-            "cache_read": 0.6,
-            "cache_write": 7.5,
-            "input": 6,
-            "output": 22.5
-          },
           "input": 3,
-          "output": 15,
-          "tiers": [
-            {
-              "cache_read": 0.6,
-              "cache_write": 7.5,
-              "input": 6,
-              "output": 22.5,
-              "tier": {
-                "size": 200000,
-                "type": "context"
-              }
-            }
-          ]
+          "output": 15
         },
         "description": "Claude workhorse for coding agents, careful analysis, and production cost control",
         "family": "claude-sonnet",
@@ -124138,11 +125210,13 @@
           }
         ],
         "release_date": "2026-02-17",
+        "structured_output": true,
         "temperature": true,
         "tool_call": true
       },
       "claude-sonnet-4@20250514": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-4-20250514",
         "cost": {
           "cache_read": 0.3,
           "cache_write": 3.75,
@@ -124179,11 +125253,61 @@
         ],
         "release_date": "2025-05-22",
         "status": "deprecated",
+        "structured_output": false,
         "temperature": true,
+        "tool_call": true
+      },
+      "claude-sonnet-5-5@default": {
+        "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-5-5",
+        "cost": {
+          "cache_read": 0.1,
+          "cache_write": 2.5,
+          "input": 2,
+          "output": 10
+        },
+        "description": "Fast Claude model for everyday coding, agents, and knowledge work",
+        "family": "claude-sonnet",
+        "id": "claude-sonnet-5-5@default",
+        "knowledge": "2026-06",
+        "last_updated": "2026-09-28",
+        "limit": {
+          "context": 1000000,
+          "output": 128000
+        },
+        "modalities": {
+          "input": [
+            "text",
+            "image",
+            "pdf"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Claude Sonnet 5.5",
+        "open_weights": false,
+        "reasoning": true,
+        "reasoning_options": [
+          {
+            "type": "effort",
+            "values": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        ],
+        "release_date": "2026-09-28",
+        "structured_output": true,
+        "temperature": false,
         "tool_call": true
       },
       "claude-sonnet-5@default": {
         "attachment": true,
+        "canonical_model_id": "anthropic/claude-sonnet-5",
         "cost": {
           "cache_read": 0.2,
           "cache_write": 2.5,
@@ -124228,6 +125352,7 @@
           }
         ],
         "release_date": "2026-06-30",
+        "structured_output": true,
         "temperature": false,
         "tool_call": true
       }

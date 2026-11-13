@@ -240,11 +240,18 @@ interface SurfaceRule {
  * Rows that are *not* on their provider's default surface.
  *
  * google-vertex spans three: Gemini `generateContent` (the default), an
- * OpenAI-compatible chat surface for its `-maas` models, and an
- * Anthropic-shaped `rawPredict` surface for Claude. The Claude rule is
- * exercised by the codegen fixtures but produces nothing against the real
- * snapshot: v1 denies every Claude↔vertex edge because unmodel has no
+ * OpenAI-compatible chat surface for its `-maas` models and its `xai/` Grok
+ * rows, and an Anthropic-shaped `rawPredict` surface for Claude. The Claude
+ * rule is exercised by the codegen fixtures but produces nothing against the
+ * real snapshot: v1 denies every Claude↔vertex edge because unmodel has no
  * rawPredict module (see data/availability-overrides.json).
+ *
+ * The Grok rule, from
+ * https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/partner-models/use-partner-models
+ * (2026-11-12): "Grok models use the OpenAI-compatible chat completions and
+ * Responses APIs, so the request path uses endpoints/openapi ." — the same
+ * `endpoints/openapi/chat/completions` route the MaaS page documents, with the
+ * `xai/`-prefixed id in the body (`"model": "xai/grok-4.7"`).
  *
  * azure deliberately has **no** rule. It also serves Claude, but on a wire
  * surface nobody has verified, so those rows are denied rather than labelled
@@ -253,6 +260,7 @@ interface SurfaceRule {
 const SURFACE_RULES: Readonly<Record<string, readonly SurfaceRule[]>> = {
   "google-vertex": [
     { match: /-maas$/, endpoint: "google-vertex.chatMaas" },
+    { match: /^xai\//, endpoint: "google-vertex.chatMaas" },
     { match: /claude/, endpoint: "google-vertex.chatRawPredict" },
   ],
 };

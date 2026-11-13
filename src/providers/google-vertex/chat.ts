@@ -13,7 +13,7 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCostUSD } from "../../core/cost";
 import { estimateToolDefinitionTokens, PER_MESSAGE_TOKEN_OVERHEAD } from "../../core/tokens";
 import { GEMINI_IMAGE_TOKENS } from "../google";
-import type { GoogleContent } from "../google/wire";
+import type { GoogleContent, GoogleThinkingLevel } from "../google/wire";
 import { models } from "../../catalog/google-vertex.gen";
 import { createToApi } from "../../core/translate/retarget";
 import { targetValidationFor } from "../../retarget/target-constraints";
@@ -54,10 +54,13 @@ export type VertexGenerateContentSdkParams<T extends VertexGenerateContentBody> 
 };
 
 // ---------------------------------------------------------------------------
-// Checks — catalog-driven only. The google module's hand-written media
-// constraint tables (formats/durations/inline caps) are sourced from Gemini
-// API docs (ai.google.dev) and are deliberately NOT applied here: the Vertex
-// docs were not re-verified for those limits, and unproven facts stay out.
+// Checks — catalog-driven, plus the per-model rules a Vertex model page states
+// itself (the tables below the capability checks). The google module's
+// hand-written constraint tables (media formats/durations/inline caps, the
+// thinking-level rules) are sourced from Gemini API docs (ai.google.dev) and
+// are deliberately NOT applied here: the two surfaces differ where both were
+// read (a lone `thinkingBudget` on Gemini 4 is an API warning there and a 400
+// here), and unproven facts stay out.
 // checkCapabilities is duplicated from google/chat.ts (private
 // there; see the schema note in ./wire.ts).
 // ---------------------------------------------------------------------------
@@ -117,7 +120,12 @@ function checkCapabilities(
     }
   }
 
-  if (config.temperature !== undefined && info.temperature === false) {
+  // A per-model sampling rule below is the authority where one exists.
+  if (
+    config.temperature !== undefined &&
+    info.temperature === false &&
+    !hasSamplingRule(stripModelPath(model))
+  ) {
     ctx.report({
       code: "unsupported_param",
       path: ["generationConfig", "temperature"],
@@ -174,6 +182,121 @@ function checkMediaModalities(
       });
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Per-model rules, each from the model's own Vertex page (retrieved
+// 2026-11-12). Matched by bare id, so the `models/…` and
+// `publishers/google/models/…` spellings are covered too.
+// ---------------------------------------------------------------------------
+
+/** The Vertex Gemini model pages, one per id: `${VERTEX_GEMINI_DOCS_URL}/<page>`. */
+const VERTEX_GEMINI_DOCS_URL = "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini";
+
+/**
+ * Gemini 4: the thinking levels each page lists, and the rule all three pages
+ * state in the same words — "Setting thinking_budget or
+ * thinking_level="MINIMAL" returns an HTTP 400 validation error." Any
+ * `thinkingBudget` is refused, alone or not, which is stricter than the Gemini
+ * API (unmodel/google), where a lone budget maps to the nearest level with a
+ * warning.
+ *
+ * - `gemini-4-argon` (`/4-argon`): "Supports thinking levels LOW , MEDIUM
+ *   (default), and HIGH ."
+ * - `gemini-4-carbon` (`/4-carbon`): "4 Carbon supports thinking levels LOW ,
+ *   MEDIUM (default on gemini-4-carbon ), and HIGH"
+ * - `gemini-4-hydrogen` (`/4-hydrogen`): "Hydrogen supports thinking levels
+ *   LOW , MEDIUM , HIGH (default), and XHIGH ."
+ *
+ * `XHIGH` on argon or carbon is not refused: neither page says it errors.
+ */
+const GEMINI_4_THINKING_LEVELS = {
+  "gemini-4-argon": { levels: ["LOW", "MEDIUM", "HIGH"], source: `${VERTEX_GEMINI_DOCS_URL}/4-argon` },
+  "gemini-4-carbon": { levels: ["LOW", "MEDIUM", "HIGH"], source: `${VERTEX_GEMINI_DOCS_URL}/4-carbon` },
+  "gemini-4-hydrogen": {
+    levels: ["LOW", "MEDIUM", "HIGH", "XHIGH"],
+    source: `${VERTEX_GEMINI_DOCS_URL}/4-hydrogen`,
+  },
+} as const satisfies Record<string, { levels: readonly GoogleThinkingLevel[]; source: string }>;
+
+/** The `generationConfig` sampling fields a per-model rule can name. */
+type SamplingParam = "temperature" | "topP" | "topK" | "seed" | "logprobs";
+
+/**
+ * Sampling fields a model page says return an API error.
+ *
+ * - `gemini-nano-banana-2.1` (`/nano-banana-2-1`): "The seed , topK , logprobs
+ *   , temperature , and topP parameters aren't supported for Nano Banana 2.1.
+ *   Setting any of these parameters returns an API error." `logprobs` is the
+ *   integer field; `responseLogprobs` is not named, so it is not refused.
+ */
+const REFUSED_SAMPLING_PARAMS = {
+  "gemini-nano-banana-2.1": {
+    params: ["temperature", "topP", "topK", "seed", "logprobs"],
+    source: `${VERTEX_GEMINI_DOCS_URL}/nano-banana-2-1`,
+  },
+} as const satisfies Record<string, { params: readonly SamplingParam[]; source: string }>;
+
+/** True when a per-model sampling table owns the `temperature` decision for this id. */
+function hasSamplingRule(id: string): boolean {
+  return Object.hasOwn(REFUSED_SAMPLING_PARAMS, id);
+}
+
+/** Gemini 4 `thinkingConfig`: any `thinkingBudget`, and `thinkingLevel` MINIMAL, are a 400. */
+function checkGemini4Thinking(
+  params: VertexGenerateContentBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const thinking = params.generationConfig?.thinkingConfig;
+  if (thinking === undefined) return;
+  const id = stripModelPath(params.model);
+  if (!Object.hasOwn(GEMINI_4_THINKING_LEVELS, id)) return;
+  const { levels, source } = GEMINI_4_THINKING_LEVELS[id as keyof typeof GEMINI_4_THINKING_LEVELS];
+
+  if (thinking.thinkingBudget !== undefined) {
+    ctx.report({
+      code: "unsupported_param",
+      path: ["generationConfig", "thinkingConfig", "thinkingBudget"],
+      model: params.model,
+      message: `\`generationConfig.thinkingConfig.thinkingBudget\` is refused by "${params.model}" on Vertex (HTTP 400); set \`thinkingLevel\` to one of ${levels.join(", ")} instead.`,
+      meta: { allowed: [...levels], source },
+    });
+  }
+
+  const level = thinking.thinkingLevel;
+  if (level !== undefined && level.toUpperCase() === "MINIMAL") {
+    ctx.report({
+      code: "invalid_enum_value",
+      path: ["generationConfig", "thinkingConfig", "thinkingLevel"],
+      model: params.model,
+      message: `\`generationConfig.thinkingConfig.thinkingLevel: "${level}"\` is refused by "${params.model}" on Vertex (HTTP 400); it accepts ${levels.join(", ")}.`,
+      meta: { value: level, allowed: [...levels], source },
+    });
+  }
+}
+
+/** Sampling fields a model page says the API refuses. */
+function checkSamplingParams(
+  params: VertexGenerateContentBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const config = params.generationConfig;
+  if (config === undefined) return;
+  const id = stripModelPath(params.model);
+  if (!Object.hasOwn(REFUSED_SAMPLING_PARAMS, id)) return;
+  const rule = REFUSED_SAMPLING_PARAMS[id as keyof typeof REFUSED_SAMPLING_PARAMS];
+  for (const param of rule.params) {
+    if (config[param] === undefined) continue;
+    ctx.report({
+      code: "unsupported_param",
+      path: ["generationConfig", param],
+      model: params.model,
+      message: `\`generationConfig.${param}\` is refused by "${params.model}" on Vertex (an API error); its sampling is fixed, so remove it.`,
+      meta: { source: rule.source },
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -340,7 +463,7 @@ export function createChat(config: GoogleVertexConfig): GoogleVertexChat {
     schema: vertexGenerateContentSchema,
     modelId: (params) => stripModelPath(params.model),
     catalog: models,
-    checks: [checkCapabilities, checkMediaModalities],
+    checks: [checkCapabilities, checkMediaModalities, checkGemini4Thinking, checkSamplingParams],
     estimate,
     promptPath: ["contents"],
     finalize: (params) => {

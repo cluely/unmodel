@@ -363,11 +363,11 @@ export const availability = {
   },
   "google/gemini-3.1-flash-lite-image": {
     "google": "gemini-3.1-flash-lite-image",
+    "google-vertex": "gemini-3.1-flash-lite-image",
     "openrouter": "google/gemini-3.1-flash-lite-image",
   },
   "google/gemini-3.1-flash-lite-preview": {
     "google": "gemini-3.1-flash-lite-preview",
-    "google-vertex": "gemini-3.1-flash-lite-preview",
     "openrouter": "google/gemini-3.1-flash-lite-preview",
   },
   "google/gemini-3.1-pro-preview": {
@@ -413,20 +413,24 @@ export const availability = {
   },
   "google/gemini-4-argon": {
     "google": "gemini-4-argon",
+    "google-vertex": "gemini-4-argon",
     "openrouter": "google/gemini-4-argon",
     "vercel": { id: "google/gemini-4-argon", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "google/gemini-4-carbon": {
     "google": "gemini-4-carbon",
+    "google-vertex": "gemini-4-carbon",
     "openrouter": "google/gemini-4-carbon",
     "vercel": { id: "google/gemini-4-carbon", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "google/gemini-4-hydrogen": {
     "google": "gemini-4-hydrogen",
+    "google-vertex": "gemini-4-hydrogen",
     "openrouter": "google/gemini-4-hydrogen",
     "vercel": { id: "google/gemini-4-hydrogen", narrows: { context: 1000000, drops: ["audio", "video"] } },
   },
   "google/gemini-nano-banana-2.1": {
+    "google-vertex": "gemini-nano-banana-2.1",
     "openrouter": "google/gemini-nano-banana-2.1",
   },
   "google/gemma-2-27b-it": {
@@ -459,6 +463,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/google/gemma-4-26b-a4b-it", narrows: { context: 256000, drops: ["video"] } },
     "deepinfra": { id: "google/gemma-4-26B-A4B-it", narrows: { drops: ["video"] } },
     "google": { id: "gemma-4-26b-a4b-it", narrows: { drops: ["video"] } },
+    "google-vertex": { id: "google/gemma-4-26b-a4b-it-maas", endpoint: "google-vertex.chatMaas", narrows: { drops: ["video"] } },
     "huggingface": { id: "google/gemma-4-26B-A4B-it", narrows: { drops: ["video"] } },
     "novita-ai": { id: "google/gemma-4-26b-a4b-it", narrows: { drops: ["video"] } },
     "openrouter": "google/gemma-4-26b-a4b-it",
@@ -1588,6 +1593,7 @@ export const availability = {
   },
   "x-ai/grok-4.3": {
     "amazon-bedrock": { id: "xai.grok-4.3", narrows: { drops: ["pdf"] } },
+    "google-vertex": { id: "xai/grok-4.3", endpoint: "google-vertex.chatMaas", narrows: { context: 200000, drops: ["pdf"] } },
     "openrouter": "x-ai/grok-4.3",
     "vercel": "spacexai/grok-4.3",
     "xai": "grok-4.3",
@@ -1599,12 +1605,14 @@ export const availability = {
   },
   "x-ai/grok-4.6": {
     "amazon-bedrock": { id: "xai.grok-4.6", narrows: { drops: ["pdf"] } },
+    "google-vertex": { id: "xai/grok-4.6", endpoint: "google-vertex.chatMaas", narrows: { drops: ["pdf"] } },
     "openrouter": "x-ai/grok-4.6",
     "vercel": { id: "spacexai/grok-4.6", narrows: { drops: ["pdf"] } },
     "xai": "grok-4.6",
   },
   "x-ai/grok-4.7": {
     "amazon-bedrock": "us.xai.grok-4.7",
+    "google-vertex": { id: "xai/grok-4.7", endpoint: "google-vertex.chatMaas", narrows: { drops: ["pdf"] } },
     "openrouter": "x-ai/grok-4.7",
     "vercel": { id: "spacexai/grok-4.7", narrows: { drops: ["pdf"] } },
     "xai": "grok-4.7",
@@ -1697,7 +1705,7 @@ export const availability = {
   "z-ai/glm-5": {
     "amazon-bedrock": { id: "zai.glm-5", narrows: { context: 202752 } },
     "deepinfra": { id: "zai-org/GLM-5", narrows: { context: 202752 } },
-    "google-vertex": { id: "zai-org/glm-5-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 202752 } },
+    "google-vertex": { id: "zai-org/glm-5-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 200000 } },
     "huggingface": { id: "zai-org/GLM-5", narrows: { context: 202752 } },
     "novita-ai": { id: "zai-org/glm-5", narrows: { context: 202800 } },
     "openrouter": "z-ai/glm-5",
@@ -1725,6 +1733,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.2", narrows: { context: 262144 } },
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
+    "google-vertex": { id: "zai-org/glm-5.2-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 1000000 } },
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
     "mistral": "glm-5-2",
     "nebius": "zai-org/GLM-5.2",
@@ -1810,7 +1819,6 @@ export const availability = {
   },
   "~google/gemini-flash-latest": {
     "google": "gemini-flash-latest",
-    "google-vertex": "gemini-flash-latest",
     "openrouter": "~google/gemini-flash-latest",
   },
   "~google/gemini-pro-latest": {

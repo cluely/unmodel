@@ -46,6 +46,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.2", narrows: { context: 262144 } },
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
+    "google-vertex": { id: "zai-org/glm-5.2-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 1000000 } },
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
     "mistral": "glm-5-2",
     "nebius": "zai-org/GLM-5.2",

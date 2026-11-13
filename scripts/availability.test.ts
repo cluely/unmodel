@@ -651,6 +651,36 @@ describe("availability — real snapshot invariants", () => {
     expect(leaks).toEqual([]);
   });
 
+  test("google-vertex partner rows: Grok on the MaaS surface, Mistral on no surface", () => {
+    const vertex = REAL.providers.get("google-vertex")!;
+    const grok = Object.keys(vertex).filter((id) => id.startsWith("xai/"));
+    expect(grok.length).toBeGreaterThan(0);
+    for (const id of grok) {
+      expect(vertex[id]?.["google-vertex"]).toEqual({ id, endpoint: "google-vertex.chatMaas" });
+    }
+    expect(targetsOf(REAL, "xai", "grok-4.7")?.["google-vertex"]).toMatchObject({
+      id: "xai/grok-4.7",
+      endpoint: "google-vertex.chatMaas",
+    });
+    // mistral-medium-3 / mistral-small-2503 / codestral-2 sit on a mistralai
+    // rawPredict route unmodel has no module for: denied, both directions.
+    function isVertexMistral(provider: string, id: string): boolean {
+      return provider === "google-vertex" && /^(mistral|codestral)-/.test(id);
+    }
+    const leaks: string[] = [];
+    for (const [providerId, map] of REAL.providers) {
+      for (const [modelId, targets] of Object.entries(map)) {
+        for (const [targetProvider, entry] of Object.entries(targets)) {
+          const targetId = typeof entry === "string" ? entry : entry.id;
+          if (isVertexMistral(providerId, modelId) || isVertexMistral(targetProvider, targetId)) {
+            leaks.push(`${providerId}:${modelId} → ${targetProvider}:${targetId}`);
+          }
+        }
+      }
+    }
+    expect(leaks).toEqual([]);
+  });
+
   test("the only non-default endpoint emitted is google-vertex's MaaS chat surface", () => {
     const endpoints = new Set<string>();
     for (const map of REAL.providers.values()) {
@@ -738,6 +768,12 @@ describe("availability — real snapshot invariants", () => {
     // every in-scope chat row now carries its own provider as a target, which
     // adds a line to every existing row and a whole 3-line row for every model
     // no other provider serves. openrouter, with the most rows, went 45 → 66.
+    //
+    // The total moved 384 → 428 KiB: 388.7 KiB measured, 2026-11-12, after the
+    // google-vertex slice of that day's snapshot (22 new vertex rows, plus a
+    // google-vertex target on every row other providers share with them, e.g.
+    // glm-5.2 on 15 tables). The heuristic was checked, not assumed: the new
+    // edges are real same-model merges. Largest table: openrouter, 71.3 KiB.
     const dir = new URL("../src/catalog/availability/", import.meta.url).pathname;
     let total = 0;
     const oversized: string[] = [];
@@ -747,7 +783,7 @@ describe("availability — real snapshot invariants", () => {
       if (bytes > 72 * 1024) oversized.push(`${file} (${bytes} bytes)`);
     }
     expect(oversized).toEqual([]);
-    expect(total).toBeLessThan(384 * 1024);
+    expect(total).toBeLessThan(428 * 1024);
   });
 
   test("committed files match a fresh generation (drift guard)", async () => {

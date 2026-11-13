@@ -372,8 +372,13 @@ const CHAT_FACTORY_BUDGET_KIB = 158;
  * `ChatValidator<ChatProviderValidatorRegistry>` — without the annotation
  * `const`-inference emits the whole 32-provider registry expansion twice, and
  * the second copy was 48% of the file. 455.0 KiB measured.
+ *
+ * 500.7 KiB measured, 2026-11-12: the google-vertex slice of that day's
+ * snapshot adds a google-vertex target to rows other providers' availability
+ * types carry inline here (glm-5.2, gemma-4-26b, gemini-4-*, grok-4.x); data,
+ * not code.
  */
-const CHAT_DECLARATION_BUDGET_KIB = 500;
+const CHAT_DECLARATION_BUDGET_KIB = 550;
 
 /**
  * `dist/catalog/index.d.ts` on its own, for the reason above and one specific

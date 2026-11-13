@@ -1166,12 +1166,20 @@ generates no tokens) or that emits audio/video without tool calling (music, spee
 realtime voice) is dropped. Image-out rows are deliberately kept — `gemini-3-pro-image`
 really is a `google.chat` (`:generateContent`) request.
 
-Currently denied there, both for unverified wire surfaces:
+Currently denied there, each for a wire surface unmodel has not verified or has no
+module for:
 
 - `*  → azure:*claude*` — models.dev lists 11 Claude rows on Azure but records `api: null`,
   and unmodel's Azure module is OpenAI-compatible only. The surface is unconfirmed.
 - `*  → google-vertex:*claude*` — Vertex serves Claude through an Anthropic-shaped
   `rawPredict` route that unmodel has no module for.
+- `*  → google-vertex:mistral-*`, `*  → google-vertex:codestral-*` — Vertex serves
+  Mistral's models on `publishers/mistralai/models/{model}:rawPredict`, not
+  `:generateContent`, and unmodel has no module for that route either.
+
+Vertex's `xai/` Grok rows are not denied: Vertex serves them on the same OpenAI-compatible
+`endpoints/openapi/chat/completions` route as its `-maas` models, so their edges are
+labelled `google-vertex.chatMaas`.
 
 Not denied but worth knowing: `claude → openrouter` ships through the chat-completions
 dialect. Whether OpenRouter also exposes an Anthropic-compatible `/v1/messages` surface

@@ -34,8 +34,10 @@ describe("google-vertex URL construction", () => {
   });
 
   test("prefixed model ids still resolve in the catalog (no unknown_model)", () => {
+    // gemini-2.5-flash carries `status: "deprecated"` on Vertex, so a
+    // zero-warning assertion uses a current row.
     const r = vertex.chat.safe({
-      model: "publishers/google/models/gemini-2.5-flash",
+      model: "publishers/google/models/gemini-3.5-flash-lite",
       contents: textContents("hi"),
     });
     expect(r.ok).toBe(true);
@@ -94,7 +96,7 @@ describe("google-vertex wire body (Gemini generateContent dialect)", () => {
 
   test("google-only top-level params (store) are unknown_param on Vertex", () => {
     const params = {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash-lite",
       contents: textContents("hi"),
       store: true,
     } as unknown as Parameters<typeof vertex.chat.safe>[0];
@@ -195,6 +197,133 @@ describe("google-vertex catalog wiring", () => {
       // gemini-2.5-flash on Vertex: $0.30/M input, $2.50/M output.
       expect(r.estimate.costUSD).toBeCloseTo((7 * 0.3 + 100 * 2.5) / 1e6, 12);
     }
+  });
+});
+
+describe("google-vertex new Gemini rows (models.dev 2026-11-12)", () => {
+  // Every rate is the generated google-vertex row: input / output per 1M.
+  const rows = [
+    ["gemini-4-argon", 2, 10],
+    ["gemini-4-carbon", 2, 10],
+    ["gemini-4-hydrogen", 1.5, 7.5],
+    ["gemini-nano-banana-2.1", 1.5, 30],
+    ["gemini-3.1-flash-lite-image", 0.25, 30],
+  ] as const;
+
+  test.each(rows)("%s validates clean and prices from the catalog", (model, input, output) => {
+    const r = vertex.chat.safe({
+      model,
+      contents: textContents("hello world!"),
+      generationConfig: { maxOutputTokens: 100 },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo((7 * input + 100 * output) / 1e6, 12);
+    }
+  });
+
+  test("checkChat prices a Gemini 4 response at the vertex rate", () => {
+    const report = checkChat({
+      modelVersion: "gemini-4-hydrogen",
+      usageMetadata: { promptTokenCount: 1_000_000, candidatesTokenCount: 0 },
+    });
+    expect(report.costUSD).toBeCloseTo(1.5, 10);
+  });
+});
+
+describe("google-vertex Gemini 4 thinking (Vertex model pages, 2026-11-12)", () => {
+  test.each(["gemini-4-argon", "gemini-4-carbon", "gemini-4-hydrogen"])(
+    "%s refuses any thinkingBudget, even alone",
+    (model) => {
+      const r = vertex.chat.safe({
+        model,
+        contents: textContents("hi"),
+        generationConfig: { thinkingConfig: { thinkingBudget: 1024 } },
+      });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors.map((e) => e.code)).toEqual(["unsupported_param"]);
+        expect(r.errors[0]?.path).toEqual(["generationConfig", "thinkingConfig", "thinkingBudget"]);
+        expect(r.errors[0]?.message).toContain("set `thinkingLevel` to one of LOW, MEDIUM, HIGH");
+        expect(r.errors[0]?.meta?.source).toBe(
+          `https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/${model.slice("gemini-".length)}`,
+        );
+      }
+    },
+  );
+
+  test("MINIMAL is refused and the message names the levels the model takes", () => {
+    const r = vertex.chat.safe({
+      model: "publishers/google/models/gemini-4-hydrogen",
+      contents: textContents("hi"),
+      generationConfig: { thinkingConfig: { thinkingLevel: "MINIMAL" } },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_enum_value");
+      expect(r.errors[0]?.path).toEqual(["generationConfig", "thinkingConfig", "thinkingLevel"]);
+      expect(r.errors[0]?.meta?.allowed).toEqual(["LOW", "MEDIUM", "HIGH", "XHIGH"]);
+    }
+    const argon = vertex.chat.safe({
+      model: "gemini-4-argon",
+      contents: textContents("hi"),
+      generationConfig: { thinkingConfig: { thinkingLevel: "MINIMAL" } },
+    });
+    expect(argon.ok).toBe(false);
+    if (!argon.ok) expect(argon.errors[0]?.meta?.allowed).toEqual(["LOW", "MEDIUM", "HIGH"]);
+  });
+
+  test("the documented levels pass, XHIGH included on hydrogen", () => {
+    for (const [model, thinkingLevel] of [
+      ["gemini-4-hydrogen", "XHIGH"],
+      ["gemini-4-carbon", "HIGH"],
+      ["gemini-4-argon", "LOW"],
+    ] as const) {
+      const r = vertex.chat.safe({
+        model,
+        contents: textContents("hi"),
+        generationConfig: { thinkingConfig: { thinkingLevel, includeThoughts: true } },
+      });
+      expect(r.ok).toBe(true);
+    }
+  });
+
+  test("older Gemini rows keep their thinkingBudget", () => {
+    const r = vertex.chat.safe({
+      model: "gemini-3.5-flash-lite",
+      contents: textContents("hi"),
+      generationConfig: { thinkingConfig: { thinkingBudget: 1024 } },
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe("google-vertex gemini-nano-banana-2.1 sampling (Vertex model page, 2026-11-12)", () => {
+  test("seed, topK, logprobs, temperature and topP are each refused", () => {
+    const r = vertex.chat.safe({
+      model: "gemini-nano-banana-2.1",
+      contents: textContents("a red bicycle"),
+      generationConfig: { temperature: 0.5, topP: 0.9, topK: 40, seed: 7, logprobs: 2 },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => e.path.at(-1))).toEqual(["temperature", "topP", "topK", "seed", "logprobs"]);
+      expect(new Set(r.errors.map((e) => e.code))).toEqual(new Set(["unsupported_param"]));
+      expect(r.errors[0]?.meta?.source).toBe(
+        "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/nano-banana-2-1",
+      );
+    }
+  });
+
+  test("an image request without sampling fields passes", () => {
+    const r = vertex.chat.safe({
+      model: "gemini-nano-banana-2.1",
+      contents: textContents("a red bicycle"),
+      generationConfig: { responseModalities: ["TEXT", "IMAGE"], candidateCount: 1 },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
   });
 });
 

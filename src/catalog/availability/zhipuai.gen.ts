@@ -85,7 +85,7 @@ export const availability = {
   "glm-5": {
     "amazon-bedrock": { id: "zai.glm-5", narrows: { context: 202752 } },
     "deepinfra": { id: "zai-org/GLM-5", narrows: { context: 202752 } },
-    "google-vertex": { id: "zai-org/glm-5-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 202752 } },
+    "google-vertex": { id: "zai-org/glm-5-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 200000 } },
     "huggingface": { id: "zai-org/GLM-5", narrows: { context: 202752 } },
     "novita-ai": { id: "zai-org/glm-5", narrows: { context: 202800 } },
     "openrouter": "z-ai/glm-5",
@@ -109,6 +109,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.2", narrows: { context: 262144 } },
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
+    "google-vertex": { id: "zai-org/glm-5.2-maas", endpoint: "google-vertex.chatMaas" },
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
     "mistral": "glm-5-2",
     "nebius": "zai-org/GLM-5.2",

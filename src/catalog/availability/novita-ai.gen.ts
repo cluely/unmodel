@@ -126,6 +126,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/google/gemma-4-26b-a4b-it", narrows: { context: 256000 } },
     "deepinfra": "google/gemma-4-26B-A4B-it",
     "google": "gemma-4-26b-a4b-it",
+    "google-vertex": { id: "google/gemma-4-26b-a4b-it-maas", endpoint: "google-vertex.chatMaas" },
     "huggingface": "google/gemma-4-26B-A4B-it",
     "novita-ai": "google/gemma-4-26b-a4b-it",
     "openrouter": "google/gemma-4-26b-a4b-it",
@@ -193,6 +194,7 @@ export const availability = {
     "novita-ai": "meta-llama/llama-4-maverick-17b-128e-instruct-fp8",
   },
   "meta-llama/llama-4-scout-17b-16e-instruct": {
+    "google-vertex": { id: "meta/llama-4-scout-17b-16e-instruct-maas", endpoint: "google-vertex.chatMaas" },
     "novita-ai": "meta-llama/llama-4-scout-17b-16e-instruct",
   },
   "microsoft/wizardlm-2-8x22b": {
@@ -573,7 +575,7 @@ export const availability = {
   "zai-org/glm-5": {
     "amazon-bedrock": { id: "zai.glm-5", narrows: { context: 202752 } },
     "deepinfra": { id: "zai-org/GLM-5", narrows: { context: 202752 } },
-    "google-vertex": { id: "zai-org/glm-5-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 202752 } },
+    "google-vertex": { id: "zai-org/glm-5-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 200000 } },
     "huggingface": { id: "zai-org/GLM-5", narrows: { context: 202752 } },
     "novita-ai": "zai-org/glm-5",
     "openrouter": "z-ai/glm-5",
@@ -597,6 +599,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.2", narrows: { context: 262144 } },
     "deepinfra": "zai-org/GLM-5.2",
     "friendli": "zai-org/GLM-5.2",
+    "google-vertex": { id: "zai-org/glm-5.2-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 1000000 } },
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144 } },
     "mistral": "glm-5-2",
     "nebius": "zai-org/GLM-5.2",

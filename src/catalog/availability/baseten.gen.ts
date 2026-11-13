@@ -110,6 +110,7 @@ export const availability = {
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.2", narrows: { context: 262144, drops: ["image"] } },
     "deepinfra": { id: "zai-org/GLM-5.2", narrows: { drops: ["image"] } },
     "friendli": { id: "zai-org/GLM-5.2", narrows: { drops: ["image"] } },
+    "google-vertex": { id: "zai-org/glm-5.2-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 1000000, drops: ["image"] } },
     "huggingface": { id: "zai-org/GLM-5.2", narrows: { context: 262144, drops: ["image"] } },
     "mistral": { id: "glm-5-2", narrows: { drops: ["image"] } },
     "nebius": { id: "zai-org/GLM-5.2", narrows: { drops: ["image"] } },

@@ -9,9 +9,10 @@
  * API-reference schema page still lists `stop`, `modalities` and
  * `reasoning_effort: "none"` in its request schema; the prose pages say each
  * returns HTTP 400, and the prose wins. Deliberately NOT refused, because no
- * page states a 400: `frequency_penalty` / `presence_penalty` ("a request that
- * sets them can return an error"), `top_logprobs`, and `reasoning_effort:
- * "max"` on the ids the docs call it "not available" for.
+ * page states a 400: `top_logprobs`; `frequency_penalty` / `presence_penalty`
+ * ("a request that sets them can return an error") and `reasoning_effort:
+ * "max"` on the ids the docs call it "not available" for are warned, not
+ * refused.
  *
  * Cost caveat: muse-ember-1.0 bills a request over 200K input tokens at its
  * long-context rates in full ("Over 200K input tokens": $0.30 input / $1.50
@@ -35,6 +36,7 @@ import { availability } from "../../catalog/availability/meta.gen";
 const CHAT_COMPLETIONS_DOC =
   "https://dev.meta.ai/docs/protocols/chat-completions (checked 2026-11-12)";
 const REASONING_DOC = "https://dev.meta.ai/docs/reasoning (checked 2026-11-12)";
+const CHOOSE_A_MODEL_DOC = "https://dev.meta.ai/docs/choose-a-model (checked 2026-11-12)";
 const TOOL_CALLING_DOC = "https://dev.meta.ai/docs/tool-calling (checked 2026-11-12)";
 const ERROR_HANDLING_DOC = "https://dev.meta.ai/docs/error-handling (checked 2026-11-12)";
 const MEDIA_DOC = "https://dev.meta.ai/docs/media-understanding (checked 2026-11-12)";
@@ -131,6 +133,8 @@ const { chat, chatUrl, checkChat, estimateChatTokens } = createOpenAICompatible<
   familyRules: chatFamilyRules,
   extraChecks: [
     checkLogprobs,
+    checkUnsupportedPenalties,
+    checkMaxEffortAvailability,
     checkResponsesTextFormat,
     checkTools,
     checkSamplingRanges,
@@ -187,6 +191,71 @@ function checkLogprobs(
     model: params.model,
     message: `\`logprobs: true\` is not supported by "${params.model}": Meta's reasoning models return HTTP 400 for it. Omit \`logprobs\` or send \`false\`.`,
     meta: { source: REASONING_DOC },
+  });
+}
+
+/**
+ * "`frequency_penalty` and `presence_penalty` are not supported." "Leave them
+ * unset: they do not change the output, and a request that sets them can
+ * return an error." (CHAT_COMPLETIONS_DOC). No page states a 400, so this
+ * warns. It is not an `ignored` deny rule: that rule's message calls the
+ * value "silently ignored", and Meta says it can return an error.
+ */
+const UNSUPPORTED_PENALTIES = ["frequency_penalty", "presence_penalty"] as const;
+
+function checkUnsupportedPenalties(
+  params: ChatCompletionsBodyBase,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  for (const param of UNSUPPORTED_PENALTIES) {
+    if (params[param] == null) continue;
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: [param],
+      model: params.model,
+      message: `\`${param}\` is not supported by Meta's Chat Completions endpoint: it does not change the output, and a request that sets it can return an error. Leave it unset.`,
+      meta: { source: CHAT_COMPLETIONS_DOC },
+    });
+  }
+}
+
+/**
+ * The ids without `reasoning_effort: "max"`. CHOOSE_A_MODEL_DOC: "`"max"`
+ * isn't available on `muse-spark-1.2`, `muse-spark-1.1`, or
+ * `muse-spark-1.3-contributor`." REASONING_DOC's "max" row: "Supported by
+ * `muse-wonder-1.0`, `muse-spark-1.3`, and `muse-ember-1.0`".
+ * muse-spark-1.2-contributor is named in neither sentence; it is the
+ * Contributor-mode variant of muse-spark-1.2 and missing from the supported
+ * list, so it is listed. The models.dev snapshot's `reasoning_options` leave
+ * "max" out for all four. A deny set rather than an allowlist, so an id Meta
+ * adds later is not warned before its docs say anything.
+ */
+const NO_MAX_EFFORT_IDS: ReadonlySet<string> = new Set<MetaTextModelId>([
+  "muse-spark-1.1",
+  "muse-spark-1.2",
+  "muse-spark-1.2-contributor",
+  "muse-spark-1.3-contributor",
+]);
+
+/**
+ * `"max"` on an id the docs say lacks it. Neither page says whether the API
+ * rejects or lowers the value, so this warns.
+ */
+function checkMaxEffortAvailability(
+  params: ChatCompletionsBodyBase,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.reasoning_effort !== "max" || !NO_MAX_EFFORT_IDS.has(params.model)) return;
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["reasoning_effort"],
+    model: params.model,
+    message: `Meta's docs say \`reasoning_effort: "max"\` isn't available on "${params.model}"; it is offered on muse-wonder-1.0, muse-spark-1.3 and muse-ember-1.0. The docs don't say whether the API rejects or lowers it; "xhigh" is the highest level they leave open to this model.`,
+    meta: { source: `${CHOOSE_A_MODEL_DOC}; ${REASONING_DOC}` },
   });
 }
 

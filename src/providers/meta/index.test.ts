@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { chat, chatModels, checkChat, CHAT_COMPLETIONS_URL, models } from "./index";
+import { chat as unifiedChat } from "../../chat";
 
 describe("unmodel/meta", () => {
   test("chat URL is the documented OpenAI-compatible endpoint", () => {
@@ -188,6 +189,84 @@ describe("meta.chat — endpoint-wide HTTP 400s", () => {
     const r = chat.safe({ model, messages: images(51) });
     expect(codes(r)).toEqual(["invalid_shape"]);
     expect(firstError(r)?.meta?.limit).toBe(50);
+  });
+});
+
+// Documented as unsupported, with no HTTP 400 stated: warned, never refused.
+describe("meta.chat — warned, not refused", () => {
+  const model = "muse-spark-1.3";
+
+  // "`frequency_penalty` and `presence_penalty` are not supported." "Leave them
+  // unset: they do not change the output, and a request that sets them can
+  // return an error." — https://dev.meta.ai/docs/protocols/chat-completions
+  test("frequency_penalty / presence_penalty warn once each, on meta.chat and unmodel/chat", () => {
+    const substrate = chat.safe({
+      model,
+      messages: hi,
+      frequency_penalty: 0.5,
+      presence_penalty: 0.2,
+    });
+    expect(substrate.ok).toBe(true);
+    if (substrate.ok) {
+      expect(substrate.warnings.map((w) => [w.code, w.path])).toEqual([
+        ["unsupported_param", ["frequency_penalty"]],
+        ["unsupported_param", ["presence_penalty"]],
+      ]);
+      for (const w of substrate.warnings) {
+        expect(w.meta?.source).toContain("dev.meta.ai/docs/protocols/chat-completions");
+        expect(w.message).toContain("can return an error");
+      }
+    }
+    const unified = unifiedChat.safe({
+      model: `meta/${model}`,
+      messages: hi,
+      frequencyPenalty: 0.5,
+      presencePenalty: 0.2,
+    });
+    expect(unified.ok).toBe(true);
+    if (unified.ok) {
+      expect(unified.warnings.map((w) => [w.code, w.path])).toEqual([
+        ["unsupported_param", ["frequencyPenalty"]],
+        ["unsupported_param", ["presencePenalty"]],
+      ]);
+      for (const w of unified.warnings) {
+        expect(w.meta?.source).toContain("dev.meta.ai/docs/protocols/chat-completions");
+      }
+    }
+  });
+
+  test("unset or null penalties raise no warning", () => {
+    for (const r of [
+      chat.safe({ model, messages: hi }),
+      chat.safe({ model, messages: hi, frequency_penalty: null, presence_penalty: null }),
+      unifiedChat.safe({ model: `meta/${model}`, messages: hi }),
+    ]) {
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  // "`"max"` isn't available on `muse-spark-1.2`, `muse-spark-1.1`, or
+  // `muse-spark-1.3-contributor`." — https://dev.meta.ai/docs/choose-a-model
+  test('reasoning_effort "max" warns on the ids that lack it, and only there', () => {
+    for (const id of ["muse-spark-1.3", "muse-wonder-1.0", "muse-ember-1.0"] as const) {
+      const r = chat.safe({ model: id, messages: hi, reasoning_effort: "max" });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+    for (const id of ["muse-spark-1.1", "muse-spark-1.3-contributor"] as const) {
+      const r = chat.safe({ model: id, messages: hi, reasoning_effort: "max" });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings.map((w) => [w.code, w.path])).toEqual([
+          ["unsupported_param", ["reasoning_effort"]],
+        ]);
+        expect(r.warnings[0]?.meta?.source).toContain("dev.meta.ai/docs/choose-a-model");
+      }
+    }
+    const xhigh = chat.safe({ model: "muse-spark-1.1", messages: hi, reasoning_effort: "xhigh" });
+    expect(xhigh.ok).toBe(true);
+    if (xhigh.ok) expect(xhigh.warnings).toEqual([]);
   });
 });
 

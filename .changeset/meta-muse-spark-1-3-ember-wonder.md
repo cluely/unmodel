@@ -26,6 +26,7 @@ meta: Muse Spark 1.3, Muse Ember and Muse Wonder validate and price; `meta.chat`
   - `temperature` outside 0–2 and `top_p` outside `0 < top_p ≤ 1`
     (https://dev.meta.ai/docs/error-handling);
   - more than 50 images in one request (https://dev.meta.ai/docs/media-understanding).
-- Not refused, because Meta never states a 400 for them: `frequency_penalty`,
-  `presence_penalty`, `top_logprobs`, and `reasoning_effort: "max"` on
-  `muse-spark-1.2`, `muse-spark-1.1` and the contributor ids.
+- Not refused, because Meta never states a 400 for them: `top_logprobs`;
+  `frequency_penalty`, `presence_penalty`, and `reasoning_effort: "max"` on
+  `muse-spark-1.2`, `muse-spark-1.1` and the contributor ids are warned, not
+  refused.

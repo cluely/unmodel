@@ -29,6 +29,24 @@
  *   (`wss://eu.rt.speechmatics.com/v2`), which unmodel does not validate.
  * - Alignment jobs (`type: "alignment"` + `alignment_config`) are a different
  *   product and are out of scope here; this validator models transcription.
+ *
+ * Re-verified 2026-11-12 against the same pages plus
+ * https://docs.speechmatics.com/speech-to-text/formatting.md:
+ * - `output_locale` is `string | string[]`. The array — "one per language
+ *   present in the audio" — is carried by the formatting page, the models page
+ *   (Melia 1 and Oak 1: "On Batch, `output_locale` also accepts an array of
+ *   locales"), the Batch SaaS fix note of 2026-10-13 and the Melia 1 / Oak 1
+ *   container 1.13.0 notes. The API reference still types it `string`, as do
+ *   the Python (`Optional[str]`) and JS (`output_locale?: string`) batch SDKs;
+ *   those lag, and refusing the array would refuse a request the API
+ *   fulfils.
+ * - Entity detection on Melia 1 / Oak 1 contradicts between two vendor pages:
+ *   the models page says they "do not yet support" it (so `enable_entities`
+ *   is refused on them), while https://www.speechmatics.com/pricing.md lists
+ *   "| Entity detection | Pre-recorded | On request | Melia 1, Oak 1 |" and
+ *   "| PII reduction | Pre-recorded | On request | Melia 1, Oak 1 |". So
+ *   `entities_config`, `enable_redaction` and `redaction_config` carry no
+ *   per-model gate.
  */
 
 import { z } from "zod";
@@ -44,6 +62,7 @@ import { models, BATCH_HOSTS, type SpeechmaticsRegion } from "./models";
 
 const MODELS_DOCS = "https://docs.speechmatics.com/speech-to-text/models";
 const LIMITS_DOCS = "https://docs.speechmatics.com/speech-to-text/batch/limits";
+const FORMATTING_DOCS = "https://docs.speechmatics.com/speech-to-text/formatting";
 
 /** Builds the /v2/jobs URL for a Batch SaaS region. */
 export function jobsUrl(region: SpeechmaticsRegion = "eu1"): string {
@@ -136,13 +155,38 @@ export interface SpeechmaticsSpeakerDiarizationConfig {
   speakers?: SpeechmaticsSpeaker[];
 }
 
+/** "Configuration for Advanced Entities Detection." */
+export interface SpeechmaticsEntitiesConfig {
+  /**
+   * "Must be set together with `enable_entities: true`." Returns entities such
+   * as names, dates of birth and card numbers, each with its own
+   * `entity_class`, instead of the default entity detection.
+   */
+  detect_advanced_entities?: boolean;
+}
+
+/** "Required, and only applied, when `enable_redaction` is true." */
+export interface SpeechmaticsRedactionConfig {
+  /**
+   * Groups (`pii`, `pci`, `health`, `gdpr`, `gdpr_sensitive`,
+   * `hipaa_safe_harbor`, `cpra`, `quebec_privacy_act`, `appi`,
+   * `appi_sensitive`) or specific entity types matched by their
+   * `entity_class` (e.g. `name_given`, `dob`); at least one, unique.
+   */
+  entity_classes?: string[];
+}
+
 export interface SpeechmaticsTranscriptionConfig {
   /** ISO language code; `multi` for Melia 1 and Oak 1, `auto` for language ID. */
   language: string;
   /** Specialized variant of `language`, e.g. "medical" (Enhanced only). */
   domain?: string;
-  /** Locale for the transcription output, e.g. "en-US". */
-  output_locale?: string;
+  /**
+   * Locale for the transcription output, e.g. "en-US". On Batch, Melia 1 and
+   * Oak 1 also take an array, "one per language present in the audio"; "each
+   * locale in the array must belong to a different language".
+   */
+  output_locale?: string | string[];
   /** Model to transcribe with; defaults to "standard". */
   model?: "standard" | "enhanced" | "melia-1" | "oak-1" | (string & {});
   /** @deprecated Use `model`; kept for backward compatibility. */
@@ -156,18 +200,23 @@ export interface SpeechmaticsTranscriptionConfig {
   channel_diarization_labels?: string[];
   /** Include 'entity' objects (dates, numbers) with spoken/written forms. */
   enable_entities?: boolean;
+  entities_config?: SpeechmaticsEntitiesConfig;
+  /**
+   * Redact advanced entities throughout the transcript. "Must be set together
+   * with `redaction_config.entity_classes`. If `enable_entities` is true,
+   * `entities_config.detect_advanced_entities` must also be true".
+   */
+  enable_redaction?: boolean;
+  redaction_config?: SpeechmaticsRedactionConfig;
   /** Flexible endpointing: "fixed" or "flexible". */
   max_delay_mode?: "fixed" | "flexible";
   audio_filtering_config?: SpeechmaticsAudioFilteringConfig;
   transcript_filtering_config?: SpeechmaticsTranscriptFilteringConfig;
   speaker_diarization_config?: SpeechmaticsSpeakerDiarizationConfig;
-  /**
-   * Languages to bias multilingual detection toward (Melia 1). Documented in
-   * the "Language hints" section of
-   * https://docs.speechmatics.com/speech-to-text/batch/input rather than in
-   * the JobConfig table.
-   */
+  /** Languages expected in the audio, guiding multilingual transcription. */
   language_hints?: string[];
+  /** "Whether to treat the provided language hints as strict." */
+  language_hints_strict?: boolean;
 }
 
 export interface SpeechmaticsNotificationConfig {
@@ -249,7 +298,7 @@ const schema = z.looseObject({
   transcription_config: z.looseObject({
     language: z.string().min(1),
     domain: z.string().optional(),
-    output_locale: z.string().optional(),
+    output_locale: z.union([z.string(), z.array(z.string())]).optional(),
     model: z.string().optional(),
     operating_point: z.string().optional(),
     additional_vocab: z
@@ -266,6 +315,13 @@ const schema = z.looseObject({
       .array(z.string().regex(/^[A-Za-z0-9._]+$/, "channel_diarization_labels must match ^[A-Za-z0-9._]+$."))
       .optional(),
     enable_entities: z.boolean().optional(),
+    entities_config: z
+      .looseObject({ detect_advanced_entities: z.boolean().optional() })
+      .optional(),
+    enable_redaction: z.boolean().optional(),
+    redaction_config: z
+      .looseObject({ entity_classes: z.array(z.string()).min(1).optional() })
+      .optional(),
     max_delay_mode: z.enum(["fixed", "flexible"]).optional(),
     audio_filtering_config: z
       .looseObject({ volume_threshold: z.number().min(0).max(100).optional() })
@@ -292,6 +348,7 @@ const schema = z.looseObject({
       })
       .optional(),
     language_hints: z.array(z.string()).optional(),
+    language_hints_strict: z.boolean().optional(),
   }),
   fetch_data: z
     .looseObject({ url: z.string().min(1), auth_headers: z.array(z.string()).optional() })
@@ -510,6 +567,37 @@ function checkMedicalDomain(
   });
 }
 
+/**
+ * "Each locale in the array must belong to a different language. Passing two
+ * locales for the same language, for example `en-GB` and `en-US` together, is
+ * rejected." (FORMATTING_DOCS, 2026-11-12). A locale's language is its primary
+ * subtag: `cmn` in `cmn-Hans`.
+ */
+function checkOutputLocales(
+  config: JobConfig,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const locales = config.transcription_config?.output_locale;
+  if (!Array.isArray(locales)) return;
+  const firstByLanguage = new Map<string, string>();
+  for (const [index, locale] of locales.entries()) {
+    const language = (locale.split("-")[0] ?? locale).toLowerCase();
+    const first = firstByLanguage.get(language);
+    if (first === undefined) {
+      firstByLanguage.set(language, locale);
+      continue;
+    }
+    ctx.report({
+      code: "invalid_shape",
+      path: ["transcription_config", "output_locale", index],
+      model: resolveModel(config),
+      message: `\`output_locale\` lists "${first}" and "${locale}", two locales of one language, which Speechmatics rejects; give one locale per language in the audio.`,
+      meta: { value: locale, conflictsWith: first, source: FORMATTING_DOCS },
+    });
+  }
+}
+
 /** Audio paths a media declaration may be attached to, most specific first. */
 const AUDIO_PATHS: ReadonlyArray<Array<string | number>> = [["data_file"], ["fetch_data", "url"]];
 
@@ -590,7 +678,13 @@ const validator = createValidator<JobConfig, unknown>({
   schema,
   modelId: resolveModel,
   catalog: models,
-  checks: [checkOperatingPoint, checkMultilingual, checkMedicalDomain, checkDataFileSize],
+  checks: [
+    checkOperatingPoint,
+    checkMultilingual,
+    checkMedicalDomain,
+    checkOutputLocales,
+    checkDataFileSize,
+  ],
   // The audio arrives as a `data_file` FORM PART alongside this JSON config, so
   // a declaration addressed to it names a real coordinate that is not a key of
   // `JobConfig`. Same list `declaredAudio` reads, so the two cannot disagree.

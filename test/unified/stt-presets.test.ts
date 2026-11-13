@@ -371,6 +371,29 @@ describe("every declared transcribe preset is a value the provider accepts", () 
     });
     expect(smx["summarization_config"]).toEqual({ summary_type: "bullets" });
 
+    // …including Standard's bilingual pack and Melia 1's per-language locales.
+    const pack = stt({
+      model: "speechmatics/standard",
+      audio: { url: "https://example.com/a.wav" },
+      language: "es",
+      domain: "bilingual-en",
+    } as never) as unknown as Record<string, Record<string, unknown>>;
+    expect(pack["transcription_config"]).toMatchObject({ language: "es", domain: "bilingual-en" });
+    const locales = stt({
+      model: "speechmatics/melia-1",
+      audio: { url: "https://example.com/a.wav" },
+      language: "multi",
+      output_locale: ["en-GB", "cmn-Hans"],
+    } as never) as unknown as Record<string, Record<string, unknown>>;
+    expect(locales["transcription_config"]?.["output_locale"]).toEqual(["en-GB", "cmn-Hans"]);
+    const medical = stt.safe({
+      model: "speechmatics/standard",
+      audio: { url: "https://example.com/a.wav" },
+      domain: "medical",
+    } as never);
+    expect(medical.ok).toBe(false);
+    if (!medical.ok) expect(medical.errors[0]!.message).toContain('requires `model: "enhanced"`');
+
     // Gladia: `code_switching` shares `language_config` with the compiled
     // language array rather than replacing it.
     const gld = stt({

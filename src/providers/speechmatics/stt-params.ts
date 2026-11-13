@@ -64,18 +64,34 @@ export const MODELS = ["enhanced", "standard", "melia-1", "oak-1"] as const;
  * is the whole of its `languages` list — the shortest in the library, and one
  * an editor can now complete.
  *
- * `domain` is Enhanced's alone: `domain: "medical"` "selects the Enhanced
- * Medical model and requires `model: "enhanced"`". Oak 1 is the multilingual
- * medical model by its id, with no `domain` at all.
+ * ## `domain`
+ *
+ * Enhanced takes any `domain`; Standard takes the one its docs name. The
+ * language packs are for both — "The Enhanced and Standard models can
+ * transcribe a selected combination of languages in one media file or
+ * stream", and the Spanish and English pack is
+ * `{"language": "es", "domain": "bilingual-en"}`
+ * (https://docs.speechmatics.com/speech-to-text/languages.md, 2026-11-12). The
+ * medical domain is Enhanced's alone: `domain: "medical"` "selects the
+ * Enhanced Medical model and requires `model: "enhanced"`". Oak 1 is the
+ * multilingual medical model by its id, with no `domain` at all.
  *
  * Excluded: `fetch_data`, `transcription_config.{language,model,diarization}`
  * and `language_identification_config.expected_languages` are canonical words'
  * wire spellings (the last of those is why the config object still merges
  * rather than replaces), `operating_point` is deprecated in favour of `model`,
  * and `notification_config` / `tracking` are transport.
+ * `transcription_config.{language_hints_strict, entities_config,
+ * enable_redaction, redaction_config}` are typed on the wire and reach it
+ * through `providerOptions.speechmatics`. No row claims them because
+ * Speechmatics' own sources disagree about where they apply: the models page
+ * and pricing.md on entity detection and redaction for Melia 1 and Oak 1 (see
+ * `./stt.ts`), and the batch input docs ("guide detection without restricting
+ * it") and the Python SDK ("Recognition is restricted to these languages") on
+ * what hints, and so strict hints, mean.
  */
 export const TRANSCRIPTION_CONFIG_EXTRAS = {
-  output_locale: EXTRA as string,
+  output_locale: EXTRA as string | string[],
   punctuation_overrides: EXTRA as SpeechmaticsPunctuationOverrides,
   channel_diarization_labels: EXTRA as string[],
   max_delay_mode: EXTRA as "fixed" | "flexible",
@@ -118,7 +134,10 @@ export const SPEECHMATICS_STT_MODEL_PARAMS = {
     timestamps: TIMESTAMPS,
     extras: { ...FULL_EXTRAS, domain: EXTRA as string },
   },
-  standard: { timestamps: TIMESTAMPS, extras: FULL_EXTRAS },
+  standard: {
+    timestamps: TIMESTAMPS,
+    extras: { ...FULL_EXTRAS, domain: EXTRA as "bilingual-en" },
+  },
   "melia-1": MULTILINGUAL,
   "oak-1": MULTILINGUAL,
 } as const satisfies SttModelParamTable;

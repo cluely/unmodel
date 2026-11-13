@@ -376,8 +376,11 @@ function extrasNarrowingTests(): void {
   stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi" });
   // @ts-expect-error
   stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi", summarization_config: {} });
-  // @ts-expect-error — `domain: "medical"` "requires `model: "enhanced"`".
+  // Standard's one documented `domain` is the Spanish and English pack…
+  stt({ model: "speechmatics/standard", audio: { url }, language: "es", domain: "bilingual-en" });
+  // @ts-expect-error — …and `domain: "medical"` "requires `model: "enhanced"`".
   stt({ model: "speechmatics/standard", audio: { url }, domain: "medical" });
+  stt({ model: "speechmatics/melia-1", audio: { url }, language: "multi", output_locale: ["en-GB", "cmn-Hans"] });
   // @ts-expect-error — Oak 1 is the medical model by its id; it takes no `domain`.
   stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi", domain: "medical" });
   stt({ model: "speechmatics/enhanced", audio: { url }, domain: "medical" });

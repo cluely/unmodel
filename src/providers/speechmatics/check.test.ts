@@ -30,8 +30,8 @@ describe("speechmatics.checkJob", () => {
       },
     });
     expect(report.warnings).toEqual([]);
-    // 60 minutes x ($0.40/hr ÷ 60) = $0.40.
-    expect(report.costUSD).toBeCloseTo(0.4, 10);
+    // 60 minutes x ($0.75/hr ÷ 60) = $0.75.
+    expect(report.costUSD).toBeCloseTo(0.75, 10);
     expect(report.usage).toEqual({});
   });
 
@@ -39,8 +39,8 @@ describe("speechmatics.checkJob", () => {
     const report = checkJob({
       job: { status: "done", duration: 600, config: { transcription_config: { language: "en" } } },
     });
-    // 10 minutes x ($0.24/hr ÷ 60).
-    expect(report.costUSD).toBeCloseTo((600 / 60) * (0.24 / 60), 10);
+    // 10 minutes x ($0.45/hr ÷ 60).
+    expect(report.costUSD).toBeCloseTo((600 / 60) * (0.45 / 60), 10);
   });
 
   test("the deprecated operating_point still resolves a rate", () => {
@@ -51,7 +51,7 @@ describe("speechmatics.checkJob", () => {
         config: { transcription_config: { operating_point: "melia-1", language: "multi" } },
       },
     });
-    expect(report.costUSD).toBeCloseTo(0.129 / 60, 10);
+    expect(report.costUSD).toBeCloseTo(0.24 / 60, 10);
   });
 
   test("an oak-1 job prices at its catalogued rate", () => {

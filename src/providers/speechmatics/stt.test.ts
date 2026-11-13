@@ -8,7 +8,7 @@ import {
   resolveModel,
   type JobConfig,
 } from "./stt";
-import { models } from "./models";
+import { models, MELIA_REGIONS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 
 describe("speechmatics.stt happy path", () => {
@@ -33,6 +33,10 @@ describe("speechmatics.stt happy path", () => {
     expect(JOBS_URL).toBe("https://eu1.asr.api.speechmatics.com/v2/jobs");
     expect(jobsUrl("us1")).toBe("https://us1.asr.api.speechmatics.com/v2/jobs");
     expect(jobsUrl("au1")).toBe("https://au1.asr.api.speechmatics.com/v2/jobs");
+  });
+
+  test("Melia 1 and Oak 1 run on EU1, US1 and AU1", () => {
+    expect(MELIA_REGIONS).toEqual(["eu1", "us1", "au1"]);
   });
 
   test("a full speech-intelligence config on enhanced validates cleanly", () => {
@@ -116,6 +120,68 @@ describe("speechmatics.stt shape rules", () => {
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.message).toContain("^[A-Za-z0-9._]+$");
+  });
+
+  test("output_locale takes one locale per language on the multilingual models", () => {
+    for (const model of ["melia-1", "oak-1"] as const) {
+      const r = stt.safe({
+        type: "transcription",
+        transcription_config: { language: "multi", model, output_locale: ["en-GB", "cmn-Hans"] },
+      });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+
+    const twice = stt.safe({
+      type: "transcription",
+      transcription_config: { language: "multi", model: "melia-1", output_locale: ["en-GB", "en-US"] },
+    });
+    expect(twice.ok).toBe(false);
+    if (!twice.ok) {
+      expect(twice.errors).toHaveLength(1);
+      expect(twice.errors[0]?.code).toBe("invalid_shape");
+      expect(twice.errors[0]?.path).toEqual(["transcription_config", "output_locale", 1]);
+      expect(twice.errors[0]?.message).toContain('"en-GB" and "en-US"');
+    }
+  });
+
+  test("advanced entities, redaction and strict hints are typed wire fields", () => {
+    const r = stt.safe({
+      type: "transcription",
+      transcription_config: {
+        language: "en",
+        model: "enhanced",
+        enable_entities: true,
+        entities_config: { detect_advanced_entities: true },
+        enable_redaction: true,
+        redaction_config: { entity_classes: ["pii", "dob"] },
+        language_hints_strict: true,
+      },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+
+    const empty = stt.safe({
+      type: "transcription",
+      transcription_config: {
+        language: "en",
+        enable_redaction: true,
+        redaction_config: { entity_classes: [] },
+      },
+    });
+    expect(empty.ok).toBe(false);
+    if (!empty.ok) {
+      expect(empty.errors[0]?.path).toEqual(["transcription_config", "redaction_config", "entity_classes"]);
+    }
+  });
+
+  test("standard takes the Spanish and English pack's domain", () => {
+    const r = stt.safe({
+      type: "transcription",
+      transcription_config: { language: "es", model: "standard", domain: "bilingual-en" },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
   });
 
   test("unknown top-level keys pass through with a warning", () => {
@@ -300,8 +366,8 @@ describe("speechmatics.stt media + cost", () => {
       media: [{ path: ["data_file"], durationSeconds: 3600 }],
     });
     expect(r.ok).toBe(true);
-    // 60 minutes x ($0.40/hr ÷ 60) = $0.40.
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.4, 10);
+    // 60 minutes x ($0.75/hr ÷ 60) = $0.75.
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.75, 10);
   });
 
   test("oak-1 is catalogued and prices at its $0.30/hr batch list rate", () => {
@@ -327,7 +393,7 @@ describe("speechmatics.stt media + cost", () => {
       { media: [{ path: ["fetch_data", "url"], durationSeconds: 600 }] },
     );
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo((600 / 60) * (0.4 / 60), 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo((600 / 60) * (0.75 / 60), 10);
   });
 
   test("no declaration means no estimate", () => {

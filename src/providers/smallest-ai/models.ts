@@ -194,6 +194,22 @@ export const PRO_ONLY_LANGUAGES = [
   "vi",
 ] as const satisfies readonly SmallestLanguage[];
 
+/**
+ * The three codes `lightning_v3.1_pro_10_26` is a checkpoint for: "On
+ * `lightning_v3.1_pro_10_26`, use `en` (English), `es` (Spanish with English
+ * code-switching) or `hi` (Hindi with English code-switching)." (endpoint
+ * reference, read 2026-11-13). Every other code stays on the stable Pro pool:
+ * "The other 28 languages and `auto` stay on their current checkpoints" and
+ * "For any language other than English, Spanish or Hindi, use
+ * `lightning_v3.1_pro`." (Pro model card, read 2026-11-13). No page documents
+ * a 400 for another code on this id, so ./tts.ts warns rather than refuses.
+ */
+export const PREVIEW_CHECKPOINT_LANGUAGES = [
+  "en",
+  "es",
+  "hi",
+] as const satisfies readonly SmallestLanguage[];
+
 export type SmallestLanguage = (typeof LANGUAGES)[number];
 
 /**

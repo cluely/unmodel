@@ -24,4 +24,9 @@ export {
   SMALLEST_TTS_DELIVERY as TTS_DELIVERY,
 } from "./tts-params";
 
-export { LANGUAGES, PRO_ONLY_LANGUAGES, SMALLEST_MODEL_IDS } from "./models";
+export {
+  LANGUAGES,
+  PRO_ONLY_LANGUAGES,
+  PREVIEW_CHECKPOINT_LANGUAGES,
+  SMALLEST_MODEL_IDS,
+} from "./models";

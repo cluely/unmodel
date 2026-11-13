@@ -193,7 +193,7 @@ function run(ref: string, params: Record<string, unknown>): Outcome {
  * The providers (or single refs) whose off-list language is a **warning**
  * rather than an error.
  *
- * Two entries, and each is a documentary fact rather than a leniency:
+ * Three entries, and each is a documentary fact rather than a leniency:
  *
  * - `google`: Gemini's 78-row table is headed "Supported languages" and states
  *   which languages the models *speak*, while the REST reference's own
@@ -204,12 +204,19 @@ function run(ref: string, params: Record<string, unknown>): Outcome {
  *   2026-11-30 the id is served by Pro, which accepts all of them — so
  *   `checkLanguagePool` warns. One ref, not the provider: its other rows'
  *   off-list codes are outside the 32-code wire enum and are refused.
+ * - `smallest-ai/lightning_v3.1_pro_10_26`: the reference says to use `en`,
+ *   `es` or `hi` on the preview checkpoint but documents no 400 for another
+ *   code, so `checkPreviewCheckpointLanguage` warns.
  *
  * The library never fails a request the API may well fulfil, so the negative
  * half of the completion claim is asserted here as "compiles, and says so"
  * rather than "refused". Enumerated so another cell cannot join silently.
  */
-const WARN_ONLY_LANGUAGES: ReadonlySet<string> = new Set(["google", "smallest-ai/lightning_v3.1"]);
+const WARN_ONLY_LANGUAGES: ReadonlySet<string> = new Set([
+  "google",
+  "smallest-ai/lightning_v3.1",
+  "smallest-ai/lightning_v3.1_pro_10_26",
+]);
 
 /**
  * The spellings a codec is tried in, in order.

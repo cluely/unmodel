@@ -38,9 +38,9 @@
  * the message and meta ({ limitCharacters, actualCharacters }) spell out that
  * the limit is in characters, not tokens. Both model cards still give "Max
  * chunk size 250 characters" (optimal throughput at ~140 characters per
- * request); crossing that is a warning, never an error. The whitespace-only
- * half of the quote is not checked here: such a `text` passes the schema's
- * `min(1)` and draws the API's 400.
+ * request); crossing that is a warning, never an error. A `text` that is empty
+ * after the same `trim()` is refused as `invalid_shape` at `["text"]`; the
+ * body is sent untrimmed.
  *
  * COST: both pools publish a per-character rate (./models.ts). A request that
  * leaves `model` out gets NO `costUSD` — its pool, and so its rate, is picked
@@ -74,6 +74,7 @@ import {
   CONTENT_FILTER_ACTIONS,
   DATE_FORMATS,
   LANGUAGES,
+  PREVIEW_CHECKPOINT_LANGUAGES,
   PRO_ONLY_LANGUAGES,
   models,
   type SmallestContentFilter,
@@ -85,7 +86,13 @@ import {
 // Declared in `./models` — an import-free leaf — so that `unmodel/smallest-ai/values`
 // and the `*-params` table can read these without this validator, its zod schema
 // and its catalog. Re-exported here so every existing caller is unchanged.
-export { CONTENT_FILTER_ACTIONS, DATE_FORMATS, LANGUAGES, PRO_ONLY_LANGUAGES } from "./models";
+export {
+  CONTENT_FILTER_ACTIONS,
+  DATE_FORMATS,
+  LANGUAGES,
+  PREVIEW_CHECKPOINT_LANGUAGES,
+  PRO_ONLY_LANGUAGES,
+} from "./models";
 export type {
   SmallestContentFilter,
   SmallestContentFilterAction,
@@ -129,7 +136,7 @@ export const OUTPUT_FORMATS = ["mp3", "pcm", "wav", "ulaw", "alaw"] as const;
 export type SmallestOutputFormat = (typeof OUTPUT_FORMATS)[number];
 
 export interface TtsBody {
-  /** Text to convert to speech; at most 8000 characters after trim. */
+  /** Text to convert to speech; 1–8000 characters after trim (whitespace-only is rejected). */
   text: string;
   /** Voice identifier, e.g. "meher", "magnus". Cloned voices are `voice_*`. */
   voice_id: string;
@@ -194,7 +201,13 @@ const correlationId = (field: string) =>
     .optional();
 
 const schema = z.looseObject({
-  text: z.string().min(1, "text must not be empty."),
+  // A refine, not `.trim()`: the body is sent byte-exact, and the API trims.
+  text: z
+    .string()
+    .refine(
+      (text) => text.trim().length > 0,
+      "text must not be empty or whitespace-only; the API rejects it after trim.",
+    ),
   voice_id: z.string().min(1, "voice_id must not be empty."),
   model: z.string().optional(),
   sample_rate: z
@@ -243,6 +256,7 @@ export const ttsConstraints: Readonly<Partial<Record<string, EndpointConstraints
 // ---------------------------------------------------------------------------
 
 const PRO_ONLY_LANGUAGE_SET = new Set<string>(PRO_ONLY_LANGUAGES);
+const PREVIEW_CHECKPOINT_LANGUAGE_SET = new Set<string>(PREVIEW_CHECKPOINT_LANGUAGES);
 
 /**
  * The `text` cap, measured the way the reference states it: "Max 8000
@@ -321,21 +335,53 @@ function checkLanguagePool(
 }
 
 /**
- * `word_timestamps` with no `model`. The deny table is keyed by pool and an
- * omitted `model` resolves none, so the constraint layer does not run; the
- * rule holds on every pool, so it is reported here instead.
+ * A synthesis language outside `PREVIEW_CHECKPOINT_LANGUAGES` sent to
+ * `lightning_v3.1_pro_10_26`, `"auto"` included: every other code stays on the
+ * stable Pro pool's current checkpoint. A warning, not an error: the API
+ * documents no 400 for another code on this id. `number_pronunciation_language`
+ * is checked only when `language` is omitted — "If you omit `language`, this
+ * value also becomes the synthesis language" (endpoint reference, read
+ * 2026-11-13); with `language` set it changes only how numbers are read, and
+ * no page ties that to the checkpoint.
  */
-function checkWordTimestampsWithoutModel(
+function checkPreviewCheckpointLanguage(
   params: TtsParams,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
-  if (params.model !== undefined || params.word_timestamps == null) return;
+  if (params.model !== "lightning_v3.1_pro_10_26") return;
+  const field = params.language !== undefined ? "language" : "number_pronunciation_language";
+  const value = params[field];
+  if (value === undefined || PREVIEW_CHECKPOINT_LANGUAGE_SET.has(value)) return;
+  ctx.report({
+    code: "invalid_enum_value",
+    severity: "warning",
+    path: [field],
+    model: params.model,
+    message: `\`${field}\` ${JSON.stringify(value)} is outside the three languages of the "lightning_v3.1_pro_10_26" preview checkpoint ("en", "es", "hi"). Every other code, "auto" included, stays on the stable Pro pool's current checkpoint: set \`model: "lightning_v3.1_pro"\`.`,
+    meta: { allowed: PREVIEW_CHECKPOINT_LANGUAGES, value, source: SYNTHESIZE_DOCS },
+  });
+}
+
+/**
+ * `word_timestamps` on an id the deny table does not key: an omitted `model`
+ * (the pool is picked from the voice) or an uncatalogued one, such as a new
+ * dated checkpoint. The rule is endpoint-level ("Accepted on this endpoint but
+ * ignored"), so it is reported here whenever the constraint layer cannot.
+ */
+function checkWordTimestampsOffTable(
+  params: TtsParams,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.word_timestamps == null) return;
+  if (params.model !== undefined && Object.hasOwn(ttsConstraints, params.model)) return;
   const rule = wordTimestampsDeny.word_timestamps;
   ctx.report({
     code: "unsupported_param",
     severity: "warning",
     path: ["word_timestamps"],
+    ...(params.model !== undefined && { model: params.model }),
     message: `\`word_timestamps\` is silently ignored by the API on every Lightning pool: ${rule.reason}`,
     meta: { source: rule.source, ignored: true },
   });
@@ -393,7 +439,12 @@ const validator = createValidator<TtsParams, unknown>({
   modelId: (params) => params.model,
   catalog: models,
   constraints: ttsConstraints,
-  checks: [checkTextLength, checkLanguagePool, checkWordTimestampsWithoutModel],
+  checks: [
+    checkTextLength,
+    checkLanguagePool,
+    checkPreviewCheckpointLanguage,
+    checkWordTimestampsOffTable,
+  ],
   estimate,
   finalize,
 });

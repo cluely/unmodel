@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { tts, TTS_URL, MAX_CHARACTERS, PRO_ONLY_LANGUAGES } from "./tts";
+import { tts, TTS_URL, MAX_CHARACTERS, PREVIEW_CHECKPOINT_LANGUAGES, PRO_ONLY_LANGUAGES } from "./tts";
 import { models } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
@@ -124,6 +124,22 @@ describe("smallest-ai.tts character cap (8000 characters after trim)", () => {
     expect(tts.safe({ text, voice_id: "v", model: "lightning_v3.1_pro" }).ok).toBe(true);
   });
 
+  // "whitespace-only strings are rejected." (endpoint reference, sync and SSE).
+  test("text padded with whitespace passes, and is sent untrimmed", () => {
+    const r = tts.safe({ text: " hello ", voice_id: "meher", model: "lightning_v3.1_pro" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.params.text).toBe(" hello ");
+  });
+
+  test("whitespace-only text is invalid_shape at text", () => {
+    const r = tts.safe({ text: "   \n", voice_id: "meher", model: "lightning_v3.1_pro" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_shape");
+      expect(r.errors[0]?.path).toEqual(["text"]);
+    }
+  });
+
   test("over the model cards' 250-character chunk size is a warning, not an error", () => {
     const r = tts.safe({ text: "a".repeat(251), voice_id: "meher", model: "lightning_v3.1_pro" });
     expect(r.ok).toBe(true);
@@ -224,8 +240,10 @@ describe("smallest-ai.tts schema enforcement", () => {
 });
 
 describe("smallest-ai.tts per-model gates (doc audit 2026-11-12)", () => {
-  test("word_timestamps is a warning — accepted over HTTP but ignored — with or without a model", () => {
-    for (const model of [undefined, "lightning_v3.1_pro"] as const) {
+  test("word_timestamps is a warning — accepted over HTTP but ignored — on any model, catalogued or not", () => {
+    // `lightning_v9` stands for the next dated checkpoint, before the catalog
+    // knows it: the rule is endpoint-level, so it still warns.
+    for (const model of [undefined, "lightning_v3.1_pro", "lightning_v9"] as const) {
       const r = tts.safe({ text: "x", voice_id: "v", word_timestamps: true, ...(model && { model }) });
       expect(r.ok).toBe(true);
       if (r.ok) {
@@ -364,6 +382,60 @@ describe("smallest-ai lightning_v3.1_pro_10_26 (Pro preview checkpoint, 2026-10-
       const issue = r.warnings.find((w) => w.code === "unsupported_param");
       expect(issue?.path).toEqual(["word_timestamps"]);
       expect(issue?.meta?.ignored).toBe(true);
+    }
+  });
+
+  test("a language outside en/es/hi is a warning, not an error — auto included", () => {
+    for (const language of ["ja", "auto"] as const) {
+      const r = tts.safe({ text: "x", voice_id: "meher", model: "lightning_v3.1_pro_10_26", language });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const issues = r.warnings.filter((w) => w.code === "invalid_enum_value");
+        expect(issues.length).toBe(1);
+        expect(issues[0]?.severity).toBe("warning");
+        expect(issues[0]?.path).toEqual(["language"]);
+        expect(issues[0]?.message).toContain("lightning_v3.1_pro");
+        expect(issues[0]?.meta?.allowed).toEqual(PREVIEW_CHECKPOINT_LANGUAGES);
+      }
+    }
+  });
+
+  test("en/es/hi and an omitted language are silent", () => {
+    for (const language of [...PREVIEW_CHECKPOINT_LANGUAGES, undefined]) {
+      const r = tts.safe({
+        text: "x",
+        voice_id: "meher",
+        model: "lightning_v3.1_pro_10_26",
+        ...(language && { language }),
+      });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("number_pronunciation_language is checked only when it is the synthesis language", () => {
+    // With `language` set, it "only changes how numeric content is normalized".
+    const withLanguage = tts.safe({
+      text: "x",
+      voice_id: "meher",
+      model: "lightning_v3.1_pro_10_26",
+      language: "en",
+      number_pronunciation_language: "fr",
+    });
+    expect(withLanguage.ok).toBe(true);
+    if (withLanguage.ok) expect(withLanguage.warnings).toEqual([]);
+
+    // With `language` omitted, it "also becomes the synthesis language".
+    const alone = tts.safe({
+      text: "x",
+      voice_id: "meher",
+      model: "lightning_v3.1_pro_10_26",
+      number_pronunciation_language: "fr",
+    });
+    expect(alone.ok).toBe(true);
+    if (alone.ok) {
+      const issue = alone.warnings.find((w) => w.code === "invalid_enum_value");
+      expect(issue?.path).toEqual(["number_pronunciation_language"]);
     }
   });
 

@@ -12,7 +12,7 @@
 import { EXTRA, type AudioFormatSpec } from "../../core/unified/derive";
 import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/vocabulary/tts";
 import type { SmallestContentFilter, SmallestDateFormat, SmallestLanguage } from "./models";
-import { LANGUAGES, PRO_ONLY_LANGUAGES } from "./models";
+import { LANGUAGES, PREVIEW_CHECKPOINT_LANGUAGES, PRO_ONLY_LANGUAGES } from "./models";
 
 /** The two Lightning pools and the Pro preview checkpoint — the ref union for `smallest-ai/…`. */
 export const MODELS = ["lightning_v3.1", "lightning_v3.1_pro", "lightning_v3.1_pro_10_26"] as const;
@@ -96,16 +96,22 @@ export const CODECS = ["mp3", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] as const;
 /**
  * `lightning_v3.1_pro_10_26` is a checkpoint of the Pro pool — "Accepts every
  * Pro voice", and "Other request parameters behave identically" (endpoint
- * reference, read 2026-11-12) — so its row is the Pro row. The reference says
- * to "use `en` (English), `es` (Spanish with English code-switching) or `hi`
- * (Hindi with English code-switching)" on it, but no page says the API rejects
- * another code there, and the validator does not refuse one, so the list is
- * not narrowed to those three.
+ * reference, read 2026-11-12) — so its codecs and extras are the Pro row's.
+ * Its languages are the three it is a checkpoint for: the reference says to
+ * "use `en` (English), `es` (Spanish with English code-switching) or `hi`
+ * (Hindi with English code-switching)" on it (read 2026-11-13). No page says
+ * the API rejects another code there, so `checkPreviewCheckpointLanguage`
+ * warns rather than refuses, and the row lists only the codes it is silent
+ * on — the same split as the base pool's row and `checkLanguagePool`.
  */
 export const SMALLEST_TTS_MODEL_PARAMS = {
   "lightning_v3.1": { codecs: CODECS, languages: BASE_LANGUAGES, extras: SHARED_EXTRAS },
   "lightning_v3.1_pro": { codecs: CODECS, languages: PRO_LANGUAGES, extras: SHARED_EXTRAS },
-  "lightning_v3.1_pro_10_26": { codecs: CODECS, languages: PRO_LANGUAGES, extras: SHARED_EXTRAS },
+  "lightning_v3.1_pro_10_26": {
+    codecs: CODECS,
+    languages: PREVIEW_CHECKPOINT_LANGUAGES,
+    extras: SHARED_EXTRAS,
+  },
 } as const satisfies TtsModelParamTable;
 
 /**

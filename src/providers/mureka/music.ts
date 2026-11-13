@@ -33,6 +33,15 @@
  *   documented-combinations list, so it warns rather than fails.
  * - "The mureka-o2 model does not support vocal_id or melody_id inputs" —
  *   a constraints row, so `constraintsFor("mureka-o2")` exposes it.
+ * - `duration` (song route only; `SongGenerateReq`, last checked 2026-11-12):
+ *   "Target song duration, in seconds. Value range: [120,300]. If not
+ *   provided, the model determines the duration automatically. Supported only
+ *   by mureka-9.5. The length of the lyrics also affects the target song
+ *   duration." — changelog 2026.10.29: "Lyrics to song API supports duration
+ *   control". `mureka-7.6`, `mureka-o2`, `mureka-8` and `mureka-9` deny it as
+ *   constraints rows; `auto` does not, because the spec never says whether the
+ *   alias honours it. `InstrumentalGenerateReq` and `SongEasyGenerateReq` have
+ *   no length field.
  * - "When the model is mureka-o1, this mode is not supported" is the `stream`
  *   field's own text and the one place the LEGACY o1 id survives in the
  *   current spec (`mureka-o1` is absent from both model enums); kept as a
@@ -41,21 +50,30 @@
  *   `instrumental_id` (files/upload, purpose "instrumental") each state
  *   "this option does not support combination with other control options",
  *   so sending both is an error (checkInstrumentalControlCombos).
- * - NO cost estimate: Mureka bills per generated song but publishes no
- *   scrapable USD rate list — see the PRICING note in ./models.ts for the
- *   full search trail (the platform banner's "$0.15/song" covers only the
- *   V9.5 early-access promo). `maxCostUSD` never fires on these endpoints.
+ * - NO cost estimate: Mureka publishes USD rates per generated song, but they
+ *   differ per model AND per route (the PRICING note in ./models.ts quotes
+ *   them) and `ModelCost` has no per-song unit, so no row carries `cost` and
+ *   `maxCostUSD` never fires on these endpoints.
  * - Auth is `Authorization: Bearer <MUREKA_API_KEY>` — unmodel never touches
  *   keys; add the header yourself when fetching.
  *
- * NOT VALIDATED HERE (catalog/doc note only): the surrounding music routes —
- * `POST /v1/song/easy-generate` (prompt/styles instead of lyrics, 2000-char
- * prompt), `/v1/lyrics/generate`, `/v1/lyrics/extend`, `/v1/song/extend`
+ * `POST /v1/song/easy-generate` (prompt/styles instead of lyrics) is validated
+ * beside these, in ./music-from-prompt.ts, as `mureka.musicFromPrompt`.
+ *
+ * NOT VALIDATED HERE (doc note only; route list read from the docs bundle
+ * behind https://platform.mureka.ai/docs/ on 2026-11-12): the other music
+ * routes — `/v1/lyrics/generate`, `/v1/lyrics/extend`, `/v1/song/extend`
  * (lyrics + `extend_at`, models mureka-7.6/8 only), `/v1/song/stem`
  * (audio-separation-1/2/3), `/v1/song/remix`, `/v1/song/region-edit`,
- * `/v1/track/generate`, `/v1/soundtrack/generate` and the vocal-clone/upload
- * plumbing. Each takes a different body with its own control surface, so none
- * is "trivially similar" enough to ride these validators.
+ * `/v1/song/describe`, `/v1/song/recognize`, `/v1/song/transcribe`,
+ * `/v1/track/generate`, `/v1/soundtrack/generate` — plus
+ * `POST /v1/video/generate` + `GET /v1/video/query/{task_id}` (doubao-seedance
+ * ids), `/v1/lyrics-video/generate`, `/v1/tts/generate`, `/v1/tts/podcast`,
+ * `/v1/finetuning/create` + `/v1/finetuning/query/{task_id}`,
+ * `/v1/account/billing`, `/v1/uploads/create|add|complete` and the
+ * vocal-clone/upload plumbing. Each takes a different body with its own
+ * control surface, so none is "trivially similar" enough to ride these
+ * validators.
  *
  * `.toSdk("mureka")` is the identity: Mureka publishes no first-party SDK —
  * the docs' only code samples are cURL against the raw JSON body.
@@ -113,6 +131,9 @@ export const PROMPT_MAX_CHARACTERS = 1024;
 /** "Defaults to 2, maximum 3" — and each generated song is billed. */
 export const N_MAX = 3;
 export const DEFAULT_N = 2;
+/** Song route `duration`: "Target song duration, in seconds. Value range: [120,300]." */
+export const DURATION_MIN_SECONDS = 120;
+export const DURATION_MAX_SECONDS = 300;
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror the raw JSON bodies exactly (snake_case).
@@ -130,6 +151,12 @@ export interface SongGenerateBody {
   prompt?: string;
   /** Preferred vocal gender; uploaded-audio vocal characteristics take precedence. */
   gender?: MurekaGender;
+  /**
+   * Target length in whole seconds, 120–300; omit to let the model decide.
+   * mureka-9.5 only ("Supported only by mureka-9.5"), and the lyrics' length
+   * also moves the result.
+   */
+  duration?: number;
   /** Reference track: files/upload id (purpose "reference"). Combines with `vocal_id` only. */
   reference_id?: string;
   /** Voice to sing with: song/vocal-clone id. Combines with `reference_id` or `prompt`. */
@@ -241,6 +268,8 @@ const promptSchema = z
   .max(PROMPT_MAX_CHARACTERS, `prompt is capped at ${PROMPT_MAX_CHARACTERS} characters.`)
   .optional();
 
+const DURATION_RANGE_MESSAGE = `duration must be between ${DURATION_MIN_SECONDS} and ${DURATION_MAX_SECONDS} seconds ("Value range: [120,300]") — omit it to let the model decide.`;
+
 const songSchema = z.looseObject({
   lyrics: z
     .string()
@@ -250,6 +279,12 @@ const songSchema = z.looseObject({
   n: nSchema,
   prompt: promptSchema,
   gender: z.enum(GENDERS).optional(),
+  duration: z
+    .number()
+    .int("duration is whole seconds.")
+    .min(DURATION_MIN_SECONDS, DURATION_RANGE_MESSAGE)
+    .max(DURATION_MAX_SECONDS, DURATION_RANGE_MESSAGE)
+    .optional(),
   reference_id: z.string().min(1).optional(),
   vocal_id: z.string().min(1).optional(),
   melody_id: z.string().min(1).optional(),
@@ -268,7 +303,19 @@ const instrumentalSchema = z.looseObject({
 // Constraints — per-model gates the operation docs state.
 // ---------------------------------------------------------------------------
 
+/**
+ * `duration`: "Supported only by mureka-9.5." (SongGenerateReq, 2026-11-12).
+ * Denied on every other named id on the enum; `auto` is left alone — the spec
+ * does not say whether the alias honours it.
+ */
+const DURATION_DENY = {
+  reason:
+    '"Supported only by mureka-9.5" — use model "mureka-9.5", or omit `duration` to let the model decide.',
+  source: SONG_DOCS,
+} as const;
+
 export const songConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+  "mureka-7.6": { deny: { duration: DURATION_DENY } },
   "mureka-o2": {
     deny: {
       vocal_id: {
@@ -279,8 +326,11 @@ export const songConstraints: Readonly<Partial<Record<string, EndpointConstraint
         reason: '"The mureka-o2 model does not support vocal_id or melody_id inputs"',
         source: SONG_DOCS,
       },
+      duration: DURATION_DENY,
     },
   },
+  "mureka-8": { deny: { duration: DURATION_DENY } },
+  "mureka-9": { deny: { duration: DURATION_DENY } },
   // LEGACY: `mureka-o1` is absent from the current model enum (it also draws
   // an `unknown_model` warning), but the spec's `stream` description still
   // singles it out — kept for callers pinning the retired id.
@@ -443,8 +493,9 @@ const instrumentalValidator = createValidator<InstrumentalGenerateBody, unknown>
  * `choices[]` URLs (mp3 `url`, lossless `flac_url`/`wav_url` — each valid for
  * 30 days). Auth is your job: add `authorization: Bearer <MUREKA_API_KEY>`.
  *
- * No cost estimate is produced (no published USD rate — see ./models.ts), but
- * remember `n` defaults to 2 and every generated song is billed.
+ * No cost estimate is produced (Mureka's per-song rates have no `ModelCost`
+ * unit — see ./models.ts), but remember `n` defaults to 2 and every generated
+ * song is billed. `duration` (120–300 s) is mureka-9.5 only.
  *
  * ```ts
  * const params = mureka.music({

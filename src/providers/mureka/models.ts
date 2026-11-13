@@ -3,7 +3,7 @@
 // https://platform.mureka.ai/docs/api/operations/post-v1-song-easy-generate.html,
 // https://platform.mureka.ai/docs/api/operations/post-v1-instrumental-generate.html,
 // https://platform.mureka.ai/docs/en/changelog.html and
-// https://platform.mureka.ai/pricing (last checked 2026-08-31).
+// https://platform.mureka.ai/pricing (last checked 2026-11-12).
 //
 // MODEL IDS: the OpenAPI document embedded in the docs bundle (the source of
 // every field on the operation pages above) gives `POST /v1/song/generate` a
@@ -21,22 +21,35 @@
 // id survives. That sentence is encoded as a constraints row in ./music.ts,
 // not as a catalog row here.
 //
-// PRICING: omitted rather than guessed, after this search (2026-08-24):
-// https://platform.mureka.ai/pricing is a client-rendered app whose price
-// table is fetched from an authenticated backend — the static bundle
-// (static/js/components-*.js) ships only the table headers ("Model",
-// "Price"). The docs (FAQ, changelog, quickstart) publish no USD rates
-// either. The ONLY first-party USD figure in the public bundles is the
-// platform homepage's V9.5 early-access banner: standard price "$0.15/song",
-// beta price "$0.045/song", "Beta Exclusive until Aug 28, 2026". That is a
-// per-generated-song rate for one model during a promo window, and `ModelCost`
-// has no per-song unit to carry it (perMillionCharacters / perAudioMinute /
-// perImage / perVideoSecond are all the wrong denominator), so no `cost` is
-// encoded and no request produces a `costUSD` estimate — a `maxCostUSD` budget
-// therefore never fires on this provider. Billing fact worth knowing anyway:
-// both generate routes are billed PER SONG and `n` defaults to 2 ("Defaults
-// to 2, maximum 3. Note that you will be charged based on the number of
-// songs"), so a request that omits `n` bills two songs, not one.
+// PRICING: USD per generated song, and per ROUTE as well as per model. Read
+// on 2026-11-12 from the international tables in the static chunk that the
+// client-rendered https://platform.mureka.ai/pricing lazily loads
+// (https://platform.mureka.ai/static/js/pricing-BN1njTeG.js — the hashed name
+// rotates between builds; only the recharge-plan cards come from a backend):
+//   - "pricing.song_generation" (`tableType:"lyrics_song"`, POST
+//     /v1/song/generate): V7.6 "$ 0.03/song"; O2, V8, V9 "$ 0.045/song"; V9.5
+//     "$ 0.15/song".
+//   - "pricing.prompt_to_song" (`tableType:"prompt_song"`, POST
+//     /v1/song/easy-generate): V7.6, O2, V8, V9 "$0.3/song"; V9.5
+//     "$ 0.5/song".
+//   - "pricing.bgm_generation" (`tableType:"bgm"`; that BGM means POST
+//     /v1/instrumental/generate is read off the table name, not stated): V7.6
+//     "$ 0.03/BGM"; V8, V9 "$ 0.045/BGM"; V9.5 "$ 0.15/BGM".
+//   - `auto` has no row.
+// fal.ai's Mureka page prints the same first-party figures
+// (https://fal.ai/models/mureka/api/generate/song/llms.txt, 2026-11-12): "With
+// **lyrics**, your request will cost **$0.03** per song with mureka-7.6,
+// **$0.045** with mureka-o2, mureka-8 and mureka-9 … and **$0.15** with
+// mureka-9.5"; "With only a **prompt**, it will cost **$0.30** per song with
+// mureka-7.6, mureka-o2, mureka-8 and mureka-9, and **$0.50** with
+// mureka-9.5." No `cost` is encoded anyway: `ModelCost` has no per-song unit
+// (perMillionCharacters / perAudioMinute / perImage / perVideoSecond are all
+// the wrong denominator) and one id prices differently per route, which a
+// per-model row cannot carry — so no request produces a `costUSD` estimate and
+// a `maxCostUSD` budget never fires on this provider. Billing fact worth
+// knowing anyway: every route is billed PER SONG and `n` defaults to 2
+// ("Defaults to 2, maximum 3. Note that you will be charged based on the
+// number of songs"), so a request that omits `n` bills two songs, not one.
 //
 // LIMITS: `limit.context: 0` disables token-window checks — these are not
 // token models. The documented input caps are per-field, not per-request, and
@@ -106,9 +119,12 @@ export const models = {
     family: "mureka",
     ...MUSIC_ROW,
   },
-  // Early access per the platform banner ("V9.5 Model — Early Access Now
-  // Available", beta pricing until 2026-08-28); already on the stable enum of
-  // both generate routes, so no `status` flag is claimed.
+  // Generally available: the platform banner reads "{model} — Available Now"
+  // with model "V9.5 Model" (https://platform.mureka.ai/static/js/
+  // components-D3LaVSpW.js, 2026-11-12), and changelog 2026.8.28 says "The
+  // enhanced version of the mureka-9.5 model released." On the enum of all
+  // three routes, so no `status` flag. The one id the song route's `duration`
+  // serves: "Supported only by mureka-9.5" (./music.ts).
   "mureka-9.5": {
     id: "mureka-9.5",
     name: "Mureka V9.5",

@@ -49,19 +49,25 @@ export const FORMAT: AudioFormatSpec = {
  * Speechify's per-model surface, and the one model whose language list is one
  * value long.
  *
- * `simba-3.2` is English only — the provider's `checkLanguage` refuses anything
- * that does not start `en`, citing the 400 it would otherwise return — so its
- * row says `languages: ["en"]` and an editor completes exactly that. The other
- * four carry no list: `simba-3.0`'s six extra locales and
- * `simba-multilingual`'s "30+" are documented in prose rather than as an enum,
- * and `checkLanguage` deliberately does not gate them ("the docs say 30+ and do
- * not enumerate"). A completion list with no authority behind it would be a
- * guess dressed as a capability. `simba-3.5` publishes its 48 languages in
- * GET /v1/audio/models and still carries no list: "A language outside this
- * list is not rejected, but it is not validated either"
- * (docs.speechify.ai/build/guides/text-to-speech/language-support, 2026-11-12),
- * so the validator reports nothing for one, while a row's list promises that
- * the provider check refuses or flags whatever the list leaves out.
+ * `simba-3.2` is English only — the provider's `checkModelLanguage` refuses
+ * anything that does not start `en`, citing the 400 it would otherwise return —
+ * so its row says `languages: ["en"]` and an editor completes exactly that. The
+ * other four carry no list. `simba-3.0` and `simba-3.5` both publish theirs as
+ * `languages` arrays in GET /v1/audio/models — 7 locales (en, de-DE, es-ES,
+ * es-MX, fr-FR, it-IT, pt-BR) and 48 primary subtags
+ * (docs.speechify.ai/build/guides/concepts/models, 2026-11-12) — but neither
+ * list is a gate: "Languages outside this list often still produce usable
+ * audio on `simba-3.0`, but they are not validated or officially supported",
+ * and for `simba-3.5` "A language outside this list is not rejected, but it is
+ * not validated either" (both
+ * docs.speechify.ai/build/guides/text-to-speech/language-support, 2026-11-12).
+ * A row's list promises that the provider check refuses or flags whatever the
+ * list leaves out (the tts-presets negative sweep holds every listed row to
+ * that), and `checkModelLanguage` deliberately reports nothing for these
+ * languages. `simba-english` and `simba-multilingual` are retired — absent
+ * from GET /v1/audio/models from API version `2026-09-21`, and "served by
+ * Simba 3.5, in every language" from 2026-11-21 (models page, 2026-11-12) —
+ * and are not gated either.
  *
  * The two extras are `options`' members, nested through
  * {@link OPTIONS_NESTING}: loudness normalization to −14 LUFS, and the

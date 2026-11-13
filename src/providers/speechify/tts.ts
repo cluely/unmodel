@@ -42,10 +42,24 @@
  * 2026-11-12), so `input.length` is an upper bound — exactly what
  * `estimate.costUSD` is documented to be.
  *
- * NOT VALIDATED HERE: POST /v1/audio/stream/with-timestamps (an SSE route
- * whose body matches `stream`, but which rejects the two legacy Simba 1.6
- * models with 400 `speech_marks_unsupported`) and the dialogue route. The
- * voice-cloning routes are validated by ./voice-clone and
+ * NOT VALIDATED HERE: the dialogue route, and POST
+ * /v1/audio/stream/with-timestamps — same body as `stream`, answered as
+ * Server-Sent Events. The vendor's sources disagree on what the legacy Simba
+ * 1.6 pair does there (each re-fetched 2026-11-13):
+ * - The OpenAPI route description (docs.speechify.ai/openapi/api-reference.json):
+ *   "Every model this route accepts produces speech marks here."
+ *   `simba-english`/`simba-multilingual`, on a workspace pinned before API
+ *   version `2026-09-21`, send marks "a sentence at a time with that
+ *   sentence's audio"; "from that version on they return 400 `model_retired`
+ *   on every synthesis route".
+ * - The 2026-09-21 changelog (docs.speechify.ai/build/changelog/2026/9/21):
+ *   "Simba 1.6 is a previous-generation family: it cannot serve
+ *   `/v1/audio/stream/with-timestamps` at all".
+ * - The speech-marks guide (docs.speechify.ai/build/guides/concepts/speech-marks)
+ *   names no model: "if a model's serving cannot produce them, the request
+ *   fails here with `400 speech_marks_unsupported`", and POST /v1/audio/speech
+ *   "is the fallback".
+ * The voice-cloning routes are validated by ./voice-clone and
  * ./voice-consent-challenge.
  *
  * NO RESPONSE CHECKER on either route, and `/v1/audio/speech` answering JSON
@@ -76,8 +90,15 @@ import { models, type SpeechifyTtsModelId } from "./models";
 export const AUDIO_SPEECH_URL = "https://api.speechify.ai/v1/audio/speech";
 export const AUDIO_STREAM_URL = "https://api.speechify.ai/v1/audio/stream";
 /**
- * SSE variant — same body as `stream`, but the two legacy Simba 1.6 models
- * return 400 `speech_marks_unsupported`. Not validated by unmodel.
+ * SSE variant — same body as `stream`, answered as Server-Sent Events. Not
+ * validated by unmodel. Sources disagree on the legacy Simba 1.6 pair here
+ * (2026-11-13): the OpenAPI says "Every model this route accepts produces
+ * speech marks here" (a sentence at a time for `simba-english`/
+ * `simba-multilingual` on workspaces pinned before API version `2026-09-21`,
+ * 400 `model_retired` from that version on); the 2026-09-21 changelog says
+ * Simba 1.6 "cannot serve `/v1/audio/stream/with-timestamps` at all". The
+ * speech-marks guide ties `400 speech_marks_unsupported` to no model and names
+ * POST /v1/audio/speech as the fallback. Sources: the module header.
  */
 export const AUDIO_STREAM_WITH_TIMESTAMPS_URL =
   "https://api.speechify.ai/v1/audio/stream/with-timestamps";

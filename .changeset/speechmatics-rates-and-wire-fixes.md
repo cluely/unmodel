@@ -31,11 +31,14 @@ Requests that were refused and now validate:
   language (`["en-GB", "en-US"]`) are refused, as upstream does: "Passing two
   locales for the same language, for example `en-GB` and `en-US` together, is
   rejected."
-- `unmodel/stt` accepts `domain: "bilingual-en"` on `speechmatics/standard`:
-  the Spanish and English pack is `{"language": "es", "domain": "bilingual-en"}`
-  and the packs are for "The Enhanced and Standard models"
-  (https://docs.speechmatics.com/speech-to-text/languages.md).
-  `domain: "medical"` stays Enhanced's.
+- `unmodel/stt` accepts `domain` on `speechmatics/standard`, typed `string` as
+  on Enhanced and the wire (e.g. `"bilingual-en"`): the Spanish and English
+  pack is `{"language": "es", "domain": "bilingual-en"}` and the packs are for
+  "The Enhanced and Standard models"
+  (https://docs.speechmatics.com/speech-to-text/languages.md), and the API
+  reference types `domain` as a free string, "e.g. 'finance' or 'medical'"
+  (https://docs.speechmatics.com/api-ref/batch/create-a-new-job.md).
+  `domain: "medical"` is still refused off Enhanced, at run time.
 - `SpeechmaticsTranscriptionConfig` types `language_hints_strict`,
   `entities_config.detect_advanced_entities`, `enable_redaction` and
   `redaction_config.entity_classes` (new `SpeechmaticsEntitiesConfig` /

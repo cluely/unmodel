@@ -377,10 +377,15 @@ function extrasNarrowingTests(): void {
   stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi" });
   // @ts-expect-error
   stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi", summarization_config: {} });
-  // Standard's one documented `domain` is the Spanish and English pack…
+  // Standard takes `domain` as the free string the API reference types — the
+  // Spanish and English pack, or a field such as 'finance'…
   stt({ model: "speechmatics/standard", audio: { url }, language: "es", domain: "bilingual-en" });
-  // @ts-expect-error — …and `domain: "medical"` "requires `model: "enhanced"`".
+  stt({ model: "speechmatics/standard", audio: { url }, language: "en", domain: "finance" });
+  // …so `domain: "medical"`, which "requires `model: "enhanced"`", compiles
+  // here and is refused at run time (test/unified/stt-presets.test.ts).
   stt({ model: "speechmatics/standard", audio: { url }, domain: "medical" });
+  // Entity detection rides Melia 1 and Oak 1 too; the wire validator warns.
+  stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi", enable_entities: true });
   stt({ model: "speechmatics/melia-1", audio: { url }, language: "multi", output_locale: ["en-GB", "cmn-Hans"] });
   // @ts-expect-error — Oak 1 is the medical model by its id; it takes no `domain`.
   stt({ model: "speechmatics/oak-1", audio: { url }, language: "multi", domain: "medical" });

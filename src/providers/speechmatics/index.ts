@@ -4,6 +4,7 @@ export {
   jobsUrl,
   JOBS_URL,
   MAX_DATA_FILE_BYTES,
+  MAX_ADDITIONAL_VOCAB_ITEMS,
   DEFAULT_MODEL,
   SUPPORTED_FILE_TYPES,
   resolveModel,

@@ -5,6 +5,7 @@ import {
   jobsUrl,
   JOBS_URL,
   MAX_DATA_FILE_BYTES,
+  MAX_ADDITIONAL_VOCAB_ITEMS,
   resolveModel,
   type JobConfig,
 } from "./stt";
@@ -175,6 +176,159 @@ describe("speechmatics.stt shape rules", () => {
     }
   });
 
+  test("redaction needs entity classes, and advanced entities when entities are on", () => {
+    const base = { language: "en", model: "enhanced" } as const;
+
+    const bare = stt.safe({
+      type: "transcription",
+      transcription_config: { ...base, enable_redaction: true },
+    });
+    expect(bare.ok).toBe(false);
+    if (!bare.ok) {
+      expect(bare.errors).toHaveLength(1);
+      expect(bare.errors[0]).toMatchObject({
+        code: "invalid_shape",
+        path: ["transcription_config", "redaction_config"],
+      });
+    }
+
+    const alone = stt.safe({
+      type: "transcription",
+      transcription_config: { ...base, enable_redaction: true, redaction_config: { entity_classes: ["pii"] } },
+    });
+    expect(alone.ok).toBe(true);
+    if (alone.ok) expect(alone.warnings).toEqual([]);
+
+    const withEntities = stt.safe({
+      type: "transcription",
+      transcription_config: {
+        ...base,
+        enable_redaction: true,
+        enable_entities: true,
+        redaction_config: { entity_classes: ["pii"] },
+      },
+    });
+    expect(withEntities.ok).toBe(false);
+    if (!withEntities.ok) {
+      expect(withEntities.errors).toHaveLength(1);
+      expect(withEntities.errors[0]).toMatchObject({
+        code: "invalid_shape",
+        path: ["transcription_config", "entities_config", "detect_advanced_entities"],
+      });
+    }
+
+    const withAdvanced = stt.safe({
+      type: "transcription",
+      transcription_config: {
+        ...base,
+        enable_redaction: true,
+        enable_entities: true,
+        entities_config: { detect_advanced_entities: true },
+        redaction_config: { entity_classes: ["pii"] },
+      },
+    });
+    expect(withAdvanced.ok).toBe(true);
+    if (withAdvanced.ok) expect(withAdvanced.warnings).toEqual([]);
+  });
+
+  test("advanced entities without enable_entities warn rather than refuse", () => {
+    const r = stt.safe({
+      type: "transcription",
+      transcription_config: {
+        language: "en",
+        model: "enhanced",
+        entities_config: { detect_advanced_entities: true },
+      },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]).toMatchObject({
+        code: "unsupported_param",
+        severity: "warning",
+        path: ["transcription_config", "entities_config", "detect_advanced_entities"],
+        meta: { requires: "enable_entities" },
+      });
+    }
+  });
+
+  test("redaction entity classes must be unique", () => {
+    const twice = stt.safe({
+      type: "transcription",
+      transcription_config: {
+        language: "en",
+        enable_redaction: true,
+        redaction_config: { entity_classes: ["pii", "dob", "pii"] },
+      },
+    });
+    expect(twice.ok).toBe(false);
+    if (!twice.ok) {
+      expect(twice.errors).toHaveLength(1);
+      expect(twice.errors[0]).toMatchObject({
+        code: "invalid_shape",
+        path: ["transcription_config", "redaction_config", "entity_classes", 2],
+        meta: { value: "pii" },
+      });
+    }
+
+    const distinct = stt.safe({
+      type: "transcription",
+      transcription_config: {
+        language: "en",
+        enable_redaction: true,
+        redaction_config: { entity_classes: ["pii", "dob"] },
+      },
+    });
+    expect(distinct.ok).toBe(true);
+  });
+
+  test("output_locale is refused beside automatic language identification", () => {
+    const pinned = stt.safe({
+      type: "transcription",
+      transcription_config: { language: "en", model: "enhanced", output_locale: "en-GB" },
+    });
+    expect(pinned.ok).toBe(true);
+    if (pinned.ok) expect(pinned.warnings).toEqual([]);
+
+    for (const output_locale of ["en-GB", ["en-GB"]]) {
+      const auto = stt.safe({
+        type: "transcription",
+        transcription_config: { language: "auto", model: "enhanced", output_locale },
+      });
+      expect(auto.ok).toBe(false);
+      if (!auto.ok) {
+        expect(auto.errors).toHaveLength(1);
+        expect(auto.errors[0]).toMatchObject({
+          code: "invalid_shape",
+          path: ["transcription_config", "output_locale"],
+        });
+        expect(auto.errors[0]?.message).toContain('`language: "auto"`');
+      }
+    }
+  });
+
+  test("additional_vocab holds at most 20,000 entries", () => {
+    const vocab = (n: number) => Array.from({ length: n }, (_, i) => ({ content: `w${i}` }));
+    expect(MAX_ADDITIONAL_VOCAB_ITEMS).toBe(20_000);
+
+    const full = stt.safe({
+      type: "transcription",
+      transcription_config: { language: "en", model: "enhanced", additional_vocab: vocab(20_000) },
+    });
+    expect(full.ok).toBe(true);
+
+    const over = stt.safe({
+      type: "transcription",
+      transcription_config: { language: "en", model: "enhanced", additional_vocab: vocab(20_001) },
+    });
+    expect(over.ok).toBe(false);
+    if (!over.ok) {
+      expect(over.errors).toHaveLength(1);
+      expect(over.errors[0]?.path).toEqual(["transcription_config", "additional_vocab"]);
+      expect(over.errors[0]?.message).toContain("at most 20,000 items");
+    }
+  });
+
   test("standard takes the Spanish and English pack's domain", () => {
     const r = stt.safe({
       type: "transcription",
@@ -256,10 +410,85 @@ describe("speechmatics.stt melia-1 feature gates", () => {
     if (!r.ok) {
       const paths = r.errors.map((e) => e.path.join("."));
       expect(paths).toContain("transcription_config.additional_vocab");
-      expect(paths).toContain("transcription_config.enable_entities");
+      expect(paths).not.toContain("transcription_config.enable_entities");
       expect(paths).toContain("summarization_config");
       expect(paths).toContain("translation_config");
       expect(r.errors.every((e) => e.code === "unsupported_capability")).toBe(true);
+      // Entity detection: the models page and the pricing page disagree.
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]).toMatchObject({
+        code: "unsupported_capability",
+        severity: "warning",
+        path: ["transcription_config", "enable_entities"],
+        meta: { contradictedBy: "https://www.speechmatics.com/pricing.md" },
+      });
+    }
+  });
+
+  test("entity detection on oak-1 is sent with one warning, advanced entities included", () => {
+    const r = stt.safe({
+      type: "transcription",
+      transcription_config: {
+        language: "multi",
+        model: "oak-1",
+        enable_entities: true,
+        entities_config: { detect_advanced_entities: true },
+      },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]).toMatchObject({
+        code: "unsupported_capability",
+        path: ["transcription_config", "enable_entities"],
+        model: "oak-1",
+        meta: { contradictedBy: "https://www.speechmatics.com/pricing.md" },
+      });
+    }
+  });
+
+  test("a single language code on melia-1 / oak-1 warns, while auto and pack codes are refused", () => {
+    for (const model of ["melia-1", "oak-1"] as const) {
+      const single = stt.safe({
+        type: "transcription",
+        transcription_config: { language: "en", model },
+      });
+      expect(single.ok).toBe(true);
+      if (single.ok) {
+        expect(single.warnings).toHaveLength(1);
+        expect(single.warnings[0]).toMatchObject({
+          code: "invalid_enum_value",
+          severity: "warning",
+          path: ["transcription_config", "language"],
+          model,
+          meta: { allowed: ["multi"], value: "en" },
+        });
+        expect(single.warnings[0]?.message).toContain("language_hints");
+      }
+
+      const auto = stt.safe({
+        type: "transcription",
+        transcription_config: { language: "auto", model },
+      });
+      expect(auto.ok).toBe(false);
+      if (!auto.ok) {
+        expect(auto.errors).toHaveLength(1);
+        expect(auto.errors[0]?.code).toBe("invalid_enum_value");
+      }
+
+      const pack = stt.safe({
+        type: "transcription",
+        transcription_config: { language: "cmn_en", model },
+      });
+      expect(pack.ok).toBe(false);
+      if (!pack.ok) {
+        expect(pack.errors).toHaveLength(1);
+        expect(pack.errors[0]).toMatchObject({
+          code: "invalid_enum_value",
+          path: ["transcription_config", "language"],
+          meta: { source: "https://docs.speechmatics.com/speech-to-text/languages" },
+        });
+      }
     }
   });
 

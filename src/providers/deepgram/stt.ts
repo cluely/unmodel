@@ -310,9 +310,10 @@ const LANGUAGE_HINT_MODELS: ReadonlySet<string> = new Set(["nova-3", "nova-3-gen
  * (LANGUAGE_HINT_DOCS, read 2026-11-12) — so a hint outside Nova-3
  * multilingual is either a silent no-op or a 400, and both are refused. The
  * other Nova-3 variants only warn: whether nova-3-medical's multilingual model
- * takes hints is undocumented, and "a `language_hint` on a multilingual model
- * that does not support hints now returns HTTP 400"
- * (https://developers.deepgram.com/changelog/2026/11/10). Models unknown to
+ * takes hints is undocumented; Deepgram's self-hosted release 261110 notes say
+ * "a `language_hint` on a multilingual model that does not support hints now
+ * returns HTTP 400" (https://developers.deepgram.com/changelog/2026/11/10,
+ * read 2026-11-12), and the hosted docs state no such rule. Models unknown to
  * the catalog are left alone.
  */
 export function checkLanguageHintScope(
@@ -349,7 +350,7 @@ export function checkLanguageHintScope(
       severity: "warning",
       path: ["language_hint"],
       model: params.model,
-      message: `\`language_hint\` is documented for \`model: "nova-3"\` with \`language: "multi"\`; whether "${params.model}" takes it is undocumented, and a multilingual model that does not support hints answers HTTP 400 INVALID_QUERY_PARAMETER.`,
+      message: `\`language_hint\` is documented for \`model: "nova-3"\` with \`language: "multi"\`; whether "${params.model}" takes it is undocumented (Deepgram's self-hosted release 261110 answers HTTP 400 INVALID_QUERY_PARAMETER for a hint on a multilingual model without hint support; the hosted API's behaviour is unstated).`,
       meta: { source: LANGUAGE_HINT_DOCS },
     });
   }

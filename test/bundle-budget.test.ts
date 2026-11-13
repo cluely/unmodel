@@ -545,7 +545,7 @@ const VOICE_DESIGN_PACK_BUDGET_KIB = 200;
  * above. It is roughly twice what a "150–200 KiB" back-of-envelope suggested,
  * and the reason is worth writing down rather than rounding away: the fourteen
  * speech endpoints are validator-heavy rather than catalog-heavy (Deepgram
- * alone carries 105 Aura voices as catalog rows, and OpenAI's speech
+ * alone carries 102 Aura voices as catalog rows, and OpenAI's speech
  * constraints ride in the same 617-line table as its images and chat ones), so
  * the weight is code, not data. A caller who wants two providers builds their
  * own pack with `createTts([…])` and pays 40–60 KiB.

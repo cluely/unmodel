@@ -114,7 +114,7 @@ whether the solar-mini `reasoning_effort` deny retires with its model.
 law — the wire spellings `/v1/text-to-speech/{voice_id}`, `/tts/bytes`, `/v1/speak`,
 `/v1/t2a_v2`, `/synthesize`, `:generateContent` survive only on the URL constants and wire
 types): openai (tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15), cartesia,
-deepgram (Aura 1/2), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave — deprecated,
+deepgram (Aura 1/2 on `/v1/speak`), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave — deprecated,
 access ends 2026-11-13; see `hume.sts` below), inworld,
 lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
 resemble (`tts` + `ttsStream`; closed to new customers since 2026-08-13, existing customers
@@ -161,7 +161,11 @@ model ids are catalogued, and `mistral.stt` rejects them by name), and fish-audi
 `transcribe-stream-1` (Preview, MessagePack-only `wss://api.fish.audio/v1/asr/realtime`).
 **TTS still to do (leaderboard order):** typecast,
 gradium, async, microsoft/azure, mistral (Voxtral TTS), boson-ai, neuphonic, amazon (Polly),
-nvidia (Magpie), zyphra. **Excluded (no public developer API):** VUI Labs (Luna TTS —
+nvidia (Magpie), zyphra. Also still to do: deepgram's Flux TTS `/v2/speak`
+(`POST https://api.deepgram.com/v2/speak` batch and the `wss://api.deepgram.com/v2/speak`
+socket, `flux-{voice}-{language}` voices, GA 2026-08-12 —
+https://developers.deepgram.com/docs/flux-tts/overview; `deepgram.tts` and
+`deepgram.speakLive` refuse `flux-*` voices by name). **Excluded (no public developer API):** VUI Labs (Luna TTS —
 contact-gated, no published docs).
 **STT still to do:** azure, smallest-ai, alibaba, deepinfra, xai, amazon,
 nvidia, gradium, reson8, modulate, cohere (stt), fish-audio (`transcribe-1-pro` and the deprecated

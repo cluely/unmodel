@@ -189,15 +189,17 @@ describe("leonardo.image Elements models", () => {
     expect(notBoolean.ok).toBe(false);
     if (!notBoolean.ok) expect(notBoolean.errors[0]?.path).toEqual(["parameters", "transparency"]);
 
+    // A warning, not a refusal: Phoenix's published `parameters` object is open
+    // (no `additionalProperties: false`), so the API may ignore the key.
     const phoenix = safeUnchecked({
       model: "phoenix-v1.0",
       parameters: { prompt: "x", transparency: true },
     });
-    expect(phoenix.ok).toBe(false);
-    if (!phoenix.ok) {
-      expect(phoenix.errors[0]?.code).toBe("unsupported_param");
-      expect(phoenix.errors[0]?.meta?.["models"]).toEqual([...ELEMENTS_MODELS]);
-    }
+    expect(phoenix.ok).toBe(true);
+    const warning = phoenix.warnings.find((w) => w.path.join(".") === "parameters.transparency");
+    expect(warning?.code).toBe("unsupported_param");
+    expect(warning?.severity).toBe("warning");
+    expect(warning?.meta?.["models"]).toEqual([...ELEMENTS_MODELS]);
   });
 
   test("user_elements and platform_elements take at most 4 entries, weight ≥ 0", () => {
@@ -237,15 +239,15 @@ describe("leonardo.image Elements models", () => {
       image.safe({ model: "lifelike-vision", parameters: { prompt: "x", guidances } }).ok,
     ).toBe(true);
 
+    // A warning: Phoenix's published `guidances` object is open too.
     const phoenix = safeUnchecked({
       model: "phoenix-v1.0",
       parameters: { prompt: "x", guidances: { edge: guidances.edge } },
     });
-    expect(phoenix.ok).toBe(false);
-    if (!phoenix.ok) {
-      expect(phoenix.errors[0]?.code).toBe("unsupported_param");
-      expect(phoenix.errors[0]?.path).toEqual(["parameters", "guidances", "edge"]);
-    }
+    expect(phoenix.ok).toBe(true);
+    const warning = phoenix.warnings.find((w) => w.code === "unsupported_param");
+    expect(warning?.severity).toBe("warning");
+    expect(warning?.path).toEqual(["parameters", "guidances", "edge"]);
 
     const two = safeUnchecked({
       model: "lifelike-vision",
@@ -279,11 +281,10 @@ describe("leonardo.image Elements models", () => {
 
   test("a Phoenix-and-Elements key on Lucid names every model that takes it", () => {
     const r = safeUnchecked({ model: "lucid-realism", parameters: { prompt: "x", tiling: true } });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.meta?.["models"]).toEqual(["phoenix-v1.0", "phoenix-v0.9", ...ELEMENTS_MODELS]);
-      expect(r.errors[0]?.message).toContain('"kino-xl"');
-    }
+    expect(r.ok).toBe(true);
+    const warning = r.warnings.find((w) => w.code === "unsupported_param");
+    expect(warning?.meta?.["models"]).toEqual(["phoenix-v1.0", "phoenix-v0.9", ...ELEMENTS_MODELS]);
+    expect(warning?.message).toContain('"kino-xl"');
   });
 });
 
@@ -330,16 +331,26 @@ describe("leonardo.image per-model dimensions", () => {
 });
 
 describe("leonardo.image per-model params", () => {
-  test("Phoenix-only params are rejected on the Lucid models", () => {
+  test("Phoenix-only params warn on the Lucid models, naming the takers", () => {
     const r = safeUnchecked({
       model: "lucid-origin",
       parameters: { prompt: "x", contrast: "HIGH" },
     });
+    expect(r.ok).toBe(true);
+    const warning = r.warnings.find((w) => w.code === "unsupported_param");
+    expect(warning?.severity).toBe("warning");
+    expect(warning?.path).toEqual(["parameters", "contrast"]);
+    expect(warning?.meta?.["models"]).toContain("phoenix-v1.0");
+    expect(warning?.message).toContain("may ignore it rather than reject it");
+  });
+
+  test("a caller can still make a sibling-model key an error", () => {
+    const r = safeUnchecked(
+      { model: "lucid-origin", parameters: { prompt: "x", contrast: "HIGH" } },
+      { severity: { unsupported_param: "error" } },
+    );
     expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.code).toBe("unsupported_param");
-      expect(r.errors[0]?.path).toEqual(["parameters", "contrast"]);
-    }
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["parameters", "contrast"]);
   });
 
   test("QUALITY mode is Phoenix-only", () => {
@@ -423,8 +434,12 @@ describe("leonardo.image style ids and guidances", () => {
         guidances: { image_to_image: [{ image: { id: "abc" }, strength: "MID" }] },
       },
     });
-    expect(lucid.ok).toBe(false);
-    if (!lucid.ok) expect(lucid.errors[0]?.code).toBe("unsupported_param");
+    expect(lucid.ok).toBe(true);
+    expect(lucid.warnings.find((w) => w.code === "unsupported_param")?.path).toEqual([
+      "parameters",
+      "guidances",
+      "image_to_image",
+    ]);
 
     expect(
       image.safe({

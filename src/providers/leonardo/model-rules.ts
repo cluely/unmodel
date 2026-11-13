@@ -399,7 +399,9 @@ const PHOENIX_RULE: LeonardoModelRule = {
  * - `platform_elements` — "An array of Platform Elements for image generation."
  *
  * Named for those two arrays, which no other tabled model takes. No vendor
- * page names who trained these models or a family for them.
+ * page names who trained these models or a family for them. The untabled
+ * `flux-dev` takes both arrays too (with typed `userLoraId` / `akUUID` ids and
+ * a weight of -2..2), so the name does not cover every model that takes Elements.
  */
 const ELEMENTS_PARAMETERS = [
   ...PHOENIX_PARAMETERS,
@@ -517,5 +519,19 @@ export const LEONARDO_MODEL_RULES: Readonly<Record<string, LeonardoModelRule>> =
   },
 };
 
-/** Every parameter key any tabled model accepts — used to phrase messages. */
+/**
+ * Every parameter key any tabled model accepts — used to phrase messages.
+ *
+ * A key from this list sent to a tabled model whose table lacks it is an
+ * `unsupported_param` **warning**, and so is an untabled guidance kind. The
+ * reason is the spec (updatedAt 2026-09-01, read 2026-11-12): none of the 13
+ * tabled image arms sets `additionalProperties: false` on the body, on
+ * `parameters` or on `guidances`, though the document sets it 62 times
+ * elsewhere: on 9 arms' `parameters` (remove-bg among them) and on 28 arms'
+ * `guidances` (mostly video — Veo, Seedance, Kling 3.x, Wan, …). The one
+ * vendor sentence about unknown keys — "Unknown keys under `parameters` are
+ * rejected, not ignored." (https://docs.leonardo.ai/docs/remove-bg, read
+ * 2026-11-12) — covers remove-bg only. Turn these back into errors only once
+ * a recorded 4xx body shows the API rejecting such a key.
+ */
 export const LEONARDO_KNOWN_PARAMETERS: readonly string[] = [...ELEMENTS_PARAMETERS];

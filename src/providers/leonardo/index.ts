@@ -55,8 +55,8 @@ export type {
 } from "./model-rules";
 
 // No response checker: POST /v2/generations returns a generation id, and
-// fetching the images (GET /v2/generations/{id}, or the webhook callback) is
-// transport — out of unmodel's scope.
+// fetching the images (the v1 GET https://cloud.leonardo.ai/api/rest/v1/generations/{id},
+// or the webhook callback) is transport — out of unmodel's scope.
 
 export { models, provider } from "./models";
 export type { LeonardoModelId } from "./models";

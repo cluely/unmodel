@@ -33,8 +33,15 @@
  *   artificialanalysis rows "Lucid Origin Ultra/Fast" and "Phoenix 1.0
  *   Ultra/Fast" are this parameter, not separate model ids.
  * - ASYNC-JOB API: the POST returns a generation id; fetch the images with
- *   `GET /v2/generations/{id}` or a webhook callback — transport, out of
- *   unmodel's scope.
+ *   the v1 `GET https://cloud.leonardo.ai/api/rest/v1/generations/{id}` ("Get
+ *   a Single Generation", https://docs.leonardo.ai/v1.0/reference/getgenerationbyid,
+ *   updatedAt 2026-06-03, read 2026-11-12) or a webhook callback — transport,
+ *   out of unmodel's scope. v2 publishes only `POST /generations` and
+ *   `POST /generationssync`; Leonardo's own v2 recipes poll
+ *   `rest/v1/generations/{id}`.
+ * - The 13 tabled arms leave `parameters` and `guidances` open (no
+ *   `additionalProperties: false`), so a key or guidance kind outside a
+ *   model's table is a warning, not an error — see LEONARDO_KNOWN_PARAMETERS.
  * - No cost estimate: Leonardo publishes no public per-model rate (see
  *   models.ts). The response's `cost` object is authoritative.
  * - Auth is an `Authorization: Bearer …` header — unmodel never touches keys.
@@ -236,9 +243,11 @@ export interface LeonardoPhoenixParameters extends LeonardoCommonParameters {
 }
 
 /**
- * `parameters` for the nine Elements models (`kino-xl` … `lightning-xl`):
+ * `parameters` for nine tabled image models (`kino-xl` … `lightning-xl`):
  * Phoenix's keys, a FAST / QUALITY mode with no ULTRA, four more guidance
- * kinds, `transparency` and the two Elements arrays.
+ * kinds, `transparency` and the two Elements arrays. "Elements" is unmodel's
+ * name for this shared shape, after those arrays — no vendor page names a
+ * family for these models.
  */
 export interface LeonardoElementsParameters extends LeonardoCommonParameters {
   /** Generation mode. Default "FAST" ("QUALITY" on portrait-perfect and stock-photography). */
@@ -571,11 +580,14 @@ function checkGuidances(
   for (const [kind, entries] of Object.entries(value)) {
     const kindRule = rule.guidances[kind];
     if (kindRule === undefined) {
+      // A warning: this model's published `guidances` object is open (see
+      // LEONARDO_KNOWN_PARAMETERS), so the API may ignore the kind.
       ctx.report({
         code: "unsupported_param",
         path: ["parameters", "guidances", kind],
         model,
-        message: `\`guidances.${kind}\` is not a guidance kind "${model}" supports; it accepts ${Object.keys(rule.guidances).join(", ")}.`,
+        severity: "warning",
+        message: `\`guidances.${kind}\` is not a guidance kind "${model}" supports; it accepts ${Object.keys(rule.guidances).join(", ")}. It was passed through: the published schema does not mark "${model}"'s \`guidances\` as closed, so the API may ignore it rather than reject it.`,
         meta: { allowed: Object.keys(rule.guidances), source: LEONARDO_DOCS_URL },
       });
       continue;
@@ -762,7 +774,9 @@ function checkParameters(
     });
   }
 
-  // Params that belong to a sibling model (or nothing at all).
+  // Params that belong to a sibling model (or nothing at all). Both are
+  // warnings: this model's published `parameters` object is open (see
+  // LEONARDO_KNOWN_PARAMETERS), so the API may ignore the key.
   for (const key of Object.keys(parameters)) {
     if (rule.parameters.includes(key)) continue;
     if (LEONARDO_KNOWN_PARAMETERS.includes(key)) {
@@ -771,7 +785,8 @@ function checkParameters(
         code: "unsupported_param",
         path: ["parameters", key],
         model,
-        message: `\`${key}\` is not part of "${model}"'s parameters schema; it belongs to other models on this endpoint: ${takers.map((id) => JSON.stringify(id)).join(", ")}.`,
+        severity: "warning",
+        message: `\`${key}\` is not part of "${model}"'s parameters schema; it belongs to other models on this endpoint: ${takers.map((id) => JSON.stringify(id)).join(", ")}. It was passed through: the published schema does not mark "${model}"'s \`parameters\` as closed, so the API may ignore it rather than reject it.`,
         meta: { allowed: [...rule.parameters], models: takers, source: LEONARDO_DOCS_URL },
       });
     } else {
@@ -909,8 +924,9 @@ const validator = createValidator<AnyGenerationsBody, unknown>({
  * runtime unknown_model warning.
  *
  * The returned object's enumerable props are the exact fetch JSON body. The
- * POST returns a generation id — fetch the images with
- * `GET /v2/generations/{id}` or a webhook (transport, out of unmodel's scope).
+ * POST returns a generation id — fetch the images with the v1
+ * `GET https://cloud.leonardo.ai/api/rest/v1/generations/{id}` or a webhook
+ * (transport, out of unmodel's scope).
  * Auth is your job: add an `Authorization: Bearer …` header when fetching.
  *
  * ```ts

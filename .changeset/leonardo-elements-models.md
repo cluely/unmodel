@@ -2,7 +2,7 @@
 "unmodel": patch
 ---
 
-leonardo: the nine Elements image models
+leonardo: nine more image models (kino-xl … lightning-xl)
 
 `leonardo.image` and `unmodel/image` now validate, type and compile `kino-xl`,
 `anime-xl`, `portrait-perfect`, `stock-photography`, `illustrative-albedo`,
@@ -12,7 +12,9 @@ schema (https://docs.leonardo.ai/reference/creategeneration, OpenAPI updatedAt
 2026-09-01, read 2026-11-12). They used to fall through to the loose arm with an
 `unknown_model` warning and no per-param checks.
 
-- One shared `parameters` shape, `LeonardoElementsParameters`: Phoenix's keys plus
+- One shared `parameters` shape, `LeonardoElementsParameters` (unmodel's name for
+  it, after the two Elements arrays — no vendor page names a family for these
+  models): Phoenix's keys plus
   `transparency` ("Whether the image can be generated with a transparent
   background"), `user_elements` and `platform_elements` (at most 4 entries each,
   `weight` ≥ 0 — the items declare no id key, so none is typed), `mode`
@@ -27,5 +29,5 @@ schema (https://docs.leonardo.ai/reference/creategeneration, OpenAPI updatedAt
 - `unmodel/leonardo/values` lists them in `IMAGE_MODELS` / `IMAGE_MODEL_PARAMS`
   with a shared 1536-px preset list and the `1k` tier.
 - `negativePrompt`, `contrast`, `tiling` and the new keys are no longer called
-  "Phoenix-only": a request that sends one to a model without it is refused with
-  the list of models that take it.
+  "Phoenix-only": a request that sends one to a model without it is flagged
+  `unsupported_param` with the list of models that take it.

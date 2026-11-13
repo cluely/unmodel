@@ -11,9 +11,8 @@
  * `scripts/atlascloud-audit.ts` is what notices when they drift.
  *
  * Ground truth: the 31 snapshots in `data/atlascloud/openapi/`, one per
- * catalogued id — 23 fetched and transcribed 2026-08-26, and the eight Veo 3.1
- * Fast / Lite, Seedance 2.5 draft-complete and Wan 3.0 reference documents
- * 2026-11-12. Route and auth prose: ./urls.ts.
+ * catalogued id, every one re-fetched and diffed canonically against the live
+ * document on 2026-11-12. Route and auth prose: ./urls.ts.
  *
  * ## RESTATED, never imported
  *
@@ -27,7 +26,7 @@
  *
  * | | ModelArk (`bytedance`) | Atlas (`atlascloud`) |
  * |---|---|---|
- * | Seedance 2.5 `resolution` | 2 values (`480p`, `720p`) | **11** (the `-sr`/`-esr` ladder up to `4k-esr`) |
+ * | Seedance 2.5 `resolution` | 2 values (`480p`, `720p`) | **12** (the `-sr`/`-esr` ladder up to `4k-esr`, and native `4k`) |
  * | Seedance 2.5 i2v `ratio` | the 7-member enum | **`adaptive` only** |
  * | reference input | `content[]` items with a `role` | three flat string arrays |
  * | the route | one url for every model | one url, and `model` is a REAL body field |
@@ -48,7 +47,7 @@ export const VIDEO_SCHEMA_SOURCE = "https://static.atlascloud.ai/model/schema/";
 export const VIDEO_MODELS_SOURCE = "https://api.atlascloud.ai/api/v1/models";
 
 /** The date every table in this file was transcribed from those documents. */
-export const VIDEO_VERIFIED = "2026-08-26";
+export const VIDEO_VERIFIED = "2026-11-12";
 
 function denyTable(
   entries: Readonly<Record<string, string>>,
@@ -84,7 +83,7 @@ export const SEEDANCE_15_ASPECT_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "
 export const VEO_ASPECT_RATIOS = ["16:9", "9:16"] as const;
 
 /**
- * Seedance 2.5's `resolution` — **eleven** values, and the reason this
+ * Seedance 2.5's `resolution` — **twelve** values, and the reason this
  * provider's tables cannot be shared with `bytedance`'s two.
  *
  * "480p, 720p, and 1080p are native Seedance outputs. Every -sr and -esr option
@@ -94,6 +93,11 @@ export const VEO_ASPECT_RATIOS = ["16:9", "9:16"] as const;
  * 1080p-sr, and 1080p-esr are different products and are priced differently.
  * 4k-esr delivers a 2160-pixel short edge (3840x2160 at 16:9), not native 4K
  * generation."
+ *
+ * All three 2.5 schemas also list native `4k` (read 2026-11-12) — after
+ * `1080p` on text-to-video, after `4k-esr` on the image and reference routes —
+ * with no sentence of its own; the draft-complete schema's "1080p or 4k are
+ * native Seedance outputs" is the only prose that names it.
  */
 export const SEEDANCE_25_RESOLUTIONS = [
   "480p",
@@ -107,11 +111,12 @@ export const SEEDANCE_25_RESOLUTIONS = [
   "1440p-sr",
   "1440p-esr",
   "4k-esr",
+  "4k",
 ] as const;
 
 /**
- * Seedance 2.0's `resolution` — the full 2.0 model is the only Seedance here
- * with native `4k`: "\"4k\" is native UHD (3840×2160, 16:9) available on the
+ * Seedance 2.0's `resolution` — the full 2.0 model is the only 2.0 tier with
+ * native `4k`: "\"4k\" is native UHD (3840×2160, 16:9) available on the
  * full Seedance 2.0 models only (not Fast/Mini)".
  *
  * Note the CASING difference from 2.5: the 2.0 series spells its upscaler
@@ -140,8 +145,21 @@ export const SEEDANCE_20_SMALL_RESOLUTIONS = [
 export const SEEDANCE_15_RESOLUTIONS = ["720p", "480p"] as const;
 export const SEEDANCE_15_FAST_RESOLUTIONS = ["720p"] as const;
 
-/** Wan 3.0 prime `resolution` — UPPER-case P, unlike every other row here. */
-export const WAN_PRIME_RESOLUTIONS = ["1080P", "720P", "480P"] as const;
+/**
+ * Wan 3.0 prime `resolution`: the same lower-case list, `-esr` ladder
+ * included, that Wan 3.0 publishes: "Output resolution. Native tiers: 480p,
+ * 720p, 1080p. ESR tiers: 720p-esr, 1080p-esr, 1440p-esr, 4k-esr." (both prime
+ * documents, re-read 2026-09-30).
+ */
+export const WAN_PRIME_RESOLUTIONS = [
+  "1080p",
+  "720p",
+  "480p",
+  "720p-esr",
+  "1080p-esr",
+  "1440p-esr",
+  "4k-esr",
+] as const;
 
 /** Wan 3.0 `resolution` — lower-case, with an `-esr` enhancement ladder. */
 export const WAN_RESOLUTIONS = [
@@ -560,6 +578,7 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
 const SEEDANCE_25_ONLY = {
   output_format:
     "`output_format` (mp4/mov) is a Seedance 2.5 parameter; every other Atlas video model always returns mp4",
+  draft: "`draft` (a 480p preview completed later at 1080p) is a Seedance 2.5 parameter on Atlas",
 } as const;
 
 /**

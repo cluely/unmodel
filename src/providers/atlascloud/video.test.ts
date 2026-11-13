@@ -479,12 +479,12 @@ describe("the shape field", () => {
 });
 
 // ---------------------------------------------------------------------------
-// `resolution` — the eleven-value ladder, and four spellings of one tier
+// `resolution` — the twelve-value ladder, and the spellings of one tier
 // ---------------------------------------------------------------------------
 
 describe("resolution", () => {
-  test("Seedance 2.5 publishes eleven values and every one of them validates", () => {
-    expect(SEEDANCE_25_RESOLUTIONS).toHaveLength(11);
+  test("Seedance 2.5 publishes twelve values and every one of them validates", () => {
+    expect(SEEDANCE_25_RESOLUTIONS).toHaveLength(12);
     for (const resolution of SEEDANCE_25_RESOLUTIONS) {
       expect(
         codes(safeUnchecked({ model: "bytedance/seedance-2.5/text-to-video", prompt: "p", resolution })),
@@ -501,25 +501,29 @@ describe("resolution", () => {
       .toEqual(["invalid_enum_value@resolution"]);
   });
 
-  test("native 4k is the full 2.0 model's alone", () => {
+  test("native 4k: the full 2.0 model and all three 2.5 routes, never 2.0 mini/fast", () => {
     expect(codes(safeUnchecked({ model: "bytedance/seedance-2.0/text-to-video", prompt: "p", resolution: "4k" })))
       .toEqual([]);
+    for (const body of [
+      { model: "bytedance/seedance-2.5/text-to-video", prompt: "p" },
+      { model: "bytedance/seedance-2.5/image-to-video", image: IMAGE_URL },
+      { model: "bytedance/seedance-2.5/reference-to-video", reference_images: [IMAGE_URL] },
+    ]) {
+      expect(codes(safeUnchecked({ ...body, resolution: "4k" })), body.model).toEqual([]);
+    }
     expect(codes(safeUnchecked({ model: "bytedance/seedance-2.0-mini/text-to-video", prompt: "p", resolution: "4k" })))
       .toEqual(["invalid_enum_value@resolution"]);
     expect(codes(safeUnchecked({ model: "bytedance/seedance-2.0-fast/text-to-video", prompt: "p", resolution: "4k" })))
       .toEqual(["invalid_enum_value@resolution"]);
   });
 
-  test("Wan 3.0-prime is the one UPPER-case enum on the provider", () => {
-    expect(codes(safeUnchecked({ model: "alibaba/wan-3.0-prime/text-to-video", prompt: "p", resolution: "1080P" })))
-      .toEqual([]);
-    expect(codes(safeUnchecked({ model: "alibaba/wan-3.0-prime/text-to-video", prompt: "p", resolution: "1080p" })))
-      .toEqual(["invalid_enum_value@resolution"]);
-    // …and plain Wan 3.0 is the mirror image.
-    expect(codes(safeUnchecked({ model: "alibaba/wan-3.0/text-to-video", prompt: "p", resolution: "1080p" })))
-      .toEqual([]);
-    expect(codes(safeUnchecked({ model: "alibaba/wan-3.0/text-to-video", prompt: "p", resolution: "1080P" })))
-      .toEqual(["invalid_enum_value@resolution"]);
+  test("Wan 3.0-prime takes the same lower-case ladder as Wan 3.0", () => {
+    for (const model of ["alibaba/wan-3.0-prime/text-to-video", "alibaba/wan-3.0/text-to-video"]) {
+      expect(codes(safeUnchecked({ model, prompt: "p", resolution: "1080p" }))).toEqual([]);
+      expect(codes(safeUnchecked({ model, prompt: "p", resolution: "4k-esr" }))).toEqual([]);
+      expect(codes(safeUnchecked({ model, prompt: "p", resolution: "1080P" })))
+        .toEqual(["invalid_enum_value@resolution"]);
+    }
   });
 
   test("the v1.5-pro fast pair renders 720p only", () => {
@@ -604,6 +608,23 @@ describe("a param from another family is named, not swallowed", () => {
       output_format: "mov",
     }))).toEqual(["unsupported_param@output_format"]);
   });
+
+  test("`draft` is a Seedance 2.5 field on all three routes", () => {
+    for (const body of [
+      { model: "bytedance/seedance-2.5/text-to-video", prompt: "p" },
+      { model: "bytedance/seedance-2.5/image-to-video", image: IMAGE_URL },
+      { model: "bytedance/seedance-2.5/reference-to-video", prompt: "p", reference_images: [IMAGE_URL] },
+    ]) {
+      const result = safeUnchecked({ ...body, draft: true });
+      expect(codes(result)).toEqual([]);
+      expect(result.warnings.map((warning) => warning.code)).not.toContain("unknown_param");
+    }
+    expect(codes(safeUnchecked({
+      model: "bytedance/seedance-2.0/text-to-video",
+      prompt: "p",
+      draft: true,
+    }))).toEqual(["unsupported_param@draft"]);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -684,11 +705,21 @@ describe("the roster and its tables agree", () => {
     for (const row of Object.values(videoModels)) {
       expect((row as { cost?: unknown }).cost, row.id).toBeUndefined();
     }
-    expect(ATLASCLOUD_PRICING_CAVEAT).toContain("per-run");
+    expect(ATLASCLOUD_PRICING_CAVEAT).toContain("Varies by model, duration, and resolution");
     expect(listedPrice("bytedance/seedance-2.5/text-to-video")).toEqual({
       actual: 0.134,
-      origin: 0.134,
-      discount: 100,
+      origin: 0.167,
+      discount: 80,
+    });
+    expect(listedPrice("bytedance/seedance-2.0/text-to-video")).toEqual({
+      actual: 0.09,
+      origin: 0.112,
+      discount: 80,
+    });
+    expect(listedPrice("bytedance/seedance-2.0-mini/text-to-video")).toEqual({
+      actual: 0.045,
+      origin: 0.056,
+      discount: 80,
     });
     expect(listedPrice("nope/nope")).toBeUndefined();
   });

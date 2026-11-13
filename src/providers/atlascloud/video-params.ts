@@ -109,6 +109,7 @@ const SEEDANCE_2X_EXTRAS = {
 const SEEDANCE_25_EXTRAS = {
   ...SEEDANCE_2X_EXTRAS,
   output_format: EXTRA as (typeof VIDEO_OUTPUT_FORMATS)[number],
+  draft: EXTRA as boolean,
 } as const;
 
 const SEEDANCE_25_REFERENCE_EXTRAS = {
@@ -148,7 +149,6 @@ const SEEDANCE_20_TIERS = ["480p", "720p", "1080p", "1440p", "4k"] as const;
 const SEEDANCE_20_SMALL_TIERS = ["480p", "720p", "1080p", "1440p"] as const;
 const SEEDANCE_15_TIERS = ["480p", "720p"] as const;
 const SEEDANCE_15_FAST_TIERS = ["720p"] as const;
-const WAN_PRIME_TIERS = ["480p", "720p", "1080p"] as const;
 const WAN_TIERS = ["480p", "720p", "1080p", "1440p", "4k"] as const;
 const VEO_TIERS = ["720p", "1080p", "4k"] as const;
 const VEO_LITE_TIERS = ["720p", "1080p"] as const;
@@ -162,8 +162,8 @@ const VEO_LITE_DURATIONS = [4, 6, 8] as const;
  * Atlas's per-model surface.
  *
  * `resolutions` is where this provider is least like its neighbours: Atlas
- * spells the same tier four ways across four families (`1080p` on Seedance 2.x
- * and Wan 3.0, `1080P` on Wan 3.0-prime, and on Seedance 2.5 the tier is
+ * spells the same tier differently across families (`1080p` on Seedance 2.x
+ * and Wan 3.0, `1080p-SR` on Seedance 2.0 mini/fast, and on Seedance 2.5 it is
  * reachable three ways — native `1080p`, upscaled `1080p-sr` and enhanced
  * `1080p-esr`, which the schema says "are different products and are priced
  * differently"). The tiers listed here are the CANONICAL ones the adapter can
@@ -172,7 +172,9 @@ const VEO_LITE_DURATIONS = [4, 6, 8] as const;
  *
  * `1440p` and `4k` appear on the Seedance rows only via that ladder
  * (`1440p-sr`, `4k-esr`), which is why they are listed: the adapter maps the
- * canonical tier onto the spelling the model's own enum actually has.
+ * canonical tier onto the spelling the model's own enum actually has. Seedance
+ * 2.5's enum also lists native `4k`; canonical `4k` stays on `4k-esr` there
+ * (see the resolution note in ./unified-video.ts).
  */
 export const ATLASCLOUD_VIDEO_MODEL_PARAMS = {
   "bytedance/seedance-2.5/text-to-video": {
@@ -258,12 +260,12 @@ export const ATLASCLOUD_VIDEO_MODEL_PARAMS = {
     extras: SEEDANCE_15_EXTRAS,
   },
   "alibaba/wan-3.0-prime/text-to-video": {
-    resolutions: WAN_PRIME_TIERS,
+    resolutions: WAN_TIERS,
     ratios: WAN_RATIOS_SHAPES,
     extras: WAN_EXTRAS,
   },
   "alibaba/wan-3.0-prime/image-to-video": {
-    resolutions: WAN_PRIME_TIERS,
+    resolutions: WAN_TIERS,
     // Wan's image-to-video schema has no `ratio` field at all.
     ratios: NO_RATIOS,
     extras: WAN_EXTRAS,

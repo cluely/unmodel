@@ -2,35 +2,44 @@
  * What Atlas Cloud publishes about price, and why none of it reaches
  * `ModelInfo.cost`.
  *
- * # The contradiction, in Atlas's own words
+ * # One figure per model, and Atlas's own pages say it is not a rate
  *
- * Every model page is a React application, and its bundle carries **three**
- * mutually exclusive price sentences from three templates (read at
- * https://www.atlascloud.ai/models/bytedance/seedance-2.5/reference-to-video on
- * 2026-08-26, verbatim from the shipped source):
+ * The model page states ONE figure per model and calls it authoritative. Its
+ * markdown form (`https://www.atlascloud.ai/models/<id>/llms.txt`) reads
+ * "These are the authoritative Atlas Cloud rates for this model." over
+ * "- $0.2 per second of generated video" (google/veo3.1/text-to-video), and
+ * the HTML page's meta description agrees: "Starting from $0.134/second"
+ * (bytedance/seedance-2.5/reference-to-video). All read 2026-11-12.
  *
- * > `Your request will cost ${price} per run. For $10 you can run this model
- * > approximately {times} times.`
+ * Three other Atlas sources say that figure cannot be the price of a request:
  *
- * > `For every second of 720p video you generated, you will be charged
- * > ${rate}/second. Your request will cost ${tokenRate} per 1000 tokens. The
- * > number of tokens is given by (height of output video × width of output
- * > video × (input duration + output duration) × 24) / 1024. If video inputs
- * > are provided the rate drops to ${tokenRateWithVideo} per 1000 tokens. With
- * > video inputs and 720p resolution the price is ${rateWithVideo} per second.`
- *
- * …and the same page's own meta description says *"Starting from $0.134/1M
- * tokens"* for the model whose card in the related-models strip reads
- * *"From $0.134 /SEC"*. One number, `0.134`, presented as a per-run price, a
- * per-second rate and a per-million-token rate on one page.
+ * - the billing page — video pricing "Varies by model, duration, and
+ *   resolution; some models are billed by output video tokens", and
+ *   "Image/Video generation is charged per request; failed tasks are
+ *   automatically not charged" (https://www.atlascloud.ai/docs/models/price);
+ * - Atlas's own cost test, which prices ONE model on ONE day at two rates — "A
+ *   480p draft is ready in about 1 min 40 s at $0.134 per second" and
+ *   "Upgrading to 1080p costs $0.592 per second, almost the same as $0.596 for
+ *   direct 1080p.", "including that day's 20% discount"
+ *   (https://www.atlascloud.ai/blog/tips/seedance-2-5-draft-mode-cost-test).
+ *   The page's per-second figure is the floor of a resolution ladder Atlas
+ *   does not publish, and a flat `perVideoSecond` would under-state direct
+ *   1080p on the flagship row about 4.4×;
+ * - the page bundle, which still ships a per-run and a per-1000-token template
+ *   (`Your request will cost ${price} per run. For $10 you can run this model
+ *   approximately {times} times.`, and `… per 1000 tokens. The number of
+ *   tokens is given by (height of output video × width of output video ×
+ *   (input duration + output duration) × 24) / 1024 …`). Which one renders
+ *   for a given model cannot be read without executing the page.
  *
  * # And the catalog cannot settle it
  *
- * `GET https://api.atlascloud.ai/api/v1/models` returns a `price` object per
- * row, but only **2 of 337** media rows carry `price.actual.unit` (both
- * `"generation"`); the other 335 are a bare `base_price` string with no unit at
- * all. Worse, **152 of 473** rows carry a promotional `discount` between 40 and
- * 90, so `price.actual` is not the list price either — it is today's offer.
+ * `GET https://api.atlascloud.ai/api/v1/models` (608 rows, read 2026-11-12)
+ * returns a `price` object per row, but **none of the 31 curated rows**
+ * carries `price.actual.unit`, and 389 of its 470 media rows are a bare
+ * `base_price` string with no unit at all. **223 of 608** rows carry a
+ * promotional `discount` between 30 and 95, so `price.actual` is not the list
+ * price either — it is today's offer.
  *
  * # So: no `cost`, and the caveat instead
  *
@@ -46,11 +55,10 @@
  * `Validated` from it carries no `costUSD` — which is what makes
  * `options.maxCostUSD` a no-op here rather than a false pass.
  *
- * What would change this: Atlas documenting a unit (a `price.actual.unit` on
- * every media row would do it), or a model page settling on one of its three
- * sentences. Either one is a small diff — {@link LISTED_BASE_PRICE_USD} is
- * already the transcription — and until then the number stays out of the
- * catalog.
+ * What would change this: Atlas publishing the per-resolution ladder its
+ * billing page describes, with a `price.actual.unit` on the curated rows. That
+ * is a small diff — {@link ATLASCLOUD_LISTED_BASE_PRICE_USD} is already the
+ * transcription — and until then the number stays out of the catalog.
  *
  * @see https://www.atlascloud.ai/models — the model pages
  * @see https://api.atlascloud.ai/api/v1/models — the keyless catalog
@@ -58,16 +66,18 @@
 
 /** The sentence to show a caller who asks why an Atlas request has no estimate. */
 export const ATLASCLOUD_PRICING_CAVEAT =
-  "Atlas Cloud publishes no unit for its video rates: 335 of its 337 media catalog rows carry a " +
-  "bare `base_price` with no `unit`, 152 of 473 rows carry a 40–90% promotional discount so the " +
-  "listed figure is not the list price, and the model page renders the same number as a per-run " +
-  "price, a per-second rate and a per-1000-token rate from three templates in one bundle. " +
-  "unmodel therefore ships no `cost` for any atlascloud model rather than a guess. The listed " +
-  "figures are in ATLASCLOUD_LISTED_BASE_PRICE_USD, and they are unit-less on purpose.";
+  "Atlas Cloud publishes no unit-bearing rate for these video models: none of their catalog rows " +
+  "carries a `unit`, 223 of its 608 rows carry a 30–95% promotional discount so the listed figure " +
+  "is not the list price, and its billing page says video pricing \"Varies by model, duration, and " +
+  "resolution; some models are billed by output video tokens\" — Atlas's own cost test prices " +
+  "Seedance 2.5 at $0.134/s for a 480p draft and $0.596/s at 1080p. A model page's single " +
+  "per-second figure is the floor of that unpublished ladder, so unmodel ships no `cost` for any " +
+  "atlascloud model rather than a guess. The listed figures are in " +
+  "ATLASCLOUD_LISTED_BASE_PRICE_USD, and they are unit-less on purpose.";
 
 /** Where the caveat was read, and when. */
 export const ATLASCLOUD_PRICING_SOURCE = "https://api.atlascloud.ai/api/v1/models";
-export const ATLASCLOUD_PRICING_VERIFIED = "2026-08-26";
+export const ATLASCLOUD_PRICING_VERIFIED = "2026-11-12";
 
 /**
  * The token formula Atlas's model page states, transcribed verbatim so the one
@@ -92,7 +102,7 @@ export interface AtlascloudListedPrice {
   /** `price.origin.base_price` — the pre-discount figure, same unknown unit. */
   readonly origin: number;
   /**
-   * `price.discount`, as Atlas returns it: a number between 40 and 100 where
+   * `price.discount`, as Atlas returns it: a number between 30 and 100 where
    * **100 means no discount** (`actual === origin`) and 70 means the row is
    * currently discounted. It is a percentage OF the list price, not off it.
    */
@@ -100,8 +110,12 @@ export interface AtlascloudListedPrice {
 }
 
 /**
- * The figures Atlas listed for the curated ids — the original 23 on
- * 2026-08-26, the eight added on 2026-11-12.
+ * The figures Atlas listed for the 31 curated ids, read from the keyless
+ * catalog 2026-11-12 — e.g. `"price":{"discount":"80","actual":{"base_price":
+ * "0.134"},"origin":{"base_price":"0.167"}}` on each Seedance 2.5 generation
+ * route, and `"price":{"discount":"80","actual":{"base_price":"0.263"},
+ * "origin":{"base_price":"0.329"}}` on bytedance/seedance-2.5/draft-complete.
+ * No curated row carries a `unit`.
  *
  * Transcribed rather than derived, and carried as data rather than as `cost`,
  * for the reason in this module's docstring: these are numbers without units.
@@ -115,15 +129,15 @@ export const ATLASCLOUD_LISTED_BASE_PRICE_USD: Readonly<
   "alibaba/wan-3.0-prime/image-to-video": { actual: 0.061, origin: 0.068, discount: 90 },
   "alibaba/wan-3.0/text-to-video": { actual: 0.04, origin: 0.05, discount: 80 },
   "alibaba/wan-3.0/image-to-video": { actual: 0.04, origin: 0.05, discount: 80 },
-  "bytedance/seedance-2.5/text-to-video": { actual: 0.134, origin: 0.134, discount: 100 },
-  "bytedance/seedance-2.5/image-to-video": { actual: 0.134, origin: 0.134, discount: 100 },
-  "bytedance/seedance-2.5/reference-to-video": { actual: 0.134, origin: 0.134, discount: 100 },
-  "bytedance/seedance-2.0/text-to-video": { actual: 0.112, origin: 0.112, discount: 100 },
-  "bytedance/seedance-2.0/image-to-video": { actual: 0.112, origin: 0.112, discount: 100 },
-  "bytedance/seedance-2.0/reference-to-video": { actual: 0.112, origin: 0.112, discount: 100 },
-  "bytedance/seedance-2.0-mini/text-to-video": { actual: 0.039, origin: 0.056, discount: 70 },
-  "bytedance/seedance-2.0-mini/image-to-video": { actual: 0.039, origin: 0.056, discount: 70 },
-  "bytedance/seedance-2.0-mini/reference-to-video": { actual: 0.039, origin: 0.056, discount: 70 },
+  "bytedance/seedance-2.5/text-to-video": { actual: 0.134, origin: 0.167, discount: 80 },
+  "bytedance/seedance-2.5/image-to-video": { actual: 0.134, origin: 0.167, discount: 80 },
+  "bytedance/seedance-2.5/reference-to-video": { actual: 0.134, origin: 0.167, discount: 80 },
+  "bytedance/seedance-2.0/text-to-video": { actual: 0.09, origin: 0.112, discount: 80 },
+  "bytedance/seedance-2.0/image-to-video": { actual: 0.09, origin: 0.112, discount: 80 },
+  "bytedance/seedance-2.0/reference-to-video": { actual: 0.09, origin: 0.112, discount: 80 },
+  "bytedance/seedance-2.0-mini/text-to-video": { actual: 0.045, origin: 0.056, discount: 80 },
+  "bytedance/seedance-2.0-mini/image-to-video": { actual: 0.045, origin: 0.056, discount: 80 },
+  "bytedance/seedance-2.0-mini/reference-to-video": { actual: 0.045, origin: 0.056, discount: 80 },
   "bytedance/seedance-2.0-fast/text-to-video": { actual: 0.072, origin: 0.09, discount: 80 },
   "bytedance/seedance-2.0-fast/image-to-video": { actual: 0.072, origin: 0.09, discount: 80 },
   "bytedance/seedance-2.0-fast/reference-to-video": { actual: 0.072, origin: 0.09, discount: 80 },
@@ -134,12 +148,6 @@ export const ATLASCLOUD_LISTED_BASE_PRICE_USD: Readonly<
   "google/veo3.1/text-to-video": { actual: 0.2, origin: 0.2, discount: 100 },
   "google/veo3.1/image-to-video": { actual: 0.2, origin: 0.2, discount: 100 },
   "google/veo3.1/reference-to-video": { actual: 0.2, origin: 0.2, discount: 100 },
-  // The eight ids catalogued 2026-11-12, read from the same keyless catalog
-  // that day — e.g. `"price":{"discount":"100","actual":{"base_price":"0.08"},
-  // "origin":{"base_price":"0.08"}}` on google/veo3.1-fast/text-to-video and
-  // `"price":{"discount":"80","actual":{"base_price":"0.263"},"origin":
-  // {"base_price":"0.329"}}` on bytedance/seedance-2.5/draft-complete. No row
-  // carries a `unit`.
   "google/veo3.1-fast/text-to-video": { actual: 0.08, origin: 0.08, discount: 100 },
   "google/veo3.1-fast/image-to-video": { actual: 0.08, origin: 0.08, discount: 100 },
   "google/veo3.1-lite/text-to-video": { actual: 0.05, origin: 0.05, discount: 100 },

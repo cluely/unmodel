@@ -74,12 +74,16 @@
             "x-ui-component": "select"
           },
           "resolution": {
-            "default": "1080P",
-            "description": "The resolution of the generated video.",
+            "default": "1080p",
+            "description": "Output resolution. Native tiers: 480p, 720p, 1080p. ESR tiers: 720p-esr, 1080p-esr, 1440p-esr, 4k-esr.",
             "enum": [
-              "1080P",
-              "720P",
-              "480P"
+              "1080p",
+              "720p",
+              "480p",
+              "720p-esr",
+              "1080p-esr",
+              "1440p-esr",
+              "4k-esr"
             ],
             "type": "string",
             "x-ui-component": "select"

@@ -224,10 +224,11 @@ a second route (the argument is recorded in `src/cli-registry.test.ts`).
 Atlas resells weights unmodel already reaches: `bytedance/seedance-*` is also `bytedance.video`
 (ByteDance's own ModelArk) and `fal.video`, and `google/veo3.1/*` is also `google.video` and
 `fal.video` — three transports, three visibly different bodies, and no normalisation between
-them. **No `atlascloud` model ships a cost:** Atlas publishes no unit for its rates (its catalog
-carries a bare `base_price` on 335 of 337 media rows and its model page renders the same figure
-as a per-run price, a per-second rate and a per-1000-token rate), so the caveat ships instead —
-`ATLASCLOUD_PRICING_CAVEAT` on `unmodel/atlascloud`.
+them. **No `atlascloud` model ships a cost:** Atlas publishes no unit-bearing rate for them (no
+curated catalog row carries a `unit`, and its billing page says video pricing "Varies by model,
+duration, and resolution", so the model page's one per-second figure is the floor of an
+unpublished ladder), so the caveat ships instead — `ATLASCLOUD_PRICING_CAVEAT` on
+`unmodel/atlascloud`.
 Remaining (first-party APIs): tencent (HunyuanVideo).
 Several are also reachable as hosted routes on `unmodel/runway`
 (`hailuo3`, `seedance2*`, `gemini_omni_flash`, `grok_imagine_1_5`, `happyhorse_1_0`).

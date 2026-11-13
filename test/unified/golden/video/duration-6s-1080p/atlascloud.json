@@ -4,7 +4,7 @@
     "model": "alibaba/wan-3.0-prime/text-to-video",
     "prompt": "a drone shot over a fjord at sunrise",
     "duration": 6,
-    "resolution": "1080P"
+    "resolution": "1080p"
   },
   "url": "https://api.atlascloud.ai/api/v1/model/generateVideo"
 }

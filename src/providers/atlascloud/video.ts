@@ -14,7 +14,7 @@
  * |---|---|---|
  * | reference input | one chat-style `content[]` array whose items carry a `role` | three FLAT string arrays: `reference_images` / `reference_videos` / `reference_audios` |
  * | route selection | one url, `model` names the model | one url, `model` names the model **and the route**: `bytedance/seedance-2.5/text-to-video` |
- * | Seedance 2.5 `resolution` | 2 values | **11** — the `-sr`/`-esr` upscale ladder up to `4k-esr` |
+ * | Seedance 2.5 `resolution` | 2 values | **12** — the `-sr`/`-esr` upscale ladder up to `4k-esr`, and native `4k` |
  * | Seedance 2.5 i2v `ratio` | the 7-member enum | `adaptive` only |
  *
  * `src/providers/bytedance/video.ts` is the same weights through ByteDance's own
@@ -43,8 +43,8 @@
  * keys; add the header yourself when fetching.
  *
  * Wire facts transcribed from the 31 committed snapshots in
- * `data/atlascloud/openapi/` (23 on 2026-08-26, eight more on 2026-11-12) and
- * from https://www.atlascloud.ai/docs/models/video.
+ * `data/atlascloud/openapi/` (each diffed canonically against its live
+ * document 2026-11-12) and from https://www.atlascloud.ai/docs/models/video.
  */
 
 import { z } from "zod";
@@ -199,6 +199,8 @@ interface NotWan {
 interface NotSeedance25 {
   /** Seedance 2.5 only. */
   output_format?: never;
+  /** Seedance 2.5 only. */
+  draft?: never;
   /** Seedance 2.5 reference-to-video only. */
   omni_reference_task_type?: never;
 }
@@ -268,6 +270,12 @@ interface Seedance25Shared
   return_last_frame?: boolean;
   /** `"mov"` encodes yuv444p for multi-round editing pipelines. Default `"mp4"`. */
   output_format?: AtlasOutputFormat;
+  /**
+   * "Generate a draft preview at 480p, overriding resolution. The response
+   * carries a draft_id for completing the draft at 1080p with
+   * bytedance/seedance-2.5/draft-complete within seven days." Default false.
+   */
+  draft?: boolean;
   /** Seedance 2.5's schemas declare no `seed`. */
   seed?: never;
 }
@@ -338,7 +346,7 @@ interface Seedance20Shared
   return_last_frame?: boolean;
 }
 
-/** The full 2.0 model is the only Seedance here with native `4k`. */
+/** The full 2.0 model is the only 2.0 tier with native `4k` (Seedance 2.5 has it too). */
 export interface Seedance20TextToVideoBody extends Seedance20Shared, NoFrames, NoReferenceArrays {
   model: "bytedance/seedance-2.0/text-to-video";
   prompt: string;
@@ -490,7 +498,7 @@ interface WanShared
 
 export interface Wan30PrimeTextToVideoBody extends WanShared, NoFrames, NotWanReference {
   model: "alibaba/wan-3.0-prime/text-to-video";
-  /** UPPER-case `P`, unlike every other resolution enum on this provider. */
+  /** The same lower-case `-esr` ladder Wan 3.0 publishes. */
   resolution?: AtlasWanPrimeResolution;
   ratio?: AtlasWanRatio;
 }
@@ -507,7 +515,7 @@ export interface Wan30PrimeImageToVideoBody extends WanShared, NotWanReference {
 
 export interface Wan30TextToVideoBody extends WanShared, NoFrames, NotWanReference {
   model: "alibaba/wan-3.0/text-to-video";
-  /** Lower-case, with an `-esr` enhancement ladder the prime tier lacks. */
+  /** Lower-case, with an `-esr` enhancement ladder. */
   resolution?: AtlasWanResolution;
   ratio?: AtlasWanRatio;
 }
@@ -829,6 +837,7 @@ const videoSchema = z.looseObject({
   watermark: z.boolean().optional(),
   return_last_frame: z.boolean().optional(),
   output_format: z.enum(VIDEO_OUTPUT_FORMATS).optional(),
+  draft: z.boolean().optional(),
   omni_reference_task_type: z.enum(OMNI_REFERENCE_TASK_TYPES).optional(),
   bitrate_mode: z.enum(BITRATE_MODES).optional(),
   seed: z.number().int().min(VIDEO_SEED_RANGE.min).max(VIDEO_SEED_RANGE.max).optional(),

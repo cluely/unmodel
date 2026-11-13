@@ -90,7 +90,7 @@ export function resultUrl(id: string): string {
 
 /**
  * `GET https://api.atlascloud.ai/api/v1/models` — the keyless media catalog
- * (473 rows on 2026-08-26). `scripts/atlascloud-audit.ts` diffs it against
+ * (608 rows on 2026-11-12). `scripts/atlascloud-audit.ts` diffs it against
  * `data/atlascloud/curation.json`.
  */
 export const MODELS_CATALOG_URL = `${ATLASCLOUD_BASE_URL}/models`;

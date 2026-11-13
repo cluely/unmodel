@@ -83,6 +83,9 @@ function crossFamilyFieldTypeTests(): void {
   video({ model: "bytedance/seedance-2.5/text-to-video", prompt: "hi", bitrate_mode: "high" });
   // @ts-expect-error — `output_format` is 2.5's alone
   video({ model: "bytedance/seedance-2.0/text-to-video", prompt: "hi", output_format: "mov" });
+  video({ model: "bytedance/seedance-2.5/text-to-video", prompt: "hi", draft: true });
+  // @ts-expect-error: `draft` is 2.5's alone
+  video({ model: "bytedance/seedance-2.0/text-to-video", prompt: "hi", draft: true });
   // @ts-expect-error — Seedance 2.x spells the shape field `ratio`
   video({ model: "bytedance/seedance-2.0/text-to-video", prompt: "hi", aspect_ratio: "16:9" });
   // @ts-expect-error — …and v1.5 pro spells it `aspect_ratio`
@@ -102,18 +105,21 @@ function crossFamilyFieldTypeTests(): void {
 }
 
 function resolutionEnumTypeTests(): void {
-  // The eleven-value ladder is per model, and the casings differ by family.
+  // The twelve-value ladder is per model, and the casings differ by family.
   video({ model: "bytedance/seedance-2.5/text-to-video", prompt: "hi", resolution: "4k-esr" });
   video({ model: "bytedance/seedance-2.0/text-to-video", prompt: "hi", resolution: "1440p-SR" });
-  video({ model: "alibaba/wan-3.0-prime/text-to-video", prompt: "hi", resolution: "1080P" });
+  video({ model: "alibaba/wan-3.0-prime/text-to-video", prompt: "hi", resolution: "1080p" });
+  video({ model: "alibaba/wan-3.0-prime/text-to-video", prompt: "hi", resolution: "4k-esr" });
   video({ model: "alibaba/wan-3.0/text-to-video", prompt: "hi", resolution: "1080p" });
 
   // @ts-expect-error — 2.5 spells the upscaler suffix lower-case
   video({ model: "bytedance/seedance-2.5/text-to-video", prompt: "hi", resolution: "1440p-SR" });
-  // @ts-expect-error — native 4k is the full 2.0 model's alone
+  // Native 4k: the full 2.0 model and Seedance 2.5, never 2.0 mini/fast.
+  video({ model: "bytedance/seedance-2.5/text-to-video", prompt: "hi", resolution: "4k" });
+  // @ts-expect-error: 2.0 mini/fast have no native 4k
   video({ model: "bytedance/seedance-2.0-mini/text-to-video", prompt: "hi", resolution: "4k" });
-  // @ts-expect-error — Wan 3.0-prime is UPPER-case; plain Wan 3.0 is not
-  video({ model: "alibaba/wan-3.0-prime/text-to-video", prompt: "hi", resolution: "1080p" });
+  // @ts-expect-error: Wan 3.0-prime spells its tiers lower-case, like Wan 3.0
+  video({ model: "alibaba/wan-3.0-prime/text-to-video", prompt: "hi", resolution: "1080P" });
   // @ts-expect-error — the v1.5-pro fast pair renders 720p only
   video({ model: "bytedance/seedance-v1.5-pro/text-to-video-fast", prompt: "hi", resolution: "480p" });
 }

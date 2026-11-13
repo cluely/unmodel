@@ -1,26 +1,27 @@
 // Hand-maintained — Atlas Cloud is not in models.dev (`data/models-dev.json` carries 184
 // providers and none of them is Atlas), so this file is the catalog. Refresh from
-//   https://api.atlascloud.ai/api/v1/models                     (the keyless catalog — 473 rows)
+//   https://api.atlascloud.ai/api/v1/models                     (the keyless catalog — 608 rows)
 //   https://static.atlascloud.ai/model/schema/<id-with-dashes>.json  (one OpenAPI 3.0.0 per model)
 //   https://www.atlascloud.ai/docs/models/video                  (route, auth, polling)
 //   https://www.atlascloud.ai/models/<id>                        (the model page: pricing prose)
-// Verified 2026-08-26. `bun run audit:atlascloud` diffs the live catalog against
+//   https://www.atlascloud.ai/models/<id>/llms.txt               (the same page as markdown, schema included)
+// Verified 2026-11-12. `bun run audit:atlascloud` diffs the live catalog against
 // `data/atlascloud/curation.json` and reports gone / new / changed; it never writes.
 //
-// SCOPE, recorded: unmodel serves Atlas's VIDEO route only. Atlas is a 473-model aggregator
+// SCOPE, recorded: unmodel serves Atlas's VIDEO route only. Atlas is a 608-model aggregator
 // whose three media routes (`/model/generateVideo`, `/generateImage`, `/generateAudio`) cover
 // nine unmodel verbs, and whose `type`/`categories` taxonomy is lossy enough that it can never
-// be the source of a verb map — seven `suno/chirp-*` MUSIC models are filed under
+// be the source of a verb map — three `suno/chirp-*` MUSIC models are filed under
 // TEXT-TO-SPEECH, `tripo-h3.1/image-to-3d` is `type: "Image"`, and `bytedance/seed-asr-2.0`
 // (speech-to-text) is `type: "Audio"`. So the roster is curated by hand in
 // `data/atlascloud/curation.json`, which also records what is deliberately OUT and why.
 //
-// PRICING IS DELIBERATELY ABSENT FROM EVERY ROW. See ./pricing.ts: Atlas's catalog carries a
-// bare `base_price` string with no unit on 335 of its 337 media rows, 152 of 473 rows carry a
-// promotional `discount` (40–90%) so `price.actual` is not the list price, and the model page
-// itself renders three mutually exclusive sentences from three templates in the same bundle
-// ("… per run", "… /second", "… per 1000 tokens"). A `cost` here would be a guess dressed as a
-// catalog fact. The figures Atlas publishes are transcribed in ./pricing.ts as what they are:
+// PRICING IS DELIBERATELY ABSENT FROM EVERY ROW. See ./pricing.ts: no curated catalog row
+// carries a price `unit` (389 of Atlas's 470 media rows are a bare `base_price` string), 223 of
+// 608 rows carry a promotional `discount` (30–95%) so `price.actual` is not the list price, and
+// the model page's single "per second" figure is contradicted by Atlas's own billing page
+// ("Varies by model, duration, and resolution") and its own cost test (one model at $0.134/s for
+// a 480p draft, $0.596/s at 1080p). A `cost` here would be a guess dressed as a catalog fact. The figures Atlas publishes are transcribed in ./pricing.ts as what they are:
 // unit-less listed numbers with the caveat attached.
 //
 // RELEASE DATES ARE ABSENT for the same reason: Atlas's catalog publishes no release date, and
@@ -31,7 +32,7 @@
 //
 // DOC ROT ALREADY VISIBLE, recorded so a reader does not mistake it for our error:
 //   - the video API reference's own sample body sends `"model": "kling-v2.0"`, an id that is
-//     not in the live catalog (Atlas serves `kwaivgi/kling-v3.0-*` and `kwaivgi/kling-v2.6-*`);
+//     not in the live catalog (none of its 38 `kwaivgi/kling-*` ids is that one);
 //   - `google/veo3.1/reference-to-video`'s schema lists `aspect_ratio` in `x-order-properties`
 //     but declares no such property, and carries a stray top-level `seed` object beside
 //     `properties`;

@@ -1,8 +1,9 @@
 /**
  * Vidu Text to Video — POST https://api.vidu.com/ent/v2/text2video
  *
- * Wire notes (verified against https://platform.vidu.com/docs/text-to-video on
- * 2026-08-13):
+ * Wire notes (verified 2026-08-13; the route is documented per family at
+ * https://platform.vidu.com/docs/api-reference/video-models/{vidu-q3,vidu-q2,vidu-q1}/text-to-video,
+ * and facts re-read there cite their own date):
  * - `model` and `prompt` are required; everything else is optional with a
  *   documented default. Only four models have an arm here — the img2video-only
  *   variants (`viduq3-pro-fast`, the q2-pro/turbo family, `viduq1-classic`,

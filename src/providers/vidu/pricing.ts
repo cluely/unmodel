@@ -1,8 +1,16 @@
 /**
  * Vidu pricing — https://platform.vidu.com/docs/pricing (verified 2026-08-13).
+ * As of 2026-11-12 that page renders "Document not found | Vidu API"; its last
+ * capture is
+ * http://web.archive.org/web/20260920044216/https://platform.vidu.com/docs/pricing.
  *
- * Credits cost $0.005 each and the pricing page prints a USD column beside
- * every credit rate, so the tables below are transcriptions, not conversions.
+ * Credits cost $0.005 each ("Credits are available for $0.005 each, with
+ * applicable sales tax based on your location." — same capture) and that page
+ * printed a USD column beside every credit rate, so the tables below are
+ * transcriptions, not conversions. The live
+ * https://platform.vidu.com/docs/overview/pricing (2026-11-12) prices credits
+ * in RMB only ("| Credits | Price (RMB) |", "| 1 | 0.03125 |"), so it is not
+ * the source of these USD tables (see ./models.ts).
  *
  * What is estimable from a request:
  *   - Q3 models: a flat per-second rate by (route × resolution), with an

@@ -251,6 +251,63 @@ describe("vidu.videoFromReference", () => {
     }
   });
 
+  test("a saved subject's kind is on the server, so viduq2-pro bounds it by the total of 6", () => {
+    const image = (name: string) => ({ name, images: [`https://example.com/${name}.png`] });
+    const saved = (name: string) => ({ name, server_id: `subject-${name}` });
+    const four = ["a", "b", "c", "d"].map(image);
+    // The documented maximum: 4 image subjects + 2 saved (video) subjects.
+    const ok = videoFromReference.safe({
+      model: "viduq2-pro",
+      prompt: "hi",
+      subjects: [...four, saved("v1"), saved("v2")],
+      duration: 5,
+    });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) expect(ok.warnings).toEqual([]);
+
+    const seven = videoFromReference.safe({
+      model: "viduq2-pro",
+      prompt: "hi",
+      subjects: [...four, saved("v1"), saved("v2"), saved("v3")],
+      duration: 5,
+    });
+    expect(seven.ok).toBe(false);
+    if (!seven.ok) {
+      const issue = seven.errors.find((e) => e.code === "invalid_shape");
+      expect(issue?.path).toEqual(["subjects"]);
+      expect(issue?.meta?.max).toBe(6);
+    }
+
+    // Off viduq2-pro a saved subject can only be an image subject: 8 is over the 7.
+    const q3 = videoFromReference.safe({
+      model: "viduq3",
+      prompt: "hi",
+      subjects: [...["a", "b", "c", "d", "e", "f", "g"].map(image), saved("s")],
+    });
+    expect(q3.ok).toBe(false);
+    if (!q3.ok) {
+      const issue = q3.errors.find((e) => e.code === "invalid_shape");
+      expect(issue?.path).toEqual(["subjects"]);
+      expect(issue?.meta?.max).toBe(7);
+    }
+  });
+
+  test("video subjects are viduq2-pro-only", () => {
+    for (const model of ["viduq3", "viduq3-drama"] as const) {
+      const r = videoFromReference.safe({
+        model,
+        prompt: "hi",
+        subjects: [{ name: "v", videos: ["https://example.com/clip.mp4"] }],
+      });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) {
+        const issue = r.errors.find((e) => e.code === "unsupported_param");
+        expect(issue?.path, model).toEqual(["subjects", 0, "videos"]);
+        expect(issue?.meta?.supported, model).toEqual(["viduq2-pro"]);
+      }
+    }
+  });
+
   test("viduq4-preview has no subjects form", () => {
     const r = videoFromReference.safe({
       model: "viduq4-preview",

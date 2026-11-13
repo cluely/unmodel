@@ -1,8 +1,8 @@
 /**
  * Vidu Reference to Image — POST https://api.vidu.com/ent/v2/reference2image
  *
- * Wire notes (verified against https://platform.vidu.com/docs/reference-to-image
- * on 2026-08-13):
+ * Wire notes (verified 2026-08-13; the route is now documented at
+ * https://platform.vidu.com/docs/api-reference/image-generation):
  * - `model` and `prompt` are required; `prompt` caps at 2000 characters here
  *   (the video routes allow 5000).
  * - `images` is optional on `viduq2` (0–7 references — with none it is plain

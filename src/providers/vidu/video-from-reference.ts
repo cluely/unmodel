@@ -1,8 +1,9 @@
 /**
  * Vidu Reference to Video — POST https://api.vidu.com/ent/v2/reference2video
  *
- * Wire notes (verified against https://platform.vidu.com/docs/reference-to-video
- * on 2026-08-13):
+ * Wire notes (verified 2026-08-13; the route is documented per family at
+ * https://platform.vidu.com/docs/api-reference/video-models/{vidu-q4-preview,vidu-q3,vidu-q2,vidu-q1}/reference-to-video,
+ * and facts re-read there cite their own date):
  * - The page documents TWO request-body forms on this one endpoint:
  *   "Subjects-Reference to Video" (a `subjects` list of named entries —
  *   temporary `images` / `videos`, a saved `server_id`, or a bare `name` text
@@ -336,16 +337,34 @@ function checkReferences(
 /**
  * The subjects caps quoted on {@link SUBJECTS_MODELS}: 7 image or text
  * subjects (4 on viduq2-pro), up to 3 images each, and — on viduq2-pro, the
- * one model with video subjects — at most 2 video subjects, 1 of them
+ * one model with video subjects ("Note 1: Only the viduq2-pro Reference to
+ * Video model supports video subjects.") — at most 2 video subjects, 1 of them
  * temporary, each one clip ("Supports uploading at most one 5-second video").
+ *
+ * A saved subject is referenced by id alone — "The subject ID obtained through
+ * the Create Subject API. Note: When server_id is not passed, it is treated as
+ * a temporary subject and will not be saved by the system." (the `server_id`
+ * row; the request example passes `{ "name": "2", "server_id": "321321" }`) —
+ * so whether it is an image or a video subject lives on the server. On
+ * viduq2-pro such a subject counts toward neither cap, only toward their sum
+ * of 6; on every other model it can only be an image subject and counts
+ * toward the 7. Same page as {@link SUBJECTS_MODELS}, re-read 2026-11-13.
  */
 function checkSubjects(model: string, subjects: readonly ViduSubject[], ctx: PipelineContext): void {
-  const videoSubjects =
-    model === VIDEO_REFERENCE_MODEL
-      ? subjects.filter((subject) => Array.isArray(subject.videos) && subject.videos.length > 0)
-      : [];
-  const max = model === VIDEO_REFERENCE_MODEL ? 4 : 7;
-  const imageOrText = subjects.length - videoSubjects.length;
+  const q2Pro = model === VIDEO_REFERENCE_MODEL;
+  const videoSubjects = q2Pro
+    ? subjects.filter((subject) => Array.isArray(subject.videos) && subject.videos.length > 0)
+    : [];
+  const saved = q2Pro
+    ? subjects.filter(
+        (subject) =>
+          subject.server_id !== undefined &&
+          !(Array.isArray(subject.images) && subject.images.length > 0) &&
+          !(Array.isArray(subject.videos) && subject.videos.length > 0),
+      )
+    : [];
+  const max = q2Pro ? 4 : 7;
+  const imageOrText = subjects.length - videoSubjects.length - saved.length;
   if (imageOrText > max) {
     ctx.report({
       code: "invalid_shape",
@@ -353,6 +372,17 @@ function checkSubjects(model: string, subjects: readonly ViduSubject[], ctx: Pip
       model,
       message: `\`subjects\` accepts at most ${max} image or text subjects for "${model}"; got ${imageOrText}.`,
       meta: { max, count: imageOrText, source: SOURCE },
+    });
+  }
+  // Without saved subjects the two caps already bound the total; with them,
+  // the total is the only bound a kind-less subject has.
+  if (saved.length > 0 && subjects.length > 6) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["subjects"],
+      model,
+      message: `\`subjects\` accepts at most 6 subjects for "${model}" (4 image or text + 2 video); got ${subjects.length}.`,
+      meta: { max: 6, count: subjects.length, source: SOURCE },
     });
   }
   const temporary = videoSubjects.filter((subject) => subject.server_id === undefined).length;
@@ -376,7 +406,16 @@ function checkSubjects(model: string, subjects: readonly ViduSubject[], ctx: Pip
       });
     }
     const clips = subject.videos;
-    if (model === VIDEO_REFERENCE_MODEL && Array.isArray(clips) && clips.length > 1) {
+    if (!q2Pro && Array.isArray(clips) && clips.length > 0) {
+      ctx.report({
+        code: "unsupported_param",
+        path: ["subjects", index, "videos"],
+        model,
+        message: `video subjects (\`subjects[].videos\`) are only supported by "${VIDEO_REFERENCE_MODEL}"; got "${model}".`,
+        meta: { source: SOURCE, supported: [VIDEO_REFERENCE_MODEL] },
+      });
+    }
+    if (q2Pro && Array.isArray(clips) && clips.length > 1) {
       ctx.report({
         code: "invalid_shape",
         path: ["subjects", index, "videos"],

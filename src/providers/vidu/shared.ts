@@ -1,9 +1,12 @@
 /**
  * Shared wire pieces for the Vidu API (`https://api.vidu.com/ent/v2/...`),
- * transcribed from the request-body tables on
- * https://platform.vidu.com/docs/text-to-video,
- * /docs/image-to-video, /docs/start-end-to-video, /docs/reference-to-video and
- * /docs/reference-to-image — verified 2026-08-13.
+ * transcribed from the request-body tables of each route — verified
+ * 2026-08-13. Vidu now documents every video route once per model family,
+ * https://platform.vidu.com/docs/api-reference/video-models/{vidu-q4-preview,vidu-q3,vidu-q2,vidu-q1}/
+ * {text-to-video,image-to-video,start-end-to-video,reference-to-video}, and
+ * reference2image at https://platform.vidu.com/docs/api-reference/image-generation;
+ * the single-page /docs/<route> addresses render "Document not found" as of
+ * 2026-11-12. Facts re-read on the new pages cite their own URL and date.
  *
  * Every route is asynchronous: it responds with a task object
  * (`{ task_id, state, ... }`); polling the Get Generation API or handling

@@ -10,9 +10,17 @@
 // Verified 2026-08-13 unless a row cites its own date.
 //
 // Pricing conversion (documented so the arithmetic never rots unexplained):
-// "Credits are available for $0.005 each" (docs/pricing), and the same page
-// prints the USD column next to every credit rate — so USD = credits × 0.005
-// and the numbers below are the page's own USD figures, not derived ones.
+// the USD figures below are transcribed from https://platform.vidu.com/docs/pricing
+// (verified 2026-08-13), which printed a USD column next to every credit rate
+// ("Credits are available for $0.005 each, with applicable sales tax based on
+// your location.") — so USD = credits × 0.005 and the numbers are that page's
+// own USD figures, not derived ones. As of 2026-11-12 the page renders
+// "Document not found | Vidu API"; its last capture is
+// http://web.archive.org/web/20260920044216/https://platform.vidu.com/docs/pricing.
+// Its live replacement, https://platform.vidu.com/docs/overview/pricing
+// (2026-11-12), prices credits in RMB only ("| Credits | Price (RMB) |",
+// "| 1 | 0.03125 |"), and 0.03125 RMB is not $0.005, so no live page states
+// the USD figures below.
 //
 // Which rate a model carries here:
 //   - Q3 models bill a flat per-second rate that varies by resolution; the
@@ -55,7 +63,14 @@ export const provider = {
   doc: "https://platform.vidu.com/docs",
 } as const satisfies ProviderInfo;
 
-/** USD per Vidu credit — https://platform.vidu.com/docs/pricing */
+/**
+ * USD per Vidu credit — "Credits are available for $0.005 each, with
+ * applicable sales tax based on your location." on the retired
+ * https://platform.vidu.com/docs/pricing, last captured at
+ * http://web.archive.org/web/20260920044216/https://platform.vidu.com/docs/pricing
+ * (read 2026-11-12). The live pricing page quotes credits in RMB only; see the
+ * header.
+ */
 export const CREDIT_USD = 0.005;
 
 export const videoModels = {

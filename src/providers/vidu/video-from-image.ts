@@ -1,8 +1,9 @@
 /**
  * Vidu Image to Video — POST https://api.vidu.com/ent/v2/img2video
  *
- * Wire notes (verified against https://platform.vidu.com/docs/image-to-video on
- * 2026-08-13):
+ * Wire notes (verified 2026-08-13; the route is documented per family at
+ * https://platform.vidu.com/docs/api-reference/video-models/{vidu-q4-preview,vidu-q3,vidu-q2,vidu-q1}/image-to-video,
+ * and facts re-read there cite their own date):
  * - `model` and `images` are required; `images` takes exactly ONE start-frame
  *   image (public URL or base64 data URI, png/jpeg/jpg/webp, ≤50MB, aspect
  *   ratio between 1:4 and 4:1; the whole POST body must stay under 20MB).

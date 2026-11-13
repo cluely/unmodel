@@ -646,6 +646,39 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     expect(result.errors[0]!.message).toContain("5 seconds");
   });
 
+  test("vidu's `4k` is viduq4-preview's wire `4K` on both of its routes, and no other model's", () => {
+    const url = "https://example.com/a.png";
+    for (const [role, route] of [
+      ["first", "img2video"],
+      ["reference", "reference2video"],
+    ] as const) {
+      const result = video.safe({
+        model: "vidu/viduq4-preview",
+        prompt: "a fox",
+        image: { url, role },
+        resolution: "4k",
+      });
+      expect(result.ok, role).toBe(true);
+      if (!result.ok) continue;
+      expect(result.warnings, role).toEqual([]);
+      const params = result.params as unknown as { resolution: string; request: { url: string } };
+      expect(params.request.url).toBe(`https://api.vidu.com/ent/v2/${route}`);
+      expect(params.resolution, role).toBe("4K");
+    }
+
+    const q3 = video.safe({
+      model: "vidu/viduq3",
+      prompt: "a fox",
+      image: { url, role: "reference" },
+      resolution: "4k",
+    } as never);
+    expect(q3.ok).toBe(false);
+    if (q3.ok) return;
+    // The endpoint answers, naming viduq3's own tiers.
+    expect(q3.errors[0]!.path).toEqual(["resolution"]);
+    expect(q3.errors[0]!.message).toContain('"viduq3" on reference2video');
+  });
+
   test("a model this snapshot has not seen keeps every route open", () => {
     // It has already drawn `unknown_model`; gating it against tables that do
     // not describe it would be a guess dressed as a check.

@@ -47,10 +47,10 @@ export const MODELS = [
  * now says so instead of the adapter saying it after the fact. The models that
  * also serve text2video or reference2video keep the five-value enum.
  *
- * `resolutions` is `720p`/`1080p` almost everywhere: `360p`, `540p` and
- * viduq4-preview's `2K` / `4K` are real wire values this row does not name
- * (they live on `providerOptions.vidu.resolution`), and the q1 pair renders
- * 1080p only.
+ * `resolutions` is `720p`/`1080p` almost everywhere: viduq4-preview adds `4k`
+ * (its wire `4K`); `360p`, `540p` and q4's `2K` are real wire values no row
+ * names (they live on `providerOptions.vidu.resolution`); and the q1 pair
+ * renders 1080p only.
  *
  * The three extras are the fields present on **all three** routes. `style`,
  * `audio_type`, `voice_id`, `is_rec`, `auto_subjects` and `subjects` are
@@ -74,6 +74,16 @@ export const SHAPED_ROW = {
   extras: VIDU_EXTRAS,
 } as const;
 
+/**
+ * viduq4-preview: `SHAPED_ROW` plus `4k`, which both of its arms (img2video,
+ * reference2video) accept as `4K`.
+ */
+export const Q4_ROW = {
+  resolutions: ["720p", "1080p", "4k"],
+  ratios: VIDU_ASPECT_RATIOS,
+  extras: VIDU_EXTRAS,
+} as const;
+
 /** An image-only model: `img2video` has no `aspect_ratio` field at all. */
 export const FRAME_ONLY_ROW = {
   resolutions: TIERS,
@@ -82,7 +92,7 @@ export const FRAME_ONLY_ROW = {
 } as const;
 
 export const VIDU_VIDEO_MODEL_PARAMS = {
-  "viduq4-preview": SHAPED_ROW,
+  "viduq4-preview": Q4_ROW,
   "viduq3-pro": SHAPED_ROW,
   "viduq3-pro-fast": FRAME_ONLY_ROW,
   "viduq3-turbo": SHAPED_ROW,

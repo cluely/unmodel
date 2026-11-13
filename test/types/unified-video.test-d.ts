@@ -247,6 +247,10 @@ function sizeNarrowingTests(): void {
   video({ model: "openai/sora-2-pro", prompt: "hi", resolution: "1440p" });
   // @ts-expect-error — Veo 2 denies `parameters.resolution` outright.
   video({ model: "google/veo-2.0-generate-001", prompt: "hi", resolution: "720p" });
+  // `4k` is viduq4-preview's wire `4K`; no other Vidu model renders it.
+  video({ model: "vidu/viduq4-preview", prompt: "hi", image: { url: "https://e.com/a.png" }, resolution: "4k" });
+  // @ts-expect-error — viduq3 tops out at 1080p.
+  video({ model: "vidu/viduq3", prompt: "hi", image: { url: "https://e.com/a.png", role: "reference" }, resolution: "4k" });
 
   video({ model: "kling/kling-v3", prompt: "hi", aspectRatio: "16:9" });
   // @ts-expect-error — Kling's three shapes do not include 4:3.

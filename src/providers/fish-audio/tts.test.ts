@@ -110,6 +110,21 @@ describe("fish-audio.tts model gate", () => {
     expect(TTS_MODEL_IDS).toContain(DEFAULT_TTS_MODEL);
   });
 
+  // "S1 is deprecated and will be retired on December 31, 2026" — still served.
+  test("s1 validates with a deprecated_model warning", () => {
+    expect(models.s1.status).toBe("deprecated");
+    const r = tts.safe({ model: "s1", text: "hi" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+  });
+
+  test("s2-pro and drama-3 are open-weights; s1 and the S2.1 rows are not", () => {
+    expect(models["s2-pro"].openWeights).toBe(true);
+    expect(models["drama-3"].openWeights).toBe(true);
+    expect(models.s1.openWeights).toBe(false);
+    expect(models["s2.1-pro"].openWeights).toBe(false);
+  });
+
   test("S2_MODEL_IDS is the s2 family and excludes s1", () => {
     expect([...S2_MODEL_IDS].sort()).toEqual(["s2-pro", "s2.1-pro", "s2.1-pro-free"]);
   });
@@ -192,6 +207,78 @@ describe("fish-audio.tts enums", () => {
   });
 });
 
+describe("fish-audio.tts language", () => {
+  test("a BCP-47 tag, `auto` and the empty string pass", () => {
+    for (const language of ["es-MX", "zh_CN", "auto", ""]) {
+      const r = tts.safe({ text: "It costs $5.", language });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("a tag over 35 characters or with other characters is rejected", () => {
+    expect(safeUnchecked({ text: "hi", language: "a".repeat(36) }).ok).toBe(false);
+    const r = safeUnchecked({ text: "hi", language: "en US" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["language"]);
+  });
+});
+
+describe("fish-audio.tts pronunciation_dictionary", () => {
+  const ref = { id: "brand-names", version: "v3" };
+  const phoneme = { items: [{ key: "Nguyen", value: "w i n" }] };
+  const alias = { items: [{ key: "NASA", value: "N A S A", type: "alias" as const }] };
+  function textWith(pronunciation_dictionary: unknown): Record<string, unknown> {
+    return { text: "hi", pronunciation_dictionary };
+  }
+
+  test("references and inline dictionaries each validate clean", () => {
+    for (const pronunciation_dictionary of [[ref], [phoneme, alias]]) {
+      const r = tts.safe({ text: "hi", pronunciation_dictionary });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("mixing the two forms is rejected naming the rule", () => {
+    const r = safeUnchecked(textWith([ref, phoneme]));
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      const err = r.errors.find((e) => e.path[0] === "pronunciation_dictionary");
+      expect(err?.code).toBe("invalid_shape");
+      expect(err?.message).toContain("mutually exclusive");
+    }
+  });
+
+  test("schema bounds: at most 3 dictionaries, ref pattern, item lengths, closed objects", () => {
+    expect(safeUnchecked(textWith([ref, ref, ref, ref])).ok).toBe(false);
+    expect(safeUnchecked(textWith([{ id: "a b", version: "1" }])).ok).toBe(false);
+    expect(safeUnchecked(textWith([{ id: "a" }])).ok).toBe(false);
+    expect(safeUnchecked(textWith([{ items: [{ key: "", value: "x" }] }])).ok).toBe(false);
+    expect(safeUnchecked(textWith([{ items: [{ key: "k", value: "v", type: "regex" }] }])).ok).toBe(
+      false,
+    );
+    expect(safeUnchecked(textWith([{ items: [{ key: "k", value: "v", lang: "en" }] }])).ok).toBe(
+      false,
+    );
+  });
+
+  test("a phoneme-only inline dictionary keeps the byte-count estimate", () => {
+    const text = "a".repeat(1000);
+    const r = tts.safe({ model: "s2.1-pro", text, pronunciation_dictionary: [phoneme] });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo((1000 * 15) / 1_000_000, 12);
+  });
+
+  test("an alias entry or a reference leaves the request without an estimate", () => {
+    for (const pronunciation_dictionary of [[alias], [ref]]) {
+      const r = tts.safe({ model: "s2.1-pro", text: "a".repeat(1000), pronunciation_dictionary });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+    }
+  });
+});
+
 describe("fish-audio.tts codec pairing", () => {
   test("mp3_bitrate against a non-mp3 format warns as ignored", () => {
     const r = tts.safe({ text: "hi", format: "wav", mp3_bitrate: 128 });
@@ -249,10 +336,10 @@ describe("fish-audio.tts multi-speaker and loudness gates", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
-  test("a single reference_id string on s1 passes", () => {
+  test("a single reference_id string on s1 passes (warning only that s1 is deprecated)", () => {
     const r = tts.safe({ model: "s1", text: "hi", reference_id: "a" });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings).toEqual([]);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 
   test("prosody.normalize_loudness on s1 warns as a silent no-op", () => {

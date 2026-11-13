@@ -10,6 +10,5 @@
     "texts": ["Hello there.", "General Kenobi."]
   },
   "url": "https://api.fish.audio/model",
-  "headers": {},
-  "issues": [{ "code": "invalid_shape", "path": ["visibility"] }]
+  "headers": {}
 }

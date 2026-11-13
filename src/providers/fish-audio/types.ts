@@ -50,6 +50,10 @@ export type {
   FishAudioOpusBitrate,
   FishAudioProsodyControl,
   FishAudioReferenceAudio,
+  FishAudioPronunciationDictionaryRef,
+  FishAudioInlinePronunciationDictionary,
+  FishAudioPronunciationItem,
+  FishAudioPronunciationItemType,
 } from "./tts";
 
 export type { CreateModelParams, FishAudioVisibility } from "./voice-clone";

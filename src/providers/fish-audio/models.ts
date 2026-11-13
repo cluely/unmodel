@@ -59,8 +59,9 @@ const ttsModels = {
     limit: { context: 0 },
     cost: { perMillionCharacters: PER_MILLION_UTF8_BYTES },
   },
-  // "Free development variant of s2.1-pro … Identical model quality to paid
-  // version"; "Free to use under fair-use limits" with no TTFA/DPA guarantees.
+  // "Use **`s2.1-pro-free`** for testing, prototyping, development, and
+  // smaller businesses. It is the same model as S2.1-Pro at $0, but it does
+  // not guarantee TTFA or DPA" (choosing-a-model, 2026-11-12).
   "s2.1-pro-free": {
     id: "s2.1-pro-free",
     name: "Fish Audio S2.1-Pro Free",
@@ -71,11 +72,17 @@ const ttsModels = {
     openWeights: false,
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
-    // "$0.00 / M UTF-8 bytes" — pricing-and-rate-limits.
+    // "| `s2.1-pro-free` | $0.00 / M UTF-8 bytes |" — pricing-and-rate-limits,
+    // 2026-11-12. The changelog bounds it: "the same model at no cost through
+    // November 30, 2026". No later rate is published; re-verify on 2026-12-01
+    // and omit `cost` if the page turns non-zero without a number.
     cost: { perMillionCharacters: 0 },
   },
-  // "Previous-generation S2 model" — 80+ languages, "100ms time-to-first-audio",
-  // multi-speaker support.
+  // "Previous-generation S2 TTS model" — "Multi-speaker dialogue support",
+  // "80+ languages", "100ms time-to-first-audio", "Open-source"
+  // (models-overview, 2026-11-12). Open weights: the changelog calls it "fully
+  // open-source", and https://huggingface.co/fishaudio/s2-pro publishes the
+  // checkpoint under the "Fish Audio Research License".
   "s2-pro": {
     id: "s2-pro",
     name: "Fish Audio S2-Pro",
@@ -83,7 +90,7 @@ const ttsModels = {
     attachment: false,
     reasoning: false,
     toolCall: false,
-    openWeights: false,
+    openWeights: true,
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
     cost: { perMillionCharacters: PER_MILLION_UTF8_BYTES },
@@ -111,9 +118,13 @@ const ttsModels = {
     // PT / 08:00 UTC)"; the catalog carries the list price.
     cost: { perMillionCharacters: 50 },
   },
-  // "Legacy model available for existing integrations" — 13 languages,
-  // "4 billion parameters", emotional control via `(parenthesis)` syntax.
-  // Still an accepted `model` header value, so not marked deprecated.
+  // 13 languages, "4 billion parameters", emotional control via
+  // `(parenthesis)` syntax. "**Fish Audio S1** (deprecated) - High-quality
+  // voice generation" (models-overview, 2026-11-12). Deprecations: "S1 is
+  // deprecated and will be retired on December 31, 2026. After that date,
+  // requests that specify `s1` are served by `s2.1-pro`." Until then it is a
+  // value of the `model` header enum and is served as itself, so the row
+  // stays, warns as deprecated, and keeps its single-speaker gate.
   s1: {
     id: "s1",
     name: "Fish Audio S1",
@@ -122,6 +133,7 @@ const ttsModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
+    status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
     cost: { perMillionCharacters: PER_MILLION_UTF8_BYTES },

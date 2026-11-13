@@ -10,6 +10,7 @@ export {
   OPUS_BITRATES,
   PROSODY_SPEED_MIN,
   PROSODY_SPEED_MAX,
+  PRONUNCIATION_ITEM_TYPES,
 } from "./tts";
 export type {
   TtsBody,
@@ -19,6 +20,10 @@ export type {
   FishAudioOpusBitrate,
   FishAudioProsodyControl,
   FishAudioReferenceAudio,
+  FishAudioPronunciationDictionaryRef,
+  FishAudioInlinePronunciationDictionary,
+  FishAudioPronunciationItem,
+  FishAudioPronunciationItemType,
 } from "./tts";
 
 export {

@@ -3,8 +3,8 @@
  *
  * Wire reference:
  * https://docs.fish.audio/api-reference/endpoint/model/create-model and the
- * OpenAPI schema at github.com/fishaudio/docs `api-reference/openapi.json`
- * (`paths./model.post`), verified 2026-08-22.
+ * OpenAPI schema at https://docs.fish.audio/api-reference/openapi.json
+ * (`paths./model.post`), verified 2026-11-12.
  *
  * - The OpenAPI spec advertises four content types (JSON, urlencoded,
  *   multipart, msgpack) over one schema, but `voices` and `cover_image` are
@@ -18,10 +18,10 @@
  * - There is no model field. unmodel addresses the route through the
  *   synthetic catalog id `fast` — the documented train mode — so a future
  *   full-training mode is a new id, not a param.
- * - VISIBILITY FOOTGUN: `visibility` defaults to **"public"**, which "will be
- *   shown in the discovery page". An omitted `visibility` is therefore
- *   flagged with a warning naming the default; `"private"` keeps the cloned
- *   voice to the creator. `cover_image` is "required if the model is public".
+ * - VISIBILITY: `visibility` defaults to "private", and "Public requests are
+ *   downgraded to private; use the web publish flow to publish publicly."
+ *   `cover_image` is still described as "required if the model is public",
+ *   so an explicit "public" without one stays refused.
  * - The response is the created model document; its `_id` is the voice id —
  *   the value `reference_id` takes on POST /v1/tts.
  * - Pricing: docs.fish.audio publishes no rate for model creation, so there
@@ -54,7 +54,7 @@ export const VOICE_CLONE_MAX_VOICES = 20;
 /** `texts` parallels `voices` and shares its cap. */
 export const VOICE_CLONE_MAX_TEXTS = 20;
 
-/** Documented `visibility` values; default "public" (see module JSDoc). */
+/** Documented `visibility` values; default "private" (see module JSDoc). */
 export const VOICE_CLONE_VISIBILITIES = ["public", "unlist", "private"] as const;
 export type FishAudioVisibility = (typeof VOICE_CLONE_VISIBILITIES)[number];
 
@@ -83,9 +83,18 @@ export interface CreateModelParams {
    */
   texts?: string | string[] | null;
   /**
-   * "public will be shown in the discovery page, unlist allows anyone with
-   * the link to access, private only be visible to the creator." DEFAULTS TO
-   * "public" — omitting it is flagged (see module JSDoc).
+   * "Signatures from /v1/voice-design candidates, one per voice in the same
+   * order. When every uploaded voice verifies, the model is stamped
+   * source=voice_design; an invalid signature rejects the request." Single
+   * string or array; each is its own form part. Where a signature comes from
+   * is not documented: the `VoiceDesignCandidate` response schema carries no
+   * signature field (openapi.json, 2026-11-12).
+   */
+  voice_design_signatures?: string | string[] | null;
+  /**
+   * "Public requests are downgraded to private; use the web publish flow to
+   * publish publicly. Unlist allows anyone with the link to access, while
+   * private is visible only to the creator." Default "private".
    */
   visibility?: FishAudioVisibility;
   /** "Model description". */
@@ -122,6 +131,7 @@ const schema = z.looseObject({
     ])
     .nullable()
     .optional(),
+  voice_design_signatures: z.union([z.string(), z.array(z.string())]).nullable().optional(),
   visibility: z.string().optional(),
   description: z.string().nullable().optional(),
   cover_image: z.instanceof(Blob).nullable().optional(),
@@ -152,36 +162,14 @@ function checkVisibilityEnum(
 }
 
 /**
- * The public-by-default footgun: an omitted `visibility` publishes the cloned
- * voice on the discovery page. The request is fulfilled, so this is a
- * warning; setting any explicit value silences it.
+ * "Model cover image, this is required if the model is public." Only an
+ * explicit "public" can trip this — the default is "private".
  */
-function checkVisibilityOmitted(
-  params: CreateModelParams,
-  _info: ModelInfo | undefined,
-  ctx: PipelineContext,
-): void {
-  if (params.visibility !== undefined) return;
-  ctx.report({
-    code: "invalid_shape",
-    severity: "warning",
-    path: ["visibility"],
-    message:
-      '`visibility` is omitted and defaults to "public", which lists the cloned voice on the public discovery page (and makes `cover_image` required). Set `"private"` to keep it visible only to you.',
-    meta: { default: "public", source: CREATE_MODEL_DOCS },
-  });
-}
-
-/** "Model cover image, this is required if the model is public." */
 function checkCoverImageIfPublic(
   params: CreateModelParams,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
-  // Only an EXPLICIT "public" errors here: an omitted `visibility` is implicit
-  // public, but it already carries the omission warning above, and erroring a
-  // minimal request on a field the schema marks optional would out-strict the
-  // wire.
   if (params.visibility !== "public" || params.cover_image != null) return;
   ctx.report({
     code: "invalid_shape",
@@ -199,13 +187,14 @@ function checkCoverImageIfPublic(
 // ---------------------------------------------------------------------------
 
 /** Array-capable fields the form appends item-by-item under the same key. */
-const REPEATED_FIELDS = new Set<string>(["voices", "texts", "tags"]);
+const REPEATED_FIELDS = new Set<string>(["voices", "texts", "voice_design_signatures", "tags"]);
 
 /**
  * Builds the multipart/form-data body for `POST /model` from validated
  * params. Each `voices` recording is its own `voices` part (a single Blob is
- * one part); `texts` and `tags` likewise repeat per item; `cover_image` is a
- * file part; booleans are stringified. Null/undefined fields are omitted.
+ * one part); `texts`, `voice_design_signatures` and `tags` likewise repeat
+ * per item; `cover_image` is a file part; booleans are stringified.
+ * Null/undefined fields are omitted.
  *
  * ```ts
  * const params = fishAudio.voiceClone({
@@ -240,8 +229,9 @@ export function voiceCloneToFormData(params: CreateModelParams): FormData {
 }
 
 /**
- * SDK targets for `fish-audio.voiceClone`. `fish-audio-sdk` (JS) takes
- * wire-shaped params, so the single `"fish-audio"` formatter is the identity.
+ * SDK targets for `fish-audio.voiceClone`. The JavaScript SDK (`fish-audio`
+ * on npm; `fish-audio-sdk` is the Python package) takes wire-shaped params,
+ * so the single `"fish-audio"` formatter is the identity.
  * Type alias, not interface: an interface has no implicit index signature and
  * cannot satisfy `SdkFormatters`.
  */
@@ -274,7 +264,7 @@ const validator = createValidator<
   // catalog-keyed machinery stays coherent (see module JSDoc).
   modelId: () => VOICE_CLONE_MODEL_ID,
   catalog: models,
-  checks: [checkVisibilityEnum, checkVisibilityOmitted, checkCoverImageIfPublic],
+  checks: [checkVisibilityEnum, checkCoverImageIfPublic],
   finalize,
 });
 
@@ -286,9 +276,9 @@ const validator = createValidator<
  * the validated params (including the `voices` Blobs), and the raw-fetch path
  * is `.request.url` + `voiceCloneToFormData(validated)` as the body — never
  * `JSON.stringify`. The response document's `_id` is the created voice's id,
- * usable as `reference_id` on POST /v1/tts. Watch `visibility`: it defaults
- * to "public" (see module JSDoc). Auth is your job: add an
- * `authorization: Bearer …` header.
+ * usable as `reference_id` on POST /v1/tts. `visibility` defaults to
+ * "private", and a "public" request is downgraded to private (see module
+ * JSDoc). Auth is your job: add an `authorization: Bearer …` header.
  */
 export const voiceClone = validator as unknown as {
   <T extends CreateModelParams>(

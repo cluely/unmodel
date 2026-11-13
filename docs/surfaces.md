@@ -791,7 +791,7 @@ await fetch(request.request.url, {
 });
 ```
 
-The vocabulary carries the facts an invoice would otherwise teach. Fish Audio defaults new voices to **public**, so `visibility` is a param and the validator warns when you omit it. MiniMax requires a caller-chosen `voiceId` everyone else refuses. Per-sample `transcript`s exist wherever a wire field does. You get back the created voice's id, which `unmodel/tts` takes as `voice`. Managing stored voices is out of scope. Speechify's clone route (a consent challenge/response ceremony) is wire-only at `unmodel/speechify`.
+The vocabulary carries the facts an invoice would otherwise teach. `visibility` is a param because who can see a new voice is a privacy fact: Fish Audio and Cartesia both default to private, and Fish Audio downgrades a `"public"` request to private. MiniMax requires a caller-chosen `voiceId` everyone else refuses. Per-sample `transcript`s exist wherever a wire field does. You get back the created voice's id, which `unmodel/tts` takes as `voice`. Managing stored voices is out of scope. Speechify's clone route (a consent challenge/response ceremony) is wire-only at `unmodel/speechify`.
 
 ## Voice design
 

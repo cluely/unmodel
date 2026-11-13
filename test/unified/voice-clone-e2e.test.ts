@@ -158,7 +158,7 @@ describe("the category's own rules", () => {
     expect(issue?.message).toContain("`texts` array parallels `voices`");
   });
 
-  test("fish: omitting visibility surfaces the public-by-default warning", () => {
+  test("fish: omitting visibility is clean (the wire defaults to private)", () => {
     const result = voiceClone.safe({
       model: "fish-audio/fast",
       operation: "clone",
@@ -167,8 +167,7 @@ describe("the category's own rules", () => {
     } as never);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const warning = result.warnings.find((w) => w.path?.[0] === "visibility");
-    expect(warning?.message).toContain('"public"');
+    expect(result.warnings).toEqual([]);
   });
 
   test('cartesia: visibility "unlisted" is refused naming the two access values', () => {

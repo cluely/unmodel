@@ -142,7 +142,7 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * already at 343.5 after the 2026-11-12 wave — the Gemini 4 rules and the
    * 3.8 TTS / 3.5 Transcribe / Lyria 3.5 / Nano Banana 2.1 hand rows — and
    * the review fixes on top add `google.stt`'s gemini-3.5-transcribe duration
-   * warning, the function-declaration-scoped `tools` gate in `google.chat`,
+   * warning, the `tools` gate in `google.chat` (SUPPORTED_BUILTIN_TOOLS where a page documents the built-ins, functionDeclarations elsewhere),
    * and their quoted provenance (comments ship in the unminified chunks). No
    * new module joined the graph. (313.8 after the Lyria music surface,
    * 2026-08-24.)

@@ -1081,24 +1081,60 @@ describe("the 2026-11 hand rows on google.chat", () => {
       "invalid_enum_value",
     );
     expect(issue.path).toEqual(["generationConfig", "imageConfig", "imageSize"]);
-    // Grounding with Google Search carries a supported badge, and the image
-    // guide's REST sample sends `"tools": [{"google_search": {}}]` here.
+    // "Grounding with Google Search" is supported; function calling carries a
+    // not-supported badge (SUPPORTED_BUILTIN_TOOLS).
     const grounded = expectOk(
       chat.safe({ model: "gemini-nano-banana-2.1", contents: HELLO, tools: [{ googleSearch: {} }] }),
     );
-    expect(grounded.warnings.some((w) => w.code === "unsupported_capability")).toBe(false);
-    // Function calling carries a not-supported badge. (A runtime refusal only:
-    // the per-model type arms derive from the generated catalog, so a hand row
-    // keeps the wide arm.)
-    const declared = expectError(
+    expect(grounded.warnings).toEqual([]);
+    const fn = expectError(
       chat.safe({
         model: "gemini-nano-banana-2.1",
         contents: HELLO,
+        // @ts-expect-error — the `tools` arm admits only `googleSearch` here.
         tools: [{ functionDeclarations: [{ name: "f" }] }],
       }),
       "unsupported_capability",
     );
-    expect(declared.path).toEqual(["tools", 0, "functionDeclarations"]);
+    expect(fn.path).toEqual(["tools", 0, "functionDeclarations"]);
+    expect(fn.message).toContain("does not support function calling");
+  });
+
+  test("a toolCall: false row with no SUPPORTED_BUILTIN_TOOLS entry keeps its built-in tools", () => {
+    // No page-backed row for gemini-2.5-flash-image, so only function calling
+    // (what models.dev's tool_call flag means) is refused.
+    const grounded = chat.safe({ model: "gemini-2.5-flash-image", contents: HELLO, tools: [{ googleSearch: {} }] });
+    expect(grounded.ok).toBe(true);
+    if (grounded.ok) expect(grounded.warnings.some((w) => w.code === "unsupported_capability")).toBe(false);
+    const fn = expectError(
+      chat.safe({
+        model: "gemini-2.5-flash-image",
+        contents: HELLO,
+        // @ts-expect-error — functionDeclarations is the one tool the arm withholds.
+        tools: [{ functionDeclarations: [{ name: "f" }] }],
+      }),
+      "unsupported_capability",
+    );
+    expect(fn.path).toEqual(["tools", 0, "functionDeclarations"]);
+  });
+
+  test("Google Search grounding passes on the generated image rows whose pages support it", () => {
+    for (const model of ["gemini-3-pro-image", "gemini-3.1-flash-image"] as const) {
+      expect(models[model].toolCall).toBe(false);
+      const result = expectOk(chat.safe({ model, contents: HELLO, tools: [{ googleSearch: {} }] }));
+      expect(result.warnings).toEqual([]);
+      const issue = expectError(
+        chat.safe({
+          model,
+          contents: HELLO,
+          // @ts-expect-error — "URL context" is not supported on its page.
+          tools: [{ urlContext: {} }],
+        }),
+        "unsupported_capability",
+      );
+      expect(issue.path).toEqual(["tools", 0, "urlContext"]);
+      expect(issue.meta?.source).toBe(`https://ai.google.dev/gemini-api/docs/models/${model}`);
+    }
   });
 
   test("gemini-robotics-er-2-preview validates and prices", () => {

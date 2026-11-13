@@ -239,29 +239,40 @@ function imageTokensFor(modelId: string, level?: string): number {
   return GEMINI_IMAGE_TOKENS;
 }
 
+/**
+ * Built-in tools a model page marks supported although function calling is
+ * not (the catalog's `toolCall: false`). Every other tool key stays refused on
+ * these ids, `functionDeclarations` included, and a `toolCall: false` id with
+ * no row here refuses `tools` outright. The per-model `tools` arm below reads
+ * this table too.
+ *
+ * Each page (https://ai.google.dev/gemini-api/docs/models/<id>, retrieved
+ * 2026-11-13) lists "Grounding with Google Search" as supported and "Function
+ * calling", "Code execution" and "URL context" as not supported.
+ * `gemini-2.5-flash-image` has no row on purpose: its page lists "Grounding
+ * with Google Search" as not supported.
+ */
+const SUPPORTED_BUILTIN_TOOLS = {
+  "gemini-nano-banana-2.1": {
+    tools: ["googleSearch"],
+    source: "https://ai.google.dev/gemini-api/docs/models/gemini-nano-banana-2.1",
+  },
+  "gemini-3-pro-image": {
+    tools: ["googleSearch"],
+    source: "https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image",
+  },
+  "gemini-3.1-flash-image": {
+    tools: ["googleSearch"],
+    source: "https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image",
+  },
+} as const satisfies Record<string, { tools: readonly (keyof GoogleTool)[]; source: string }>;
+
 function checkCapabilities(params: GenerateContentBody, info: ModelInfo | undefined, ctx: PipelineContext): void {
   if (info === undefined) return;
   const model = params.model;
 
-  // `toolCall` is models.dev's `tool_call` — FUNCTION calling, nothing wider —
-  // so only a tool carrying `functionDeclarations` is refused. The built-in
-  // tools (googleSearch, urlContext, codeExecution, …) have no catalog flag:
-  // the Nano Banana model pages badge Function calling not-supported beside a
-  // supported "Grounding with Google Search", and the image-generation guide's
-  // REST sample posts `"tools": [{"google_search": {}}]` to
-  // `gemini-nano-banana-2.1:generateContent` (both retrieved 2026-11-13).
-  if (!info.toolCall) {
-    for (const [i, tool] of (params.tools ?? []).entries()) {
-      if (tool.functionDeclarations === undefined) continue;
-      ctx.report({
-        code: "unsupported_capability",
-        path: ["tools", i, "functionDeclarations"],
-        model,
-        message:
-          `"${model}" does not support function calling; remove \`tools[${i}].functionDeclarations\` ` +
-          `(built-in tools such as googleSearch are not covered by this check).`,
-      });
-    }
+  if (params.tools !== undefined && params.tools.length > 0 && !info.toolCall) {
+    checkBuiltinTools(params.tools, model, ctx);
   }
 
   const config = params.generationConfig;
@@ -284,6 +295,51 @@ function checkCapabilities(params: GenerateContentBody, info: ModelInfo | undefi
   // temperature / thinkingConfig / maxOutputTokens: the same three catalog-flag
   // rules `google.tts` runs, from ./tts-checks.
   checkGenerationCapabilities(config, ["generationConfig"], model, info, ctx);
+}
+
+/**
+ * `tools` on a model without function calling. An id with no
+ * SUPPORTED_BUILTIN_TOOLS row refuses `tools` outright; an id with one refuses
+ * every tool key its page does not mark supported, one issue per key.
+ */
+function checkBuiltinTools(tools: readonly GoogleTool[], model: string, ctx: PipelineContext): void {
+  const id = stripModelsPrefix(model);
+  if (!Object.hasOwn(SUPPORTED_BUILTIN_TOOLS, id)) {
+    // No page-backed row: `toolCall` is models.dev's `tool_call` — FUNCTION
+    // calling, nothing wider — so only a tool carrying `functionDeclarations`
+    // is refused. The built-in tools (googleSearch, urlContext, codeExecution,
+    // …) have no catalog flag, and refusing them without a page that says so
+    // would refuse requests the API may fulfil.
+    tools.forEach((tool, i) => {
+      if (tool.functionDeclarations === undefined) return;
+      ctx.report({
+        code: "unsupported_capability",
+        path: ["tools", i, "functionDeclarations"],
+        model,
+        message:
+          `"${model}" does not support function calling; remove \`tools[${i}].functionDeclarations\` ` +
+          `(built-in tools such as googleSearch are not covered by this check).`,
+      });
+    });
+    return;
+  }
+  const rule = SUPPORTED_BUILTIN_TOOLS[id as keyof typeof SUPPORTED_BUILTIN_TOOLS];
+  const supported: readonly string[] = rule.tools;
+  tools.forEach((tool, i) => {
+    for (const [key, value] of Object.entries(tool)) {
+      if (value === undefined || supported.includes(key)) continue;
+      ctx.report({
+        code: "unsupported_capability",
+        path: ["tools", i, key],
+        model,
+        message:
+          key === "functionDeclarations"
+            ? `"${model}" does not support function calling; remove \`tools[${i}].functionDeclarations\`. Of the tools, it supports only ${supported.join(", ")}.`
+            : `\`tools[${i}].${key}\` is not supported by "${model}"; of the tools, it supports only ${supported.join(", ")}.`,
+        meta: { supported: [...supported], source: rule.source },
+      });
+    }
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -940,9 +996,10 @@ const validator = createValidator<GenerateContentBody, unknown>({
 // `{}`), while four run-time checks narrow it per model: checkResponseModalities,
 // checkImageGeneration, checkSpeechGeneration and checkCapabilities. Every arm
 // below restates one of those four, keyed off the same source the check reads —
-// the generated catalog, or GEMINI_IMAGE_MODEL_RULES — so no hand-copied id
-// list exists to drift, and `chat.test.ts` pins the resolved unions so a
-// `bun run codegen` that flips a flag surfaces as a test diff.
+// the generated catalog, GEMINI_IMAGE_MODEL_RULES, or SUPPORTED_BUILTIN_TOOLS —
+// so no hand-copied id list exists to drift, and `chat.test.ts` pins the
+// resolved unions so a `bun run codegen` that flips a flag surfaces as a test
+// diff.
 //
 // `generationConfig` is a NESTED object, which is the mechanically interesting
 // part: the refusals have to be spelled `?: never` rather than omitted, or the
@@ -1022,17 +1079,32 @@ type NarrowedGenerationConfig<M extends string> = Omit<
   speechConfig?: "AUDIO" extends OutputModalityOf<M> ? GoogleSpeechConfig : never;
 };
 
+type BuiltinTools = typeof SUPPORTED_BUILTIN_TOOLS;
+
+/** One `tools[]` entry that may set only the keys `K`; every other tool key is `?: never`. */
+type BuiltinToolEntry<K extends keyof GoogleTool> = Pick<GoogleTool, K> & {
+  [P in Exclude<keyof GoogleTool, K>]?: never;
+};
+
+/**
+ * `tools` for one model: the built-in tools its page admits when it has a
+ * SUPPORTED_BUILTIN_TOOLS row; on any other `toolCall: false` row every tool
+ * but `functionDeclarations` (the runtime gate's exact scope); and the wide
+ * array everywhere else.
+ */
+type ToolsOf<M extends string> = M extends keyof BuiltinTools
+  ? Array<BuiltinToolEntry<BuiltinTools[M]["tools"][number]>>
+  : M extends ModelsWhereFalse<GoogleCatalog, "toolCall">
+    ? Array<Omit<GoogleTool, "functionDeclarations"> & { functionDeclarations?: never }>
+    : GenerateContentBody["tools"];
+
 /** `GenerateContentBody` narrowed to one model id. */
 export type GenerateContentArm<M extends string> = Omit<
   GenerateContentBody,
   "model" | "tools" | "generationConfig"
 > & {
   model: M;
-  // A `toolCall: false` model keeps its built-in tools (googleSearch, …) and
-  // loses only `functionDeclarations` — the runtime gate's exact scope.
-  tools?: M extends ModelsWhereFalse<GoogleCatalog, "toolCall">
-    ? Array<Omit<GoogleTool, "functionDeclarations"> & { functionDeclarations?: never }>
-    : GenerateContentBody["tools"];
+  tools?: ToolsOf<M>;
   generationConfig?: NarrowedGenerationConfig<M>;
 };
 

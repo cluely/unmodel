@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { checkChat, createGoogleVertex, generateContentUrl } from "./index";
+import { checkChat, createGoogleVertex, generateContentUrl, models } from "./index";
+import { availability } from "../../catalog/availability/google-vertex.gen";
 import { TranslationUnavailableError } from "../../core/translate/errors";
 import type { ValidateResult } from "../../core/result";
 
@@ -202,6 +203,12 @@ describe("google-vertex catalog wiring", () => {
 
 describe("google-vertex new Gemini rows (models.dev 2026-11-12)", () => {
   // Every rate is the generated google-vertex row: input / output per 1M.
+  // argon/carbon: the promotional rate "through November 30, 2026" ("50%
+  // credits back on net spend"); the page lists $4.00 / $20.00 / $0.20
+  // "Starting December 1, 2026". Source:
+  // https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing,
+  // retrieved 2026-11-12. The first codegen:refresh after that date is
+  // expected to move these two rows.
   const rows = [
     ["gemini-4-argon", 2, 10],
     ["gemini-4-carbon", 2, 10],
@@ -373,6 +380,195 @@ describe("google-vertex gemini-nano-banana-2.1 sampling (Vertex model page, 2026
     });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings).toEqual([]);
+  });
+});
+
+describe("google-vertex built-in tools on models without function calling (Vertex model pages, 2026-11-13)", () => {
+  const imageModels = ["gemini-nano-banana-2.1", "gemini-3-pro-image", "gemini-3.1-flash-image"] as const;
+
+  test("each allowlisted id is a `toolCall: false` row, so the allowlist is what opens googleSearch", () => {
+    for (const model of imageModels) expect(models[model].toolCall).toBe(false);
+  });
+
+  test.each([...imageModels])("%s accepts Google Search grounding with no warnings", (model) => {
+    const r = vertex.chat.safe({ model, contents: textContents("hi"), tools: [{ googleSearch: {} }] });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("image search rides the same googleSearch tool on gemini-nano-banana-2.1", () => {
+    // "Grounding Google Search, Image search Supported"; the grounding guide
+    // spells it `googleSearch.searchTypes.imageSearch`.
+    const r = vertex.chat.safe({
+      model: "gemini-nano-banana-2.1",
+      contents: textContents("hi"),
+      tools: [{ googleSearch: { searchTypes: { imageSearch: {}, webSearch: {} } } }],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("functionDeclarations is still refused, at its own path, naming what the model offers", () => {
+    const r = vertex.chat.safe({
+      model: "gemini-nano-banana-2.1",
+      contents: textContents("hi"),
+      tools: [{ googleSearch: {} }, { functionDeclarations: [{ name: "f" }] }],
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => [e.code, e.path])).toEqual([
+        ["unsupported_capability", ["tools", 1, "functionDeclarations"]],
+      ]);
+      expect(r.errors[0]?.message).toContain("does not support function calling");
+      expect(r.errors[0]?.message).toContain("supports only googleSearch");
+      expect(r.errors[0]?.meta?.source).toBe(
+        "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/nano-banana-2-1",
+      );
+    }
+  });
+
+  test("codeExecution and urlContext stay refused (\"Not supported\" on the page)", () => {
+    const r = vertex.chat.safe({
+      model: "gemini-nano-banana-2.1",
+      contents: textContents("hi"),
+      tools: [{ codeExecution: {} }, { urlContext: {} }],
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.map((e) => e.path)).toEqual([
+        ["tools", 0, "codeExecution"],
+        ["tools", 1, "urlContext"],
+      ]);
+    }
+  });
+
+  test("gemini-2.5-flash-image keeps refusing googleSearch (\"Grounding Not supported\")", () => {
+    const r = vertex.chat.safe({
+      model: "gemini-2.5-flash-image",
+      contents: textContents("hi"),
+      tools: [{ googleSearch: {} }],
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["tools"]);
+  });
+});
+
+describe("google-vertex Gemini 4 long decode (Vertex guides, 2026-11-13)", () => {
+  const gemini4 = ["gemini-4-argon", "gemini-4-carbon", "gemini-4-hydrogen"] as const;
+  const guide = (model: string) =>
+    `https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/guides/${model}#long-decodes`;
+
+  test.each([131072, 256000])("gemini-4-carbon accepts the guide's maxOutputTokens %d with one warning", (value) => {
+    const r = vertex.chat.safe({
+      model: "gemini-4-carbon",
+      contents: textContents("hi"),
+      generationConfig: { maxOutputTokens: value },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => [w.code, w.severity, w.path])).toEqual([
+        ["over_output_limit", "warning", ["generationConfig", "maxOutputTokens"]],
+      ]);
+      expect(r.warnings[0]?.message).toContain("v1beta1");
+      expect(r.warnings[0]?.message).toContain('.toSdk("google-vertex")');
+      expect(r.warnings[0]?.meta?.source).toBe(guide("gemini-4-carbon"));
+    }
+  });
+
+  test.each([...gemini4])("%s takes 1,048,576 and refuses 1,048,577", (model) => {
+    const ceiling = vertex.chat.safe({
+      model,
+      contents: textContents("hi"),
+      generationConfig: { maxOutputTokens: 1_048_576 },
+    });
+    expect(ceiling.ok).toBe(true);
+    const over = vertex.chat.safe({
+      model,
+      contents: textContents("hi"),
+      generationConfig: { maxOutputTokens: 1_048_577 },
+    });
+    expect(over.ok).toBe(false);
+    if (!over.ok) {
+      expect(over.errors.map((e) => e.code)).toEqual(["over_output_limit"]);
+      expect(over.errors[0]?.meta?.limit).toBe(1_048_576);
+      expect(over.errors[0]?.meta?.source).toBe(guide(model));
+    }
+  });
+
+  test("within one segment there is no warning", () => {
+    const r = vertex.chat.safe({
+      model: "gemini-4-hydrogen",
+      contents: textContents("hi"),
+      generationConfig: { maxOutputTokens: 65_536 },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+});
+
+describe("google-vertex.chat non-Gemini route signpost", () => {
+  test.each([
+    ["xai/grok-4.7", "endpoints/openapi/chat/completions"],
+    ["zai-org/glm-5.2-maas", "endpoints/openapi/chat/completions"],
+    ["mistral-medium-3", "publishers/mistralai/models/{model}:rawPredict"],
+    ["claude-opus-5-5@default", "publishers/anthropic/models/{model}:rawPredict"],
+  ])("%s warns and names the route Vertex serves it on", (model, route) => {
+    const r = vertex.chat.safe({ model, contents: textContents("hi") });
+    // A WARNING, not an error: the substrate never refuses what the API might
+    // fulfil, and the request is still built exactly as written.
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const signpost = r.warnings.find((w) => w.code === "unsupported_capability");
+    expect(signpost?.path).toEqual(["model"]);
+    expect(signpost?.meta?.route).toContain(route);
+    expect(signpost?.message).toContain("unmodel has no validator for that route");
+    expect(r.params.request.url).toContain(`/publishers/google/models/${model}:generateContent`);
+  });
+
+  test("a Gemini row gets no signpost", () => {
+    const r = vertex.chat.safe({ model: "gemini-3.5-flash-lite", contents: textContents("hi") });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("the warned rows are exactly the non-default surfaces and the deny list the package records", async () => {
+    // SURFACE_RULES (scripts/availability.ts) labels the `-maas` and `xai/`
+    // rows `google-vertex.chatMaas` in the generated availability data; the
+    // google-vertex deny refs (data/availability-overrides.json) cover the
+    // Claude and Mistral rows. Drift in either direction is a silent hole.
+    const overrides = (await Bun.file(
+      new URL("../../../data/availability-overrides.json", import.meta.url).pathname,
+    ).json()) as { deny: [string, string][] };
+    const denied = overrides.deny
+      .map(([, target]) => target)
+      .filter((ref) => ref.startsWith("google-vertex:"))
+      .map((ref) => {
+        const body = ref
+          .slice("google-vertex:".length)
+          .split("*")
+          .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+          .join(".*");
+        return new RegExp(`^${body}$`);
+      });
+    const ids = Object.keys(models);
+    const offSurface = ids.filter((id) => {
+      const self = (availability as Record<string, Record<string, unknown>>)[id]?.["google-vertex"];
+      return typeof self === "object" && self !== null && "endpoint" in self;
+    });
+    const expected = [...new Set([...offSurface, ...ids.filter((id) => denied.some((re) => re.test(id)))])].sort();
+    const warned = ids
+      .filter((id) => {
+        const r = vertex.chat.safe({ model: id, contents: textContents("hi") });
+        return r.warnings.some((w) => w.code === "unsupported_capability" && w.path[0] === "model");
+      })
+      .sort();
+    expect(warned).toEqual(expected);
+    // And the chatMaas rows are the ones pointed at the OpenAI-compatible route.
+    for (const id of offSurface) {
+      const r = vertex.chat.safe({ model: id, contents: textContents("hi") });
+      const signpost = r.warnings.find((w) => w.code === "unsupported_capability" && w.path[0] === "model");
+      expect(String(signpost?.meta?.route), id).toContain("endpoints/openapi/chat/completions");
+    }
   });
 });
 

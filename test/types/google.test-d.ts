@@ -827,6 +827,21 @@ function googlePerModelTypeTests(): void {
   // flag, and Nano Banana 2 documents Search grounding beside a not-supported
   // Function calling badge.
   chat({ model: "gemini-3.1-flash-image", contents: HI, tools: [{ googleSearch: {} }] });
+  // `toolCall: false` too, but SUPPORTED_BUILTIN_TOOLS admits Google Search
+  // grounding: that one tool shape, and no other key beside it.
+  chat({ model: "gemini-3-pro-image", contents: HI, tools: [{ googleSearch: {} }] });
+  chat({
+    model: "gemini-3-pro-image",
+    contents: HI,
+    // @ts-expect-error — function calling is "not supported" on its page.
+    tools: [{ functionDeclarations: [{ name: "f" }] }],
+  });
+  chat({
+    model: "gemini-3-pro-image",
+    contents: HI,
+    // @ts-expect-error — code execution is "not supported" on its page.
+    tools: [{ googleSearch: {}, codeExecution: {} }],
+  });
 
   // --- everything that must NOT break --------------------------------------
   // A reasoning model still takes thinkingConfig, and a normal model still

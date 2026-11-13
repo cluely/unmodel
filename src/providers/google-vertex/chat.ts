@@ -13,7 +13,7 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCostUSD } from "../../core/cost";
 import { estimateToolDefinitionTokens, PER_MESSAGE_TOKEN_OVERHEAD } from "../../core/tokens";
 import { GEMINI_IMAGE_TOKENS } from "../google";
-import type { GoogleContent, GoogleThinkingLevel } from "../google/wire";
+import type { GoogleContent, GoogleThinkingLevel, GoogleTool } from "../google/wire";
 import { models } from "../../catalog/google-vertex.gen";
 import { createToApi } from "../../core/translate/retarget";
 import { targetValidationFor } from "../../retarget/target-constraints";
@@ -61,8 +61,10 @@ export type VertexGenerateContentSdkParams<T extends VertexGenerateContentBody> 
 // are deliberately NOT applied here: the two surfaces differ where both were
 // read (a lone `thinkingBudget` on Gemini 4 is an API warning there and a 400
 // here), and unproven facts stay out.
-// checkCapabilities is duplicated from google/chat.ts (private
-// there; see the schema note in ./wire.ts).
+// checkCapabilities runs the same catalog-flag rules as google/chat.ts's
+// (private there; see the schema note in ./wire.ts) but is not a copy of it:
+// its tool and output bounds read the Vertex tables below, and its
+// temperature rule defers to the per-model sampling tables.
 // ---------------------------------------------------------------------------
 
 type MediaKind = "image" | "audio" | "video" | "pdf";
@@ -95,12 +97,7 @@ function checkCapabilities(
   const model = params.model;
 
   if (params.tools !== undefined && params.tools.length > 0 && !info.toolCall) {
-    ctx.report({
-      code: "unsupported_capability",
-      path: ["tools"],
-      model,
-      message: `"${model}" does not support tool/function calling; remove \`tools\`.`,
-    });
+    checkBuiltinTools(params.tools, model, ctx);
   }
 
   const config = params.generationConfig;
@@ -143,6 +140,18 @@ function checkCapabilities(
     });
   }
 
+  const id = stripModelPath(model);
+  if (Object.hasOwn(GEMINI_4_LONG_DECODE_GUIDES, id)) {
+    checkLongDecodeOutput(
+      config.maxOutputTokens,
+      info.limit.output,
+      model,
+      GEMINI_4_LONG_DECODE_GUIDES[id as keyof typeof GEMINI_4_LONG_DECODE_GUIDES],
+      ctx,
+    );
+    return;
+  }
+
   const outputLimit = info.limit.output;
   if (
     config.maxOutputTokens !== undefined &&
@@ -158,6 +167,78 @@ function checkCapabilities(
       meta: { limit: outputLimit, value: config.maxOutputTokens },
     });
   }
+}
+
+/**
+ * `tools` on a model without function calling. An id with no
+ * SUPPORTED_BUILTIN_TOOLS row refuses `tools` outright; an id with one refuses
+ * every tool key its page does not mark Supported, one issue per key.
+ */
+function checkBuiltinTools(tools: readonly GoogleTool[], model: string, ctx: PipelineContext): void {
+  const id = stripModelPath(model);
+  if (!Object.hasOwn(SUPPORTED_BUILTIN_TOOLS, id)) {
+    ctx.report({
+      code: "unsupported_capability",
+      path: ["tools"],
+      model,
+      message: `"${model}" does not support tool/function calling; remove \`tools\`.`,
+    });
+    return;
+  }
+  const rule = SUPPORTED_BUILTIN_TOOLS[id as keyof typeof SUPPORTED_BUILTIN_TOOLS];
+  const supported: readonly string[] = rule.tools;
+  tools.forEach((tool, i) => {
+    for (const [key, value] of Object.entries(tool)) {
+      if (value === undefined || supported.includes(key)) continue;
+      ctx.report({
+        code: "unsupported_capability",
+        path: ["tools", i, key],
+        model,
+        message:
+          key === "functionDeclarations"
+            ? `"${model}" does not support function calling; remove \`tools[${i}].functionDeclarations\`. Of the tools, it supports only ${supported.join(", ")}.`
+            : `\`tools[${i}].${key}\` is not supported by "${model}" on Vertex; of the tools, it supports only ${supported.join(", ")}.`,
+        meta: { supported: [...supported], source: rule.source },
+      });
+    }
+  });
+}
+
+/**
+ * Gemini 4 `maxOutputTokens`: an error only above the long-decode ceiling, and
+ * a warning between one segment's output and that ceiling, because the URL
+ * this module builds is /v1/ and long decode is v1beta1-only.
+ */
+function checkLongDecodeOutput(
+  maxOutputTokens: number | undefined,
+  segmentLimit: number | undefined,
+  model: string,
+  source: string,
+  ctx: PipelineContext,
+): void {
+  if (maxOutputTokens === undefined) return;
+  if (maxOutputTokens > GEMINI_4_MAX_OUTPUT_TOKENS) {
+    ctx.report({
+      code: "over_output_limit",
+      path: ["generationConfig", "maxOutputTokens"],
+      model,
+      message: `\`generationConfig.maxOutputTokens\` (${maxOutputTokens}) exceeds the ${GEMINI_4_MAX_OUTPUT_TOKENS}-token long-decode ceiling of "${model}"; Vertex returns HTTP 400 above it.`,
+      meta: { limit: GEMINI_4_MAX_OUTPUT_TOKENS, value: maxOutputTokens, source },
+    });
+    return;
+  }
+  if (segmentLimit === undefined || segmentLimit <= 0 || maxOutputTokens <= segmentLimit) return;
+  ctx.report({
+    code: "over_output_limit",
+    severity: "warning",
+    path: ["generationConfig", "maxOutputTokens"],
+    model,
+    message:
+      `\`generationConfig.maxOutputTokens\` (${maxOutputTokens}) is above the catalog's ${segmentLimit}-token per-segment output for "${model}". ` +
+      `Output past one segment takes long decode, and \`continuation_token\` is supported only in the v1beta1 API, while \`.request.url\` targets /v1/. ` +
+      `Send it through \`.toSdk("google-vertex")\` (the Gen AI SDK uses v1beta1 by default) or a /v1beta1/ REST path. The request is accepted as written.`,
+    meta: { limit: segmentLimit, ceiling: GEMINI_4_MAX_OUTPUT_TOKENS, value: maxOutputTokens, source },
+  });
 }
 
 /** Media kind vs the model's input modalities (e.g. video sent to a text+image model). */
@@ -192,6 +273,64 @@ function checkMediaModalities(
 
 /** The Vertex Gemini model pages, one per id: `${VERTEX_GEMINI_DOCS_URL}/<page>`. */
 const VERTEX_GEMINI_DOCS_URL = "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini";
+
+/** The Vertex developer guides, one per Gemini 4 id: `${VERTEX_GUIDES_DOCS_URL}/<id>`. */
+const VERTEX_GUIDES_DOCS_URL = "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/guides";
+
+/**
+ * Built-in tools a model page marks Supported although function calling is
+ * not (the catalog's `toolCall: false`). Retrieved 2026-11-13. Every other
+ * tool key stays refused on these ids, `functionDeclarations` included, and a
+ * `toolCall: false` id with no row here refuses `tools` outright.
+ *
+ * - `gemini-nano-banana-2.1` (`/nano-banana-2-1`): "Grounding Google Search,
+ *   Image search Supported"; "Function calling Not supported", "Code
+ *   execution Not supported", "URL context Not supported". Image search is
+ *   not a separate key: the grounding guide enables it as `{ "googleSearch":
+ *   { "searchTypes": { "imageSearch": {}, "webSearch": {} } } }`
+ *   (…/models/grounding/grounding-with-google-search).
+ * - `gemini-3-pro-image` (`/3-pro-image`) and `gemini-3.1-flash-image`
+ *   (`/3-1-flash-image`): "Grounding Google Search Supported"; function
+ *   calling, code execution and URL context "Not supported".
+ *
+ * `gemini-2.5-flash-image` has no row on purpose: its page reads "Grounding
+ * Not supported", like every other tool on it.
+ */
+const SUPPORTED_BUILTIN_TOOLS = {
+  "gemini-nano-banana-2.1": { tools: ["googleSearch"], source: `${VERTEX_GEMINI_DOCS_URL}/nano-banana-2-1` },
+  "gemini-3-pro-image": { tools: ["googleSearch"], source: `${VERTEX_GEMINI_DOCS_URL}/3-pro-image` },
+  "gemini-3.1-flash-image": { tools: ["googleSearch"], source: `${VERTEX_GEMINI_DOCS_URL}/3-1-flash-image` },
+} as const satisfies Record<string, { tools: readonly (keyof GoogleTool)[]; source: string }>;
+
+/**
+ * Gemini 4 long decode: the `maxOutputTokens` ceiling, above the catalog's
+ * per-segment `limit.output` (which stays the figure `estimate()` bills when
+ * no `maxOutputTokens` is sent). Retrieved 2026-11-13.
+ *
+ * - All three model pages: "Maximum output tokens 1,048,576", and "you can
+ *   extend output up to 1,048,576 tokens (minus your input tokens) using long
+ *   decodes".
+ * - All three developer guides (`${VERTEX_GUIDES_DOCS_URL}/gemini-4-<name>`):
+ *   "setting `max_output_tokens` greater than `1,048,576` returns an HTTP
+ *   `400` error." Argon's and Carbon's: "Set `max_output_tokens` greater than
+ *   65,536 (streaming) or 32,768 (non-streaming) up to 1,048,576"; Hydrogen's:
+ *   "set `max_output_tokens` greater than 65,536 (up to 1,048,576) for
+ *   streaming or non-streaming requests." Carbon's guide samples send
+ *   `maxOutputTokens` 131072 (REST, `/v1beta1/…:generateContent`) and 256000
+ *   (Gen AI SDK).
+ * - The catch every model page names: "known issue: `continuation_token` is
+ *   supported only in the `v1beta1` API, which the Google Gen AI SDK uses by
+ *   default". `.request.url` is a /v1/ URL, and what /v1/ does with a value
+ *   past one segment is undocumented, so that range warns and never refuses.
+ */
+const GEMINI_4_MAX_OUTPUT_TOKENS = 1_048_576;
+
+/** The guide that states {@link GEMINI_4_MAX_OUTPUT_TOKENS}, per Gemini 4 id. */
+const GEMINI_4_LONG_DECODE_GUIDES = {
+  "gemini-4-argon": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-argon#long-decodes`,
+  "gemini-4-carbon": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-carbon#long-decodes`,
+  "gemini-4-hydrogen": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-hydrogen#long-decodes`,
+} as const satisfies Record<string, string>;
 
 /**
  * Gemini 4: the thinking levels each page lists, and the rule all three pages
@@ -353,6 +492,90 @@ function checkSamplingParams(
       });
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Substrate signpost — the catalog rows this endpoint does not serve
+//
+// The google-vertex catalog is Vertex's whole model garden as models.dev files
+// it, so `GoogleVertexTextModelId` carries Claude, Mistral, Grok and the
+// `-maas` open models beside Gemini, and each of them validated clean into a
+// `publishers/google/models/{model}:generateContent` URL. Vertex serves them
+// on other routes.
+//
+// A WARNING, not an error, for the reason openai's `checkChatCompletionsRoute`
+// gives: wire-truth (docs/decisions.md §1) says the substrate never refuses
+// what the API might fulfil, and a caller who knows better must be able to
+// send. The table holds only the families the package already records:
+// SURFACE_RULES in scripts/availability.ts (`-maas`, `xai/`, `claude`) and the
+// google-vertex deny list in data/availability-overrides.json (`claude`,
+// `mistral-`, `codestral-`). ./index.test.ts pins it against the generated
+// availability data and that deny list. Pages retrieved 2026-11-13.
+// ---------------------------------------------------------------------------
+
+interface NonGeminiRoute {
+  match: RegExp;
+  /** The route Vertex documents for these ids. */
+  route: string;
+  source: string;
+}
+
+/** `POST …/endpoints/openapi/chat/completions`, as the MaaS page writes it. */
+const OPENAPI_CHAT_ROUTE = "POST …/locations/{location}/endpoints/openapi/chat/completions (OpenAI-compatible)";
+
+const NON_GEMINI_ROUTES: readonly NonGeminiRoute[] = [
+  {
+    // "https://aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/global/endpoints/openapi/chat/completions"
+    match: /-maas$/,
+    route: OPENAPI_CHAT_ROUTE,
+    source: "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/maas/call-open-model-apis",
+  },
+  {
+    // "Grok models use the OpenAI-compatible chat completions and Responses
+    // APIs, so the request path uses `endpoints/openapi`."
+    match: /^xai\//,
+    route: OPENAPI_CHAT_ROUTE,
+    source: "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/partner-models/use-partner-models",
+  },
+  {
+    // The Claude sample: "/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/anthropic/models/${MODEL_ID}:rawPredict",
+    // its body `messages` + `max_tokens` + "anthropic_version": "vertex-2023-10-16".
+    match: /claude/,
+    route: "POST …/publishers/anthropic/models/{model}:rawPredict (Anthropic Messages body)",
+    source: "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/partner-models/use-partner-models",
+  },
+  {
+    // "…/publishers/mistralai/models/MODEL:rawPredict" and ":streamRawPredict"
+    match: /^(?:mistral-|codestral-)/,
+    route: "POST …/publishers/mistralai/models/{model}:rawPredict (or :streamRawPredict)",
+    source: "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/partner-models/mistral",
+  },
+];
+
+/**
+ * Names the route a non-Gemini id is actually served on. Reads the bare id
+ * only, never the catalog row, so an id the catalog does not carry yet
+ * (`xai/grok-5`) is answered too.
+ */
+function checkPartnerRoute(
+  params: VertexGenerateContentBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const id = stripModelPath(params.model);
+  const entry = NON_GEMINI_ROUTES.find((candidate) => candidate.match.test(id));
+  if (entry === undefined) return;
+  ctx.report({
+    code: "unsupported_capability",
+    severity: "warning",
+    path: ["model"],
+    model: params.model,
+    message:
+      `"${params.model}" is not a Gemini model: Vertex serves it on ${entry.route}, not on the ` +
+      `publishers/google/models/{model}:generateContent URL in \`.request.url\`, so this request is expected to fail there. ` +
+      `unmodel has no validator for that route. The request is sent as written all the same.`,
+    meta: { route: entry.route, source: entry.source },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -519,7 +742,13 @@ export function createChat(config: GoogleVertexConfig): GoogleVertexChat {
     schema: vertexGenerateContentSchema,
     modelId: (params) => stripModelPath(params.model),
     catalog: models,
-    checks: [checkCapabilities, checkMediaModalities, checkGemini4Thinking, checkSamplingParams],
+    checks: [
+      checkPartnerRoute,
+      checkCapabilities,
+      checkMediaModalities,
+      checkGemini4Thinking,
+      checkSamplingParams,
+    ],
     estimate,
     promptPath: ["contents"],
     finalize: (params) => {

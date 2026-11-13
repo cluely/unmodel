@@ -441,7 +441,7 @@ describe("every declared speech preset is a value the provider accepts", () => {
     expect(result.errors[0]!.message).toContain("gpt-4o-mini-tts");
 
     // Rime's Coda denies all four Mist-family knobs, so its row has no extras
-    // at all and the message names the six ids that do.
+    // at all and the message names the three ids that do.
     const coda = tts.safe({
       model: "rime/coda",
       text: "hi",

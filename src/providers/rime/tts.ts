@@ -212,11 +212,6 @@ const codaOnlyDenies = {
 export const ttsConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   coda: { deny: codaOnlyDenies },
   mistv3: { deny: { ...phonemizeDeny, ...noTextNormalizationDeny } },
-  // Arcana is sunsetting into Coda, and its reference pages are gone; only the
-  // two gates the model matrix states model-generically are applied.
-  arcana: { deny: { ...phonemizeDeny, ...noTextNormalizationDeny } },
-  arcanav2: { deny: { ...phonemizeDeny, ...noTextNormalizationDeny } },
-  arcanav3: { deny: { ...phonemizeDeny, ...noTextNormalizationDeny } },
 };
 
 // ---------------------------------------------------------------------------

@@ -47,7 +47,7 @@ export type RimeTtsResult = ReturnType<typeof validator<RimeTtsWire>>;
 
 /**
  * The Mist generation whose speed field is `speedAlpha`. Everything else —
- * Coda, Mist v3, the Arcana line — uses `timeScaleFactor`.
+ * Coda and Mist v3 — uses `timeScaleFactor`.
  */
 const SPEED_ALPHA_MODELS: ReadonlySet<string> = new Set(["mistv2", "mist"]);
 

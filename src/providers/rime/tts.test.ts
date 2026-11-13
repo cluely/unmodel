@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { tts, RIME_TTS_URL, MAX_CHARACTERS, MIST_V2_ACCEPT_VALUES } from "./tts";
-import { models, ARCANA_MODEL_IDS } from "./models";
+import { models, RIME_MODEL_IDS } from "./models";
+import { MODELS, RIME_TTS_MODEL_PARAMS } from "./tts-params";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -37,17 +38,15 @@ describe("rime.tts happy path", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
-  test("unknown model warns; the Arcana ids and legacy Mist warn as deprecated", () => {
+  test("unknown model warns; legacy Mist warns as deprecated", () => {
     const unknown = tts.safe({ text: "x", speaker: "v", modelId: "mistv9" });
     expect(unknown.ok).toBe(true);
     if (unknown.ok) expect(unknown.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
 
-    for (const modelId of [...ARCANA_MODEL_IDS, "mist"] as const) {
-      expect(models[modelId].status).toBe("deprecated");
-      const r = tts.safe({ text: "x", speaker: "v", modelId });
-      expect(r.ok).toBe(true);
-      if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("deprecated_model");
-    }
+    expect(models.mist.status).toBe("deprecated");
+    const r = tts.safe({ text: "x", speaker: "v", modelId: "mist" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("deprecated_model");
   });
 
   test("unknown top-level key warns", () => {
@@ -199,7 +198,7 @@ describe("rime.tts sampling rate ranges", () => {
 
 describe("rime.tts per-model gates (doc audit 2026-08-13)", () => {
   test("phonemizeBetweenBrackets is Mist v2 / Mist v1 only", () => {
-    for (const modelId of ["coda", "mistv3", "arcanav3"] as const) {
+    for (const modelId of ["coda", "mistv3"] as const) {
       const r = tts.safe({
         text: "{h'El.o} World",
         speaker: "astra",
@@ -349,14 +348,6 @@ describe("rime cost estimation (Starter list rates)", () => {
     }
   });
 
-  test("Arcana has no published rate of its own — no costUSD", () => {
-    for (const modelId of ARCANA_MODEL_IDS) {
-      const r = tts.safe({ text: "a".repeat(1000), speaker: "astra", modelId });
-      expect(r.ok).toBe(true);
-      if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
-    }
-  });
-
   test("maxCostUSD enforces over_budget", () => {
     const r = tts.safe(
       { text: "a".repeat(1000), speaker: "astra", modelId: "coda" },
@@ -368,6 +359,14 @@ describe("rime cost estimation (Starter list rates)", () => {
 });
 
 describe("rime catalog", () => {
+  test("the catalog, the id list, MODELS and the params table name the same four ids", () => {
+    const ids = ["coda", "mistv3", "mistv2", "mist"] as const;
+    expect(Object.keys(models)).toEqual([...ids]);
+    expect([...RIME_MODEL_IDS]).toEqual([...ids]);
+    expect([...MODELS]).toEqual([...ids]);
+    expect(Object.keys(RIME_TTS_MODEL_PARAMS)).toEqual([...ids]);
+  });
+
   test("every model is TTS-shaped with the 1,000-character cap", () => {
     for (const info of Object.values(models)) {
       expect(info.limit.context).toBe(0);

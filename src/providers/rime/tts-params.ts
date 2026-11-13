@@ -14,7 +14,7 @@ import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/voc
 import { LANGUAGES, MIST_LANGUAGES } from "./models";
 
 /** Every model id the catalog carries — the ref union for `rime/…`. */
-export const MODELS = ["coda", "mistv3", "mistv2", "mist", "arcanav3", "arcanav2", "arcana"] as const;
+export const MODELS = ["coda", "mistv3", "mistv2", "mist"] as const;
 
 export const CODA_DOCS = "https://docs.rime.ai/api-reference/coda/http";
 
@@ -43,7 +43,7 @@ export const FORMAT: AudioFormatSpec = {
  *
  * | | codecs | languages | extras |
  * |---|---|---|---|
- * | `coda`, `arcana*` | mp3, PCM, μ-law, **Opus** | all 16 spellings | *none* |
+ * | `coda` | mp3, PCM, μ-law, **Opus** | all 16 spellings | *none* |
  * | `mistv3` | mp3, PCM, μ-law, **Opus** | the Mist 8 | inline speed, bracket pauses |
  * | `mistv2`, `mist` | mp3, PCM, μ-law | the Mist 8 | those two, plus phonemes and normalization |
  *
@@ -88,8 +88,6 @@ export const MODERN_CODECS = ["mp3", "pcm_s16le", "pcm_mulaw", "opus"] as const;
 
 export const LEGACY_CODECS = ["mp3", "pcm_s16le", "pcm_mulaw"] as const;
 
-export const ARCANA_ROW = { codecs: MODERN_CODECS, languages: LANGUAGES } as const;
-
 export const LEGACY_MIST_ROW = {
   codecs: LEGACY_CODECS,
   languages: MIST_LANGUAGES,
@@ -101,9 +99,6 @@ export const RIME_TTS_MODEL_PARAMS = {
   mistv3: { codecs: MODERN_CODECS, languages: MIST_LANGUAGES, extras: MIST_EXTRAS },
   mistv2: LEGACY_MIST_ROW,
   mist: LEGACY_MIST_ROW,
-  arcanav3: { ...ARCANA_ROW, extras: MIST_EXTRAS },
-  arcanav2: { ...ARCANA_ROW, extras: MIST_EXTRAS },
-  arcana: { ...ARCANA_ROW, extras: MIST_EXTRAS },
 } as const satisfies TtsModelParamTable;
 
 /**

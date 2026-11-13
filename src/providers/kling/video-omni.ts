@@ -3,24 +3,24 @@
  * POST https://api-singapore.klingai.com/omni-video/{model}
  *
  * Exported as `kling.videoOmni`, a sibling of `kling.videoV3` /
- * `kling.videoV3FromImage`. It has no corroborated counterpart: the
- * `POST /v1/videos/*` family documents no omni route, so there is nothing to
- * fall back to — this endpoint is the whole of unmodel's omni-video coverage
- * and it rests entirely on the evidence below.
+ * `kling.videoV3FromImage`, and unmodel's whole omni-video coverage. The
+ * `POST /v1/videos/*` family has an omni route too —
+ * `POST /v1/videos/omni-video`, `model_name` `enum:["kling-video-o1",
+ * "kling-v3-omni"]`
+ * (https://kling.ai/document-api/api/video/3-0-omni/video-omni/legacy,
+ * 2026-11-12) — which is documented but not validated here.
  *
- * EXPERIMENTAL — UNCORROBORATED ROUTE. `POST /omni-video/{model}` was recovered by
- * EVALUATING THE DOC SITE'S OWN JAVASCRIPT BUNDLE (the SPA's navigation/asset
- * chunks under s15-kling.klingai.com/kos/s101/nlav112918/api-doc/assets/), not
- * read off a served documentation page, and nothing independent corroborates
- * it: kling.ai/document-api and app.klingai.com answer HTTP 446 to every
- * non-browser client, and curl with a browser UA returns one byte-identical
- * SPA shell for every path, so no fetch can confirm or refute the route.
- * Searching Kling's own apiReference pages for the same models returns the
- * versioned `POST /v1/videos/*` family instead. Prefer the corroborated
- * `kling.video` (./video.ts) unless you have verified this
- * route against a live account. This export exists so the bundle-derived
- * shape is not lost; it may 404, and the polling route (`GET /tasks`) is
- * unverified too.
+ * EXPERIMENTAL. The route shapes were transcribed from the doc site's own
+ * JavaScript chunks (the SPA under s15-kling.klingai.com/kos/s101/nlav112918/
+ * api-doc/assets/; kling.ai/document-api serves one shell for every path).
+ * The API host corroborates the FAMILY: without credentials,
+ * `POST /text-to-video/kling-4.0`, `/omni-video/kling-4.0` and `GET /tasks`
+ * answer HTTP 401 `{"code":1002,"message":"Authentication error. The current
+ * API does not support AK/SK; ..."}` — the API-key-only new API's gate —
+ * where an unknown path answers 404 (api-singapore.klingai.com, 2026-11-12).
+ * The gate fires for any model segment (`/text-to-video/kling-9.9` answers
+ * 1002 too), so whether a given model's path exists stays doc-only until
+ * verified against a live account.
  *
  * Wire notes (transcribed from those bundle definitions, cross-read against
  * https://kling.ai/document-api/api/video/3-0-omni/video-omni and
@@ -36,8 +36,9 @@
  * - Kling 4.0 / 4.0 Flash (https://kling.ai/document-api/api/video/4-0/video-omni
  *   and /4-0-flash/video-omni, read 2026-11-12) run 3–30s / 3–20s, take
  *   `21:9` and `adaptive` shapes, `audio: "native" | "original"` with no
- *   "off", and up to 7 Elements. 4.0 adds `middle_frame`, `last_frame` and
- *   `voice` entries (`{ type: "voice", voice_id, id }`); Flash has neither.
+ *   "off", and up to 7 Elements. 4.0 takes `middle_frame` keyframes and
+ *   `voice` entries (`{ type: "voice", voice_id, id }`); Flash takes neither,
+ *   nor `last_frame`.
  * - A request that carries a VIDEO input (`base_video` / `feature_video`) is
  *   billed at the "With Video Input" tier, which the cost estimate accounts
  *   for. On Kling 4.0 / 4.0 Flash that tier bills a TOTAL duration (output × 2,
@@ -67,6 +68,7 @@ import {
   KLING_ASPECT_RATIOS,
   KLING_BASE_URL,
   KLING_HEADERS,
+  OMNI_MAX_ELEMENTS,
   checkContents,
   checkPrompt,
   checkSettings,
@@ -116,6 +118,7 @@ export const OMNI_VIDEO_RULES: RouteRules = {
     audio: ["native", "original", "off"],
     multiShot: true,
     contentTypes: OMNI_CONTENT_TYPES,
+    maxElements: OMNI_MAX_ELEMENTS,
   },
   "kling-o1": {
     resolutions: ["720p", "1080p"],
@@ -123,6 +126,7 @@ export const OMNI_VIDEO_RULES: RouteRules = {
     durations: DURATIONS_3_10,
     audio: ["original", "off"],
     contentTypes: OMNI_CONTENT_TYPES,
+    maxElements: OMNI_MAX_ELEMENTS,
   },
   // https://kling.ai/document-api/api/video/4-0/video-omni (2026-11-12):
   // `i({resolutions:["720p","1080p"],defaultResolution:"1080p",maxDuration:30,
@@ -277,7 +281,7 @@ const validator = createValidator<OmniVideoParams, unknown>({
 /**
  * Validates raw wire params for Kling `POST /omni-video/{model}`.
  *
- * EXPERIMENTAL and uncorroborated — see the module header. The returned
+ * EXPERIMENTAL — see the module header. The returned
  * object's enumerable props are the exact fetch JSON body: `model` is
  * STRIPPED into `.request.url`.
  *

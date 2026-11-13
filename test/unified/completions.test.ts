@@ -2709,9 +2709,7 @@ describe("kling.video: per-model parameter completions", () => {
     expect(klingParam("kling-v3", "duration")).toEqual([
       "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
     ]);
-    expect(klingParam("kling-v2-6", "duration")).toEqual([
-      "3", "4", "5", "6", "7", "8", "9", "10",
-    ]);
+    expect(klingParam("kling-v2-6", "duration")).toEqual(["5", "10"]);
     expect(klingParam("kling-v2-5-turbo", "duration")).toEqual(["5", "10"]);
   });
 

@@ -93,9 +93,10 @@ export {
 } from "./fal-target";
 
 // EXPERIMENTAL — the path-addressed family (`POST /text-to-video/{model}`,
-// `/image-to-video/{model}`, `/omni-video/{model}`), recovered from the doc
-// site's JS bundle and corroborated by nothing. Each module carries the full
-// EXPERIMENTAL note; prefer `video` / `videoFromImage` above.
+// `/image-to-video/{model}`, `/omni-video/{model}`), transcribed from the doc
+// site's JS chunks; the API host answers the family, each model's path is
+// doc-only. Each module carries the full EXPERIMENTAL note. Kling 4.0 / 4.0
+// Flash are served here alone.
 export { videoV3, textToVideoV3Url, TEXT_TO_VIDEO_V3_RULES } from "./video-v3";
 export type { TextToVideoV3Params, TextToVideoV3Settings } from "./video-v3";
 
@@ -152,6 +153,7 @@ export {
   SHOT_PROMPT_MAX_CHARS,
   MAX_SHOTS,
   MAX_ELEMENTS,
+  OMNI_MAX_ELEMENTS,
   KLING_4_MAX_ELEMENTS,
   PROMPT_BUDGET_3072,
   KLING_4_PROMPT_BUDGET,
@@ -197,8 +199,9 @@ export type { ImageMode, ImageCostInputs, VideoCostInputs } from "./pricing";
 // Every route responds with an async task object; unmodel validates requests
 // only, so this provider ships no response checker. Motion Control, Elements,
 // Avatar/TTS, lip sync, audio generation, video effects, outpainting, virtual
-// try-on, video extension, `POST /v1/images/multi-image2image` and the
-// account/asset endpoints are documented but not yet validated here.
+// try-on, video extension, `POST /v1/videos/omni-video`,
+// `POST /v1/images/multi-image2image` and the account/asset endpoints are
+// documented but not yet validated here.
 // `models` is the provider-wide view; four ids name both a video and an image
 // model, so it carries a merged dual-kind row for those. Reach for
 // `videoModels` / `imageModels` whenever one kind's rate is what you mean.

@@ -23,8 +23,9 @@
  * The id spellings are the giveaway for which family a ref lands in —
  * `kling-v3` is the body-addressed route and `kling-3.0` the path-addressed
  * one — and that is Kling's own naming, recorded in `./models.ts` along with
- * the provenance of both families. The V3 family is uncorroborated: prefer the
- * `kling-v*` ids unless you have verified those routes against a live account.
+ * the provenance of both families. The V3 family is EXPERIMENTAL — the API
+ * host answers it, but each model's path is doc-only — and it is the only one
+ * serving Kling 4.0 / 4.0 Flash.
  *
  * # `mode` is a resolution with a different name
  *

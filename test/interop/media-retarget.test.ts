@@ -242,16 +242,17 @@ describe("kling.video → fal", () => {
     expect(result.errors[0]?.message).toContain("pro tier only");
   });
 
-  test("refused: a duration Kling serves and fal does not", () => {
-    const result = klingVideo({
-      model_name: "kling-v2-6",
-      prompt: "x",
-      mode: "pro",
-      duration: "8",
-    }).toApiSafe("fal");
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.errors[0]?.message).toContain('"5" or "10"');
+  test("exact: every duration Kling serves on 2.6 is one fal's row takes", () => {
+    // Kling's capability map gives kling-v2-6 "5s, 10s" — fal's own pair.
+    for (const duration of ["5", "10"] as const) {
+      const result = klingVideo({
+        model_name: "kling-v2-6",
+        prompt: "x",
+        mode: "pro",
+        duration,
+      }).toApiSafe("fal");
+      expect(result.ok, duration).toBe(true);
+    }
   });
 
   test("refused: watermark, callback and external task id, each by name", () => {

@@ -93,6 +93,19 @@ describe("kling.video capability gates", () => {
 
     expect(video.safe({ model_name: "kling-v3", prompt: "hi", duration: "8" }).ok).toBe(true);
   });
+
+  test("kling-v2-6 runs 5s or 10s, as its capability-map row reads", () => {
+    expect(video.safe({ model_name: "kling-v2-6", prompt: "hi", duration: "10" }).ok).toBe(true);
+    const r = videoFromImage.safe({
+      model_name: "kling-v2-6",
+      image: "https://example.com/a.png",
+      prompt: "hi",
+      // @ts-expect-error kling-v2-6 offers "5" and "10"
+      duration: "8",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.meta?.allowed).toEqual(["5", "10"]);
+  });
 });
 
 describe("kling.video shape rules", () => {

@@ -77,7 +77,6 @@ const THREE_TO_FIFTEEN = [
   "14",
   "15",
 ] as const;
-const THREE_TO_TEN = ["3", "4", "5", "6", "7", "8", "9", "10"] as const;
 
 /**
  * `duration` on the `/v1/videos/*` routes — SECONDS AS A STRING. The union is
@@ -105,11 +104,6 @@ export type KlingV1Duration = (typeof THREE_TO_FIFTEEN)[number];
  * validator looser than the layer above it, which inverts docs/decisions.md
  * #1. The literal types below are what makes the three agree by construction;
  * `./video.test.ts` asserts the rest.
- *
- * Note one documented discrepancy: the capability map gives `kling-v2-6` a
- * "3~10s" generation range while the current `POST /text-to-video/kling-2.6`
- * route offers only 5s and 10s. Each route is checked against its own source,
- * so the wider range applies here and the narrower one in ./video-v3.ts.
  */
 const V1_MODEL_RULES_TABLE = {
   "kling-v3": {
@@ -118,7 +112,10 @@ const V1_MODEL_RULES_TABLE = {
     sound: true,
     multiShot: true,
   },
-  "kling-v2-6": { modes: ["std", "pro"], durations: THREE_TO_TEN, sound: true },
+  // https://kling.ai/document-api/guides/capability-map/video (2026-11-12):
+  // `id:"kling-v2-6",...,generationRange:{en:"5s, 10s"}` — the same two the
+  // path-addressed 2.6 routes enumerate (`enum:["5","10"]`).
+  "kling-v2-6": { modes: ["std", "pro"], durations: FIVE_TEN, sound: true },
   "kling-v2-5-turbo": { modes: ["std", "pro"], durations: FIVE_TEN },
 } as const satisfies Readonly<Record<string, V1ModelRules>>;
 

@@ -8,14 +8,12 @@
  * capability map on 2026-08-13; the `model_name` enum and field list against
  * https://kling.ai/document-api/api/video/3-0-omni/text-to-video/legacy on
  * 2026-11-12):
- * - This is the `model_name`-in-the-body route, and the only Kling video route
- *   any reachable source corroborates: the endpoint line reads
+ * - This is the `model_name`-in-the-body route: the endpoint line reads
  *   `POST https://api-singapore.klingai.com/v1/videos/text2video` and the
  *   polling route `GET /v1/videos/text2video/{task_id}`. A second,
- *   path-addressed family exists in the doc site's JS bundle but nothing can
- *   corroborate it — it ships as the EXPERIMENTAL `kling.videoV3` (see
- *   ./video-v3.ts), and its id spellings differ (`kling-3.0` there vs
- *   `kling-v3` here).
+ *   path-addressed family ships as the EXPERIMENTAL `kling.videoV3` (see
+ *   ./video-v3.ts for its provenance), and its id spellings differ
+ *   (`kling-3.0` there vs `kling-v3` here).
  * - `model_name` is one of `kling-v3`, `kling-v2-6`, `kling-v2-5-turbo`;
  *   `mode` defaults to `std` (720P), `duration` to "5" (a STRING on this
  *   route), `aspect_ratio` to "16:9" and `sound` to "off".
@@ -130,7 +128,8 @@ export interface TextToVideoParams {
    * Seconds, as a string. Defaults to "5". The union is the widest documented
    * range (kling-v3's 3–15s), which is what a run-time or post-snapshot
    * `model_name` gets; a LITERAL one is narrowed to its own `V1_MODEL_RULES`
-   * row at compile time — kling-v2-5-turbo offers only "5" and "10".
+   * row at compile time — kling-v2-6 and kling-v2-5-turbo offer only "5"
+   * and "10".
    */
   duration?: KlingV1Duration;
   watermark_info?: KlingWatermarkInfo;

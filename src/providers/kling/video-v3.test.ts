@@ -372,6 +372,18 @@ describe("kling.videoOmni", () => {
     }
   });
 
+  test("3.0 Omni and O1 take up to 7 Elements — the ceiling of every documented case", () => {
+    const elements = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({ type: "element", element_id: `${i}`, id: `e${i}` }));
+    const prompt = { type: "prompt", text: "hi" };
+    for (const model of ["kling-3.0-omni", "kling-o1"] as const) {
+      expect(videoOmni.safe({ model, contents: [prompt, ...elements(7)] }).ok, model).toBe(true);
+      const eight = videoOmni.safe({ model, contents: [prompt, ...elements(8)] });
+      expect(eight.ok, model).toBe(false);
+      if (!eight.ok) expect(eight.errors[0]?.meta?.max).toBe(7);
+    }
+  });
+
   test("the text-to-video-only models have no omni route", () => {
     const r = videoOmni.safe({
       model: "kling-2.6",

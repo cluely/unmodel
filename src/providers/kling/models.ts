@@ -37,13 +37,16 @@
 //     primary exports — `kling.video` / `kling.videoFromImage`.
 //   - EXPERIMENTAL — a path-addressed family (`POST /text-to-video/kling-3.0`,
 //     `/omni-video/kling-o1`, polled via `GET /tasks`) keyed by the path
-//     segment (`pathVideoModels`). Its route shapes were recovered by
-//     evaluating the doc site's own JS bundle, NOT read off a served page, and
-//     no independent source corroborates them (the doc site answers HTTP 446
-//     to every non-browser client and serves one byte-identical SPA shell to
-//     curl, so no fetch can ever confirm or refute them). Exported under the
-//     experimental names `kling.videoV3` / `kling.videoV3FromImage` /
-//     `kling.videoOmni` — see those modules' EXPERIMENTAL notes.
+//     segment (`pathVideoModels`). Its route shapes were transcribed from the
+//     doc site's own JS chunks (kling.ai/document-api serves one SPA shell for
+//     every path). The API host corroborates the family — without credentials
+//     it answers `POST /text-to-video/kling-4.0` and `GET /tasks` with the new
+//     API's auth error (HTTP 401, code 1002) where an unknown path answers 404
+//     (2026-11-12) — but that gate fires for any model segment, so each
+//     model's path stays doc-only. Kling 4.0 / 4.0 Flash exist only here.
+//     Exported under the experimental names `kling.videoV3` /
+//     `kling.videoV3FromImage` / `kling.videoOmni` — see those modules'
+//     EXPERIMENTAL notes.
 // Both spellings name the same weights; ./pricing.ts normalizes them so a
 // request priced through either route lands on the same rate.
 //
@@ -91,12 +94,12 @@ const videoModality = { input: ["text", "image"], output: ["video"] } as const;
 const omniModality = { input: ["text", "image", "video"], output: ["video"] } as const;
 
 /**
- * EXPERIMENTAL — models addressed by URL path on the uncorroborated
- * path-addressed video routes (`/text-to-video/{model}`,
- * `/image-to-video/{model}`, `/omni-video/{model}`). See the header comment:
- * these ids and routes come from the doc site's JS bundle and no reachable
- * source confirms them. For the corroborated `model_name` spellings of the
- * same weights use `v1VideoModels` (`kling-3.0` is `kling-v3` there).
+ * EXPERIMENTAL — models addressed by URL path on the path-addressed video
+ * routes (`/text-to-video/{model}`, `/image-to-video/{model}`,
+ * `/omni-video/{model}`). See the header comment: the API host answers the
+ * family, but these ids come from the doc site alone. For the `model_name`
+ * spellings of the same weights use `v1VideoModels` (`kling-3.0` is
+ * `kling-v3` there).
  */
 export const pathVideoModels = {
   "kling-3.0": {
@@ -384,10 +387,12 @@ const dualKindModels = {
 
 /**
  * The provider-wide view: every id this provider answers to, exactly once.
- * `kling-v3-omni` and `kling-video-o1` also exist as VIDEO ids on the
- * capability map, but the only routes that take them in a body are the image
- * ones, so the merged map carries their image entries; the path-addressed
- * video routes address those weights as `kling-3.0-omni` / `kling-o1`.
+ * `kling-v3-omni` and `kling-video-o1` also exist as VIDEO ids — the
+ * `model_name` enum of `POST /v1/videos/omni-video`
+ * (https://kling.ai/document-api/api/video/3-0-omni/video-omni/legacy,
+ * 2026-11-12), a route unmodel does not validate — so the merged map carries
+ * their image entries; the path-addressed video routes address those weights
+ * as `kling-3.0-omni` / `kling-o1`.
  *
  * `dualKindModels` is spread LAST so the shadowed id above resolves to its
  * merged row rather than to whichever kind happened to be spread later.

@@ -203,8 +203,8 @@ function v1PerModelArmTypeTests(): void {
   // --- The calls the wire used to accept while the unified layer refused them
   // @ts-expect-error kling-v2-5-turbo offers "5" and "10"
   video({ model_name: "kling-v2-5-turbo", prompt: "hi", duration: "8" });
-  // @ts-expect-error kling-v2-6's range is 3–10s
-  video({ model_name: "kling-v2-6", prompt: "hi", duration: "12" });
+  // @ts-expect-error kling-v2-6 offers "5" and "10"
+  video({ model_name: "kling-v2-6", prompt: "hi", duration: "3" });
   // @ts-expect-error 4K is kling-v3's alone on this family
   video({ model_name: "kling-v2-6", prompt: "hi", mode: "4k" });
   // @ts-expect-error native audio is kling-v3 / kling-v2-6 only
@@ -219,7 +219,7 @@ function v1PerModelArmTypeTests(): void {
   // --- …and the same facts, each on the model that DOES document them
   video({ model_name: "kling-v3", prompt: "hi", duration: "8", mode: "4k", sound: "on" });
   video({ model_name: "kling-v3", prompt: "hi", multi_shot: true, shot_type: "intelligence" });
-  video({ model_name: "kling-v2-6", prompt: "hi", duration: "3", mode: "pro", sound: "on" });
+  video({ model_name: "kling-v2-6", prompt: "hi", duration: "10", mode: "pro", sound: "on" });
   video({ model_name: "kling-v2-5-turbo", prompt: "hi", mode: "pro", duration: "10" });
   videoFromImage({ model_name: "kling-v2-5-turbo", image: "https://e.com/a.png", duration: "5", mode: "pro" });
 

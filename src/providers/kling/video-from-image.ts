@@ -114,7 +114,8 @@ export interface ImageToVideoParams {
    * Seconds, as a string. Defaults to "5". The union is the widest documented
    * range (kling-v3's 3–15s), which is what a run-time or post-snapshot
    * `model_name` gets; a LITERAL one is narrowed to its own `V1_MODEL_RULES`
-   * row at compile time — kling-v2-5-turbo offers only "5" and "10".
+   * row at compile time — kling-v2-6 and kling-v2-5-turbo offer only "5"
+   * and "10".
    */
   duration?: KlingV1Duration;
   watermark_info?: KlingWatermarkInfo;

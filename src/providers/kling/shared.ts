@@ -3,14 +3,15 @@
  * definitions behind https://kling.ai/document-api (the API-reference pages
  * render from Kling's own OpenAPI data) — verified 2026-08-13.
  *
- * TWO ROUTE FAMILIES. The corroborated one is `POST /v1/videos/text2video` /
+ * TWO ROUTE FAMILIES. One is `POST /v1/videos/text2video` /
  * `/v1/videos/image2video` with `model_name` in the BODY (`kling.video`
  * / `kling.videoFromImage`); the path-addressed one (`POST /text-to-video/
- * {model}`, `/omni-video/{model}`) was recovered from the doc site's JS bundle
- * and is corroborated by nothing, so it ships EXPERIMENTAL as
- * `kling.videoV3` / `kling.videoV3FromImage` / `kling.videoOmni`. The
- * constants below marked "current routes" belong to that experimental family;
- * ./models.ts records the full provenance of both.
+ * {model}`, `/omni-video/{model}`) was transcribed from the doc site's JS
+ * chunks and ships EXPERIMENTAL as `kling.videoV3` / `kling.videoV3FromImage`
+ * / `kling.videoOmni` — the API host answers the family with its own auth
+ * gate, but each model's path is doc-only. The constants below marked
+ * "current routes" belong to that family; ./models.ts records the full
+ * provenance of both.
  *
  * Base URL: "The API endpoint has been changed from https://api.klingai.com to
  * https://api-singapore.klingai.com" (docs/api/get-started/authentication);
@@ -22,9 +23,9 @@
  * credentials; add the header yourself when fetching.
  *
  * Every generation route is asynchronous: it responds with a task object and
- * you poll `GET /v1/videos/{route}/{task_id}` (the corroborated family) or
- * `GET /tasks` (the experimental path-addressed family — unverified, like the
- * routes it serves), or set `options.callback_url`.
+ * you poll `GET /v1/videos/{route}/{task_id}` (the `model_name` family) or
+ * `GET /tasks` (the path-addressed family — the API host answers it with the
+ * same auth gate as the routes it serves), or set `options.callback_url`.
  */
 
 import { z } from "zod";
@@ -99,7 +100,13 @@ export type KlingMode = (typeof KLING_MODES)[number];
 /** `sound` switch on `/v1/videos/*`. */
 export const KLING_SOUND = ["on", "off"] as const;
 
-/** Documented `prompt` ceiling on the current routes (recommended ≤ 2500). */
+/**
+ * The `prompt` ceiling the pre-4.0 text-to-video rows enforce (recommended
+ * ≤ 2500): "Maximum length: 3072 characters (recommended: ≤ 2500)." —
+ * https://kling.ai/document-api/api/video/3-0-omni/text-to-video and
+ * /3-0-turbo/text-to-video (2026-11-12). The 2.6 and 2.5-turbo pages print
+ * "Maximum length: 2500 characters." instead; their rows keep the looser 3072.
+ */
 export const PROMPT_MAX_CHARS = 3072;
 /** Documented `prompt` / `negative_prompt` ceiling on `/v1/videos/*`. */
 export const V1_PROMPT_MAX_CHARS = 2500;
@@ -192,6 +199,19 @@ export const IMAGE_MIN_DIMENSION = 300;
 export const IMAGE_FORMATS = ["jpg", "jpeg", "png"] as const;
 /** Up to 3 Elements can be specified per task — the cap a rule row inherits unless it states its own. */
 export const MAX_ELEMENTS = 3;
+
+/**
+ * The most Elements any documented case allows on the Kling 3.0 Omni and O1
+ * omni routes. https://kling.ai/document-api/api/video/3-0-omni/video-omni
+ * (2026-11-12): "When there is no reference video+only multi-image element,
+ * the sum of the number of reference pictures and multi-image element shall
+ * not exceed 7."; https://kling.ai/document-api/api/video/o1/video-omni: "No
+ * reference video: reference images + Elements ≤ 7." The tighter cases (3 with
+ * a first frame, 4 with a reference video, 3 video-character Elements) turn
+ * on an Element's kind, which an opaque `element_id` does not reveal, so only
+ * the ceiling is checked.
+ */
+export const OMNI_MAX_ELEMENTS = 7;
 
 /**
  * The Kling 4.0 / 4.0 Flash omni-video Element cap.

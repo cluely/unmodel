@@ -7,19 +7,20 @@
  * Kling 3.0 — not a single model: the family also serves 2.6, 2.5-turbo and
  * Kling 4.0 / 4.0 Flash.
  *
- * EXPERIMENTAL — UNCORROBORATED ROUTE. `POST /image-to-video/{model}` was recovered by
- * EVALUATING THE DOC SITE'S OWN JAVASCRIPT BUNDLE (the SPA's navigation/asset
- * chunks under s15-kling.klingai.com/kos/s101/nlav112918/api-doc/assets/), not
- * read off a served documentation page, and nothing independent corroborates
- * it: kling.ai/document-api and app.klingai.com answer HTTP 446 to every
- * non-browser client, and curl with a browser UA returns one byte-identical
- * SPA shell for every path, so no fetch can confirm or refute the route.
- * Searching Kling's own apiReference pages for the same models returns the
- * versioned `POST /v1/videos/*` family instead. Prefer the corroborated
- * `kling.videoFromImage` (./video-from-image.ts) unless you have verified this
- * route against a live account. This export exists so the bundle-derived
- * shape is not lost; it may 404, and the polling route (`GET /tasks`) is
- * unverified too.
+ * EXPERIMENTAL. The route shapes were transcribed from the doc site's own
+ * JavaScript chunks (the SPA under s15-kling.klingai.com/kos/s101/nlav112918/
+ * api-doc/assets/; kling.ai/document-api serves one shell for every path).
+ * The API host corroborates the FAMILY: without credentials,
+ * `POST /text-to-video/kling-4.0`, `/omni-video/kling-4.0` and `GET /tasks`
+ * answer HTTP 401 `{"code":1002,"message":"Authentication error. The current
+ * API does not support AK/SK; ..."}` — the API-key-only new API's gate —
+ * where an unknown path answers 404 (api-singapore.klingai.com, 2026-11-12).
+ * The gate fires for any model segment (`/text-to-video/kling-9.9` answers
+ * 1002 too), so whether a given model's path exists stays doc-only until
+ * verified against a live account.
+ * Kling 4.0 / 4.0 Flash exist on this family alone; for the earlier models
+ * `kling.videoFromImage` (./video-from-image.ts) is the
+ * `model_name`-in-the-body alternative.
  *
  * Wire notes (transcribed from those bundle definitions, cross-read against
  * https://kling.ai/document-api/api/video/3-0-omni/image-to-video and the
@@ -229,8 +230,8 @@ const validator = createValidator<ImageToVideoV3Params, unknown>({
 /**
  * Validates raw wire params for Kling `POST /image-to-video/{model}`.
  *
- * EXPERIMENTAL and uncorroborated — see the module header.
- * `kling.videoFromImage` is the corroborated image-to-video validator.
+ * EXPERIMENTAL — see the module header. `kling.videoFromImage` is the
+ * `model_name`-in-the-body image-to-video validator.
  *
  * ```ts
  * const params = kling.videoV3FromImage({

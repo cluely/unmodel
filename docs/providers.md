@@ -79,12 +79,18 @@ alias of `/v1/sonar`), which the Agent API superseded but Perplexity still serve
 Chat Completions support ended on September 27, 2026. Synchronous and streaming requests
 keep working: they are being reformulated as Agent API requests"
 ([migration overview](https://docs.perplexity.ai/docs/agent-api/migrate-from-sonar/overview),
-2026-11-12). All four sonar ids stay reachable and warn `deprecated_model`; `checkChat`
-reports the billed `usage.cost.total_cost`. Open owner decisions: the Agent API
-(`POST /v1/agent`, Responses-shaped — decisions.md §7), the Embeddings and Decisions APIs
-(no unmodel surface takes either), the documented `file_url` / `pdf_url` / `video_url` /
-string `image_url` content parts (refused today — accepting them needs a perplexity-specific
-message type the shared openai-compatible factory cannot express), and request-fee-aware
+2026-11-12). All four sonar ids stay reachable and warn `deprecated_model`. Perplexity's
+suggested Agent API `effort` levels (the field that replaces `model` there): "`sonar` →
+`fast`, `sonar-pro` → `fast`, `sonar-reasoning-pro` → `low`, `sonar-deep-research` →
+`high`." ([migration how-to](https://docs.perplexity.ai/docs/agent-api/migrate-from-sonar/how-to),
+2026-11-12). User messages take the reference's `file_url` and `pdf_url` chunks and string
+`image_url` ([API reference](https://docs.perplexity.ai/api-reference/legacy/sonar-post),
+2026-11-12); its `video_url` chunk is shape-checked but refused `unsupported_capability` on
+every sonar row — none has video input, and the
+[media guide](https://docs.perplexity.ai/docs/legacy/sonar/media) documents none (2026-11-13).
+`checkChat` reports the billed `usage.cost.total_cost`. Open owner
+decisions: the Agent API (`POST /v1/agent`, Responses-shaped — decisions.md §7), the
+Embeddings and Decisions APIs (no unmodel surface takes either), and request-fee-aware
 pre-send estimates. **Excluded:** the Orchestrator API (`/orchestrator/v1`) — "Orchestrator
 API is in private preview." ([orchestrator models](https://docs.perplexity.ai/docs/orchestrator/models),
 2026-11-12).

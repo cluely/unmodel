@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { CHAT_COMPLETIONS_URL, chat, checkChat, models } from "./index";
+import type { PerplexityUserContentPart } from "./index";
+import { chat as groqChat } from "../groq";
+import { chat as openaiChat } from "../openai/chat";
 
 describe("perplexity", () => {
   test("chat URL is the OpenAI-compatible route on api.perplexity.ai", () => {
@@ -32,6 +35,130 @@ describe("perplexity", () => {
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
     }
+  });
+
+  // The Sonar reference's content chunks, each URL field "anyOf: URL | string"
+  // (https://docs.perplexity.ai/api-reference/legacy/sonar-post, 2026-11-12).
+  // sonar-pro, because the catalog gives it image input.
+  describe("content chunks", () => {
+    const chunks: Array<[string, PerplexityUserContentPart]> = [
+      ["image_url, object", { type: "image_url", image_url: { url: "https://example.com/a.png" } }],
+      ["image_url, string", { type: "image_url", image_url: "https://example.com/a.png" }],
+      [
+        "file_url, object",
+        { type: "file_url", file_url: { url: "https://example.com/a.pdf" }, file_name: "a.pdf" },
+      ],
+      // "base64 encoded bytes without any prefix" (media guide).
+      ["file_url, string", { type: "file_url", file_url: "JVBERi0xLjQK", file_name: null }],
+      ["pdf_url, object", { type: "pdf_url", pdf_url: { url: "https://example.com/a.pdf" } }],
+      ["pdf_url, string", { type: "pdf_url", pdf_url: "https://example.com/a.pdf" }],
+    ];
+
+    for (const [name, part] of chunks) {
+      test(`${name} validates`, () => {
+        const r = chat.safe({ model: "sonar-pro", messages: [{ role: "user", content: [part] }] });
+        expect(r.ok).toBe(true);
+        if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+      });
+    }
+
+    // The reference's video chunk is shape-checked like the others; whether a
+    // model takes video is then the catalog's call, as on every oai-base
+    // overlay. No sonar row has video input, and Perplexity's media guide
+    // documents none — its only video section is `return_videos`, a response
+    // option (https://docs.perplexity.ai/docs/legacy/sonar/media, 2026-11-13) —
+    // so a well-formed chunk is refused by modality, never as invalid_shape.
+    test("video_url chunks are shape-valid and refused on the catalog's modality", () => {
+      const videos: PerplexityUserContentPart[] = [
+        { type: "video_url", video_url: { url: "https://example.com/v.mp4", frame_interval: 10 } },
+        // frame_interval is "string | integer" (the reference's VideoURL).
+        { type: "video_url", video_url: { url: "https://example.com/v.mp4", frame_interval: "10" } },
+        { type: "video_url", video_url: "https://example.com/v.mp4" },
+      ];
+      for (const part of videos) {
+        const r = chat.safe({ model: "sonar-pro", messages: [{ role: "user", content: [part] }] });
+        expect(r.ok).toBe(false);
+        if (!r.ok) {
+          expect(r.errors.map((e) => [e.code, e.path, e.meta?.modality])).toEqual([
+            ["unsupported_capability", ["messages", 0, "content", 0], "video"],
+          ]);
+        }
+      }
+    });
+
+    test("a fractional frame_interval is invalid_shape: the reference's VideoURL takes string | integer", () => {
+      const r = chat.safe({
+        model: "sonar-pro",
+        messages: [
+          {
+            role: "user",
+            content: [{ type: "video_url", video_url: { url: "https://example.com/v.mp4", frame_interval: 2.5 } }],
+          },
+        ],
+      });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors.map((e) => e.code)).toEqual(["invalid_shape"]);
+    });
+
+    test("a chunk without its URL field is still refused", () => {
+      const r = chat.safe({
+        model: "sonar-pro",
+        messages: [{ role: "user", content: [{ type: "file_url" } as never] }],
+      });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors.map((e) => e.code)).toEqual(["invalid_shape"]);
+    });
+
+    // The widening is perplexity's alone: the shared dialect, and so every
+    // other overlay, keeps refusing both forms.
+    test("openai.chat and groq.chat still refuse string image_url and file_url", () => {
+      const parts = [
+        { type: "image_url", image_url: "https://example.com/a.png" },
+        { type: "file_url", file_url: { url: "https://example.com/a.pdf" } },
+      ];
+      for (const part of parts) {
+        const openai = openaiChat.safe({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: [part as never] }],
+        });
+        const groq = groqChat.safe({
+          model: "llama-3.3-70b-versatile",
+          messages: [{ role: "user", content: [part as never] }],
+        });
+        for (const r of [openai, groq]) {
+          expect(r.ok).toBe(false);
+          if (!r.ok) expect(r.errors.map((e) => [e.code, e.path])).toEqual([["invalid_shape", ["messages", 0, "content"]]]);
+        }
+      }
+    });
+
+    // toSdk("ai-sdk") reads the body through the dialect's encoder: the string
+    // image form translates like the object one, and a chunk with no
+    // translation is dropped by name rather than silently.
+    test("toSdk('ai-sdk') carries a string image_url and names a dropped file_url", () => {
+      const v = chat({
+        model: "sonar-pro",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "image_url", image_url: "https://example.com/a.png" },
+              { type: "file_url", file_url: { url: "https://example.com/a.pdf" } },
+            ],
+          },
+        ],
+      });
+      const sdk = v.toSdk("ai-sdk");
+      expect(sdk.messages).toEqual([
+        {
+          role: "user",
+          content: [{ type: "file", mediaType: "image/png", data: "https://example.com/a.png" }],
+        },
+      ]);
+      expect(sdk.warnings.map((w) => [w.code, w.path])).toEqual([
+        ["dropped_content", ["messages", 0, "content", 1]],
+      ]);
+    });
   });
 
   test("unknown models warn and name the perplexity catalog", () => {

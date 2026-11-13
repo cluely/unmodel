@@ -41,6 +41,7 @@ import type { Warn } from "../../core/translate/warnings";
 import type {
   ChatAssistantMessage,
   ChatCompletionsBodyBase,
+  ChatImagePart,
   ChatMessage,
   ChatTextPart,
   ChatTool,
@@ -111,10 +112,15 @@ function encodeUserPart(part: ChatUserContentPart, path: Array<string | number>,
       // IR carries the hint and the *target* decoder decides what it costs:
       // Gemini takes it as-is, Anthropic drops it by name, and OpenAI's own
       // decoder narrows `medium` (which only Gemini has) to `high`.
-      const detail = part.image_url.detail !== undefined ? { detail: part.image_url.detail } : {};
-      const parsed = parseDataUrl(part.image_url.url);
+      //
+      // A plain-string `image_url` is the other form perplexity's validator
+      // accepts for the same chunk; it carries no `detail`.
+      const image: ChatImagePart["image_url"] =
+        typeof part.image_url === "string" ? { url: part.image_url } : part.image_url;
+      const detail = image.detail !== undefined ? { detail: image.detail } : {};
+      const parsed = parseDataUrl(image.url);
       return parsed === undefined
-        ? { type: "media", data: { kind: "url", url: part.image_url.url }, ...detail, ...cache }
+        ? { type: "media", data: { kind: "url", url: image.url }, ...detail, ...cache }
         : {
             type: "media",
             mediaType: parsed.mediaType,
@@ -164,6 +170,18 @@ function encodeUserPart(part: ChatUserContentPart, path: Array<string | number>,
         path,
         message:
           "a `file` content part carries neither `file_data` nor `file_id`; there is nothing to translate, so it was dropped.",
+      });
+      return undefined;
+    }
+    default: {
+      // Not a dialect part: an overlay's own chunk, such as perplexity's
+      // `file_url`, `pdf_url` or `video_url`, that its validator accepts.
+      const kind = (part as { type: string }).type;
+      warn({
+        code: "dropped_content",
+        path,
+        message: `a \`${kind}\` content part is a provider's extension of the chat-completions dialect, with no translation into another dialect; it was dropped.`,
+        meta: { kind },
       });
       return undefined;
     }

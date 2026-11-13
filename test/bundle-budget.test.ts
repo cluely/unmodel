@@ -1919,6 +1919,10 @@ describe("unmodel/chat", () => {
       "src/catalog/availability/nebius.gen.ts",
       "src/catalog/availability/nvidia.gen.ts",
       "src/catalog/availability/openai.gen.ts",
+      // Not new bytes either, for moonshotai's reason: perplexity's index.ts
+      // builds its content-chunk schema before the createOpenAICompatible
+      // call, so the table keeps its own region (measured 2026-11-13).
+      "src/catalog/availability/perplexity.gen.ts",
       "src/catalog/availability/scaleway.gen.ts",
       "src/catalog/availability/siliconflow.gen.ts",
       "src/catalog/availability/stepfun.gen.ts",

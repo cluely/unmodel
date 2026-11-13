@@ -2,7 +2,7 @@
  * Drift: the provider list, the endpoint table and the profile table have to
  * keep agreeing, and every provider on the list has to actually work.
  *
- * `CHAT_PROVIDERS` is hand-written (32 short strings read better here than in a
+ * `CHAT_PROVIDERS` is hand-written (33 short strings read better here than in a
  * `.gen.ts`, and `refs.test.ts` pins it against the generated `ChatProviderId`
  * union in both directions). What that does *not* prove is that the list is the
  * right list — i.e. that it is exactly "every provider with a static URL whose

@@ -1,0 +1,10 @@
+{
+  "status": 503,
+  "body": {
+    "error": {
+      "code": "model_unavailable",
+      "message": "z-image has no route that can answer within max_wait_s right now.",
+      "request_id": "req_196c11679c4f25521c0e"
+    }
+  }
+}

@@ -71,6 +71,7 @@ import type {
   UpscaleValidator,
 } from "../core/unified/vocabulary/upscale";
 import { upscale as fal } from "../providers/fal/unified-upscale";
+import { upscale as revana } from "../providers/revana/unified-upscale";
 import { upscale as topaz } from "../providers/topaz/unified";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
@@ -94,8 +95,8 @@ export function createUpscale<A extends UpscaleAdapter>(
 }
 
 /**
- * Every upscale adapter unmodel ships — two providers, and they disagree about
- * the category's one cross-vendor word.
+ * Every upscale adapter unmodel ships — three providers, and the two with more
+ * than one model disagree about the category's one cross-vendor word.
  *
  * fal serves ten endpoints across two media: Clarity, AuraSR, Real-ESRGAN,
  * Recraft and SeedVR for stills; Topaz, SeedVR and FLUX for clips; and Topaz's
@@ -117,9 +118,15 @@ export function createUpscale<A extends UpscaleAdapter>(
  * Two ways to have no `factor`, and the refusals say which is which — which is
  * the sort of thing a vocabulary only learns from a second witness.
  *
- * The cost of both is pinned in `test/bundle-budget.test.ts`.
+ * Revana serves one upscaler on its one route, and it is a third `never`: the
+ * request has no multiplier and no size either, only the thing to enlarge. Its
+ * source is a still by declaration rather than by route — the model takes a
+ * picture or a clip in two different fields, and a canonical `{ url }` cannot
+ * say which it is (`src/providers/revana/unified-upscale.ts`).
+ *
+ * The cost of all three is pinned in `test/bundle-budget.test.ts`.
  */
-export const upscale = createUpscale([fal, topaz]);
+export const upscale = createUpscale([fal, topaz, revana]);
 
 export type {
   AnyUpscaleAdapter,

@@ -1,0 +1,11 @@
+{
+  "status": 400,
+  "body": {
+    "error": {
+      "message": "web_search_options: Web search is not offered.",
+      "type": "invalid_request_error",
+      "code": "unsupported_parameter",
+      "param": null
+    }
+  }
+}

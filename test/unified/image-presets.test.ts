@@ -59,6 +59,7 @@ import { image as leonardo } from "../../src/providers/leonardo/unified";
 import { image as luma } from "../../src/providers/luma/unified-image";
 import { image as openai } from "../../src/providers/openai/unified-image";
 import { image as recraft } from "../../src/providers/recraft/unified-image";
+import { image as revana } from "../../src/providers/revana/unified-image";
 import { image as reve } from "../../src/providers/reve/unified";
 import { image as runway } from "../../src/providers/runway/unified-image";
 import { image as stability } from "../../src/providers/stability/unified-image";
@@ -68,6 +69,7 @@ import { imageEdit as falEdit } from "../../src/providers/fal/unified-image-edit
 import { imageEdit as ideogramEdit } from "../../src/providers/ideogram/unified-image-edit";
 import { imageEdit as openaiEdit } from "../../src/providers/openai/unified-image-edit";
 import { imageEdit as recraftEdit } from "../../src/providers/recraft/unified-image-edit";
+import { imageEdit as revanaEdit } from "../../src/providers/revana/unified-image-edit";
 
 interface Adapter {
   readonly provider: string;
@@ -92,6 +94,7 @@ const IMAGE_ADAPTERS: readonly Adapter[] = [
   leonardo,
   krea,
   reve,
+  revana,
 ];
 
 const EDIT_ADAPTERS: readonly (Adapter & { readonly imageInputs: readonly string[] })[] = [
@@ -100,6 +103,7 @@ const EDIT_ADAPTERS: readonly (Adapter & { readonly imageInputs: readonly string
   falEdit,
   ideogramEdit,
   recraftEdit,
+  revanaEdit,
 ];
 
 /** A route's own required params, none of which has a canonical word. */

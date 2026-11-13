@@ -55,6 +55,7 @@ import { music as elevenlabs } from "../providers/elevenlabs/unified-music";
 import { music as fal } from "../providers/fal/unified-music";
 import { music as google } from "../providers/google/unified-music";
 import { music as mureka } from "../providers/mureka/unified";
+import { music as revana } from "../providers/revana/unified-music";
 import { music as stability } from "../providers/stability/unified-music";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
@@ -98,12 +99,19 @@ export function createMusic<A extends MusicAdapter>(
  * ×1000 is exact and therefore silent, and a length that lands between two
  * milliseconds is refused rather than rounded.
  *
- * The cost is honest and measured: importing this pulls in all four
+ * **The one provider a bare prompt does not reach.** Revana's music input is
+ * `prompt` ("the idea") plus `style` or `lyrics`, and it refuses a request
+ * with neither. The canonical vocabulary has no word for either, so both are
+ * per-model extras and `music({ model: "revana/…", prompt })` alone is refused
+ * by `revana.music` in the API's own sentence — a typed gap rather than a
+ * `prompt` quietly written to `style`.
+ *
+ * The cost is honest and measured: importing this pulls in all six
  * providers' validators, schemas and catalogs (pinned in
  * `test/bundle-budget.test.ts`). `createMusic([…])` above is the way to pay
- * for one provider instead of four.
+ * for one provider instead of six.
  */
-export const music = createMusic([elevenlabs, stability, mureka, google, fal]);
+export const music = createMusic([elevenlabs, stability, mureka, google, fal, revana]);
 
 export type {
   AnyMusicAdapter,

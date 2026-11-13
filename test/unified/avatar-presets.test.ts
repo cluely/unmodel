@@ -19,6 +19,7 @@ import { describe, expect, test } from "bun:test";
 import { avatar } from "../../src/unified/avatar";
 import { avatar as fal } from "../../src/providers/fal/unified-avatar";
 import { avatar as heygen } from "../../src/providers/heygen/unified-avatar";
+import { avatar as revana } from "../../src/providers/revana/unified-avatar";
 import { avatar as sync } from "../../src/providers/sync/unified-avatar";
 import { avatar as veed } from "../../src/providers/veed/unified-avatar";
 import { FAL_REQUIRED_PROBES } from "../../src/providers/fal/gen/endpoints.gen";
@@ -33,7 +34,8 @@ const falRefs = fal.models.map((id) => `fal/${id}`);
 const syncRefs = sync.models.map((id) => `sync/${id}`);
 const veedRefs = veed.models.map((id) => `veed/${id}`);
 const heygenRefs = heygen.models.map((id) => `heygen/${id}`);
-const refs = [...falRefs, ...syncRefs, ...veedRefs, ...heygenRefs];
+const revanaRefs = revana.models.map((id) => `revana/${id}`);
+const refs = [...falRefs, ...syncRefs, ...veedRefs, ...heygenRefs, ...revanaRefs];
 
 /** The bare model id a ref points at, and the provider it names. */
 const bare = (ref: string): string => ref.slice(ref.indexOf("/") + 1);
@@ -49,6 +51,7 @@ const providerOf = (ref: string): string => ref.slice(0, ref.indexOf("/"));
 const ROWS = {
   ...fal.modelParams,
   ...heygen.modelParams,
+  ...revana.modelParams,
   ...sync.modelParams,
   ...veed.modelParams,
 } as Readonly<
@@ -60,7 +63,8 @@ test("the sweep covers the whole roster", () => {
   expect(syncRefs).toHaveLength(1);
   expect(veedRefs).toHaveLength(1);
   expect(heygenRefs).toHaveLength(2);
-  expect(refs).toHaveLength(12);
+  expect(revanaRefs).toHaveLength(4);
+  expect(refs).toHaveLength(16);
 });
 
 /**
@@ -102,6 +106,10 @@ describe.each(refs)("%s", (ref) => {
       // a tagged object with three arms, the track beside it is a bare string.
       if (kind === "audio") return body["audio_url"];
       return (body["image"] as { url?: string } | undefined)?.url;
+    }
+    if (provider === "revana") {
+      // fal's two flat fields, one level down: the body is `{ model, input }`.
+      return (body["input"] as Record<string, unknown> | undefined)?.[`${kind}_url`];
     }
     const input = body["input"] as ReadonlyArray<{ type: string; url?: string }> | undefined;
     return input?.find((item) => item.type === kind)?.url;
@@ -176,7 +184,9 @@ describe.each(refs)("%s", (ref) => {
   });
 
   test("`seed` is accepted exactly where the row declares it", () => {
-    const declared = ROWS[id]?.keys?.includes("seed") === true;
+    // Revana's answer is `true` for its whole roster rather than per row:
+    // `seed` is a field of the `ModelInput` every one of its models shares.
+    const declared = provider === "revana" || ROWS[id]?.keys?.includes("seed") === true;
     const result = avatar.safe({
       model: ref,
       audio: VOICE,

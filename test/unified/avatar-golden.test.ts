@@ -10,6 +10,11 @@
  * escape hatch. A committed body is the clearest possible statement that those
  * are two different requests to one category.
  *
+ * `prompted` is the case for the word this vocabulary deliberately does not
+ * have: `prompt` rides as a per-model extra, typed and placed by each row, and
+ * Revana's avatar rows are the ones that carry it one level down, under
+ * `input`.
+ *
  * Like its lipsync twin, this tree has **no `lossy-` case**, and for the same
  * reason: there is no unit to convert and no enum to snap onto here. The
  * assertion at the bottom makes that a check rather than a claim.
@@ -128,6 +133,13 @@ describe.each(caseDirs)("golden avatar/%s", (name) => {
         expect(fixture.url).toBe(`https://api.veed.io/v1/${model}`);
         return;
       }
+      if (provider === "revana") {
+        // sync.'s answer at a router: `model` is a real body field, at ONE url
+        // for every media model the provider serves.
+        expect(fixture.params["model"]).toBe(model);
+        expect(fixture.url).toBe("https://api.revana.si/v1/generations");
+        return;
+      }
       expect(provider).toBe("heygen");
       // One url per CATEGORY, and the id is spelled differently on the wire
       // from the way a ref spells it: `lipsync-speed` becomes `mode: "speed"`
@@ -192,6 +204,12 @@ describe("the matrix itself", () => {
         const input = fixture.params["input"] as ReadonlyArray<{ type: string; url?: string }>;
         const track = input.find((item) => item.type === "audio");
         expect(track?.url, name).toBeString();
+        continue;
+      }
+      if (provider === "revana") {
+        // The same flat field, one level down: the body is `{ model, input }`.
+        const input = fixture.params["input"] as Readonly<Record<string, unknown>>;
+        expect(input["audio_url"], name).toBeString();
         continue;
       }
       // fal, VEED and HeyGen all spell it `audio_url`, and at HeyGen that is

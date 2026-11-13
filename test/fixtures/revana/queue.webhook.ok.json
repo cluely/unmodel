@@ -1,0 +1,11 @@
+{
+  "headers": {
+    "revana-signature": "t=1794533669,v1=ee0fd61f0e84129fb502ee919ac03f544d1274a604108acf4caa02f9c9d070cb",
+    "revana-webhook-id": "wh_gen_ea7940d91db84aad8d22",
+    "x-revana-request-id": "gen_ea7940d91db84aad8d22",
+    "user-agent": "Revana-Webhooks/1.0",
+    "content-type": "application/json",
+    "content-length": "358"
+  },
+  "body": "{\"status\":\"OK\",\"payload\":{\"images\":[{\"url\":\"https://api.revana.si/v1/queue/revana/z-image/requests/gen_ea7940d91db84aad8d22/content\",\"width\":1024,\"height\":1024,\"file_name\":\"gen_ea7940d91db84aad8d22.png\",\"file_size\":1115782,\"content_type\":\"image/png\"}],\"description\":\"\"},\"request_id\":\"gen_ea7940d91db84aad8d22\",\"gateway_request_id\":\"gen_ea7940d91db84aad8d22\"}"
+}

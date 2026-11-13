@@ -47,7 +47,7 @@ const png = (bytes = 64): Blob => new Blob([new Uint8Array(bytes)], { type: "ima
 const URL_IMAGE = "https://example.com/street.png";
 
 describe("the pack", () => {
-  test("registers exactly the five image-edit providers, sorted", () => {
+  test("registers exactly the six image-edit providers, sorted", () => {
     expect([...imageEdit.providers]).toEqual([
       "black-forest-labs",
       // fal contributes 17 editing endpoints — more than the other four
@@ -58,6 +58,7 @@ describe("the pack", () => {
       "ideogram",
       "openai",
       "recraft",
+      "revana",
     ]);
   });
 
@@ -609,6 +610,103 @@ describe("`size`, on the editing routes", () => {
     const warnings = (result.params as unknown as { warnings: readonly { path: unknown[] }[] })
       .warnings;
     expect(warnings.some((warning) => warning.path[0] === "size")).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// revana — an edit is a picture request that carries a picture, by URL
+// ---------------------------------------------------------------------------
+
+describe("revana: the source is a public URL and nothing else", () => {
+  const base = { operation: "edit", prompt: PROMPT } as const;
+
+  test("the picture lands on `input.image_url`, the shape and count beside it", () => {
+    const params = imageEdit({
+      ...base,
+      model: "revana/nano-banana-pro",
+      image: { url: URL_IMAGE },
+      aspectRatio: "4:5",
+      n: 2,
+      seed: 3,
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "nano-banana-pro",
+      input: { prompt: PROMPT, image_url: URL_IMAGE, aspect_ratio: "4:5", num_images: 2, seed: 3 },
+    });
+    expect(params.request.url).toBe("https://api.revana.si/v1/generations");
+    expect(params.toSdk("revana")).toEqual(JSON.parse(JSON.stringify(params)));
+  });
+
+  test.each([
+    ["{ file }", { file: png() }],
+    ["{ data }", { data: "aVZCT1J3MEtHZ28=" }],
+  ])("%s is refused with the upload route that makes a URL", (_label, image) => {
+    const result = imageEdit.safe({ ...base, model: "revana/flux-kontext-pro", image } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["image"]],
+    ]);
+    expect(result.errors[0]!.message).toContain("it takes { url }");
+    expect(result.errors[0]!.message).toContain("POST https://api.revana.si/v1/uploads");
+  });
+
+  test("a `data:` URL is `revana.imageEdit`'s own https rule, at `image`", () => {
+    const result = imageEdit.safe({
+      ...base,
+      model: "revana/flux-kontext-pro",
+      image: { url: "data:image/png;base64,aVZCT1J3MEtHZ28=" },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path: ["image"] });
+    expect(result.errors[0]!.message).toContain("must be a public https URL");
+  });
+
+  test("`strength` and `outputFormat` are declared gaps naming what an edit does take", () => {
+    const result = imageEdit.safe({
+      ...base,
+      model: "revana/flux-kontext-pro",
+      image: { url: URL_IMAGE },
+      strength: 0.5,
+      outputFormat: "png",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["strength"]],
+      ["unsupported_param", ["outputFormat"]],
+    ]);
+    expect(result.errors[0]!.message).toContain("steered by `prompt` alone");
+  });
+
+  test("a model that cannot edit is refused by the view, which names the wide address", () => {
+    // `imagen-4` is text-to-image only: not in this roster, and `revana.imageEdit`
+    // is the narrower view that says so.
+    const result = imageEdit.safe({
+      ...base,
+      model: "revana/imagen-4",
+      image: { url: URL_IMAGE },
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.warnings.map((issue) => issue.code)).toEqual(["unknown_model"]);
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_capability", path: ["model"] });
+    expect(result.errors[0]!.message).toContain("`revana.image` validates it");
+  });
+
+  test("further reference pictures ride on `providerOptions.revana.input.image_urls`", () => {
+    const params = imageEdit({
+      ...base,
+      model: "revana/nano-banana-pro",
+      image: { url: URL_IMAGE },
+      providerOptions: { revana: { input: { image_urls: ["https://example.com/style.png"] } } },
+    });
+    expect((params as unknown as { input: Record<string, unknown> }).input).toEqual({
+      prompt: PROMPT,
+      image_url: URL_IMAGE,
+      image_urls: ["https://example.com/style.png"],
+    });
   });
 });
 

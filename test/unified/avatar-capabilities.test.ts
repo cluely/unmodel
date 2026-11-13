@@ -35,6 +35,7 @@ import type { AvatarParams } from "../../src/core/unified/vocabulary/avatar";
 import { avatar } from "../../src/unified/avatar";
 import { avatar as fal } from "../../src/providers/fal/unified-avatar";
 import { avatar as heygen } from "../../src/providers/heygen/unified-avatar";
+import { avatar as revana } from "../../src/providers/revana/unified-avatar";
 import { avatar as sync } from "../../src/providers/sync/unified-avatar";
 import { avatar as veed } from "../../src/providers/veed/unified-avatar";
 
@@ -69,6 +70,8 @@ interface Capability {
   /** Where the voice track lands, as a dot path into the body. */
   audio: { at: string; support: Support };
   seed: Support;
+  /** Where a `native` seed lands, as a dot path, when it is not the body root. */
+  seedAt?: string;
   /** The enum field a preset-performer route wants instead of a picture. */
   performer?: { at: string; value: string };
   /** Extras the ref must ALSO carry for a minimal request to compile. */
@@ -210,6 +213,53 @@ const TABLE: Readonly<Record<string, Capability>> = {
     audio: { at: "audio_url", support: "native" },
     seed: "unsupported",
   },
+
+  // ---- Revana, a second router ---------------------------------------------
+  // Four models, one body (`{ model, input }`, on the route every Revana media
+  // model shares) and therefore one row four times: the facts below are the
+  // WIRE's, not a model's. Every one takes a still — Revana has no catalogued
+  // performer to name instead — every one takes a `seed`, and none takes
+  // inline bytes, because Revana fetches each reference itself.
+  "revana/kling-avatar-pro": {
+    ref: "revana/kling-avatar-pro",
+    url: "https://api.revana.si/v1/generations",
+    imageAt: "input.image_url",
+    inline: "unsupported",
+    image: "required",
+    audio: { at: "input.audio_url", support: "native" },
+    seed: "native",
+    seedAt: "input.seed",
+  },
+  "revana/kling-avatar-std": {
+    ref: "revana/kling-avatar-std",
+    url: "https://api.revana.si/v1/generations",
+    imageAt: "input.image_url",
+    inline: "unsupported",
+    image: "required",
+    audio: { at: "input.audio_url", support: "native" },
+    seed: "native",
+    seedAt: "input.seed",
+  },
+  "revana/omnihuman-1.5": {
+    ref: "revana/omnihuman-1.5",
+    url: "https://api.revana.si/v1/generations",
+    imageAt: "input.image_url",
+    inline: "unsupported",
+    image: "required",
+    audio: { at: "input.audio_url", support: "native" },
+    seed: "native",
+    seedAt: "input.seed",
+  },
+  "revana/omnihuman-2.0": {
+    ref: "revana/omnihuman-2.0",
+    url: "https://api.revana.si/v1/generations",
+    imageAt: "input.image_url",
+    inline: "unsupported",
+    image: "required",
+    audio: { at: "input.audio_url", support: "native" },
+    seed: "native",
+    seedAt: "input.seed",
+  },
 };
 
 const STILL = { url: "https://example.com/headshot.png" } as const;
@@ -247,6 +297,7 @@ function compile(row: Capability, extra: Partial<AvatarParams> = {}): Compiled |
 const ROWS = {
   ...fal.modelParams,
   ...heygen.modelParams,
+  ...revana.modelParams,
   ...sync.modelParams,
   ...veed.modelParams,
 } as Readonly<Record<string, { readonly sources?: readonly string[] }>>;
@@ -268,11 +319,12 @@ test("the table covers every endpoint both adapters serve", () => {
   expect((byProvider.get("sync") ?? []).sort()).toEqual([...sync.models].sort());
   expect((byProvider.get("veed") ?? []).sort()).toEqual([...veed.models].sort());
   expect((byProvider.get("heygen") ?? []).sort()).toEqual([...heygen.models].sort());
+  expect((byProvider.get("revana") ?? []).sort()).toEqual([...revana.models].sort());
   expect([...byProvider.keys()].sort()).toEqual([...avatar.providers]);
 });
 
-test("the pack registers exactly four providers", () => {
-  expect([...avatar.providers]).toEqual(["fal", "heygen", "sync", "veed"]);
+test("the pack registers exactly five providers", () => {
+  expect([...avatar.providers]).toEqual(["fal", "heygen", "revana", "sync", "veed"]);
 });
 
 /**
@@ -280,10 +332,10 @@ test("the pack registers exactly four providers", () => {
  * field the type reads is the same one the adapter reads, so a drift between
  * "what compiles" and "what the editor offers" is not expressible.
  */
-test("ten endpoints take a still and two take a catalogued performer", () => {
+test("fourteen endpoints take a still and two take a catalogued performer", () => {
   const still = rows.filter(([, row]) => row.image === "required");
   const preset = rows.filter(([, row]) => row.image === "forbidden");
-  expect(still).toHaveLength(10);
+  expect(still).toHaveLength(14);
   expect(preset).toHaveLength(2);
   for (const [, row] of still) {
     expect([...(ROWS[bare(row.ref)]?.sources ?? [])]).toEqual(["image"]);
@@ -371,7 +423,7 @@ describe.each(rows)("%s", (name, row) => {
     }
     expect(compiled).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
-    expect(compiled.body["seed"]).toBe(PROBE_SEED);
+    expect(pluck(compiled.body, row.seedAt ?? "seed")).toBe(PROBE_SEED);
   });
 
   test("the performer enum is reachable, and only where it exists", () => {
@@ -472,7 +524,7 @@ test("inline bytes have three distinct fates across the pack", () => {
   const providersFor = (fate: string): string[] =>
     [...new Set((byFate.get(fate) ?? []).map((ref) => ref.slice(0, ref.indexOf("/"))))].sort();
   expect(providersFor("derived")).toEqual(["fal"]);
-  expect(providersFor("unsupported")).toEqual(["sync", "veed"]);
+  expect(providersFor("unsupported")).toEqual(["revana", "sync", "veed"]);
   expect(providersFor("structural")).toEqual(["heygen"]);
 
   // The asymmetry inside one HeyGen request: the still takes bytes, the track

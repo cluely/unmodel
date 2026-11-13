@@ -93,6 +93,8 @@ import { image as leonardo } from "../providers/leonardo/unified";
 import { image as luma } from "../providers/luma/unified-image";
 import { image as openai } from "../providers/openai/unified-image";
 import { image as recraft } from "../providers/recraft/unified-image";
+// The LEAF, for fal's reason: `../providers/revana/unified` carries eight adapters.
+import { image as revana } from "../providers/revana/unified-image";
 import { image as reve } from "../providers/reve/unified";
 import { image as runway } from "../providers/runway/unified-image";
 import { image as stability } from "../providers/stability/unified-image";
@@ -159,10 +161,15 @@ export function createImage<A extends ImageAdapter>(
  * different auth, so both belong; which you want depends on whose key you
  * hold.
  *
- * The cost is honest and measured: importing this pulls in seventeen provider
+ * Revana is a second router with the same property and a different wire: one
+ * url for every model, the model a body field, and a picture sized by a shape
+ * and a tier rather than by pixels — so `dimensions` reaches it as the shape
+ * the pixels describe, with the warning that conversion always carries.
+ *
+ * The cost is honest and measured: importing this pulls in eighteen provider
  * validators, their schemas and their catalogs, pinned in
  * `test/bundle-budget.test.ts`. `createImage([…])` above is the way to pay for
- * two providers instead of seventeen.
+ * two providers instead of eighteen.
  */
 export const image = createImage([
   openai,
@@ -182,6 +189,7 @@ export const image = createImage([
   krea,
   reve,
   xai,
+  revana,
 ]);
 
 export type {

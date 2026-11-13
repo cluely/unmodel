@@ -22,8 +22,8 @@ const CLIP = { url: "https://example.com/take-3.mp4" } as const;
 const VOICE = { url: "https://example.com/vo-french.wav" } as const;
 
 describe("the pack", () => {
-  test("registers exactly the four lipsync providers", () => {
-    expect([...lipsync.providers]).toEqual(["fal", "heygen", "sync", "veed"]);
+  test("registers exactly the five lipsync providers", () => {
+    expect([...lipsync.providers]).toEqual(["fal", "heygen", "revana", "sync", "veed"]);
   });
 
   test("a provider outside the pack is structural, not a validation error", () => {
@@ -454,6 +454,80 @@ describe("the arm this category deliberately does not serve", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.warnings.some((issue) => issue.code === "unknown_model")).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// revana — a clip and a sound, under `input`
+// ---------------------------------------------------------------------------
+
+describe("the result is Revana's own Validated, on the route every media model shares", () => {
+  const REF = "revana/bytedance-lipsync";
+
+  test("the clip, the track, a seed and the `prompt` extra land under `input`", () => {
+    const params = lipsync({
+      model: REF,
+      source: CLIP,
+      audio: VOICE,
+      seed: 7,
+      prompt: "The presenter speaks to camera",
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "bytedance-lipsync",
+      input: {
+        video_url: CLIP.url,
+        audio_url: VOICE.url,
+        seed: 7,
+        prompt: "The presenter speaks to camera",
+      },
+    });
+    expect(params.request.url).toBe("https://api.revana.si/v1/generations");
+    expect(params.toSdk("revana")).toEqual(JSON.parse(JSON.stringify(params)));
+    expect(params.warnings).toEqual([]);
+  });
+
+  test("it ends in `revana.lipsync`, the narrower view of `revana.video`", () => {
+    // Asserted through the one thing only that address says: it refuses an id
+    // that is not one of the curated lip-sync models, naming the wide address.
+    for (const model of ["revana/veo-3.1", "revana/nemesis", "revana/seedance-2.5"]) {
+      const result = lipsync.safe({ model, source: CLIP, audio: VOICE } as never);
+      expect(result.ok, model).toBe(false);
+      if (result.ok) continue;
+      expect(result.warnings.map((issue) => issue.code)).toEqual(["unknown_model"]);
+      expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+        ["unsupported_capability", ["model"]],
+      ]);
+      expect(result.errors[0]!.message).toContain("`revana.video` validates it");
+    }
+  });
+
+  test("inline bytes are refused for the clip and the track alike, naming the upload route", () => {
+    const result = lipsync.safe({
+      model: REF,
+      source: { data: "AAECAwQF", mimeType: "video/mp4" },
+      audio: { data: "BgcICQoL", mimeType: "audio/wav" },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["source"]],
+      ["unsupported_param", ["audio"]],
+    ]);
+    for (const issue of result.errors) {
+      expect(issue.message).toContain("POST https://api.revana.si/v1/uploads");
+    }
+  });
+
+  test("an `http:` reference is `revana.lipsync`'s own finding, at the canonical word", () => {
+    const result = lipsync.safe({
+      model: REF,
+      source: CLIP,
+      audio: { url: "http://example.com/vo.wav" },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path: ["audio"] });
+    expect(result.errors[0]!.message).toContain("must be a public https URL");
   });
 });
 

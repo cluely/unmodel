@@ -51,6 +51,7 @@ import { video as luma } from "../../src/providers/luma/unified-video";
 import { video as minimax } from "../../src/providers/minimax/unified-video";
 import { video as openai } from "../../src/providers/openai/unified-video";
 import { video as pixverse } from "../../src/providers/pixverse/unified";
+import { video as revana } from "../../src/providers/revana/unified-video";
 import { video as runway } from "../../src/providers/runway/unified-video";
 import { video as vidu } from "../../src/providers/vidu/unified-video";
 
@@ -73,6 +74,7 @@ const ADAPTERS: readonly Adapter[] = [
   lightricks,
   fal,
   atlascloud,
+  revana,
 ];
 
 const IMAGE_URL = "https://example.com/frame.png";
@@ -161,6 +163,11 @@ const ATLASCLOUD_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Obje
 const REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = {
   ...FAL_REQUIRED,
   ...ATLASCLOUD_REQUIRED,
+  // `NemesisInput` requires BOTH a clip and reference pictures ("restages a
+  // clip with your people, products and places"), which none of the four route
+  // bases carries alone. The references ride on the video base.
+  "revana/nemesis": { image: [{ url: IMAGE_URL, role: "reference" }] },
+  "revana/nemesis-lite": { image: [{ url: IMAGE_URL, role: "reference" }] },
   "runway/gen4.5": { aspectRatio: "16:9", duration: 5 },
   "runway/gen4_turbo": { aspectRatio: "16:9" },
   "runway/veo3.1": { aspectRatio: "16:9" },

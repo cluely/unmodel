@@ -1,0 +1,14 @@
+{
+  "ref": "revana/seedance-2.0",
+  "params": {
+    "model": "seedance-2.0",
+    "input": {
+      "prompt": "@fox trots through the same snowfield at dusk",
+      "image_urls": [
+        "https://example.com/frame.png"
+      ],
+      "duration": 5
+    }
+  },
+  "url": "https://api.revana.si/v1/generations"
+}

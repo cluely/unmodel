@@ -1,0 +1,17 @@
+{
+  "ref": "revana/qwen-image-edit",
+  "image": {
+    "url": "https://example.com/street.png"
+  },
+  "params": {
+    "model": "qwen-image-edit",
+    "input": {
+      "prompt": "make it winter",
+      "image_url": "https://example.com/street.png"
+    }
+  },
+  "url": "https://api.revana.si/v1/generations",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

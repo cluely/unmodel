@@ -23,7 +23,7 @@ import { video as klingAdapter } from "../../src/providers/kling/unified-video";
 import { video as openaiAdapter } from "../../src/providers/openai/unified";
 
 describe("the pack", () => {
-  test("registers exactly the fourteen video providers, sorted", () => {
+  test("registers exactly the fifteen video providers, sorted", () => {
     expect([...video.providers]).toEqual([
       "alibaba",
       "atlascloud",
@@ -36,6 +36,7 @@ describe("the pack", () => {
       "minimax",
       "openai",
       "pixverse",
+      "revana",
       "runway",
       "vidu",
       "xai",
@@ -511,6 +512,288 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     expect(result.errors.map((issue) => issue.code)).toEqual(["unsupported_param"]);
     expect(result.errors[0]!.path).toEqual(["image"]);
     expect(result.errors[0]!.message).toContain("POST /openapi/v2/image/upload");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// revana — one url, one id per model, and the validator owns the combination
+// ---------------------------------------------------------------------------
+
+describe("revana: the adapter compiles and `revana.video` decides", () => {
+  const FRAME = "https://example.com/frame.png";
+  const CLIP = "https://example.com/clip.mp4";
+  const body = (params: Record<string, unknown>): unknown =>
+    JSON.parse(JSON.stringify(video(params as never)));
+
+  test("every input lands on the field of the same meaning, under `input`", () => {
+    expect(
+      body({
+        model: "revana/kling-4.0",
+        prompt: "a fox",
+        image: [{ url: FRAME }, { url: FRAME, role: "last" }],
+        duration: 8,
+        resolution: "1080p",
+        aspectRatio: "21:9",
+        seed: 7,
+        audio: true,
+      }),
+    ).toEqual({
+      model: "kling-4.0",
+      input: {
+        prompt: "a fox",
+        image_url: FRAME,
+        end_image_url: FRAME,
+        duration: 8,
+        resolution: "1080p",
+        aspect_ratio: "21:9",
+        seed: 7,
+        audio: true,
+      },
+    });
+  });
+
+  test("a combination the model does not offer is the API's own sentence, at `image`", () => {
+    const result = video.safe({
+      model: "revana/veo-3.1",
+      prompt: "a fox",
+      image: [{ url: FRAME, role: "reference" }],
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_capability", path: ["image"] });
+    expect(result.errors[0]!.message).toContain(
+      '"veo-3.1" cannot take this combination of inputs. It takes: a prompt alone; `input.image_url`; ' +
+        "`input.image_url` with `input.end_image_url`.",
+    );
+  });
+
+  test("a picture rides along with a clip — the adapter does not forbid what the API takes", () => {
+    // The motion-control models' `tasks` list only `video_to_video`, and their
+    // routes need the character picture beside the clip. A per-field refusal in
+    // the adapter would make that request unsayable.
+    expect(
+      body({
+        model: "revana/kling-3.0-motion-control",
+        prompt: "she waves",
+        video: { url: CLIP },
+        image: { url: FRAME },
+      }),
+    ).toEqual({
+      model: "kling-3.0-motion-control",
+      input: { prompt: "she waves", image_url: FRAME, video_url: CLIP },
+    });
+  });
+
+  test("a tier is sent in the catalog's spelling", () => {
+    expect(body({ model: "revana/veo-3.1", prompt: "a fox", resolution: "4k" })).toEqual({
+      model: "veo-3.1",
+      input: { prompt: "a fox", resolution: "4K" },
+    });
+  });
+
+  test("a tier the model lacks is refused, and says where its other sizes are", () => {
+    // `1440p` reaches no Revana model. `ltx-2.5-fast` lists a `2K`, but Revana
+    // does not publish how many lines that is, so the two are not mapped.
+    const result = video.safe({
+      model: "revana/veo-3.1",
+      prompt: "a fox",
+      resolution: "1440p",
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({
+      code: "invalid_enum_value",
+      path: ["resolution"],
+      meta: { allowed: ["720p", "1080p", "4k"], value: "1440p" },
+    });
+    expect(result.errors[0]!.message).toContain("providerOptions.revana.input.resolution");
+  });
+
+  test("a model with no resolutions answers in the API's words", () => {
+    const result = video.safe({
+      model: "revana/kling-2.1-master",
+      prompt: "a fox",
+      resolution: "720p",
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["resolution"] });
+    expect(result.errors[0]!.message).toContain('"kling-2.1-master" takes no `input.resolution`.');
+  });
+
+  test("a model that sets its own length refuses `duration`, at `duration`", () => {
+    const result = video.safe({
+      model: "revana/kling-3.0-motion-control",
+      video: { url: CLIP },
+      image: { url: FRAME },
+      duration: 5,
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["duration"] });
+    expect(result.errors[0]!.message).toContain("sets its own length");
+  });
+
+  test("inline bytes are refused with the upload route that makes a URL", () => {
+    const result = video.safe({
+      model: "revana/veo-3.1",
+      prompt: "a fox",
+      image: { data: "iVBORw0KGgo=", mimeType: "image/png" },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => issue.code)).toEqual(["unsupported_param"]);
+    expect(result.errors[0]!.path).toEqual(["image"]);
+    expect(result.errors[0]!.message).toContain("POST https://api.revana.si/v1/uploads");
+  });
+
+  test("a `data:` URL is refused too — by the validator's own https rule, at `image`", () => {
+    const result = video.safe({
+      model: "revana/veo-3.1",
+      prompt: "a fox",
+      image: { url: "data:image/png;base64,iVBORw0KGgo=" },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_shape", path: ["image"] });
+    expect(result.errors[0]!.message).toContain("must be a public https URL");
+  });
+
+  test("`negativePrompt` is sent and WARNED about — a route fact is never an error", () => {
+    const result = video.safe({ model: "revana/veo-3.1", prompt: "a fox", negativePrompt: "blur" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).toEqual({
+      model: "veo-3.1",
+      input: { prompt: "a fox", negative_prompt: "blur" },
+    });
+    expect(result.warnings.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["negativePrompt"]],
+    ]);
+    // …and on one of the two models whose routes took it, nothing at all.
+    const taken = video.safe({
+      model: "revana/kling-2.5-turbo-pro",
+      prompt: "a fox",
+      negativePrompt: "blur",
+    });
+    expect(taken.ok && taken.warnings).toEqual([]);
+  });
+
+  test("seedance-2.5 takes `SeedanceInput`: the same compile, and no `seed`", () => {
+    expect(
+      body({
+        model: "revana/seedance-2.5",
+        prompt: "a fox",
+        duration: 30,
+        resolution: "480p",
+        aspectRatio: "21:9",
+        audio: true,
+      }),
+    ).toEqual({
+      model: "seedance-2.5",
+      input: { prompt: "a fox", duration: 30, resolution: "480p", aspect_ratio: "21:9", audio: true },
+    });
+    const result = video.safe({ model: "revana/seedance-2.5", prompt: "a fox", seed: 1 });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["seed"] });
+    expect(result.errors[0]!.message).toContain("`SeedanceInput`, which has no `seed`");
+  });
+
+  test("nemesis takes `NemesisInput`: a clip and its references are a canonical request", () => {
+    expect(
+      body({
+        model: "revana/nemesis",
+        video: { url: CLIP },
+        image: [{ url: FRAME, role: "reference" }],
+        resolution: "720p",
+        roles: ["product"],
+        guide: "scene",
+      }),
+    ).toEqual({
+      model: "nemesis",
+      input: {
+        image_urls: [FRAME],
+        video_url: CLIP,
+        resolution: "720p",
+        guide: "scene",
+        roles: ["product"],
+      },
+    });
+  });
+
+  test("nemesis has no `duration`, no first frame and no shape — each refused at its own word", () => {
+    const paths = (extra: Record<string, unknown>): unknown => {
+      const result = video.safe({
+        model: "revana/nemesis",
+        video: { url: CLIP },
+        image: [{ url: FRAME, role: "reference" }],
+        ...extra,
+      } as never);
+      return result.ok ? "accepted" : result.errors.map((issue) => [issue.code, issue.path]);
+    };
+    expect(paths({ duration: 5 })).toEqual([["unsupported_param", ["duration"]]]);
+    expect(paths({ aspectRatio: "16:9" })).toEqual([["unsupported_param", ["aspectRatio"]]]);
+    expect(paths({ seed: 1 })).toEqual([["unsupported_param", ["seed"]]]);
+    expect(paths({ image: [{ url: FRAME }, { url: FRAME, role: "reference" }] })).toEqual([
+      ["unsupported_param", ["image"]],
+    ]);
+  });
+
+  test("a lip-sync model is not in this roster: it warns, and `revana.video` names what it needs", () => {
+    const result = video.safe({ model: "revana/bytedance-lipsync", video: { url: CLIP } } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.warnings.map((issue) => issue.code)).toEqual(["unknown_model"]);
+    expect(result.errors[0]!.message).toContain("needs `input.audio_url`");
+  });
+
+  test("a model this snapshot has not seen is sent as written", () => {
+    const result = video.safe({
+      model: "revana/veo-9",
+      prompt: "a fox",
+      duration: 9,
+      resolution: "4k",
+      aspectRatio: "16:9",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).toEqual({
+      model: "veo-9",
+      input: { prompt: "a fox", duration: 9, resolution: "4k", aspect_ratio: "16:9" },
+    });
+  });
+
+  test("`providerOptions.revana` reaches both levels of the body", () => {
+    expect(
+      body({
+        model: "revana/pixverse-v6",
+        prompt: "a fox",
+        providerOptions: { revana: { max_cost_usd: 4, input: { resolution: "540p" } } },
+      }),
+    ).toEqual({
+      model: "pixverse-v6",
+      input: { prompt: "a fox", resolution: "540p" },
+      max_cost_usd: 4,
+    });
+  });
+
+  test("the result is `revana.video`'s Validated: request line, SDK view, listed price", () => {
+    const request = {
+      model: "revana/veo-3.1",
+      prompt: "a fox",
+      duration: 8,
+      resolution: "4k",
+      audio: true,
+    } as const;
+    const params = video(request);
+    expect(params.request.url).toBe("https://api.revana.si/v1/generations");
+    expect(params.request.method).toBe("POST");
+    expect(params.toSdk("revana")).toEqual(JSON.parse(JSON.stringify(params)));
+    // 8 seconds at the listed `4K+audio` rate.
+    const safe = video.safe(request);
+    expect(safe.ok && safe.estimate?.costUSD).toBeCloseTo(4.64, 6);
   });
 });
 

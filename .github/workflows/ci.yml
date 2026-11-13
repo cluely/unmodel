@@ -23,6 +23,10 @@ jobs:
           # outage can never fail an unrelated pull request. Snapshot drift is
           # caught weekly by codegen-fal-refresh.yml instead.
           bun run codegen:fal
+          # Same contract for src/providers/revana/gen/**: regenerated from the
+          # committed data/revana/ snapshot, offline. Roster drift is caught
+          # weekly by codegen-revana-refresh.yml.
+          bun run codegen:revana
           # `git diff --exit-code` alone misses newly created untracked files
           # (e.g. a snapshot update that adds a new provider's .gen.ts).
           git add -A

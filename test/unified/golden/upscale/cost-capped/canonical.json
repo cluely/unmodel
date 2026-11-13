@@ -1,0 +1,10 @@
+{
+  "source": {
+    "url": "https://example.com/portrait.png"
+  },
+  "providerOptions": {
+    "revana": {
+      "max_cost_usd": 0.05
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "status": 422,
+  "body": {
+    "detail": "A reference image could not be used (is not in a supported format). Host it at a direct public link to the file and send the request again. You were not charged.",
+    "error": {
+      "code": "invalid_input",
+      "message": "A reference image could not be used (is not in a supported format). Host it at a direct public link to the file and send the request again. You were not charged.",
+      "request_id": "req_e66f40535e87e6d82719"
+    }
+  }
+}

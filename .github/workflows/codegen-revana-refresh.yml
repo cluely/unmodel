@@ -1,0 +1,84 @@
+name: Codegen refresh (Revana)
+
+# Weekly. Revana is a router whose roster moves faster than any vendor's — the
+# catalog grew from 226 to 237 models during the afternoon this integration was
+# researched — and `bun run codegen:revana` in ci.yml is offline by design, so
+# this schedule is the only place a new model, a changed option list or a moved
+# price reaches the library.
+#
+# Both fetches are keyless: `GET https://api.revana.si/v1/models` and
+# `https://revana.si/openapi.json`. No secret is involved.
+
+on:
+  schedule:
+    - cron: "41 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun install --frozen-lockfile
+
+      # Says which snapshot moved, before the refresh rewrites both. A changed
+      # openapi.json is the one a human has to read: src/providers/revana/generation-wire.ts
+      # is hand-transcribed from it.
+      - name: Snapshot drift check
+        continue-on-error: true
+        run: bun run codegen:revana:check
+
+      # Throws — on purpose — when the catalog has grown something the
+      # generator does not model (a new option key, a new price unit) or a new
+      # talking-head model that curation has not filed under a verb.
+      - name: Refresh Revana snapshots and regenerate
+        run: bun run codegen:revana:refresh
+
+      - name: Create changeset if the generated surface changed
+        run: |
+          if [ -n "$(git status --porcelain src/providers/revana)" ]; then
+            cat > .changeset/revana-catalog-refresh.md <<'EOF'
+          ---
+          "unmodel": patch
+          ---
+
+          chore: refresh the Revana model catalog
+          EOF
+          fi
+
+      # NOTE: PRs opened with the default GITHUB_TOKEN do not trigger other
+      # workflows (GitHub Actions limitation), so the CI workflow will NOT run
+      # on this PR and it cannot merge if branch protection requires checks.
+      # Fix: create a PAT or GitHub App token with contents+pull-requests
+      # write access, store it as a repo secret, and pass it via the action's
+      # `token:` input below.
+      - name: Open or update pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: codegen/revana-refresh
+          commit-message: "chore: refresh the Revana model catalog"
+          title: "chore: refresh the Revana model catalog"
+          body: |
+            Automated refresh of the committed Revana snapshots
+            (`data/revana/models.json`, `data/revana/openapi.json`) and
+            everything `scripts/codegen-revana.ts` generates from them.
+
+            **If `openapi.json` changed, read that diff first.**
+            `src/providers/revana/generation-wire.ts` is hand-transcribed from it, and no
+            generator will carry a renamed field or a new input schema across.
+
+            Two things are NOT refreshed here, because the API states them only
+            in its own 422 messages: the fields each speech model takes and
+            which models take `negative_prompt` (`data/revana/overlays.json`).
+            A new speech model fails this job until its entry is recorded.
+
+            This PR was created by the scheduled `codegen-revana-refresh`
+            workflow. The branch is rolling: subsequent runs update this same
+            PR until it is merged or closed.

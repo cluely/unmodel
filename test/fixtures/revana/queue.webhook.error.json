@@ -1,0 +1,11 @@
+{
+  "headers": {
+    "revana-signature": "t=1794533684,v1=3b3188fa9274952a2f9a63e707c866ad1202b0a73d4a89833ee170b48bc043e3",
+    "revana-webhook-id": "wh_gen_95562833c1ac4ea4a2c2",
+    "x-revana-request-id": "gen_95562833c1ac4ea4a2c2",
+    "user-agent": "Revana-Webhooks/1.0",
+    "content-type": "application/json",
+    "content-length": "492"
+  },
+  "body": "{\"error\":\"A reference image could not be used (is not in a supported format). Host it at a direct public link to the file and send the request again. You were not charged.\",\"status\":\"ERROR\",\"payload\":{\"detail\":\"A reference image could not be used (is not in a supported format). Host it at a direct public link to the file and send the request again. You were not charged.\",\"error_type\":\"invalid_input\"},\"request_id\":\"gen_95562833c1ac4ea4a2c2\",\"gateway_request_id\":\"gen_95562833c1ac4ea4a2c2\"}"
+}

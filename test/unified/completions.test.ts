@@ -1558,11 +1558,11 @@ chat({ model: "openai/gpt-5.2", messages: [], reasoning: "¦" });`);
   test("providerOptions completes the provider ids", () => {
     const entries = completionsAt(`import { chat } from "./src/chat/index";
 chat({ model: "openai/gpt-5.2", messages: [], providerOptions: { ¦ } });`);
-    // The 32 `unmodel/chat` serves, plus the five it knows but cannot send to,
+    // The 33 `unmodel/chat` serves, plus the five it knows but cannot send to,
     // whose buckets are inert and silent on purpose (a portable request carries
     // several providers' settings). `test/chat/provider-options.test.ts` pins
     // that set against the runtime's own tolerated set in both directions.
-    expect(entries.length).toBe(37);
+    expect(entries.length).toBe(38);
     expect(entries).toContain("openai");
     // Ids with a hyphen come back quoted, since that is what the editor has to
     // insert for them to be a valid key.
@@ -1971,7 +1971,7 @@ chat({ model: "openai/gpt-5.2", messages: [{ role: "user", content: [{ type: "fi
     // attachment (`dropped_content`). The set is `ChatProviderId`: the four
     // factory-configured providers are absent because `unmodel/chat` cannot
     // target them by ref at all.
-    expect(entries.length).toBe(32);
+    expect(entries.length).toBe(33);
     expect(entries).toContain("openai");
     expect(entries).toContain("anthropic");
     expect(entries).not.toContain("google-vertex");

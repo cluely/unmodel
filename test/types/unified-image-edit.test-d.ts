@@ -28,6 +28,7 @@ import { imageEdit as bflImageEdit } from "../../src/providers/black-forest-labs
 import { imageEdit as ideogramImageEdit } from "../../src/providers/ideogram/unified";
 import { imageEdit as openaiImageEdit } from "../../src/providers/openai/unified";
 import { imageEdit as recraftImageEdit } from "../../src/providers/recraft/unified";
+import { imageEdit as revanaImageEdit } from "../../src/providers/revana/unified-image-edit";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import type {
   ImageEditInputFor,
@@ -351,7 +352,40 @@ expectAssignable<readonly string[]>(openaiImageEdit.models);
 expectAssignable<ImageEditParams["model"]>("openai/gpt-image-1.5");
 expectAssignable<ImageEditParams["operation"]>("edit");
 
+// ---------------------------------------------------------------------------
+// revana — a URL-only route, with rows generated from a catalog
+// ---------------------------------------------------------------------------
+
+function revanaNarrowingTests(): void {
+  const base = { operation: "edit", prompt: "make it night" } as const;
+  const url = "https://example.com/street.png";
+
+  imageEdit({ ...base, model: "revana/nano-banana-pro", image: { url }, aspectRatio: "4:5" });
+  // @ts-expect-error — Revana fetches every reference: a Blob has no wire field.
+  imageEdit({ ...base, model: "revana/nano-banana-pro", image: { file: new Blob([]) } });
+  // @ts-expect-error — nor do inline bytes.
+  imageEdit({ ...base, model: "revana/nano-banana-pro", image: { data: "AAAA" } });
+  // @ts-expect-error — 9:21 is not one of nano-banana-pro's shapes.
+  imageEdit({ ...base, model: "revana/nano-banana-pro", image: { url }, aspectRatio: "9:21" });
+  // @ts-expect-error — no Revana model has a `size` spelling.
+  imageEdit({ ...base, model: "revana/nano-banana-pro", image: { url }, size: "1024x1024" });
+
+  // `quality`, typed from the tiers the catalog lists for the model.
+  imageEdit({ ...base, model: "revana/ideogram-v3", image: { url }, quality: "turbo" });
+  // @ts-expect-error — `high` is gpt-image-1's word, not ideogram-v3's.
+  imageEdit({ ...base, model: "revana/ideogram-v3", image: { url }, quality: "high" });
+
+  // A text-to-image-only model is `unmodel/image`'s ref, not this pack's.
+  // @ts-expect-error — imagen-4 cannot edit.
+  expectAssignable<UnifiedRef<typeof revanaImageEdit>>("revana/imagen-4");
+
+  const result = imageEdit({ ...base, model: "revana/nano-banana-pro", image: { url } });
+  expectAssignable<{ image_url?: string }>(result.input);
+  result.toSdk("revana");
+}
+
 export {
+  revanaNarrowingTests,
   operationTests,
   imageNarrowingTests,
   refUnionTests,

@@ -1,3 +1,4 @@
+import { chatModels as revanaChatModels } from "../src/providers/revana/gen/models-chat.gen";
 import { describe, expect, test } from "bun:test";
 import { generate, sortKeysDeep } from "./codegen";
 import { catalog } from "../src/catalog/index";
@@ -243,7 +244,7 @@ describe("codegen: chat tables", () => {
 
     let rows = 0;
     for (const [providerId, models] of Object.entries(chatProfiles)) {
-      const source = (catalog as Record<string, { models: Record<string, unknown> } | undefined>)[providerId];
+      const source = ({ ...catalog, revana: { models: revanaChatModels } } as Record<string, { models: Record<string, unknown> } | undefined>)[providerId];
       expect(source, `chatProfiles names provider "${providerId}"`).toBeDefined();
       for (const [modelId, profile] of Object.entries(models)) {
         const catalogRow = (source as { models: Record<string, unknown> }).models[modelId];
@@ -289,7 +290,7 @@ describe("codegen: chat tables", () => {
     let removed = 0;
     for (const [providerId, models] of Object.entries(chatProfiles)) {
       type TextRows = { models: Record<string, { modalities: { output: readonly string[] } }> };
-      const source = (catalog as unknown as Record<string, TextRows | undefined>)[providerId];
+      const source = ({ ...catalog, revana: { models: revanaChatModels } } as unknown as Record<string, TextRows | undefined>)[providerId];
       expect(source, providerId).toBeDefined();
       const textOut = Object.entries((source as TextRows).models)
         .filter(([, model]) => model.modalities.output.includes("text"))
@@ -298,7 +299,7 @@ describe("codegen: chat tables", () => {
       removed += textOut.length - expected.length;
       expect(Object.keys(models).sort(), providerId).toEqual(expected);
     }
-    expect(Object.keys(chatProfiles).length).toBe(32);
+    expect(Object.keys(chatProfiles).length).toBe(33);
     // A vacuous exclusion list would make the filter above a no-op and this
     // test a weaker version of what it replaced.
     expect(removed).toBe(9);

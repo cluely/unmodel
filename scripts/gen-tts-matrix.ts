@@ -68,6 +68,9 @@ export const TTS_MATRIX_SAMPLES = [
   // host — which is what makes the row worth generating rather than writing
   // down: every other provider here has one path and fal has twenty-three.
   { provider: "fal", params: { model: "fal/fal-ai/kokoro/american-english", text: "Sample.", voice: "af_heart" } },
+  // The router. One URL for every media model it serves, speech included, so
+  // the row is the same whichever model the sample names.
+  { provider: "revana", params: { model: "revana/elevenlabs-v3", text: "Sample." } },
 ] as const satisfies readonly { provider: string; params: TtsParams }[];
 
 /** One machine row: nothing here is written down, all three come off `.request`. */

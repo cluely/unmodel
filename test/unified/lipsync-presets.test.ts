@@ -23,6 +23,7 @@ import { describe, expect, test } from "bun:test";
 import { lipsync } from "../../src/unified/lipsync";
 import { lipsync as fal } from "../../src/providers/fal/unified-lipsync";
 import { lipsync as heygen } from "../../src/providers/heygen/unified-lipsync";
+import { lipsync as revana } from "../../src/providers/revana/unified-lipsync";
 import { lipsync as sync } from "../../src/providers/sync/unified-lipsync";
 import { lipsync as veed } from "../../src/providers/veed/unified-lipsync";
 import { FAL_REQUIRED_PROBES } from "../../src/providers/fal/gen/endpoints.gen";
@@ -36,7 +37,8 @@ const falRefs = fal.models.map((id) => `fal/${id}`);
 const syncRefs = sync.models.map((id) => `sync/${id}`);
 const veedRefs = veed.models.map((id) => `veed/${id}`);
 const heygenRefs = heygen.models.map((id) => `heygen/${id}`);
-const refs = [...falRefs, ...syncRefs, ...veedRefs, ...heygenRefs];
+const revanaRefs = revana.models.map((id) => `revana/${id}`);
+const refs = [...falRefs, ...syncRefs, ...veedRefs, ...heygenRefs, ...revanaRefs];
 
 /** The bare model id a ref points at, and the provider it names. */
 const bare = (ref: string): string => ref.slice(ref.indexOf("/") + 1);
@@ -52,6 +54,7 @@ const providerOf = (ref: string): string => ref.slice(0, ref.indexOf("/"));
 const ROWS = {
   ...fal.modelParams,
   ...heygen.modelParams,
+  ...revana.modelParams,
   ...sync.modelParams,
   ...veed.modelParams,
 } as Readonly<
@@ -63,7 +66,8 @@ test("the sweep covers the whole roster", () => {
   expect(syncRefs).toHaveLength(5);
   expect(veedRefs).toHaveLength(1);
   expect(heygenRefs).toHaveLength(2);
-  expect(refs).toHaveLength(18);
+  expect(revanaRefs).toHaveLength(1);
+  expect(refs).toHaveLength(19);
 });
 
 /**
@@ -140,7 +144,10 @@ describe.each(refs)("%s", (ref) => {
     // None of the three native providers publishes a seed anywhere, so their
     // rows declare no `keys` at all and the answer is the same `false` by a
     // different route.
-    const declared = ROWS[id]?.keys?.includes("seed") === true;
+    // Revana is the one provider where the answer is `true` for the whole
+    // roster rather than per row: `seed` is a field of the `ModelInput` every
+    // one of its models shares ("accepted by every model").
+    const declared = provider === "revana" || ROWS[id]?.keys?.includes("seed") === true;
     const result = lipsync.safe({ model: ref, source: CLIP, audio: VOICE, seed: 7, ...providerOptions } as never);
     expect(result.ok, id).toBe(declared);
   });

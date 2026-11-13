@@ -20,6 +20,7 @@ import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { upscale as falUpscale } from "../../src/providers/fal";
 import { createUpscale, upscale } from "../../src/unified/upscale";
 import { upscale as falAdapter } from "../../src/providers/fal/unified-upscale";
+import { upscale as revanaAdapter } from "../../src/providers/revana/unified-upscale";
 import { upscale as topazAdapter } from "../../src/providers/topaz/unified";
 import { toFormData, topazCostUSD } from "../../src/providers/topaz";
 
@@ -27,8 +28,8 @@ const STILL = { url: "https://example.com/portrait.png" } as const;
 const CLIP = { url: "https://example.com/take-3.mp4" } as const;
 
 describe("the pack", () => {
-  test("registers exactly the two upscale providers", () => {
-    expect([...upscale.providers]).toEqual(["fal", "topaz"]);
+  test("registers exactly the three upscale providers", () => {
+    expect([...upscale.providers]).toEqual(["fal", "revana", "topaz"]);
   });
 
   test("a provider outside the pack is structural, not a validation error", () => {
@@ -348,6 +349,68 @@ describe("providerOptions", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(JSON.parse(JSON.stringify(result.params))).not.toHaveProperty("output_format");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// revana — one upscaler, a still, and no multiplier
+// ---------------------------------------------------------------------------
+
+describe("revana: the source is the still, by declaration", () => {
+  const REF = "revana/recraft-crisp-upscale";
+
+  test("the result is `revana.upscale`'s Validated: a JSON body on the one generation route", () => {
+    const params = upscale({ model: REF, source: STILL });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      model: "recraft-crisp-upscale",
+      input: { image_url: STILL.url },
+    });
+    expect(params.request.url).toBe("https://api.revana.si/v1/generations");
+    expect(params.request.headers).toEqual({ "content-type": "application/json" });
+    expect(params.toSdk("revana")).toEqual(JSON.parse(JSON.stringify(params)));
+    // The listed per-picture rate — what the quote endpoint is asked to confirm.
+    const safe = upscale.safe({ model: REF, source: STILL });
+    expect(safe.ok && safe.estimate?.costUSD).toBeCloseTo(0.01, 6);
+  });
+
+  test("the row says a still, although the model's own summary lists a clip too", () => {
+    // "It takes: input.image_url or input.video_url" — two fields, and a
+    // canonical `{ url }` cannot say which medium is behind it. So the unified
+    // ref carries the still, and the row is what the type reads.
+    const rows = revanaAdapter.modelParams;
+    expect(rows["recraft-crisp-upscale"].sources).toEqual(["image"]);
+    expect(rows["recraft-crisp-upscale"].factors).toEqual([]);
+  });
+
+  test("`factor` is a declared gap that names what the request does carry", () => {
+    const result = upscale.safe({ model: REF, source: STILL, factor: 2 } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["factor"]],
+    ]);
+    expect(result.errors[0]!.message).toContain("no multiplier field");
+  });
+
+  test("inline bytes are refused with the upload route that makes a URL", () => {
+    const result = upscale.safe({
+      model: REF,
+      source: { data: "AAECAwQF", mimeType: "image/png" },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["source"]],
+    ]);
+    expect(result.errors[0]!.message).toContain("POST https://api.revana.si/v1/uploads");
+  });
+
+  test("an id that is not an upscaler is refused by the view, naming the wide address", () => {
+    const result = upscale.safe({ model: "revana/nano-banana-pro", source: STILL } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_capability", path: ["model"] });
+    expect(result.errors[0]!.message).toContain("`revana.image` validates it");
   });
 });
 

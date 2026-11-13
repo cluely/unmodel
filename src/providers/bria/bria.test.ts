@@ -123,6 +123,13 @@ describe("bria.image", () => {
       });
       expect(edited.ok, `edit should accept ${aspect_ratio}`).toBe(true);
       if (edited.ok) expect(edited.warnings, `${aspect_ratio} should be warning-free`).toEqual([]);
+
+      // https://docs.bria.ai/_bundle/image-editing.yaml (read 2026-11-12): "Supported for both
+      // single-image and multi-reference requests." — fibo-2.md's "two or more reference images"
+      // pitch is a quality note, not a 422.
+      const single = imageEdit.safe({ images: ["https://example.com/p.png"], instruction: "x", aspect_ratio });
+      expect(single.ok, `edit (single image) should accept ${aspect_ratio}`).toBe(true);
+      if (single.ok) expect(single.warnings, `${aspect_ratio} should be warning-free`).toEqual([]);
     }
   });
 

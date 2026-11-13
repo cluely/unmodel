@@ -449,13 +449,17 @@ describe("reasoning", () => {
    */
   test("both given: budget wins where budgets exist, effort where they do not", () => {
     const reasoning: ChatReasoning = { effort: "high", budgetTokens: 8192 };
+    // The effort rides beside the budget for a target model with none
+    // (Claude 4.7+ on anthropic-messages); a budget model ignores it.
     expect(encode({ reasoning }, "anthropic-messages").ir.settings.reasoning).toEqual({
       mode: "budget",
       budgetTokens: 8192,
+      effort: "high",
     });
     expect(encode({ reasoning }, "gemini").ir.settings.reasoning).toEqual({
       mode: "budget",
       budgetTokens: 8192,
+      effort: "high",
     });
     expect(encode({ reasoning }, "openai-chat").ir.settings.reasoning).toEqual({
       mode: "effort",
@@ -464,6 +468,14 @@ describe("reasoning", () => {
     for (const dialect of DIALECTS) {
       expect(encode({ reasoning }, dialect).warnings, dialect).toEqual([]);
     }
+  });
+
+  test("both given: an effort outside a budget dialect's vocabulary is not carried, and not warned", () => {
+    // "minimal" is not Anthropic's; narrowing it would warn on every model
+    // that takes the budget, so the no-budget decoder buckets the budget instead.
+    const { ir, warnings } = encode({ reasoning: { effort: "minimal", budgetTokens: 4096 } }, "anthropic-messages");
+    expect(ir.settings.reasoning).toEqual({ mode: "budget", budgetTokens: 4096 });
+    expect(warnings).toEqual([]);
   });
 
   /**

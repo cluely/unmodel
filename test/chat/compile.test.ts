@@ -31,7 +31,9 @@ const body = (result: object): Record<string, unknown> => ({ ...result });
 describe("the worked example", () => {
   test("anthropic/claude-sonnet-4-6 compiles to the /v1/messages body, warning-free", () => {
     // Sonnet 4.6 rather than a 4.7+ id: a thinking budget compiles to
-    // `thinking.type "enabled"`, which Claude 4.7 and later refuse.
+    // `thinking.type "enabled"` only on a model that still takes one; Claude
+    // 4.7+ gets adaptive thinking and an effort level (see "reasoning is
+    // spelled per target model" below).
     const result = chat({
       model: "anthropic/claude-sonnet-4-6",
       messages: [{ role: "user", content: PROMPT }],
@@ -77,6 +79,98 @@ describe("the worked example", () => {
     // effort level is a real loss and must be named.
     expect(result.warnings.map((w) => w.code)).toEqual(["approximated_param"]);
     expect(result.warnings[0]?.message).toContain("reasoning_effort");
+  });
+});
+
+/**
+ * One dialect, two thinking vocabularies: Claude 4.7 and later refuse a token
+ * budget (`thinking.type "enabled"`) and take adaptive thinking plus
+ * `output_config.effort`, and Sonnet 5.5 refuses `disabled`. Every request
+ * below compiles to a body the provider validator accepts — a unified request
+ * the API would fulfil must never be refused on the way down.
+ */
+describe("reasoning is spelled per target model", () => {
+  const messages = [{ role: "user" as const, content: PROMPT }];
+  function codes(result: { warnings: ReadonlyArray<{ code: string; path: unknown[] }> }): unknown[] {
+    return result.warnings.map((w) => ({ code: w.code, path: w.path }));
+  }
+
+  // Opus 4.7 runs with thinking OFF when `thinking` is absent, so an effort
+  // alone would not think there: adaptive has to be sent explicitly.
+  test.each(["claude-opus-4-7", "claude-opus-5", "claude-sonnet-5-5"])(
+    "{ effort, budgetTokens } on %s is adaptive thinking at that effort, warning-free",
+    (model) => {
+      const result = chat({
+        model: `anthropic/${model}`,
+        messages,
+        maxOutputTokens: 4096,
+        reasoning: { effort: "high", budgetTokens: 2048 },
+      });
+      expect(body(result)["thinking"]).toEqual({ type: "adaptive" });
+      expect(body(result)["output_config"]).toEqual({ effort: "high" });
+      expect(result.warnings).toEqual([]);
+    },
+  );
+
+  test.each(["claude-opus-4-7", "claude-opus-5"])(
+    "a bare budget on %s is bucketed to an effort level, and says so",
+    (model) => {
+      const result = chat({
+        model: `anthropic/${model}`,
+        messages,
+        maxOutputTokens: 32_000,
+        reasoning: { budgetTokens: 16_000 },
+      });
+      expect(body(result)["thinking"]).toEqual({ type: "adaptive" });
+      expect(body(result)["output_config"]).toEqual({ effort: "high" });
+      expect(codes(result)).toEqual([{ code: "approximated_param", path: ["thinking", "budget_tokens"] }]);
+      expect(result.warnings[0]?.meta).toEqual({ budgetTokens: 16_000, effort: "high" });
+    },
+  );
+
+  test("a model that still takes a budget gets the budget, and the effort is not sent", () => {
+    const result = chat({
+      model: "anthropic/claude-opus-4-5",
+      messages,
+      maxOutputTokens: 4096,
+      reasoning: { effort: "high", budgetTokens: 2048 },
+    });
+    expect(body(result)["thinking"]).toEqual({ type: "enabled", budget_tokens: 2048 });
+    expect(body(result)["output_config"]).toBeUndefined();
+    expect(result.warnings).toEqual([]);
+  });
+
+  test.each(["off", false] as const)(
+    "reasoning %p on claude-sonnet-5-5 is between_tools, its lowest setting",
+    (reasoning) => {
+      const result = chat({ model: "anthropic/claude-sonnet-5-5", messages, maxOutputTokens: 64, reasoning });
+      expect(body(result)["thinking"]).toEqual({ type: "between_tools" });
+      expect(codes(result)).toEqual([{ code: "approximated_param", path: ["thinking"] }]);
+      expect(result.warnings[0]?.message).toContain("progress updates between tool calls");
+    },
+  );
+
+  test.each(["claude-haiku-5-5", "claude-sonnet-5"])(
+    "reasoning off on %s is still `disabled`, warning-free",
+    (model) => {
+      const result = chat({ model: `anthropic/${model}`, messages, maxOutputTokens: 64, reasoning: "off" });
+      expect(body(result)["thinking"]).toEqual({ type: "disabled" });
+      expect(result.warnings).toEqual([]);
+    },
+  );
+
+  test("reasoning off is still refused where thinking cannot be turned off", () => {
+    const outcome = chat.safe({
+      model: "anthropic/claude-opus-5-5",
+      messages,
+      maxOutputTokens: 64,
+      reasoning: "off",
+    });
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.errors.map((e) => ({ code: e.code, path: e.path }))).toEqual([
+      { code: "unsupported_param", path: ["reasoning"] },
+    ]);
   });
 });
 

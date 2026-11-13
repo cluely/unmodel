@@ -1380,6 +1380,40 @@ describe("anthropic.chat wave: thinking", () => {
       expect(chat.safe({ model, max_tokens: 4096, messages: HI, thinking }).ok).toBe(true);
     }
   });
+
+  test("adaptive thinking is refused on Claude 4.5 (extended thinking only) and kept on 4.6", () => {
+    for (const model of ["claude-opus-4-5", "claude-sonnet-4-5-20250929", "claude-haiku-4-5"] as const) {
+      const result = invalid({ model, max_tokens: 16, messages: HI, thinking: { type: "adaptive" } });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.code).toBe("unsupported_param");
+        expect(result.errors[0]?.path).toEqual(["thinking"]);
+        expect(result.errors[0]?.message).toContain('`thinking: {type: "enabled", budget_tokens: N}`');
+        expect(result.errors[0]?.meta?.source).toBe(ERRORS_DOCS);
+      }
+    }
+    for (const model of ["claude-sonnet-4-6", "claude-opus-4-6"] as const) {
+      expect(chat.safe({ model, max_tokens: 16, messages: HI, thinking: { type: "adaptive" } }).ok).toBe(true);
+    }
+    expect(
+      chat.safe({
+        model: "claude-opus-4-5",
+        max_tokens: 4096,
+        messages: HI,
+        thinking: { type: "enabled", budget_tokens: 2048 },
+      }).ok,
+    ).toBe(true);
+  });
+
+  test("between_tools on Claude 4.5 does not point at adaptive, which is another 400 there", () => {
+    const result = invalid({ model: "claude-sonnet-4-5", max_tokens: 16, messages: HI, thinking: { type: "between_tools" } });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]?.message).toContain('`thinking: {type: "enabled", budget_tokens: N}`');
+      expect(result.errors[0]?.message).not.toContain("adaptive");
+    }
+  });
 });
 
 describe("anthropic.chat wave: tools, prefill, speed", () => {
@@ -1529,6 +1563,33 @@ describe("anthropic.chat mid-conversation system messages", () => {
       expect(result.warnings).toEqual([]);
       expect(result.params.messages[1]?.role).toBe("system");
     }
+  });
+
+  test(".toApi carries the instruction into the system prompt instead of dropping it", () => {
+    const routed = chat({
+      model: "claude-opus-5-5",
+      max_tokens: 64,
+      system: "You are helpful.",
+      messages: [
+        { role: "user", content: "Bonjour" },
+        { role: "system", content: "Answer in French from here on." },
+        { role: "assistant", content: "D'accord." },
+        { role: "user", content: "Quelle heure est-il ?" },
+      ],
+    }).toApi("openrouter");
+    const body = JSON.parse(JSON.stringify(routed)) as { messages: unknown[] };
+    expect(body.messages[0]).toEqual({
+      role: "system",
+      content: [
+        { type: "text", text: "You are helpful." },
+        { type: "text", text: "Answer in French from here on." },
+      ],
+    });
+    expect(body.messages).toHaveLength(4);
+    expect(routed.warnings.map((w) => ({ code: w.code, path: w.path }))).toEqual([
+      { code: "id_respelled", path: ["model"] },
+      { code: "approximated_param", path: ["messages", 1] },
+    ]);
   });
 
   test("a system message cannot be the first message", () => {

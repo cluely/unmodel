@@ -2118,10 +2118,15 @@ chat({ model: "claude-sonnet-5-5", max_tokens: 16, messages: [], thinking: { typ
 chat({ model: "claude-haiku-5-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
     expect(haiku55.sort()).toEqual(["adaptive", "disabled"]);
 
-    // Claude 4.5 keeps manual extended thinking.
+    // Claude 4.5 keeps manual extended thinking and never had adaptive.
     const opus45 = completionsAt(`import { chat } from "./src/providers/anthropic";
 chat({ model: "claude-opus-4-5", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
-    expect(opus45.sort()).toEqual(["adaptive", "disabled", "enabled"]);
+    expect(opus45.sort()).toEqual(["disabled", "enabled"]);
+
+    // Claude 4.6 has both modes (manual extended thinking deprecated there).
+    const sonnet46 = completionsAt(`import { chat } from "./src/providers/anthropic";
+chat({ model: "claude-sonnet-4-6", max_tokens: 16, messages: [], thinking: { type: "¦" } });`);
+    expect(sonnet46.sort()).toEqual(["adaptive", "disabled", "enabled"]);
   });
 
   test("the narrowed keys still complete — `never` refuses values, not names", () => {

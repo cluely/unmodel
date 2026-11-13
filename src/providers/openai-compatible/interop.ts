@@ -24,6 +24,7 @@
  */
 import type { ChatIR, DecodeContext, IRMessage, IRPart, IRTextBlock } from "../../core/translate/ir";
 import {
+  effortForBudget,
   emptyIR,
   inferMediaTypeFromUrl,
   isAudioMediaType,
@@ -255,7 +256,7 @@ export function encodeOpenAIChat(body: ChatCompletionsBodyBase, warn: Warn): Cha
         warn({
           code: "approximated_param",
           path: ["messages", index],
-          message: `the \`${message.role}\` message at index ${index} appears after a conversational turn; every other dialect keeps system text in a single leading slot, so it was moved to the front of the system prompt.`,
+          message: `the \`${message.role}\` message at index ${index} appears after a conversational turn; translation carries system text in one leading slot, so it was moved to the front of the system prompt.`,
         });
       }
       if (message.role === "developer") putPassthrough(ir, DIALECT, "__system_role", "developer");
@@ -768,7 +769,7 @@ export function decodeOpenAIChat(
   if (s.reasoning !== undefined) {
     if (s.reasoning.mode === "effort") body.reasoning_effort = s.reasoning.effort;
     else if (s.reasoning.mode === "budget") {
-      const effort = s.reasoning.budgetTokens <= 2048 ? "low" : s.reasoning.budgetTokens <= 8192 ? "medium" : "high";
+      const effort = effortForBudget(s.reasoning.budgetTokens);
       body.reasoning_effort = effort;
       warn({
         code: "approximated_param",

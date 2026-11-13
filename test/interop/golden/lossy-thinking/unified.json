@@ -6,11 +6,15 @@
     "warns nowhere; what DOES warn is the bucket itself, since \"max\" is Anthropic vocabulary",
     "and chat-completions tops out at \"high\" — see unified-warnings.json.",
     "",
+    "The model is claude-sonnet-4-6 because it still takes a budget: Claude 4.7 and later refuse",
+    "`thinking.type \"enabled\"`, and on those the anthropic decoder sends the carried effort as",
+    "adaptive thinking instead, which is a different body than this case pins.",
+    "",
     "`providerOptions.anthropic` is the live bucket only when the target IS anthropic, which is",
     "exactly this case's source dialect. Compiled for any other target it is inert and silent,",
     "which is why the pipeline here cannot reproduce to-openai-chat.json's `container` warning."
   ],
-  "model": "anthropic/claude-opus-5",
+  "model": "anthropic/claude-sonnet-4-6",
   "system": [{ "text": "You are careful.", "cache": true }],
   "messages": [
     { "role": "user", "content": "Think it through: 17*23?" },

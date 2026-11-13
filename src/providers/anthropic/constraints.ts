@@ -1,5 +1,9 @@
 import type { EndpointConstraints, FamilyRule } from "../../core/constraint-types";
 import type { AnthropicModelId } from "../../catalog/anthropic.gen";
+import { GEN_4_7_PLUS_MODEL_IDS } from "./model-ids";
+import type { Gen47PlusModelId } from "./model-ids";
+
+export * from "./model-ids";
 
 /** Vision limits source (verified 2026-11-12). */
 export const VISION_DOCS = "https://platform.claude.com/docs/en/build-with-claude/vision";
@@ -19,49 +23,10 @@ export const PRICING_DOCS = "https://platform.claude.com/docs/en/about-claude/pr
 // `isListed` extends every list to dated snapshots (`<id>-YYYYMMDD`). The
 // Mythos ids (claude-mythos-5-1, claude-mythos-5-2) share every rule below but
 // are limited-availability ids absent from models.dev, so they are not listed:
-// an uncataloged id is never refused.
+// an uncataloged id is never refused. The lists the codec also reads —
+// `GEN_4_7_PLUS_MODEL_IDS`, `BETWEEN_TOOLS_MODEL_IDS` — and `isListed` live in
+// ./model-ids.ts and are re-exported above.
 // ---------------------------------------------------------------------------
-
-/**
- * Claude 4.7 and later — Opus 4.7, Opus 4.8, Opus 5, Opus 5.5, Sonnet 5,
- * Sonnet 5.5, Haiku 5.5, Fable 5, Fable 5.1 and Fable 5.2. Three facts ride on
- * this generation, so the list is the single source for all three:
- *
- * - Sampling parameters were removed. `top_k` rejects ANY value and is denied
- *   in `chatConstraints`; `temperature` (only the default 1.0 accepted) and
- *   `top_p` (only values >= 0.99 accepted) keep backwards-compatible defaults
- *   and are value-checked in checkCapabilities off the catalog's
- *   `temperature: false` flag. Thinking docs: "On Claude Fable 5.2, Claude
- *   Mythos 5.2, Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, Claude
- *   Mythos 5, Claude Mythos Preview, Claude Opus 5.5, Claude Opus 5, Claude
- *   Opus 4.8, Claude Opus 4.7, Claude Sonnet 5.5, Claude Sonnet 5, and Claude
- *   Haiku 5.5, non-default `temperature`, `top_p`, or `top_k` values return a
- *   400 error on every request, regardless of whether thinking is used."
- * - Manual extended thinking was removed: `thinking: {type: "enabled"}` is a
- *   400. Errors page: "Claude 4.7 and later models don't support extended
- *   thinking. Sending `thinking: {"type": "enabled"}` to any of these models
- *   returns a 400 `invalid_request_error`" — `"thinking.type.enabled" is not
- *   supported for this model. Use "thinking.type.adaptive" and
- *   "output_config.effort" to control thinking behavior.`
- * - High-resolution vision tier: up to 4784 visual tokens per image. Vision
- *   docs table: "High-resolution | Claude 4.7 and later models | 2,576 px |
- *   4,784".
- */
-export const GEN_4_7_PLUS_MODEL_IDS = [
-  "claude-fable-5",
-  "claude-fable-5-1",
-  "claude-fable-5-2",
-  "claude-haiku-5-5",
-  "claude-opus-4-7",
-  "claude-opus-4-8",
-  "claude-opus-5",
-  "claude-opus-5-5",
-  "claude-sonnet-5",
-  "claude-sonnet-5-5",
-] as const satisfies readonly AnthropicModelId[];
-
-/** A Claude 4.7+ model id (see {@link GEN_4_7_PLUS_MODEL_IDS}). */
-export type Gen47PlusModelId = (typeof GEN_4_7_PLUS_MODEL_IDS)[number];
 
 /**
  * Models that removed forced tool use. `tool_choice: {"type": "any"}` and
@@ -106,22 +71,27 @@ export const THINKING_ALWAYS_ON_MODEL_IDS = [
 export type ThinkingAlwaysOnModelId = (typeof THINKING_ALWAYS_ON_MODEL_IDS)[number];
 
 /**
- * Models whose lowest thinking setting is `thinking: {type: "between_tools"}`
- * — up-front thinking off, the short updates between tool calls still
- * returned as thinking blocks — and which refuse `disabled`. Thinking docs:
- * "Claude Sonnet 5.5 also has thinking on by default, and it rejects
- * `thinking: {type: "disabled"}` with a 400 error. To turn off up-front
- * thinking, send `thinking: {type: "between_tools"}` instead." and
- * "`between_tools` is accepted at `low`, `medium`, and `high` effort. At
- * `xhigh` or `max` effort, a request with `between_tools` returns a 400
- * error." Every other model refuses the value (errors page: "Sending
- * `thinking: {"type": "between_tools"}` to any model other than Claude Sonnet
- * 5.5 returns a 400 `invalid_request_error`").
+ * Models that support only manual extended thinking: `thinking: {type:
+ * "adaptive"}` is a 400. Errors page: "Models that support only extended
+ * thinking (Claude 4.5 and earlier models) reject `thinking: {"type":
+ * "adaptive"}` with a 400 `invalid_request_error`" — `adaptive thinking is not
+ * supported on this model` — and "Use `thinking: {"type": "enabled",
+ * "budget_tokens": N}` on these models". Thinking docs table: Claude Opus 4.5,
+ * Sonnet 4.5 and Haiku 4.5 each read "400 error" in the `"adaptive"` column.
+ * The dated ids are listed as well as the aliases: `isListed` would cover them
+ * at run time, but the compile-time arm keys on exact catalog ids.
  */
-export const BETWEEN_TOOLS_MODEL_IDS = ["claude-sonnet-5-5"] as const satisfies readonly AnthropicModelId[];
+export const EXTENDED_THINKING_ONLY_MODEL_IDS = [
+  "claude-haiku-4-5",
+  "claude-haiku-4-5-20251001",
+  "claude-opus-4-5",
+  "claude-opus-4-5-20251101",
+  "claude-sonnet-4-5",
+  "claude-sonnet-4-5-20250929",
+] as const satisfies readonly AnthropicModelId[];
 
-/** A model id whose thinking-off form is `between_tools`. */
-export type BetweenToolsModelId = (typeof BETWEEN_TOOLS_MODEL_IDS)[number];
+/** A model id that refuses `thinking: {type: "adaptive"}`. */
+export type ExtendedThinkingOnlyModelId = (typeof EXTENDED_THINKING_ONLY_MODEL_IDS)[number];
 
 /**
  * Models that accept `thinking: {type: "disabled"}` at `output_config.effort`
@@ -232,24 +202,6 @@ export const PROMPT_LENGTH_TIERED_MODEL_IDS = ["claude-haiku-5-5"] as const sati
 
 /** Prompt tokens (input + cache reads + cache writes) above which the catalog rates no longer apply. */
 export const PROMPT_LENGTH_TIER_THRESHOLD = 100_000;
-
-/** True when `modelId` is one of `ids` or a dated snapshot of one. */
-export function isListed(modelId: string, ids: readonly string[]): boolean {
-  return ids.some((id) => isModelOrSnapshot(modelId, id));
-}
-
-/**
- * True when `modelId` is `base` or a dated snapshot of it (`base-YYYYMMDD`).
- * Every dateless id is itself a pinned snapshot (models overview: "Every
- * Claude model ID is a pinned snapshot, including the dateless IDs used from
- * the 4.6 generation on."), so a `-N` suffix is a different model:
- * `claude-opus-5-5` is not a snapshot of `claude-opus-5`.
- */
-function isModelOrSnapshot(modelId: string, base: string): boolean {
-  if (modelId === base) return true;
-  if (!modelId.startsWith(`${base}-`)) return false;
-  return /^\d{8}$/.test(modelId.slice(base.length + 1));
-}
 
 // ---------------------------------------------------------------------------
 // Constraint tables

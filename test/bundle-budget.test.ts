@@ -132,7 +132,10 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * what filled it.
    */
   groq: 138,
-  google: 345, // 313.8 measured after the Lyria music surface (2026-08-24); same ~10% headroom.
+  // 313.8 measured after the Lyria music surface (2026-08-24); 345.3 after the
+  // 2026-11-12 model wave (Gemini 4 thinking rules, the 3.8 TTS and 3.5
+  // transcribe hand rows, Lyria 3.5, and the review fixes on top). ~10% headroom.
+  google: 385,
   /**
    * Bumped 210 → 255 at the 2026-11-12 refresh: 232.1 measured. 211.9 of it is
    * the old graph plus catalog growth; the other +20.2 is the anthropic codec,
@@ -142,8 +145,16 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * Earlier: 190 → 210, +4.4 for the `detail` mappings (see `anthropic`).
    */
   deepinfra: 255,
-  /** Bumped 400 → 440: 401.9 measured, +4.8 for the `detail` mappings (see `anthropic`). */
-  openrouter: 440,
+  /**
+   * Bumped 400 → 440: 401.9 measured, +4.8 for the `detail` mappings (see `anthropic`).
+   *
+   * 440 → 480 (2026-11-13): 428.2 → 436.4 measured, +8.2 from the anthropic
+   * codec this entry carries for `.toApi("anthropic")` spelling reasoning per
+   * target model (see `CHAT_FACTORY_BUDGET_KIB` for the module breakdown).
+   * It still fit, by 0.8% — a tripwire rather than a budget, for the reason
+   * the `vercel` note gives. 480 is 436.4 × 1.1.
+   */
+  openrouter: 480,
   /**
    * Bumped 390 → 450 at the 2026-11-12 refresh: 409.5 measured, all of it the
    * gateway's own catalog and availability rows (+110 models, −54); no module
@@ -360,8 +371,18 @@ const CHAT_BUDGET_KIB = 2040;
  * Bumped 150 → 158 when `core/standard-schema.ts` joined the engine (the
  * Standard Schema seam — see the groq note in BUDGET_KIB above); the entry
  * was at ~144 with ~4% headroom before the wave-1c growth plus the seam.
+ *
+ * **158 → 181** (2026-11-13): 155.7 → 164.2 KiB measured (macOS; JS chunks,
+ * not the platform-sensitive declaration ones), when the anthropic codec
+ * started spelling reasoning per target model. Module by module: +3.3
+ * `anthropic/model-ids.ts` (the Claude 4.7+ and Sonnet 5.5 id lists with
+ * their provenance, moved out of `constraints.ts`), +3.9 `anthropic/interop.ts`
+ * (budget → adaptive + effort, "off" → `between_tools`, mid-conversation
+ * system text hoisted rather than dropped), +0.9 `core/translate/ir.ts` (the
+ * shared budget → effort table both codecs now call), +0.3 `chat/encode.ts`.
+ * 181 is 164.2 × 1.1.
  */
-const CHAT_FACTORY_BUDGET_KIB = 158;
+const CHAT_FACTORY_BUDGET_KIB = 181;
 
 /**
  * `dist/chat/index.d.ts` on its own — declarations, not chunks.
@@ -1749,14 +1770,20 @@ describe("unmodel/chat", () => {
    * `zhipuai/constraints.ts` is the import-free enum leaf
    * `retarget/target-constraints.ts` registers for `.toApi("zhipuai")`, the
    * same shape as `groq/constraints.ts`. No catalog came with it.
+   *
+   * **+1 (→ 62) with `anthropic/model-ids.ts`** (2026-11-13): the import-free
+   * id lists the anthropic codec spells reasoning by, split out of
+   * `anthropic/constraints.ts` (which re-exports them) so the factory entry
+   * can carry them without the constraint tables. A move, not new data.
    */
-  test("its provider graph is exactly the enumerated 61 modules", () => {
+  test("its provider graph is exactly the enumerated 62 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
       "src/providers/alibaba/chat.ts",
       "src/providers/anthropic/chat.ts",
       "src/providers/anthropic/constraints.ts",
       "src/providers/anthropic/interop.ts",
+      "src/providers/anthropic/model-ids.ts",
       "src/providers/anthropic/wire.ts",
       "src/providers/baseten/index.ts",
       "src/providers/cerebras/index.ts",
@@ -1939,9 +1966,13 @@ describe("unmodel/chat/factory", () => {
     // Not "no endpoint validator" — *no provider module at all* beyond the
     // three codecs the compiler is made of. A catalog, a constraint table or a
     // wire schema arriving here would mean the narrow entry had quietly
-    // acquired a provider, which is the one thing it exists not to do.
+    // acquired a provider, which is the one thing it exists not to do. The
+    // one leaf beside them is the anthropic codec's import-free id lists
+    // (which models have no thinking budget, which say "off" as
+    // `between_tools`) — data the codec compiles by, not a table it checks.
     expect(modules.filter((m) => m.startsWith("src/providers/"))).toEqual([
       "src/providers/anthropic/interop.ts",
+      "src/providers/anthropic/model-ids.ts",
       "src/providers/google/interop.ts",
       "src/providers/openai-compatible/interop.ts",
     ]);

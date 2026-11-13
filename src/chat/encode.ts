@@ -374,7 +374,9 @@ function narrowEffort(
  * on every provider: dialects with a real token budget take the budget,
  * dialects without one take the bucket. **No warning**, because nothing was
  * approximated: each target got the more precise of the two controls it
- * actually has.
+ * actually has. The budget dialects carry the effort beside the budget,
+ * because "has a budget" is per model, not per dialect: anthropic-messages
+ * has none from Claude 4.7 on, and its decoder sends the effort there.
  */
 function encodeReasoning(
   reasoning: ChatReasoning,
@@ -394,18 +396,18 @@ function encodeReasoning(
   const hasEffort = "effort" in reasoning && reasoning.effort !== undefined;
   const hasBudget = "budgetTokens" in reasoning && reasoning.budgetTokens !== undefined;
   if (hasEffort && hasBudget) {
+    const effort = (reasoning as { effort: ChatReasoningEffort }).effort;
     return HAS_BUDGET.has(dialect)
-      ? { mode: "budget", budgetTokens: (reasoning as { budgetTokens: number }).budgetTokens }
-      : {
-          mode: "effort",
-          effort: narrowEffort(
-            (reasoning as { effort: ChatReasoningEffort }).effort,
-            dialect,
-            ["reasoning", "effort"],
-            warn,
-            modelLevels,
-          ),
-        };
+      ? {
+          mode: "budget",
+          budgetTokens: (reasoning as { budgetTokens: number }).budgetTokens,
+          // Carried only when the dialect already says it, never narrowed: the
+          // decoder speaks it only on a target model with no budget, and a
+          // narrowing warning here would fire on every model that takes the
+          // budget instead. Off-vocabulary, that decoder buckets the budget.
+          ...(EFFORT_VOCABULARY[dialect].has(effort) && { effort }),
+        }
+      : { mode: "effort", effort: narrowEffort(effort, dialect, ["reasoning", "effort"], warn, modelLevels) };
   }
   if (hasBudget) {
     return { mode: "budget", budgetTokens: (reasoning as { budgetTokens: number }).budgetTokens };

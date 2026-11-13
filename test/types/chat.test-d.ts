@@ -84,8 +84,8 @@ expectTrue<ChatDialectOf<"openrouter/anthropic/claude-opus-5"> extends "openai-c
 // ---------------------------------------------------------------------------
 
 // Sonnet 4.6 rather than a 4.7+ id: a thinking budget compiles to
-// `thinking.type "enabled"`, which Claude 4.7 and later refuse — the provider
-// arm excludes it there, and the compiled body would collapse.
+// `thinking.type "enabled"` only on a model that still takes one — the
+// provider arm excludes `enabled` on Claude 4.7 and later.
 const claude = chat({
   model: "anthropic/claude-sonnet-4-6",
   messages: [{ role: "user", content: "hi" }],

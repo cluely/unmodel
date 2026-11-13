@@ -33,6 +33,7 @@ import {
   chatFamilyRules,
   COMPUTER_TOOLSET_ONLY_MODEL_IDS,
   ERRORS_DOCS,
+  EXTENDED_THINKING_ONLY_MODEL_IDS,
   FAST_MODE_DOCS,
   FAST_MODE_IGNORED_MODEL_IDS,
   FAST_MODE_MODEL_IDS,
@@ -50,6 +51,7 @@ import {
 } from "./constraints";
 import type {
   BetweenToolsModelId,
+  ExtendedThinkingOnlyModelId,
   FastModeModelId,
   ForcedToolUseRemovedModelId,
   Gen47PlusModelId,
@@ -225,7 +227,8 @@ export function checkCapabilities(
  * `top_k` are rejected and `top_p` must be within [0.95, 1]; manual extended
  * thinking additionally rejects forced tool use (`tool_choice` any/tool).
  * Per-model rules (the id lists in ./constraints.ts carry the sources):
- * manual extended thinking (`enabled`) is gone on Claude 4.7+; `disabled` is
+ * manual extended thinking (`enabled`) is gone on Claude 4.7+, and adaptive
+ * thinking does not exist on Claude 4.5 and earlier; `disabled` is
  * refused outright where thinking is always on, refused in favour of
  * `between_tools` on Sonnet 5.5, and refused at effort xhigh/max on Opus 5 and
  * Haiku 5.5; `between_tools` is Sonnet 5.5-only and capped at effort high.
@@ -240,6 +243,18 @@ export function checkThinkingCompatibility(
   const model = params.model;
   const effort = params.output_config?.effort;
   const alwaysOn = isListed(model, THINKING_ALWAYS_ON_MODEL_IDS);
+  const extendedOnly = isListed(model, EXTENDED_THINKING_ONLY_MODEL_IDS);
+
+  if (thinking.type === "adaptive" && extendedOnly) {
+    ctx.report({
+      code: "unsupported_param",
+      path: ["thinking"],
+      model,
+      message: `thinking.type "adaptive" is not supported by "${model}": Claude 4.5 and earlier models support only manual extended thinking; use \`thinking: {type: "enabled", budget_tokens: N}\`.`,
+      meta: { source: ERRORS_DOCS },
+    });
+    return;
+  }
 
   if (thinking.type === "enabled" && isListed(model, GEN_4_7_PLUS_MODEL_IDS)) {
     ctx.report({
@@ -266,7 +281,9 @@ export function checkThinkingCompatibility(
     } else if (info !== undefined) {
       const offers = alwaysOn
         ? '`thinking: {type: "adaptive"}` with a lower `output_config.effort`'
-        : '`thinking: {type: "adaptive"}` or `{type: "disabled"}`';
+        : extendedOnly
+          ? '`thinking: {type: "enabled", budget_tokens: N}` or `{type: "disabled"}`'
+          : '`thinking: {type: "adaptive"}` or `{type: "disabled"}`';
       ctx.report({
         code: "unsupported_param",
         path: ["thinking"],
@@ -814,10 +831,11 @@ type FixedSamplingModelId = ModelsWhereFalse<typeof models, "temperature">;
 
 /**
  * The `thinking` values `checkThinkingCompatibility` accepts for one model id,
- * most specific generation first (Opus 5.5 is both always-on and 4.7+). A
- * catalog id outside every list still loses `between_tools` (Sonnet 5.5-only);
- * an id the catalog does not know keeps the whole union, exactly as the
- * run-time check leaves uncataloged ids alone.
+ * most specific generation first (Opus 5.5 is both always-on and 4.7+).
+ * Claude 4.5 and earlier lose `adaptive` (extended thinking only). A catalog
+ * id outside every list still loses `between_tools` (Sonnet 5.5-only); an id
+ * the catalog does not know keeps the whole union, exactly as the run-time
+ * check leaves uncataloged ids alone.
  */
 type ThinkingArm<M extends string> = M extends ThinkingAlwaysOnModelId
   ? Extract<ThinkingConfig, { type: "adaptive" }>
@@ -825,9 +843,11 @@ type ThinkingArm<M extends string> = M extends ThinkingAlwaysOnModelId
     ? Extract<ThinkingConfig, { type: "adaptive" } | { type: "between_tools" }>
     : M extends Gen47PlusModelId
       ? Extract<ThinkingConfig, { type: "adaptive" } | { type: "disabled" }>
-      : M extends AnthropicModelId
-        ? Exclude<ThinkingConfig, { type: "between_tools" }>
-        : ThinkingConfig;
+      : M extends ExtendedThinkingOnlyModelId
+        ? Exclude<ThinkingConfig, { type: "adaptive" } | { type: "between_tools" }>
+        : M extends AnthropicModelId
+          ? Exclude<ThinkingConfig, { type: "between_tools" }>
+          : ThinkingConfig;
 
 /**
  * `MessagesBody` with the five per-model fields replaced for one model id.

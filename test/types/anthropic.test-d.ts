@@ -286,6 +286,13 @@ function anthropicPerModelTypeTests(): void {
   // …manual extended thinking is gone on Claude 4.7+ (adaptive + effort replace it)…
   // @ts-expect-error — `enabled` + budget_tokens returns a 400 on Claude 4.7 and later.
   chat({ model: "claude-opus-5", max_tokens: 16, messages: [], thinking: { type: "enabled", budget_tokens: 1024 } });
+  // …and adaptive does not exist on Claude 4.5 and earlier (extended thinking only)…
+  // @ts-expect-error — `adaptive` returns a 400 on claude-sonnet-4-5.
+  chat({ model: "claude-sonnet-4-5", max_tokens: 16, messages: [], thinking: { type: "adaptive" } });
+  // @ts-expect-error — on its dated snapshot too.
+  chat({ model: "claude-haiku-4-5-20251001", max_tokens: 16, messages: [], thinking: { type: "adaptive" } });
+  chat({ model: "claude-sonnet-4-5", max_tokens: 2048, messages: [], thinking: { type: "enabled", budget_tokens: 1024 } });
+  chat({ model: "claude-sonnet-4-6", max_tokens: 16, messages: [], thinking: { type: "adaptive" } });
   chat({ model: "claude-opus-5", max_tokens: 16, messages: [], thinking: { type: "disabled" } });
   // …haiku-5.5 may turn thinking off (effort-capped at run time) and keeps forced tool use…
   chat({

@@ -34,7 +34,7 @@ describe("anthropic-messages", () => {
   test("a compiled Claude request validates against unmodel/anthropic", () => {
     const compiled = chat({
       // Sonnet 4.6 rather than a 4.7+ id: the budget below compiles to
-      // `thinking.type "enabled"`, which Claude 4.7 and later refuse.
+      // `thinking.type "enabled"` only on a model that still takes one.
       model: "anthropic/claude-sonnet-4-6",
       messages: [
         { role: "user", content: "What is the capital of France?" },

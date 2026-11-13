@@ -103,8 +103,8 @@ describe("the ready entry and a narrow pack agree", () => {
   const PARITY = [
     {
       // Sonnet 4.6 rather than a 4.7+ id: the budget compiles to
-      // `thinking.type "enabled"`, which Claude 4.7 and later refuse (and on a
-      // model that still takes one, temperature cannot ride beside thinking).
+      // `thinking.type "enabled"` only on a model that still takes one (and
+      // there, temperature cannot ride beside thinking).
       model: "anthropic/claude-sonnet-4-6" as const,
       system: "Be brief.",
       messages: [{ role: "user" as const, content: "hi" }],
@@ -143,8 +143,10 @@ describe("the ready entry and a narrow pack agree", () => {
   );
 
   test("…and the same failure, issue for issue", () => {
+    // A budget at or above max_tokens, on a model that takes a budget (on
+    // Claude 4.7+ the budget compiles to an effort level and passes).
     const bad = {
-      model: "anthropic/claude-opus-5" as const,
+      model: "anthropic/claude-sonnet-4-6" as const,
       messages: MESSAGES,
       maxOutputTokens: 2048,
       reasoning: { budgetTokens: 4096 },

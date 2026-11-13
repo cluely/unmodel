@@ -2,7 +2,7 @@
  * The **anthropic-messages** dialect codec.
  *
  * This is the spoke behind the flagship path — `chat({model:"claude-opus-5"})
- * .toApi("openrouter")` — so three of its rules are worth stating where they
+ * .toApi("openrouter")` — so four of its rules are worth stating where they
  * can be read next to the code:
  *
  * 1. **`temperature` keeps its source scale.** Anthropic's range is 0–1 while
@@ -22,11 +22,19 @@
  * 3. **Anthropic's `tool_result` blocks ride on user messages**, which is
  *    exactly the IR's shape, so this direction is structure-preserving; the
  *    splitting into `tool`-role messages happens in the openai-chat codec.
+ * 4. **Reasoning is spelled per target model**, because the dialect's
+ *    thinking vocabulary changed under one wire: a budget is
+ *    `thinking.type "enabled"` before Claude 4.7 and adaptive thinking plus
+ *    `output_config.effort` from 4.7 on, and "off" is `between_tools` on the
+ *    one model that refuses `disabled`. The id lists come from the import-free
+ *    `./model-ids.ts`, never `./constraints.ts`: this codec is in the
+ *    provider-free `unmodel/chat/factory` graph.
  *
  * Import-graph rule 5: only `src/core/translate/**` and this directory.
  */
-import type { ChatIR, DecodeContext, IRPart, IRTextBlock } from "../../core/translate/ir";
+import type { ChatIR, DecodeContext, IRPart, IRReasoning, IRTextBlock } from "../../core/translate/ir";
 import {
+  effortForBudget,
   emptyIR,
   inferMediaTypeFromUrl,
   base64ToText,
@@ -53,6 +61,7 @@ import type {
   ToolChoice,
   ToolResultBlock,
 } from "./wire";
+import { BETWEEN_TOOLS_MODEL_IDS, GEN_4_7_PLUS_MODEL_IDS, isListed } from "./model-ids";
 
 const DIALECT = "anthropic-messages" as const;
 
@@ -246,14 +255,7 @@ export function encodeAnthropic(body: MessagesBody, warn: Warn): ChatIR {
   const toolNames = new Map<string, string>();
   body.messages.forEach((message: MessageParam, index) => {
     if (message.role === "system") {
-      // The IR's message roles are user/assistant; an operator instruction
-      // injected mid-conversation is an Anthropic-only channel.
-      warn({
-        code: "dropped_content",
-        path: ["messages", index],
-        message:
-          "a mid-conversation `system` message is an Anthropic-only operator channel with no equivalent message role in the other dialects; it was dropped. Put the instruction in the top-level `system` instead.",
-      });
+      hoistSystemMessage(ir, message.content, index, warn);
       return;
     }
     const content = message.content;
@@ -362,6 +364,49 @@ export function encodeAnthropic(body: MessagesBody, warn: Warn): ChatIR {
   }
 
   return ir;
+}
+
+/**
+ * A mid-conversation `system` message: operator-level text that applies from
+ * its position on. Translation carries system text in one leading slot, so its
+ * text is appended to `ir.system` and one `approximated_param` names what that
+ * costs. Mid-conversation system messages docs (read 2026-11-12): "This
+ * feature is not available on Claude Sonnet 5. Use the top-level `system`
+ * field there instead." — the vendor's own fallback for the same instruction —
+ * and "later system messages take precedence over earlier ones", which is why
+ * the text is appended rather than prepended. Blocks other than `text` (the
+ * page names `tool_addition` and `tool_removal`) have no system-prompt form
+ * and are dropped one by one.
+ */
+function hoistSystemMessage(
+  ir: ChatIR,
+  content: string | ContentBlock[],
+  index: number,
+  warn: Warn,
+): void {
+  const texts: IRTextBlock[] = [];
+  if (typeof content === "string") {
+    if (content !== "") texts.push({ text: content });
+  } else {
+    content.forEach((block, j) => {
+      if (block.type === "text") {
+        texts.push({ text: block.text, ...cacheOf(block.cache_control) });
+        return;
+      }
+      warn({
+        code: "dropped_content",
+        path: ["messages", index, "content", j],
+        message: `a \`${block.type}\` block in a mid-conversation \`system\` message has no system-prompt equivalent outside Anthropic's positional system messages; it was dropped.`,
+      });
+    });
+  }
+  if (texts.length === 0) return;
+  (ir.system ??= []).push(...texts);
+  warn({
+    code: "approximated_param",
+    path: ["messages", index],
+    message: `the mid-conversation \`system\` message at index ${index} was appended to the top-level system prompt: translation carries system text in one leading slot, so the instruction now applies from the start of the conversation rather than from where it sat, and the placement that kept the earlier turns' prompt cache is lost.`,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -681,16 +726,31 @@ export function decodeAnthropic(ir: ChatIR, warn: Warn, ctx?: DecodeContext): Me
   const reasoning = s.reasoning;
   if (reasoning !== undefined) {
     if (reasoning.mode === "budget") {
-      body.thinking = { type: "enabled", budget_tokens: reasoning.budgetTokens };
       const display = ownPassthrough(ir, DIALECT)["__thinking_display"];
-      if (display === "summarized" || display === "omitted") body.thinking.display = display;
+      const shown: { display?: "summarized" | "omitted" } =
+        display === "summarized" || display === "omitted" ? { display } : {};
+      if (isListed(body.model, GEN_4_7_PLUS_MODEL_IDS)) {
+        decodeBudgetAsEffort(body, reasoning, shown, warn);
+      } else {
+        body.thinking = { type: "enabled", budget_tokens: reasoning.budgetTokens, ...shown };
+      }
     } else if (reasoning.mode === "off") {
-      body.thinking = { type: "disabled" };
+      if (isListed(body.model, BETWEEN_TOOLS_MODEL_IDS)) {
+        // The model refuses `disabled`; its lowest setting is `between_tools`,
+        // which is "off" exactly when no tools run (see ./model-ids.ts).
+        body.thinking = { type: "between_tools" };
+        warn({
+          code: "approximated_param",
+          path: ["thinking"],
+          message: `"${body.model}" refuses \`thinking: {type: "disabled"}\`; reasoning "off" was sent as \`thinking: {type: "between_tools"}\`, its lowest thinking setting: no up-front thinking, but the short progress updates between tool calls still come back as thinking blocks.`,
+          meta: { from: "disabled", to: "between_tools" },
+        });
+      } else body.thinking = { type: "disabled" };
     } else {
       // Anthropic's own effort vocabulary, so an effort bucket maps directly
       // when it is one of theirs; anything else is a foreign bucket name.
       const effort = reasoning.effort;
-      if (effort === "low" || effort === "medium" || effort === "high" || effort === "xhigh" || effort === "max") {
+      if (isAnthropicEffort(effort)) {
         body.output_config = { ...body.output_config, effort };
       } else {
         warn({
@@ -730,4 +790,45 @@ export function decodeAnthropic(ir: ChatIR, warn: Warn, ctx?: DecodeContext): Me
   warnForeignExtras(ir, DIALECT, warn);
 
   return body;
+}
+
+/**
+ * A thinking budget on a Claude 4.7+ target, which has none: manual extended
+ * thinking is a 400 there (see ./model-ids.ts), and the vendor's migration is
+ * to "remove `budget_tokens`, set `thinking: {type: "adaptive"}`, and control
+ * reasoning depth with `output_config: {effort: ...}` instead of a token
+ * budget" (extended thinking docs, read 2026-11-12). `adaptive` is sent
+ * explicitly, not left to the model default, because Opus 4.7 and 4.8 run
+ * with thinking off when the field is absent (thinking docs table, "No
+ * `thinking` field": "Thinking off").
+ *
+ * An effort the caller gave beside the budget is the control this target has,
+ * so nothing is approximated; a bare budget is bucketed and says so.
+ */
+function decodeBudgetAsEffort(
+  body: MessagesBody,
+  reasoning: Extract<IRReasoning, { mode: "budget" }>,
+  shown: { display?: "summarized" | "omitted" },
+  warn: Warn,
+): void {
+  body.thinking = { type: "adaptive", ...shown };
+  if (reasoning.effort !== undefined && isAnthropicEffort(reasoning.effort)) {
+    body.output_config = { ...body.output_config, effort: reasoning.effort };
+    return;
+  }
+  const effort = effortForBudget(reasoning.budgetTokens);
+  body.output_config = { ...body.output_config, effort };
+  warn({
+    code: "approximated_param",
+    path: ["thinking", "budget_tokens"],
+    message: `"${body.model}" has no thinking token budget (Claude 4.7 and later refuse \`thinking.type "enabled"\`), so the ${reasoning.budgetTokens}-token budget was sent as \`thinking: {type: "adaptive"}\` with \`output_config.effort: "${effort}"\`, which the model sizes on its own terms. Set an effort level on the source request to choose it.`,
+    meta: { budgetTokens: reasoning.budgetTokens, effort },
+  });
+}
+
+type AnthropicEffort = NonNullable<NonNullable<MessagesBody["output_config"]>["effort"]>;
+
+/** Anthropic's own effort vocabulary: `output_config.effort`. */
+function isAnthropicEffort(effort: string): effort is AnthropicEffort {
+  return effort === "low" || effort === "medium" || effort === "high" || effort === "xhigh" || effort === "max";
 }

@@ -9,9 +9,12 @@ anthropic: corrections to `anthropic.chat` — mid-conversation `system` message
   5 / 5.5, Sonnet 5.5 and Haiku 5.5 (not on Sonnet 5 or earlier, which take
   the top-level `system` only), and the validator refused it as
   `invalid_shape`. It still cannot be `messages[0]` or sit between a
-  `tool_use` and its `tool_result`. `.toApi(...)` and `.toSdk("ai-sdk")` drop
-  it with a `dropped_content` warning: the other dialects have no such
-  message role.
+  `tool_use` and its `tool_result`. `.toApi(...)` and `.toSdk("ai-sdk")` move
+  its text to the end of the top-level system prompt with an
+  `approximated_param` warning: translation carries system text in one
+  leading slot, so the instruction applies from the start of the
+  conversation there. Non-text blocks (`tool_addition`, `tool_removal`) are
+  dropped with `dropped_content`.
   (platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages)
 - Requests with more than 20 images: the per-image bound moves from 2,000 px
   to the documented 3,000 px safe figure, and an image above it is now a

@@ -33,9 +33,9 @@
  * object (Cartesia, MiniMax), query params (Deepgram) and an `Accept` header
  * (Rime) — and so that Rime's speed inversion appears: `timeScaleFactor` on
  * Coda and on Mist v3. Its `speedAlpha` twin on Mist v2, the same reciprocal in
- * a different field, is pinned in `src/providers/rime/tts.test.ts` instead:
- * Mist v2 is deprecated, and a golden request names a model that validates
- * with no issue warnings.
+ * a different field, is pinned in `src/providers/rime/tts.test.ts` rather than
+ * here, because Rime retires `mistv2` on 2026-12-03
+ * (https://docs.rime.ai/docs/models).
  */
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";

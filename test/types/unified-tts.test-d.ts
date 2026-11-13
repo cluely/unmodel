@@ -230,7 +230,7 @@ function extrasNarrowingTests(): void {
 
   // Rime's Coda denies all four Mist-family knobs, so its row declares none.
   tts({ model: "rime/mistv2", text: "hi", voice: "astra", noTextNormalization: true });
-  // @ts-expect-error — `noTextNormalization` is "mist/mistv2 only".
+  // @ts-expect-error — `noTextNormalization` was "mist/mistv2 only" (legacy reference, 2026-08-13).
   tts({ model: "rime/mistv3", text: "hi", voice: "astra", noTextNormalization: true });
   tts({ model: "rime/mistv3", text: "hi", voice: "astra", pauseBetweenBrackets: true });
   // @ts-expect-error — …which Coda does not have either.

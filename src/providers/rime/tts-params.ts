@@ -48,9 +48,9 @@ export const FORMAT: AudioFormatSpec = {
  * | `mistv2`, `mist` | mp3, PCM, μ-law | the Mist 8 | those three, plus normalization |
  *
  * **Codecs.** "Opus and WAV arrived with Coda and Mist v3" — `checkAccept`
- * refuses anything outside `MIST_V2_ACCEPT_VALUES` on the two legacy ids, so
- * `opus` is off their row. `pcm_s16le` stays on it because the L16 spelling is
- * documented for them; it is reachable there as a *raw* stream only
+ * refuses any audio type outside `MIST_V2_ACCEPT_VALUES` on the two legacy
+ * ids, so `opus` is off their row. `pcm_s16le` stays on it because the L16
+ * spelling is documented for them; it is reachable there as a *raw* stream only
  * (`audio/wav` is not), which is a container fact the codec list does not
  * claim to carry and `resolveAudioFormat` reports at run time.
  *
@@ -84,7 +84,10 @@ export const MIST_EXTRAS = {
 
 export const LEGACY_MIST_EXTRAS = {
   ...MIST_EXTRAS,
-  /** Skip text normalization. "mist/mistv2 only." */
+  /**
+   * Skip text normalization. Mist v2 and Mist v1 only: Rime's legacy reference
+   * (last verified 2026-08-13, since removed) marked it "mist/mistv2 only".
+   */
   noTextNormalization: EXTRA as boolean,
 } as const;
 

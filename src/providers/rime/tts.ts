@@ -3,13 +3,20 @@
  *
  * Wire reference: https://docs.rime.ai/api-reference/coda/http,
  * https://docs.rime.ai/api-reference/mistv3/http,
- * https://docs.rime.ai/api-reference/mistv2/http,
  * https://docs.rime.ai/docs/models, https://docs.rime.ai/docs/speed and
  * https://docs.rime.ai/docs/api-cheat-sheet (all verified 2026-08-13);
  * https://docs.rime.ai/docs/migrate-legacy-mist,
  * https://docs.rime.ai/docs/custom-pronunciation and
  * https://docs.rime.ai/docs/errors (verified 2026-11-12).
  * Params mirror the wire body exactly.
+ *
+ * LEGACY MIST: the Mist v2/v1 HTTP reference was verified 2026-08-13. By
+ * 2026-11-12 its URL (https://docs.rime.ai/api-reference/mistv2/http)
+ * 307-redirects to the Mist v3 page, and the migration guide says "Mist v1
+ * (`mist`) and Mist v2 (`mistv2`) are legacy models, and our docs no longer
+ * cover them." The legacy-only facts below (4000–44100 Hz, the three-format
+ * Accept list) are therefore frozen as last verified on 2026-08-13 until both
+ * ids retire on 2026-12-03.
  *
  * HOST: this validator addresses `POST https://users.rime.ai/v1/rime-tts`, the
  * route that takes `modelId` in the body. Rime's error reference still
@@ -26,8 +33,9 @@
  * with `Accept`; the `audioFormat` field some integrations reach for is a
  * WebSocket query param (`/ws3`) and does nothing here. `accept` therefore
  * rides in the params object for ergonomics and is STRIPPED from the wire
- * body onto `.request.headers.accept`. Mist v2 and Mist v1 publish a narrower
- * Accept list than Coda/Mist v3 (no Opus, no WAV), which is enforced.
+ * body onto `.request.headers.accept`. Mist v2 and Mist v1 documented a
+ * narrower Accept list than Coda/Mist v3 (no Opus, no WAV), which is enforced;
+ * Mist v2 alone also serves server-sent events until it retires.
  *
  * MODEL DEFAULT: "Requests that omit `modelId`, or send a value the API does
  * not recognize, are served by **Mist v3**. Set `modelId` explicitly; Coda is
@@ -52,10 +60,14 @@
  * ({ limitCharacters, actualCharacters }) spell out that the limit is in
  * characters, not tokens.
  *
- * `.toSdk("rime")` is the identity: "Rime does not publish an npm or PyPI SDK.
- * Similarly named registry packages are unrelated third-party projects." The
- * response is raw audio bytes, so there is no response checker. Auth is a
- * `Authorization: Bearer …` header — add it yourself when fetching.
+ * `.toSdk("rime")` is the identity. Rime's SDK (`@rimelabs/sdk` on npm,
+ * `rimelabs-sdk` on PyPI, plus Go and Rust; alpha,
+ * https://docs.rime.ai/api-reference/sdk/overview, 2026-11-13) is a gRPC
+ * client: "It streams text-to-speech (TTS) and speech-to-text (STT) over gRPC
+ * with TLS". It takes its own options (model "coda" | "mistv3", voice,
+ * audioFormat, endpoint), not this HTTP body, so there is no body to reshape
+ * for it. The response is raw audio bytes, so there is no response checker.
+ * Auth is a `Authorization: Bearer …` header — add it yourself when fetching.
  */
 
 import { z } from "zod";
@@ -88,7 +100,6 @@ export const DEFAULT_MODEL_ID = "mistv3";
 export const MAX_CHARACTERS = 1000;
 
 const CODA_DOCS = "https://docs.rime.ai/api-reference/coda/http";
-const MISTV2_DOCS = "https://docs.rime.ai/api-reference/mistv2/http";
 const MODELS_DOCS = "https://docs.rime.ai/docs/models";
 const MIGRATE_LEGACY_MIST_DOCS = "https://docs.rime.ai/docs/migrate-legacy-mist";
 const SPEED_DOCS = "https://docs.rime.ai/docs/speed";
@@ -120,12 +131,23 @@ export const DEPRECATED_ACCEPT_ALIASES = {
 } as const satisfies Record<string, RimeAccept>;
 export type RimeDeprecatedAccept = keyof typeof DEPRECATED_ACCEPT_ALIASES;
 
-/** The three formats the Mist v2 reference documents (no Opus, no WAV). */
+/**
+ * The three formats Rime's legacy Mist v2 reference documented (no Opus, no
+ * WAV) — last verified 2026-08-13; the current docs no longer cover Mist v2/v1.
+ */
 export const MIST_V2_ACCEPT_VALUES = [
   "audio/mpeg",
   "audio/L16",
   "audio/PCMU",
 ] as const satisfies readonly RimeAccept[];
+
+/**
+ * "Server-sent events (`Accept: text/event-stream`) are Mist v2 only. Before
+ * December 3, move them to HTTP streaming or the Mist v3 WebSocket."
+ * (https://docs.rime.ai/docs/migrate-legacy-mist, 2026-11-12) Accepted on
+ * `mistv2` with a warning until it retires on 2026-12-03.
+ */
+export const MIST_V2_SSE_ACCEPT = "text/event-stream";
 
 export interface RimeTtsBody {
   /** The text to speak. Capped at 1,000 characters per request. */
@@ -151,7 +173,11 @@ export interface RimeTtsBody {
    * and non-English Mist v3 ignore it. Default false.
    */
   phonemizeBetweenBrackets?: boolean;
-  /** Skip text normalization. "mist/mistv2 only"; no effect on Mist v3. Default false. */
+  /**
+   * Skip text normalization. Mist v2 and Mist v1 only (the legacy reference,
+   * last verified 2026-08-13, marked it "mist/mistv2 only"); no effect on
+   * Mist v3. Default false.
+   */
   noTextNormalization?: boolean;
 }
 
@@ -160,7 +186,7 @@ export interface RimeTtsParams extends RimeTtsBody {
    * HEADER param — stripped from the wire body onto `.request.headers.accept`.
    * Selects the audio container; there is no body field for it over HTTP.
    */
-  accept?: RimeAccept | RimeDeprecatedAccept;
+  accept?: RimeAccept | RimeDeprecatedAccept | typeof MIST_V2_SSE_ACCEPT;
 }
 
 // ---------------------------------------------------------------------------
@@ -168,9 +194,10 @@ export interface RimeTtsParams extends RimeTtsBody {
 // ---------------------------------------------------------------------------
 
 /**
- * The widest documented `samplingRate` window across models: Mist v2 documents
- * 4000–44100 and the cheat sheet documents 8000–96000 for the current models.
- * Per-model narrowing happens in `checkSamplingRate`.
+ * The widest documented `samplingRate` window across models: Rime's legacy
+ * Mist v2 reference documented 4000–44100 (last verified 2026-08-13) and the
+ * cheat sheet documents 8000–96000 for the current models. Per-model narrowing
+ * happens in `checkSamplingRate`.
  */
 export const SAMPLING_RATE_FLOOR = 4000;
 export const SAMPLING_RATE_CEILING = 96000;
@@ -209,10 +236,20 @@ const codaPhonemizeDeny = {
   },
 } as const;
 
+/**
+ * Rime's legacy Mist v2 reference (last verified 2026-08-13, since removed)
+ * marked `noTextNormalization` "mist/mistv2 only"; the Coda reference lists no
+ * such field, the models page lists text normalization as a Coda feature
+ * ("| Text normalization | ✅ | ✅ |", docs/models, 2026-11-12) and "When you
+ * send text to Rime's TTS models, a normalization layer runs first"
+ * (docs/text-normalization, 2026-11-12). No current page says whether Coda
+ * rejects or ignores it, so the error severity is kept but unverified.
+ */
 const noTextNormalizationDeny = {
   noTextNormalization: {
-    reason: 'the reference marks it "mist/mistv2 only"',
-    source: MISTV2_DOCS,
+    reason:
+      'Rime\'s legacy reference (last verified 2026-08-13, since removed) marked it "mist/mistv2 only", and Rime\'s current docs describe text normalization as always on for Coda; no current page says whether Coda rejects or ignores it',
+    source: MODELS_DOCS,
   },
 } as const;
 
@@ -285,7 +322,9 @@ function checkTextLength(
 }
 
 /**
- * Mist v2 and Mist v1 document 4000–44100 Hz; the current models document
+ * Mist v2 and Mist v1 were documented at 4000–44100 Hz (Rime's legacy Mist v2
+ * reference, last verified 2026-08-13; the current docs no longer cover them,
+ * so the legacy check cites the migration guide); the current models document
  * 8000–96000 ("values above 24000 are upsampling").
  */
 function checkSamplingRate(
@@ -304,8 +343,10 @@ function checkSamplingRate(
     code: "invalid_shape",
     path: ["samplingRate"],
     model,
-    message: `\`samplingRate\` is ${rate}; "${model}" documents a range of ${min}–${max} Hz.`,
-    meta: { min, max, value: rate, source: legacy ? MISTV2_DOCS : CHEAT_SHEET_DOCS },
+    message: legacy
+      ? `\`samplingRate\` is ${rate}; "${model}" was documented at ${min}–${max} Hz (Rime's legacy Mist v2 reference, last verified 2026-08-13; the current docs no longer cover Mist v2/v1).`
+      : `\`samplingRate\` is ${rate}; "${model}" documents a range of ${min}–${max} Hz.`,
+    meta: { min, max, value: rate, source: legacy ? MIGRATE_LEGACY_MIST_DOCS : CHEAT_SHEET_DOCS },
   });
 }
 
@@ -386,9 +427,15 @@ function checkPhonemizeLanguage(
 }
 
 /**
- * `accept` must be a documented media type, and Mist v2 / Mist v1 publish only
- * three of the six. Deprecated aliases still work, so they warn rather than
- * fail.
+ * `accept` must be a documented media type, and Mist v2 / Mist v1 documented
+ * only three of the six. Deprecated aliases still work, so they warn rather
+ * than fail. `text/event-stream` is served by Mist v2 alone until it retires,
+ * so it warns there and stays an error everywhere else.
+ *
+ * Not accepted: the legacy JSON envelope. "Mist v1 and Mist v2 can return a
+ * JSON envelope with base64 audio in `audioContent`"
+ * (docs/migrate-legacy-mist, 2026-11-12), but no live page names the `Accept`
+ * value that selects it, so there is no documented value to allow.
  */
 function checkAccept(
   params: RimeTtsParams,
@@ -400,11 +447,23 @@ function checkAccept(
   const alias = (DEPRECATED_ACCEPT_ALIASES as Record<string, RimeAccept>)[accept];
   const canonical = alias ?? accept;
 
+  if (accept === MIST_V2_SSE_ACCEPT && modelOf(params) === "mistv2") {
+    ctx.report({
+      code: "invalid_enum_value",
+      severity: "warning",
+      path: ["accept"],
+      model: "mistv2",
+      message: `\`accept: "text/event-stream"\` (server-sent events) is served by Mist v2 only until it retires on December 3, 2026; after that Mist v3 serves the request. Move to HTTP streaming with an audio \`accept\` value or to the Mist v3 WebSocket.`,
+      meta: { value: accept, retires: "2026-12-03", source: MIGRATE_LEGACY_MIST_DOCS },
+    });
+    return;
+  }
+
   if (!ACCEPT_SET.has(canonical)) {
     ctx.report({
       code: "invalid_enum_value",
       path: ["accept"],
-      message: `\`accept\` must be one of ${ACCEPT_VALUES.map((v) => JSON.stringify(v)).join(", ")}; got ${JSON.stringify(accept)}.`,
+      message: `\`accept\` must be one of ${ACCEPT_VALUES.map((v) => JSON.stringify(v)).join(", ")}; got ${JSON.stringify(accept)}.${accept === MIST_V2_SSE_ACCEPT ? ' Server-sent events are served by `modelId: "mistv2"` only, until it retires on December 3, 2026.' : ""}`,
       meta: { allowed: [...ACCEPT_VALUES], value: accept, source: CODA_DOCS },
     });
     return;
@@ -428,8 +487,8 @@ function checkAccept(
     code: "invalid_enum_value",
     path: ["accept"],
     model,
-    message: `\`accept\` ${JSON.stringify(accept)} is not documented for "${model}" — Mist v2 and Mist v1 publish only ${MIST_V2_ACCEPT_VALUES.map((v) => JSON.stringify(v)).join(", ")}. Opus and WAV arrived with Coda and Mist v3.`,
-    meta: { allowed: [...MIST_V2_ACCEPT_VALUES], value: accept, source: MISTV2_DOCS },
+    message: `\`accept\` ${JSON.stringify(accept)} is not documented for "${model}" — Mist v2 and Mist v1 were documented with only ${MIST_V2_ACCEPT_VALUES.map((v) => JSON.stringify(v)).join(", ")} (Rime's legacy Mist v2 reference, last verified 2026-08-13; the current docs no longer cover Mist v2/v1). Opus and WAV arrived with Coda and Mist v3.`,
+    meta: { allowed: [...MIST_V2_ACCEPT_VALUES], value: accept, source: MIGRATE_LEGACY_MIST_DOCS },
   });
 }
 
@@ -451,11 +510,12 @@ function estimate(
 // ---------------------------------------------------------------------------
 
 /**
- * SDK targets for `rime.tts`. Rime publishes no npm or PyPI SDK, so the single
- * self-named `"rime"` target returns the wire body unchanged; naming it keeps
- * the call site shaped like every other endpoint's and leaves room for a real
- * SDK formatter later. Type alias, not interface: an interface has no implicit
- * index signature and cannot satisfy `SdkFormatters`.
+ * SDK targets for `rime.tts`. Rime's SDK is a gRPC client with its own option
+ * names and does not take the HTTP body (see the module header), so the single
+ * self-named `"rime"` target returns the wire body unchanged. Naming it keeps
+ * the call site shaped like every other endpoint's. Type alias, not interface:
+ * an interface has no implicit index signature and cannot satisfy
+ * `SdkFormatters`.
  */
 type TtsSdkTargets<B> = { rime: () => B };
 
@@ -495,9 +555,9 @@ const validator = createValidator<RimeTtsParams, unknown>({
  *
  * The result's enumerable properties are the exact fetch JSON body — `accept`
  * is stripped and lives on `.request.headers` instead, because the audio
- * format is a header over HTTP. `.toSdk("rime")` returns the body unchanged (Rime
- * publishes no SDK). Auth is your job: add an `authorization: Bearer …`
- * header.
+ * format is a header over HTTP. `.toSdk("rime")` returns the body unchanged (Rime's
+ * gRPC SDK does not take this body). Auth is your job: add an
+ * `authorization: Bearer …` header.
  *
  * ```ts
  * const params = rime.tts({

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { tts, RIME_TTS_URL, MAX_CHARACTERS, MIST_V2_ACCEPT_VALUES } from "./tts";
+import { tts, RIME_TTS_URL, MAX_CHARACTERS, MIST_V2_ACCEPT_VALUES, MIST_V2_SSE_ACCEPT } from "./tts";
 import { models, RIME_MODEL_IDS } from "./models";
 import { MODELS, RIME_TTS_MODEL_PARAMS } from "./tts-params";
 import { tts as unifiedTts } from "../../unified/tts";
@@ -29,7 +29,7 @@ describe("rime.tts happy path", () => {
     expect(v.request.url).toBe(RIME_TTS_URL);
     expect(v.request.method).toBe("POST");
     expect(v.request.headers["content-type"]).toBe("application/json");
-    // Rime publishes no SDK — toSdk is the identity.
+    // Rime's SDK is gRPC and does not take the HTTP body — toSdk is the identity.
     expect(v.toSdk("rime")).toEqual(params);
   });
 
@@ -115,12 +115,45 @@ describe("rime.tts Accept header", () => {
         expect(r.ok).toBe(false);
         if (!r.ok) {
           const issue = r.errors.find((e) => e.code === "invalid_enum_value");
-          expect(issue?.message).toContain("Mist v2 and Mist v1 publish only");
+          expect(issue?.message).toContain("Mist v2 and Mist v1 were documented with only");
+          // The legacy reference is gone; the source is the page that says so.
+          expect(String(issue?.meta?.source)).toContain("docs.rime.ai/docs/migrate-legacy-mist");
         }
       }
       for (const accept of MIST_V2_ACCEPT_VALUES) {
         expect(tts.safe({ text: "x", speaker: "astra", modelId, accept }).ok).toBe(true);
       }
+    }
+  });
+
+  test("text/event-stream passes on Mist v2 with a retirement warning (doc audit 2026-11-12)", () => {
+    // "Server-sent events (`Accept: text/event-stream`) are Mist v2 only.
+    // Before December 3, move them to HTTP streaming or the Mist v3 WebSocket."
+    expect(MIST_V2_SSE_ACCEPT).toBe("text/event-stream");
+    const r = tts.safe({ text: "x", speaker: "astra", modelId: "mistv2", accept: MIST_V2_SSE_ACCEPT });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.params.request.headers.accept).toBe("text/event-stream");
+    const accept = r.warnings.filter((w) => w.path[0] === "accept");
+    expect(accept).toHaveLength(1);
+    expect(accept[0]?.code).toBe("invalid_enum_value");
+    expect(accept[0]?.meta?.retires).toBe("2026-12-03");
+    expect(String(accept[0]?.meta?.source)).toContain("docs.rime.ai/docs/migrate-legacy-mist");
+  });
+
+  test("text/event-stream is still refused on every id but Mist v2", () => {
+    for (const modelId of ["mist", "mistv3", "coda", "mistv9", undefined] as const) {
+      const r = tts.safe({
+        text: "x",
+        speaker: "astra",
+        accept: MIST_V2_SSE_ACCEPT,
+        ...(modelId !== undefined && { modelId }),
+      });
+      expect(r.ok).toBe(false);
+      if (r.ok) continue;
+      const issue = r.errors.find((e) => e.path[0] === "accept");
+      expect(issue?.code).toBe("invalid_enum_value");
+      expect(issue?.message).toContain('`modelId: "mistv2"` only');
     }
   });
 
@@ -185,6 +218,10 @@ describe("rime.tts sampling rate ranges", () => {
       expect(tooHigh.errors[0]?.code).toBe("invalid_shape");
       expect(tooHigh.errors[0]?.path).toEqual(["samplingRate"]);
       expect(tooHigh.errors[0]?.meta?.max).toBe(44100);
+      // The legacy reference is gone; the source is the page that says so.
+      expect(String(tooHigh.errors[0]?.meta?.source)).toContain(
+        "docs.rime.ai/docs/migrate-legacy-mist",
+      );
     }
   });
 
@@ -404,6 +441,7 @@ describe("rime.tts per-model gates (doc audit 2026-08-13)", () => {
     expect(coda?.deny?.inlineSpeedAlpha?.source).toContain("docs.rime.ai/docs/speed");
     expect(coda?.deny?.phonemizeBetweenBrackets?.reason).toContain("English Mist v3 only");
     expect(coda?.deny?.phonemizeBetweenBrackets?.ignored).toBe(true);
+    expect(coda?.deny?.noTextNormalization?.source).toContain("docs.rime.ai/docs/models");
     const mistv3 = tts.constraintsFor("mistv3").at(0);
     expect(mistv3?.deny?.phonemizeBetweenBrackets).toBeUndefined();
     expect(mistv3?.deny?.noTextNormalization?.ignored).toBe(true);
@@ -454,16 +492,29 @@ describe("rime unified tts (doc audit 2026-11-12)", () => {
   });
 });
 
-describe("rime cost estimation (Starter list rates)", () => {
-  test("coda prices at $50/1M characters and the Mist family at $30/1M", () => {
+describe("rime cost estimation (Flex per-minute rates at ~1,000 characters a minute)", () => {
+  test("coda prices at $50/1M characters and mistv3 at $30/1M", () => {
     const coda = tts.safe({ text: "a".repeat(1000), speaker: "astra", modelId: "coda" });
     expect(coda.ok).toBe(true);
     if (coda.ok) expect(coda.estimate.costUSD).toBeCloseTo(0.05, 10);
 
-    for (const modelId of ["mistv3", "mistv2", "mist"] as const) {
+    const mistv3 = tts.safe({ text: "a".repeat(1000), speaker: "astra", modelId: "mistv3" });
+    expect(mistv3.ok).toBe(true);
+    if (mistv3.ok) expect(mistv3.estimate.costUSD).toBeCloseTo(0.03, 10);
+  });
+
+  test("Mist v2 and Mist v1 have no published rate, so no estimate and no budget refusal", () => {
+    // rime.ai/pricing (2026-11-13) lists only Mist v3 and Coda v2 for TTS.
+    for (const modelId of ["mistv2", "mist"] as const) {
       const r = tts.safe({ text: "a".repeat(1000), speaker: "astra", modelId });
       expect(r.ok).toBe(true);
-      if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.03, 10);
+      if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+
+      const budgeted = tts.safe(
+        { text: "a".repeat(1000), speaker: "astra", modelId },
+        { maxCostUSD: 0.01 },
+      );
+      expect(budgeted.ok).toBe(true);
     }
   });
 

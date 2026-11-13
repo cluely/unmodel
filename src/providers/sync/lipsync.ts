@@ -23,7 +23,9 @@
  *   `GET /v2/generate/{id}` until `COMPLETED`, `FAILED` or `REJECTED`, then read
  *   `outputUrl`. Or set `webhookUrl` and be told.
  * - Headers: add `x-api-key: <SYNC_API_KEY>` yourself — unmodel never touches
- *   credentials.
+ *   credentials. Add an `Idempotency-Key` too if you retry: an identical
+ *   unkeyed request within 60 seconds answers 409 `DUPLICATE_SUBMISSION` (see
+ *   `SYNC_IDEMPOTENCY_HEADER`).
  *
  * ## Why this address and `sync.avatar` are two validators on ONE URL
  *
@@ -49,9 +51,12 @@ import { models } from "./models";
 import {
   DOCS_BASE,
   GENERATE_URL,
+  SYNC_ACTIVE_SPEAKER_MODELS,
   SYNC_DUB_LANGUAGES,
   SYNC_DUB_SOURCE_LANGUAGES,
   SYNC_HEADERS,
+  SYNC_MAX_SEGMENTS,
+  SYNC_SEGMENT_MODELS,
   SYNC_TTS_PROVIDERS,
   audioInputSchema,
   checkDubParams,
@@ -80,6 +85,7 @@ export { GENERATE_URL } from "./shared";
 const SOURCE = `${DOCS_BASE}/api-reference/api/generate-api/create`;
 const SEGMENTS_SOURCE = `${DOCS_BASE}/developer-guides/segments`;
 const DIALOGUE_EDIT_SOURCE = `${DOCS_BASE}/developer-guides/dialogue-editing`;
+const REACT_SOURCE = `${DOCS_BASE}/models/react`;
 
 /** The items a lipsync generation's `input` array may hold. */
 export type SyncLipsyncInputItem = SyncVideoInput | SyncAudioLikeInput;
@@ -96,9 +102,12 @@ export interface SyncLipsyncParams {
    * places them on the timeline.
    */
   input: readonly SyncLipsyncInputItem[];
-  /** The fifteen published dials. Five of them are model-gated; see `./shared.ts`. */
+  /** The fifteen published dials. Six of them are model-gated; see `./shared.ts`. */
   options?: SyncGenerationOptions;
-  /** Several voices over one clip, each on its own time or frame range. */
+  /**
+   * Several voices over one clip, each on its own time or frame range. At most
+   * 100 segments (and 101 inputs). Not on `react-1`.
+   */
   segments?: readonly SyncGenerationSegment[];
   /** One audio input played over the whole output. Needs `segments`. */
   outputAudio?: SyncOutputAudio;
@@ -150,6 +159,26 @@ const lipsyncSchema = z.looseObject({
     .optional(),
   dialogueEdit: z.looseObject({ id: z.string() }).optional(),
 });
+
+/**
+ * At most {@link SYNC_MAX_SEGMENTS} segments — "Requests over these limits
+ * return 400" (/developer-guides/segments). The curated spec states the cap in
+ * the field's description and declares no `maxItems`, so it is not in the
+ * shape. The input ceiling beside it is `checkInputArity`'s.
+ */
+function checkSegmentCount(params: SyncLipsyncParams, _info: unknown, ctx: PipelineContext): void {
+  const count = params.segments?.length ?? 0;
+  if (count <= SYNC_MAX_SEGMENTS) return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["segments"],
+    model: params.model,
+    message:
+      `sync. accepts at most ${SYNC_MAX_SEGMENTS} segments per generation; this request has ${count} — ` +
+      "over the limit the API answers 400. Split the timeline across several generations.",
+    meta: { source: SEGMENTS_SOURCE, segments: count, max: SYNC_MAX_SEGMENTS },
+  });
+}
 
 /**
  * Segment ranges have to be ordered and the crop window comes as a pair.
@@ -373,11 +402,56 @@ function checkDubRange(params: SyncLipsyncParams, _info: unknown, ctx: PipelineC
 }
 
 /**
+ * Speaker selection and segments, which `react-1` lacks — warnings.
+ *
+ * /models/react lists both among its limitations (quoted on
+ * {@link SYNC_ACTIVE_SPEAKER_MODELS} and {@link SYNC_SEGMENT_MODELS}) and,
+ * unlike /models/lipsync, does not say whether sync. ignores such a field or
+ * rejects the request: refusing could reject a request the API fulfils, and
+ * silence could let a caller believe a speaker was picked. Not a
+ * `checkModelGatedOptions` row for that reason, and because `segments` is a
+ * top-level field.
+ */
+function checkReactLimitations(params: SyncLipsyncParams, _info: unknown, ctx: PipelineContext): void {
+  const gates = [
+    {
+      path: ["options", "active_speaker_detection"],
+      given: params.options?.active_speaker_detection !== undefined,
+      models: SYNC_ACTIVE_SPEAKER_MODELS,
+      what: "speaker selection, automatic or manual",
+    },
+    {
+      path: ["segments"],
+      given: params.segments !== undefined,
+      models: SYNC_SEGMENT_MODELS,
+      what: "multi-segment generation",
+    },
+  ];
+  for (const gate of gates) {
+    if (!gate.given || (gate.models as readonly string[]).includes(params.model)) continue;
+    ctx.report({
+      code: "unknown_param",
+      path: gate.path,
+      model: params.model,
+      message:
+        `\`${gate.path.join(".")}\` applies to ${gate.models.map((id) => `"${id}"`).join(", ")}, and this ` +
+        `request names "${params.model}" — /models/react lists ${gate.what} among react-1's limitations ` +
+        "and does not say whether sync. ignores the field or rejects the request. Drop it, or pick " +
+        "another model.",
+      meta: { source: REACT_SOURCE, allowed: [...gate.models] },
+    });
+  }
+}
+
+/**
  * Per-model narrowing, declared as a table rather than expressed in rules.
  *
- * `EndpointConstraints.deny` addresses TOP-LEVEL params, and every one of
- * sync.'s model gates lives one level down under `options` — so the gate is
+ * `EndpointConstraints.deny` addresses TOP-LEVEL params, and all but one of
+ * sync.'s model gates live one level down under `options` — so the gate is
  * {@link checkModelGatedOptions}, which can name which models DO take the dial.
+ * The one top-level gate, `segments` on `react-1`, is not a `deny` either: a
+ * deny rule refuses or declares the field ignored, and /models/react says
+ * neither — {@link checkReactLimitations} warns instead.
  * This table exists to declare the roster to the pipeline, which is also what
  * makes `constraintsFor` answer for these ids.
  */
@@ -431,9 +505,11 @@ const validator = createValidator<SyncLipsyncParams, unknown>({
     checkImageModel(SOURCE),
     checkModelGatedOptions(`${DOCS_BASE}/models/lipsync`),
     checkReactPrompt(`${DOCS_BASE}/models/react`),
+    checkReactLimitations,
     checkDubParams(SOURCE),
     checkDubRange,
     checkDialogueEdit,
+    checkSegmentCount,
     checkSegmentRefIds(SOURCE),
     checkSegmentTimes,
     checkSegmentLipsync,

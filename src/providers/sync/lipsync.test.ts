@@ -23,7 +23,11 @@ import {
   SYNC_DUB_LANGUAGES,
   SYNC_DUB_SOURCE_LANGUAGES,
   SYNC_ERROR_CODES,
+  SYNC_IDEMPOTENCY_HEADER,
+  SYNC_IDEMPOTENCY_KEY_PATTERN,
   SYNC_IMAGE_MODELS,
+  SYNC_MAX_INPUTS,
+  SYNC_MAX_SEGMENTS,
   SYNC_MODELS,
   SYNC_REASONING_MODELS,
   generationUrl,
@@ -99,6 +103,20 @@ describe("the wire", () => {
     expect(params.request.headers).toEqual({ "content-type": "application/json" });
     // The env var the vendor's own SDK reads.
     expect(provider.env).toEqual(["SYNC_API_KEY"]);
+  });
+
+  test("`Idempotency-Key` is published as data and never written", () => {
+    expect(SYNC_IDEMPOTENCY_HEADER).toBe("Idempotency-Key");
+    // "1–128 characters matching [A-Za-z0-9._~-]+" — create.md, 2026-11-12.
+    expect(SYNC_IDEMPOTENCY_KEY_PATTERN.test(crypto.randomUUID())).toBe(true);
+    expect(SYNC_IDEMPOTENCY_KEY_PATTERN.test("a".repeat(128))).toBe(true);
+    expect(SYNC_IDEMPOTENCY_KEY_PATTERN.test("a".repeat(129))).toBe(false);
+    expect(SYNC_IDEMPOTENCY_KEY_PATTERN.test("")).toBe(false);
+    expect(SYNC_IDEMPOTENCY_KEY_PATTERN.test("retry:1")).toBe(false);
+
+    const params = lipsync({ model: "lipsync-2", input: [CLIP, VOICE] });
+    const headers = Object.keys(params.request.headers).map((key) => key.toLowerCase());
+    expect(headers).not.toContain(SYNC_IDEMPOTENCY_HEADER.toLowerCase());
   });
 });
 
@@ -396,6 +414,120 @@ describe("dubbing and segments", () => {
       ],
     });
     expect(result.ok, JSON.stringify(result.ok ? [] : result.errors)).toBe(true);
+  });
+});
+
+describe("the count ceilings — 101 inputs, 100 segments", () => {
+  // "A generation can have up to 100 segments and up to 101 inputs: one video
+  // plus up to 100 audio or text inputs. Requests over these limits return
+  // 400." — /developer-guides/segments, 2026-11-12.
+  function voices(count: number) {
+    return Array.from({ length: count }, (_, index) => ({
+      type: "audio" as const,
+      url: `https://example.com/vo-${index}.wav`,
+      refId: `v${index}`,
+    }));
+  }
+  function segmentsOver(count: number, tracks: number) {
+    return Array.from({ length: count }, (_, index) => ({
+      startTime: index,
+      endTime: index + 1,
+      audioInput: { refId: `v${index % tracks}` },
+    }));
+  }
+
+  test("exactly at both limits is clean", () => {
+    expect(SYNC_MAX_INPUTS).toBe(101);
+    expect(SYNC_MAX_SEGMENTS).toBe(100);
+    const result = lipsync.safe({
+      model: "sync-3",
+      input: [CLIP, ...voices(100)],
+      segments: segmentsOver(100, 100),
+    });
+    expect(result.ok, JSON.stringify(result.ok ? [] : result.errors)).toBe(true);
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("102 inputs is refused at `input`, naming the limit", () => {
+    const result = lipsync.safe({
+      model: "sync-3",
+      input: [CLIP, ...voices(101)],
+      segments: segmentsOver(100, 101),
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => issue.path.join("."))).toEqual(["input"]);
+    expect(result.errors[0]?.code).toBe("invalid_shape");
+    expect(result.errors[0]?.message).toContain("at most 101 inputs");
+    expect(result.errors[0]?.meta).toMatchObject({ inputs: 102, max: 101 });
+  });
+
+  test("101 segments is refused at `segments`, naming the limit", () => {
+    const result = lipsync.safe({
+      model: "sync-3",
+      input: [CLIP, ...voices(100)],
+      segments: segmentsOver(101, 100),
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => issue.path.join("."))).toEqual(["segments"]);
+    expect(result.errors[0]?.message).toContain("at most 100 segments");
+    expect(result.errors[0]?.meta).toMatchObject({ segments: 101, max: 100 });
+  });
+});
+
+describe("what react-1 lacks: speaker selection and segments", () => {
+  const TRACK = { ...VOICE, refId: "a" } as const;
+  const SEGMENT = { startTime: 0, endTime: 2, audioInput: { refId: "a" } } as const;
+  const ASD = { active_speaker_detection: { auto_detect: true } } as const;
+
+  test("both are clean on lipsync-2", () => {
+    const asd = lipsync.safe({ model: "lipsync-2", input: [CLIP, VOICE], options: ASD });
+    expect(asd.ok).toBe(true);
+    expect(asd.warnings).toEqual([]);
+    const segmented = lipsync.safe({ model: "lipsync-2", input: [CLIP, TRACK], segments: [SEGMENT] });
+    expect(segmented.ok).toBe(true);
+    expect(segmented.warnings).toEqual([]);
+  });
+
+  test("each warns once on react-1 — a warning, because the page does not say it is rejected", () => {
+    const asd = lipsync.safe({ model: "react-1", input: [CLIP, VOICE], options: ASD });
+    expect(asd.ok).toBe(true);
+    expect(warningsOf(asd)).toEqual(["options.active_speaker_detection"]);
+    expect(asd.warnings[0]?.code).toBe("unknown_param");
+    expect(asd.warnings[0]?.meta).toMatchObject({ source: "https://sync.so/docs/models/react" });
+
+    const segmented = lipsync.safe({ model: "react-1", input: [CLIP, TRACK], segments: [SEGMENT] });
+    expect(segmented.ok).toBe(true);
+    expect(warningsOf(segmented)).toEqual(["segments"]);
+    expect(segmented.warnings[0]?.message).toContain("multi-segment generation");
+  });
+
+  test("at `unmodel/lipsync`, the row is the gate: react-1 refuses speaker selection", () => {
+    const source = { url: CLIP.url };
+    const audio = { url: VOICE.url };
+    const refused = unifiedLipsync.safe({
+      model: "sync/react-1",
+      source,
+      audio,
+      active_speaker_detection: { auto_detect: true },
+    } as never);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    const issue = refused.errors.find(
+      (error) => error.path.join(".") === "active_speaker_detection",
+    );
+    expect(issue?.code).toBe("unsupported_param");
+
+    const ok = unifiedLipsync({
+      model: "sync/lipsync-2",
+      source,
+      audio,
+      active_speaker_detection: { auto_detect: true },
+    });
+    expect(JSON.parse(JSON.stringify(ok))).toMatchObject({
+      options: { active_speaker_detection: { auto_detect: true } },
+    });
   });
 });
 

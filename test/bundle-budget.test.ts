@@ -233,8 +233,13 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * 78.9 measured, 2026-11-12: the error catalog grew to 135 codes and the
    * dubbing enum to 110, and the segments/outputAudio/dialogueEdit checks and
    * nine more typed options landed — data and checks, no new module.
+   *
+   * 86.4 measured, 2026-11-13 (macOS; the JS walk is platform-stable): the
+   * 101-input / 100-segment ceilings, react-1's speaker-selection and segments
+   * warnings with their two model lists, and the `Idempotency-Key` constants —
+   * checks and their quoted provenance, no new module.
    */
-  sync: 87,
+  sync: 95,
   /**
    * The native Topaz provider: two validators across two routes, a fifteen-row
    * per-model SETTINGS table that Topaz's own OpenAPI document does not
@@ -1247,7 +1252,12 @@ const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
 // `models.ts`. The 1.2 KiB between them is one adapter leaf and one params
 // leaf apiece. If the avatar pack ever picked up HeyGen's lipsync rows, this
 // is the number that would move.
-const AVATAR_PACK_BUDGET_KIB = 445;
+//
+// **Bumped 445 → 490 by the sync. review fixes**, 446.3 KiB measured (441.8
+// before; the lipsync twin 456.4 against its own 490): sync.'s `shared.ts`,
+// which both packs reach, gained the input ceiling, the react-1 gate lists and
+// the `Idempotency-Key` constants. No new module.
+const AVATAR_PACK_BUDGET_KIB = 490;
 
 /** The four providers `unmodel/avatar`'s ready-made pack is allowed to reach. */
 const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];

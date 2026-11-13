@@ -26,9 +26,10 @@
  *   unauthenticated `GET https://api.sync.so/v2/errors`, which also carries a
  *   message and a suggested fix per code.
  * - `SYNC_TEMPERATURE_MODELS` / `SYNC_OCCLUSION_MODELS` /
- *   `SYNC_REASONING_MODELS` / `SYNC_REACT_MODELS` — the option gate as data, so
- *   a form can grey out `temperature` when `sync-3` is selected rather than
- *   letting a user set a dial sync. will ignore.
+ *   `SYNC_REASONING_MODELS` / `SYNC_REACT_MODELS` / `SYNC_ACTIVE_SPEAKER_MODELS`
+ *   / `SYNC_SEGMENT_MODELS` — the option gate as data, so a form can grey out
+ *   `temperature` when `sync-3` is selected rather than letting a user set a
+ *   dial sync. will ignore.
  */
 
 export {
@@ -43,13 +44,18 @@ export {
 
 export {
   OUTPUT_FILE_NAME_MAX_CHARS,
+  SYNC_ACTIVE_SPEAKER_MODELS,
   SYNC_BLENDING_MODES,
   SYNC_DUB_LANGUAGES,
   SYNC_DUB_SOURCE_LANGUAGES,
   SYNC_EMOTIONS,
   SYNC_ERROR_CODES,
   SYNC_GENERATION_STATUSES,
+  SYNC_IDEMPOTENCY_HEADER,
+  SYNC_IDEMPOTENCY_KEY_PATTERN,
   SYNC_IMAGE_MODELS,
+  SYNC_MAX_INPUTS,
+  SYNC_MAX_SEGMENTS,
   SYNC_MODELS,
   SYNC_MODEL_MODES,
   SYNC_MODEL_TYPES,
@@ -57,6 +63,7 @@ export {
   SYNC_OUTPUT_FORMATS,
   SYNC_REACT_MODELS,
   SYNC_REASONING_MODELS,
+  SYNC_SEGMENT_MODELS,
   SYNC_SYNC_MODES,
   SYNC_TEMPERATURE_MODELS,
   SYNC_TTS_PROVIDERS,

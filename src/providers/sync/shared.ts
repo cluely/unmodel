@@ -60,6 +60,10 @@
  * Two shapes, one status. An error mapper that reads `error` will find it
  * missing on the second. (Both probed live on 2026-08-25.)
  *
+ * The one other request header sync. documents on `POST /v2/generate` is the
+ * optional `Idempotency-Key` — and an unkeyed retry within 60 seconds is a 409,
+ * so a retry loop needs it; see {@link SYNC_IDEMPOTENCY_HEADER}.
+ *
  * ## Every generation is a job
  *
  * `POST /v2/generate` answers **201** with a {@link SYNC_GENERATION_STATUSES}
@@ -107,6 +111,34 @@ export const DOCS_BASE = "https://sync.so/docs";
 
 /** `POST /v2/generate` — create a generation. Both verbs post here. */
 export const GENERATE_URL = `${SYNC_BASE_URL}/v2/generate`;
+
+/**
+ * The `Idempotency-Key` request header on `POST /v2/generate`, and the pattern
+ * its value must match.
+ *
+ * From /api-reference/api/generate-api/create and
+ * /api-reference/guides/idempotency, verified 2026-11-12:
+ *
+ * - Optional. "Case-sensitive organization-scoped key, 1–128 characters
+ *   matching [A-Za-z0-9._~-]+. Send exactly one header."
+ * - `POST /v2/generate` only (JSON and multipart) — not batch creation or
+ *   standalone TTS.
+ * - 201 on first acceptance; an equivalent retry answers 200 with the same
+ *   generation and `Idempotency-Replayed: true`. A retry after `FAILED` or
+ *   `REJECTED` starts (and bills) a new generation.
+ * - A malformed key answers 400 `INVALID_IDEMPOTENCY_KEY`; a changed payload
+ *   409 `IDEMPOTENCY_KEY_CONFLICT`, or `IDEMPOTENCY_IN_PROGRESS` while the
+ *   original is still being prepared. Keys are retained seven days.
+ * - **Without a key**, "An API-key request without the header that is
+ *   identical to one your organization sent in the last 60 seconds returns 409
+ *   DUPLICATE_SUBMISSION with the original generationId" — a naive retry loop
+ *   is refused, and the generation to poll is the one in that body.
+ *
+ * "Not a JSON field": add it to `fetch` beside `x-api-key`. unmodel never
+ * writes it.
+ */
+export const SYNC_IDEMPOTENCY_HEADER = "Idempotency-Key";
+export const SYNC_IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._~-]{1,128}$/;
 
 /**
  * The three documented query params of `GET /v2/generate/{id}`, and the one
@@ -295,6 +327,38 @@ export const SYNC_REASONING_MODELS = ["lipsync-2-pro"] as const;
  * `"react"` rather than `"lipsync"`.
  */
 export const SYNC_REACT_MODELS = ["react-1"] as const;
+
+/**
+ * The models `options.active_speaker_detection` applies to — every one but
+ * `react-1`.
+ *
+ * The /models/lipsync matrix marks it supported on all four lipsync models, and
+ * /models/react (verified 2026-11-12) excludes the fifth: "The
+ * `active_speaker_detection` option is not supported, including both automatic
+ * detection (`auto_detect`) and manual selection via bounding box or frame
+ * number."
+ */
+export const SYNC_ACTIVE_SPEAKER_MODELS = [
+  "sync-3",
+  "lipsync-2",
+  "lipsync-2-pro",
+  "lipsync-1.9.0-beta",
+] as const;
+
+/**
+ * The models the top-level `segments` array applies to — every one but
+ * `react-1`.
+ *
+ * /developer-guides/segments restricts no model; /models/react (verified
+ * 2026-11-12) says "Multi-segment generation with different audio inputs is not
+ * available" and, in its model reference, "No multi-segment generation".
+ */
+export const SYNC_SEGMENT_MODELS = [
+  "sync-3",
+  "lipsync-2",
+  "lipsync-2-pro",
+  "lipsync-1.9.0-beta",
+] as const;
 
 // ---------------------------------------------------------------------------
 // Published enums
@@ -693,11 +757,12 @@ export interface SyncActiveSpeaker {
  * The fifteen generation options the developer-facing spec publishes — the
  * same fifteen `@sync.so/sdk@0.4.0`'s `GenerationOptions` declares.
  *
- * Five are model-gated, and sync. IGNORES an option a model does not take
+ * Six are model-gated, and sync. IGNORES an option a model does not take
  * rather than refusing the request ("Unsupported options are ignored if
- * included in a request" — /models/lipsync). So the gate is reported as a
+ * included in a request" — /models/lipsync; /models/react says only "not
+ * supported"). So the gate is reported as a
  * WARNING here: refusing would reject a request the API honours, and staying
- * silent would let a caller believe a dial did something. The other ten are
+ * silent would let a caller believe a dial did something. The other nine are
  * typed and not gated, because no page says which models take them.
  */
 export interface SyncGenerationOptions {
@@ -717,7 +782,7 @@ export interface SyncGenerationOptions {
   i2v_prompt?: string;
   /** `lipsync-2` / `lipsync-2-pro` only. 0 least expressive, 1 most; default 0.5. */
   temperature?: number;
-  /** Which face to sync when the frame has several. */
+  /** Which face to sync when the frame has several. Not on `react-1`. */
   active_speaker_detection?: SyncActiveSpeaker;
   /** Not on `sync-3`, which does it natively. Default `false`; slows generation. */
   occlusion_detection_enabled?: boolean;
@@ -918,6 +983,28 @@ export const optionsSchema = z.looseObject({
 /** `outputFileName` — up to 255 characters; sync. sanitizes and appends `.mp4`. */
 export const OUTPUT_FILE_NAME_MAX_CHARS = 255;
 
+/** Where the two count ceilings below are stated in prose. */
+const LIMITS_SOURCE = `${DOCS_BASE}/developer-guides/segments`;
+
+/**
+ * `input` — at most 101 items: one visual plus up to 100 voices.
+ *
+ * https://sync.so/docs/developer-guides/segments.md (verified 2026-11-12): "A
+ * generation can have up to 100 segments and up to 101 inputs: one video plus
+ * up to 100 audio or text inputs. Requests over these limits return 400." The
+ * curated spec's `common_CreateGenerationDto.input` repeats it — "At most 101
+ * inputs." — in its description and declares no `maxItems`, so the cap is a
+ * named check ({@link checkInputArity}) rather than a schema bound.
+ */
+export const SYNC_MAX_INPUTS = 101;
+
+/**
+ * `segments` — at most 100 entries. Same guide sentence; the curated spec's
+ * `common_CreateGenerationDto.segments` says "At most 100 segments." (verified
+ * 2026-11-12), again with no `maxItems`.
+ */
+export const SYNC_MAX_SEGMENTS = 100;
+
 /** The fields both verbs share, as one zod fragment. */
 export const generationCommonSchema = {
   model: z.string(),
@@ -973,11 +1060,28 @@ const VOICE_TYPES = new Set(["audio", "text"]);
  * exceptions: each carries one video and NO voice, on purpose, and each is
  * checked where its own rule lives ({@link checkDubParams}, and
  * `checkDialogueEdit` in `./lipsync.ts`).
+ *
+ * The array also has a ceiling, {@link SYNC_MAX_INPUTS}, which is a 400 over
+ * it and is checked here because both verbs share it.
  */
 export function checkInputArity(source: string, visual: "video" | "image") {
   return (params: GenerationParams, _info: unknown, ctx: PipelineContext): void => {
     const input = params.input;
     if (!Array.isArray(input)) return;
+
+    if (input.length > SYNC_MAX_INPUTS) {
+      ctx.report({
+        code: "invalid_shape",
+        path: ["input"],
+        model: params.model,
+        message:
+          `sync. accepts at most ${SYNC_MAX_INPUTS} inputs per generation (one ${visual} plus up to ` +
+          `${SYNC_MAX_INPUTS - 1} audio or text inputs); this request has ${input.length} — over the ` +
+          "limit the API answers 400. Split the voices across several generations.",
+        meta: { source: LIMITS_SOURCE, inputs: input.length, max: SYNC_MAX_INPUTS },
+      });
+    }
+
     const visuals = input.filter((item) => VISUAL_TYPES.has(String(item?.type)));
     const voices = input.filter((item) => VOICE_TYPES.has(String(item?.type)));
 
@@ -1094,6 +1198,10 @@ export function checkImageModel(source: string) {
  * are ignored if included in a request") and repeated in each field's own
  * description. A caller who set `temperature: 0.9` on `sync-3` got the default
  * expressiveness and no indication; this is the indication.
+ *
+ * The sixth gated option, `active_speaker_detection`, is not a row here: its
+ * gate is `react-1`'s own page, which does not say the field is ignored — see
+ * `checkReactLimitations` in `./lipsync.ts`.
  */
 const GATED_OPTIONS: ReadonlyArray<{
   readonly key:

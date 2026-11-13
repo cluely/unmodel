@@ -61,10 +61,12 @@
  * item needs a `url` OR an `assetId`, which the spec encodes as an `anyOf` and
  * therefore leaves both fields individually optional.
  *
- * **Five of the fifteen `options` are model-gated, and sync. IGNORES the ones
+ * **Six of the fifteen `options` are model-gated, and sync. IGNORES the ones
  * a model does not take** rather than refusing them. `temperature` on `sync-3`
  * and `model_mode` on anything but `react-1` are silent no-ops; unmodel reports
  * them as warnings, because refusing would reject a request the API honours.
+ * (`active_speaker_detection` and `segments` on `react-1` warn too, though
+ * its page says only that neither is supported.)
  *
  * **The POST answers a JOB, at 201.** Poll `GET /v2/generate/{id}` until
  * `status` is `COMPLETED`, `FAILED` or `REJECTED` — `REJECTED` means it never
@@ -88,6 +90,7 @@ export {
   GENERATE_URL,
   MODELS_URL,
   OUTPUT_FILE_NAME_MAX_CHARS,
+  SYNC_ACTIVE_SPEAKER_MODELS,
   SYNC_BASE_URL,
   SYNC_BLENDING_MODES,
   SYNC_DUB_LANGUAGES,
@@ -95,7 +98,11 @@ export {
   SYNC_EMOTIONS,
   SYNC_ERROR_CODES,
   SYNC_GENERATION_STATUSES,
+  SYNC_IDEMPOTENCY_HEADER,
+  SYNC_IDEMPOTENCY_KEY_PATTERN,
   SYNC_IMAGE_MODELS,
+  SYNC_MAX_INPUTS,
+  SYNC_MAX_SEGMENTS,
   SYNC_MODELS,
   SYNC_MODEL_MODES,
   SYNC_MODEL_TYPES,
@@ -103,6 +110,7 @@ export {
   SYNC_OUTPUT_FORMATS,
   SYNC_REACT_MODELS,
   SYNC_REASONING_MODELS,
+  SYNC_SEGMENT_MODELS,
   SYNC_SYNC_MODES,
   SYNC_TEMPERATURE_MODELS,
   SYNC_TTS_PROVIDERS,

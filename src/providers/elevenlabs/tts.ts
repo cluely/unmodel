@@ -107,6 +107,18 @@ export type ElevenlabsOptimizeStreamingLatency =
 export const TTS_SPEED_MIN = 0.7;
 export const TTS_SPEED_MAX = 1.2;
 
+/**
+ * Bounds of `voice_settings.clone_strength`, the v4 Professional Voice Clone
+ * knob — `"maximum":1.0,"minimum":0.0` on https://api.elevenlabs.io/openapi.json,
+ * and https://elevenlabs.io/docs/changelog/2026/10/26 (both read 2026-11-12):
+ * "`clone_strength`, a value from 0 to 1 that controls how closely a
+ * Professional Voice Clone fine-tuned for a v4 model follows its training
+ * samples".
+ */
+export const TTS_CLONE_STRENGTH_MIN = 0;
+export const TTS_CLONE_STRENGTH_MAX = 1;
+const CLONE_STRENGTH_RANGE_MESSAGE = `clone_strength must be between ${TTS_CLONE_STRENGTH_MIN} and ${TTS_CLONE_STRENGTH_MAX}`;
+
 // ---------------------------------------------------------------------------
 // Wire types — mirror the raw JSON body exactly (snake_case). Explicit `null`
 // means "use the provider default" on nullable fields.
@@ -126,6 +138,13 @@ export interface ElevenlabsVoiceSettings {
   use_speaker_boost?: boolean | null;
   /** Speech speed multiplier; documented range 0.7–1.2. Default 1. */
   speed?: number | null;
+  /**
+   * How closely the output follows a Professional Voice Clone's training
+   * samples, 0–1. "Applies only to professional voice clones fine-tuned for
+   * the selected v4 model" (`VoiceSettings.cloneStrength`, elevenlabs-js
+   * 2.78.0). No default is published.
+   */
+  clone_strength?: number | null;
 }
 
 export interface ElevenlabsPronunciationDictionaryLocator {
@@ -201,6 +220,7 @@ export interface TextToSpeechSdkVoiceSettings {
   style?: number;
   useSpeakerBoost?: boolean;
   speed?: number;
+  cloneStrength?: number;
 }
 
 export interface TextToSpeechSdkRequest {
@@ -237,6 +257,14 @@ const voiceSettingsSchema = z.looseObject({
   style: z.number().nullable().optional(),
   use_speaker_boost: z.boolean().nullable().optional(),
   speed: z.number().nullable().optional(),
+  // `clone_strength: {"anyOf":[{"type":"number","maximum":1.0,"minimum":0.0},{"type":"null"}]}`
+  // on https://api.elevenlabs.io/openapi.json (2026-11-12).
+  clone_strength: z
+    .number()
+    .min(TTS_CLONE_STRENGTH_MIN, CLONE_STRENGTH_RANGE_MESSAGE)
+    .max(TTS_CLONE_STRENGTH_MAX, CLONE_STRENGTH_RANGE_MESSAGE)
+    .nullable()
+    .optional(),
 });
 
 const textToSpeechSchema = z.looseObject({
@@ -438,6 +466,7 @@ function camelizeVoiceSettings(settings: ElevenlabsVoiceSettings): TextToSpeechS
   if (settings.style != null) out.style = settings.style;
   if (settings.use_speaker_boost != null) out.useSpeakerBoost = settings.use_speaker_boost;
   if (settings.speed != null) out.speed = settings.speed;
+  if (settings.clone_strength != null) out.cloneStrength = settings.clone_strength;
   return out as TextToSpeechSdkVoiceSettings;
 }
 

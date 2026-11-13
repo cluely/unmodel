@@ -6,7 +6,7 @@
  *
  * ## What fal serves
  *
- * Three of ElevenLabs' seven TTS models, verified against fal's curated roster
+ * Three of ElevenLabs' eight TTS models, verified against fal's curated roster
  * on 2026-08-25 (`data/fal/curation.json`; the drift guard in
  * `fal-target.test.ts` re-asserts every id here against `FAL_TTS_ENDPOINTS`).
  * Source pages under https://fal.ai/models/fal-ai/elevenlabs/tts/…/api
@@ -329,8 +329,9 @@ export const ELEVENLABS_TTS_FAL_OVERLAP = {
   eleven_turbo_v2_5: { endpoints: ["fal-ai/elevenlabs/tts/turbo-v2.5"], map: mapTurboV25 },
 } as const;
 
-/** The four ElevenLabs TTS ids fal does not serve, with the reason. */
+/** The five ElevenLabs TTS ids fal does not serve, with the reason. */
 export const ELEVENLABS_TTS_FAL_REFUSALS: Readonly<Record<string, string>> = Object.freeze({
+  eleven_v4: "fal's curated ElevenLabs TTS roster is Eleven v3, Multilingual v2 and Turbo v2.5.",
   eleven_flash_v2_5:
     'fal serves no Flash v2.5 row. Turbo v2.5 is documented as "functionally equivalent" and carries the same rate, but it is a different model id producing different audio, and a retarget that swaps the model is not a retarget.',
   eleven_flash_v2: "fal's curated ElevenLabs TTS roster is Eleven v3, Multilingual v2 and Turbo v2.5.",

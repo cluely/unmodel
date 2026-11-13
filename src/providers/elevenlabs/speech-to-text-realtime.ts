@@ -15,9 +15,15 @@
  * Wire notes (verified 2026-08-13 against the AsyncAPI reference
  * https://elevenlabs.io/docs/api-reference/speech-to-text/v-1-speech-to-text-realtime,
  * pricing from https://elevenlabs.io/pricing/api):
- * - `model_id` is REQUIRED and is realtime-only: `scribe_v2_realtime`. The
- *   batch ids (`scribe_v2`, `scribe_v1`) belong to POST /v1/speech-to-text and
- *   are rejected here — the mirror image of the gate in ./speech-to-text.
+ * - `model_id` is REQUIRED and is realtime-only: `scribe_v2_realtime` or
+ *   `scribe_v3_live` (the AsyncAPI enum, 2026-11-12). The batch Scribe ids
+ *   belong to POST /v1/speech-to-text and are rejected here — the mirror image
+ *   of the gate in ./stt.
+ * - `commit_strategy: "turn_prediction"` and `multilang_mode: true` are
+ *   `scribe_v3_live`-only: "Other models reject `commit_strategy=turn_prediction`
+ *   with an `invalid_request` error and close the connection", and the same
+ *   sentence for `multilang_mode=true` (TURN_PREDICTION_DOCS_URL,
+ *   MULTILANG_DOCS_URL; read 2026-11-12). Enforced as errors.
  * - `audio_format` publishes a closed list ("Supported formats: pcm_8000,
  *   pcm_16000, pcm_22050, pcm_24000, pcm_44100, pcm_48000, ulaw_8000"); the
  *   `session_started` example echoes `pcm_16000`.
@@ -72,6 +78,15 @@ const MODELS_DOCS_URL = "https://elevenlabs.io/docs/models";
  * published (the realtime AsyncAPI reference states only the 50-term count).
  */
 const CAPABILITIES_DOCS_URL = "https://elevenlabs.io/docs/capabilities/speech-to-text";
+/** Where the `turn_prediction` refusal on other models is published. */
+const TURN_PREDICTION_DOCS_URL =
+  "https://elevenlabs.io/docs/eleven-api/guides/how-to/speech-to-text/realtime/transcripts-and-commit-strategies";
+/** Where the `multilang_mode=true` refusal on other models is published. */
+const MULTILANG_DOCS_URL =
+  "https://elevenlabs.io/docs/eleven-api/guides/how-to/speech-to-text/realtime/language-options";
+
+/** The realtime ids that take `turn_prediction` and `multilang_mode: true`. */
+const SCRIBE_V3_LIVE_ONLY_MODELS: readonly string[] = ["scribe_v3_live"];
 
 /**
  * "Supported formats: pcm_8000, pcm_16000, pcm_22050, pcm_24000, pcm_44100,
@@ -124,8 +139,11 @@ export type ElevenlabsRealtimeEntitySelector =
   | ElevenlabsRealtimeEntityCategory
   | (string & {});
 
-/** Speech segmentation strategy: explicit commits, or silence-based VAD. */
-export type ElevenlabsCommitStrategy = "manual" | "vad";
+/**
+ * Speech segmentation strategy: explicit commits, silence-based VAD, or
+ * `turn_prediction` (`scribe_v3_live` only).
+ */
+export type ElevenlabsCommitStrategy = "manual" | "vad" | "turn_prediction";
 
 // ---------------------------------------------------------------------------
 // Wire types — the query params of the realtime socket, i.e. the session config
@@ -133,7 +151,7 @@ export type ElevenlabsCommitStrategy = "manual" | "vad";
 // ---------------------------------------------------------------------------
 
 export interface SpeechToTextRealtimeParams {
-  /** REQUIRED. Realtime-only model id (`scribe_v2_realtime`). */
+  /** REQUIRED. Realtime-only model id (`scribe_v2_realtime` or `scribe_v3_live`). */
   model_id: ElevenlabsRealtimeSttModelId | (string & {});
   /** Input audio encoding; the documented example is `pcm_16000`. */
   audio_format?: ElevenlabsRealtimeAudioFormat;
@@ -149,9 +167,14 @@ export interface SpeechToTextRealtimeParams {
   secondary_languages?: string[];
   /**
    * "'manual' requires explicit commits, 'vad' automatically segments speech
-   * using silence detection."
+   * using silence detection." `turn_prediction` is `scribe_v3_live` only.
    */
   commit_strategy?: ElevenlabsCommitStrategy;
+  /**
+   * "set `multilang_mode=true` to follow speakers who switch languages during
+   * the session" (MULTILANG_DOCS_URL). `true` is `scribe_v3_live` only.
+   */
+  multilang_mode?: boolean;
   /** "VAD sensitivity threshold … Lower values are more sensitive to speech." */
   vad_threshold?: number;
   /** Silence (seconds) that triggers a commit "when VAD commit strategy is enabled". */
@@ -195,7 +218,8 @@ const schema = z.looseObject({
   audio_format: z.enum(REALTIME_STT_AUDIO_FORMATS).optional(),
   language_code: z.string().optional(),
   secondary_languages: z.array(z.string()).optional(),
-  commit_strategy: z.enum(["manual", "vad"]).optional(),
+  commit_strategy: z.enum(["manual", "vad", "turn_prediction"]).optional(),
+  multilang_mode: z.boolean().optional(),
   // No numeric range is published for any VAD knob — none is invented here.
   vad_threshold: z.number().optional(),
   vad_silence_threshold_secs: z.number().optional(),
@@ -287,7 +311,10 @@ function checkBackgroundAudioFilter(
  * `vad_silence_threshold_secs` is documented as the silence "required to
  * trigger a commit when VAD commit strategy is enabled" — with
  * `commit_strategy: "manual"` there is nothing for it to act on, so it is
- * reported as ignored (warning), not as a failure.
+ * reported as ignored (warning), not as a failure. Under `"turn_prediction"`
+ * it still acts: "VAD stays active, so the server also commits when the
+ * `vad_silence_threshold_secs` silence threshold is reached"
+ * (TURN_PREDICTION_DOCS_URL, 2026-11-12).
  */
 function checkCommitStrategy(
   params: SpeechToTextRealtimeParams,
@@ -301,9 +328,45 @@ function checkCommitStrategy(
     severity: "warning",
     path: ["vad_silence_threshold_secs"],
     message:
-      '`vad_silence_threshold_secs` only triggers commits when `commit_strategy` is "vad"; with "manual" you commit explicitly, so it has no effect.',
+      '`vad_silence_threshold_secs` only triggers commits when `commit_strategy` is "vad" or "turn_prediction"; with "manual" you commit explicitly, so it has no effect.',
     meta: { ignored: true, source: REALTIME_DOCS_URL },
   });
+}
+
+/**
+ * "Other models reject `commit_strategy=turn_prediction` with an
+ * `invalid_request` error and close the connection" (TURN_PREDICTION_DOCS_URL)
+ * and "Other models reject `multilang_mode=true` with an `invalid_request` error
+ * and close the connection" (MULTILANG_DOCS_URL). Only catalogued realtime ids
+ * are checked: an unknown id may be a newer model that takes both.
+ */
+function checkScribeV3LiveOnly(
+  params: SpeechToTextRealtimeParams,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const model = params.model_id;
+  if (info === undefined || !REALTIME_MODEL_ID_SET.has(model)) return;
+  if (SCRIBE_V3_LIVE_ONLY_MODELS.includes(model)) return;
+  const offered = SCRIBE_V3_LIVE_ONLY_MODELS.map((id) => `"${id}"`).join(", ");
+  if (params.commit_strategy === "turn_prediction") {
+    ctx.report({
+      code: "unsupported_param",
+      path: ["commit_strategy"],
+      model,
+      message: `\`commit_strategy: "turn_prediction"\` is only accepted by ${offered}; "${model}" takes "manual" or "vad".`,
+      meta: { source: TURN_PREDICTION_DOCS_URL },
+    });
+  }
+  if (params.multilang_mode === true) {
+    ctx.report({
+      code: "unsupported_param",
+      path: ["multilang_mode"],
+      model,
+      message: `\`multilang_mode: true\` is only accepted by ${offered}; "${model}" rejects it and closes the connection.`,
+      meta: { source: MULTILANG_DOCS_URL },
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -330,6 +393,7 @@ export function speechToTextRealtimeUrl(params: SpeechToTextRealtimeParams): str
   set("language_code", params.language_code);
   setAll("secondary_languages", params.secondary_languages);
   set("commit_strategy", params.commit_strategy);
+  set("multilang_mode", params.multilang_mode);
   set("vad_threshold", params.vad_threshold);
   set("vad_silence_threshold_secs", params.vad_silence_threshold_secs);
   set("min_speech_duration_ms", params.min_speech_duration_ms);
@@ -361,6 +425,7 @@ const validator = createValidator<SpeechToTextRealtimeParams>({
     checkKeytermLengths,
     checkBackgroundAudioFilter,
     checkCommitStrategy,
+    checkScribeV3LiveOnly,
   ],
   // No estimate: realtime Scribe is billed per minute of audio and the length
   // of a live session is unknowable at connect time.

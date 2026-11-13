@@ -1,0 +1,13 @@
+---
+"unmodel": patch
+---
+
+elevenlabs (2026-11-12): six new models on routes unmodel already validates, and the per-model rules they bring
+
+- `elevenlabs.tts` accepts **`eleven_v4`** (10,000 characters per request, $0.08 per 1,000 characters) and `voice_settings.clone_strength` (0–1; "Applies only to professional voice clones fine-tuned for the selected v4 model"). In `unmodel/tts`, `clone_strength` is an extra on `elevenlabs/eleven_v4` only. Sources: elevenlabs.io/docs/eleven-api/quickstart, elevenlabs.io/docs/overview/models, elevenlabs.io/pricing/api, api.elevenlabs.io/openapi.json.
+- `elevenlabs.textToSpeechStreamInput` now refuses `eleven_v3` and `eleven_v4` by name ("That endpoint does not support the `eleven_v3` or `eleven_v4` models"), pointing at the Text to Dialogue WebSocket; its allow-list is the new `STREAM_INPUT_MODEL_IDS` / `ElevenlabsStreamInputModelId`. Source: elevenlabs.io/docs/eleven-api/guides/how-to/websockets/realtime-tts.
+- `elevenlabs.stt` accepts **`scribe_v3`** and **`scribe_v2_medical`** ($0.20 per hour each). `scribe_v3` adds `numbers_format` (`"digits"` | `"words"`) and `secondary_language_codes` (sent as one form field per code); both are refused on every other batch model, which "returns an `invalid_parameters` error". `no_verbatim` is accepted on `scribe_v2_medical` and `scribe_v3`. Source: elevenlabs.io/docs/eleven-api/guides/how-to/speech-to-text/batch/number-and-language-options.
+- `elevenlabs.speechToTextRealtime` accepts **`scribe_v3_live`** ($0.22 per hour), `commit_strategy: "turn_prediction"` and `multilang_mode`. Both are refused on `scribe_v2_realtime` ("Other models reject … with an `invalid_request` error and close the connection"). `speechToTextRealtimeUrl` serializes `multilang_mode`. The batch route now points `scribe_v3_live` and `scribe_v2_realtime` at `elevenlabs.speechToTextRealtime`.
+- `elevenlabs.music` accepts **`music_v2_5`** ($0.15 per generated minute). It takes the chunks `composition_plan` ("Composition plan for the `music_v2` and `music_v2_5` models"), refuses the sections plan, and warns that `respect_sections_durations` is ignored. Source: api.elevenlabs.io/openapi.json, elevenlabs.io/docs/changelog/2026/9/14.
+- `elevenlabs.sfx` accepts **`eleven_text_to_sound_v3`** ($0.12 per generated minute). The served spec places no per-model restriction on `loop`, so the warning about `loop` on a model this build does not know has been removed. Source: elevenlabs.io/docs/changelog/2026/11/2, api.elevenlabs.io/openapi.json.
+- The unified packs (`unmodel/tts`, `unmodel/stt`, `unmodel/music`, `unmodel/sfx`) and `unmodel/elevenlabs/values` list the new refs.

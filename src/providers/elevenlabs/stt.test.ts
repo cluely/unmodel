@@ -60,7 +60,7 @@ describe("elevenlabs.stt happy path", () => {
   });
 
   test("unknown model warns but validates", () => {
-    const r = stt.safe({ model_id: "scribe_v3", file: audio });
+    const r = stt.safe({ model_id: "scribe_v9", file: audio });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
@@ -69,6 +69,76 @@ describe("elevenlabs.stt happy path", () => {
     const r = stt.safe({ model_id: "scribe_v1", file: audio });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+  });
+});
+
+describe("elevenlabs.stt new batch models (models refresh 2026-11-12)", () => {
+  test("scribe_v3 and scribe_v2_medical validate clean", () => {
+    for (const model_id of ["scribe_v3", "scribe_v2_medical"]) {
+      const r = stt.safe({ model_id, file: audio, no_verbatim: true });
+      expect(r.ok, model_id).toBe(true);
+      if (r.ok) expect(r.warnings, model_id).toEqual([]);
+    }
+  });
+
+  test("both price at $0.20 per hour of declared audio", () => {
+    for (const model_id of ["scribe_v3", "scribe_v2_medical"]) {
+      const r = stt.safe(
+        { model_id, file: audio },
+        { media: [{ path: ["file"], durationSeconds: 3600 }] },
+      );
+      expect(r.ok, model_id).toBe(true);
+      if (r.ok) expect(r.estimate.costUSD, model_id).toBeCloseTo(0.2, 10);
+    }
+  });
+
+  test("numbers_format and secondary_language_codes are accepted on scribe_v3", () => {
+    const v = stt({
+      model_id: "scribe_v3",
+      file: audio,
+      language_code: "en",
+      numbers_format: "digits",
+      secondary_language_codes: ["es", "fr"],
+    });
+    expect(v.toSdk("elevenlabs")).toMatchObject({
+      numbersFormat: "digits",
+      secondaryLanguageCodes: ["es", "fr"],
+    });
+    // "Repeat the form field once per language."
+    const form = toFormData(v);
+    expect(form.getAll("secondary_language_codes")).toEqual(["es", "fr"]);
+    expect(form.get("numbers_format")).toBe("digits");
+  });
+
+  test("numbers_format and secondary_language_codes are refused on every other batch model", () => {
+    for (const model_id of ["scribe_v2", "scribe_v2_medical", "scribe_v1"]) {
+      for (const extra of [
+        { numbers_format: "words" as const },
+        { secondary_language_codes: ["es"] },
+      ]) {
+        const r = stt.safe({ model_id, file: audio, ...extra });
+        const param = Object.keys(extra)[0];
+        expect(r.ok, `${model_id} ${param}`).toBe(false);
+        if (r.ok) continue;
+        const issue = r.errors.find((e) => e.path[0] === param);
+        expect(issue?.code).toBe("unsupported_param");
+        expect(issue?.message).toContain("scribe_v3");
+      }
+    }
+  });
+
+  test("an unknown numbers_format value is refused", () => {
+    expect(safeUnchecked({ model_id: "scribe_v3", file: audio, numbers_format: "roman" }).ok).toBe(
+      false,
+    );
+  });
+
+  test("scribe_v3_live is refused here and pointed at the realtime socket", () => {
+    const r = stt.safe({ model_id: "scribe_v3_live", file: audio });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.errors[0]?.code).toBe("unsupported_capability");
+    expect(r.errors[0]?.message).toContain("elevenlabs.speechToTextRealtime");
   });
 });
 

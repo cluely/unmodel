@@ -18,6 +18,53 @@ const safeUnchecked = speechToTextRealtime.safe as unknown as (
   options?: ValidateOptions,
 ) => ValidateResult<Record<string, unknown>>;
 
+describe("elevenlabs.speechToTextRealtime scribe_v3_live (models refresh 2026-11-12)", () => {
+  test("scribe_v3_live carries $0.22 per hour", () => {
+    expect(models.scribe_v3_live.cost.perAudioMinute).toBeCloseTo(0.22 / 60, 10);
+  });
+
+  test("turn_prediction and multilang_mode are accepted and reach the socket url", () => {
+    const session = speechToTextRealtime({
+      model_id: "scribe_v3_live",
+      commit_strategy: "turn_prediction",
+      multilang_mode: true,
+    });
+    const query = new URL(
+      speechToTextRealtimeUrl(session).replace("wss://", "https://"),
+    ).searchParams;
+    expect(query.get("commit_strategy")).toBe("turn_prediction");
+    expect(query.get("multilang_mode")).toBe("true");
+  });
+
+  test("scribe_v2_realtime refuses turn_prediction and multilang_mode: true", () => {
+    const r = speechToTextRealtime.safe({
+      model_id: "scribe_v2_realtime",
+      commit_strategy: "turn_prediction",
+      multilang_mode: true,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.errors.map((e) => e.path[0]).sort()).toEqual(["commit_strategy", "multilang_mode"]);
+    for (const issue of r.errors) {
+      expect(issue.code).toBe("unsupported_param");
+      expect(issue.message).toContain("scribe_v3_live");
+    }
+    // `false` is the documented default and stays legal everywhere.
+    expect(
+      speechToTextRealtime.safe({ model_id: "scribe_v2_realtime", multilang_mode: false }).ok,
+    ).toBe(true);
+  });
+
+  test("an unknown realtime id may take both — no refusal", () => {
+    const r = safeUnchecked({
+      model_id: "scribe_v9_live",
+      commit_strategy: "turn_prediction",
+      multilang_mode: true,
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
 describe("elevenlabs.speechToTextRealtime happy path", () => {
   test("returns the validated session config and builds the socket url", () => {
     const params = {
@@ -64,7 +111,7 @@ describe("elevenlabs.speechToTextRealtime happy path", () => {
   });
 
   test("every realtime model id validates clean and carries realtime pricing", () => {
-    expect(REALTIME_STT_MODEL_IDS).toEqual(["scribe_v2_realtime"]);
+    expect(REALTIME_STT_MODEL_IDS).toEqual(["scribe_v2_realtime", "scribe_v3_live"]);
     for (const id of REALTIME_STT_MODEL_IDS) {
       const r = speechToTextRealtime.safe({ model_id: id });
       expect(r.ok).toBe(true);

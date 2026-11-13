@@ -186,9 +186,13 @@ expectAssignable<PackRefs>("openai/gpt-4o-transcribe-diarize");
 expectAssignable<PackRefs>("assemblyai/universal-3-5-pro");
 expectAssignable<PackRefs>("assemblyai/universal-3-6-pro-preview");
 expectAssignable<PackRefs>("elevenlabs/scribe_v2");
+expectAssignable<PackRefs>("elevenlabs/scribe_v3");
+expectAssignable<PackRefs>("elevenlabs/scribe_v2_medical");
 expectAssignable<PackRefs>("soniox/stt-async-v5");
 // @ts-expect-error — a realtime-only model is not a batch ref…
 expectAssignable<PackRefs>("elevenlabs/scribe_v2_realtime");
+// @ts-expect-error — …nor is the other one…
+expectAssignable<PackRefs>("elevenlabs/scribe_v3_live");
 // @ts-expect-error — …and neither is a model no adapter declares.
 expectAssignable<PackRefs>("assemblyai/universal-9");
 
@@ -373,10 +377,17 @@ function extrasNarrowingTests(): void {
   stt({ model: "speechmatics/standard", audio: { url }, domain: "medical" });
   stt({ model: "speechmatics/enhanced", audio: { url }, domain: "medical" });
 
-  // ElevenLabs' one row difference.
+  // ElevenLabs' row differences.
   stt({ model: "elevenlabs/scribe_v2", audio: { url }, no_verbatim: true });
-  // @ts-expect-error — "Only supported with scribe_v2 model".
+  stt({ model: "elevenlabs/scribe_v2_medical", audio: { url }, no_verbatim: true });
+  // @ts-expect-error — "Supported by scribe_v2, scribe_v2_medical and scribe_v3".
   stt({ model: "elevenlabs/scribe_v1", audio: { url }, no_verbatim: true });
+  stt({ model: "elevenlabs/scribe_v3", audio: { url }, numbers_format: "words" });
+  stt({ model: "elevenlabs/scribe_v3", audio: { url }, secondary_language_codes: ["es"] });
+  // @ts-expect-error — "Both parameters are only supported by `scribe_v3`".
+  stt({ model: "elevenlabs/scribe_v2", audio: { url }, numbers_format: "words" });
+  // @ts-expect-error — …and the medical model is not scribe_v3 either.
+  stt({ model: "elevenlabs/scribe_v2_medical", audio: { url }, secondary_language_codes: ["es"] });
 
   // @ts-expect-error — a key no model on the ref'd provider takes is a typo.
   stt({ model: "mistral/voxtral-mini-latest", audio: { url }, contextbias: ["x"] });

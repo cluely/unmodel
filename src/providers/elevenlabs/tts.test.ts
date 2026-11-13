@@ -7,6 +7,8 @@ import {
   TTS_OPTIMIZE_STREAMING_LATENCY_LEVELS,
   TTS_SPEED_MIN,
   TTS_SPEED_MAX,
+  TTS_CLONE_STRENGTH_MAX,
+  TTS_CLONE_STRENGTH_MIN,
 } from "./tts";
 import { models, TTS_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
@@ -94,7 +96,7 @@ describe("elevenlabs.tts happy path", () => {
   });
 
   test("unknown model warns but validates", () => {
-    const r = tts.safe({ voice_id: "abc123", text: "hi", model_id: "eleven_v4" });
+    const r = tts.safe({ voice_id: "abc123", text: "hi", model_id: "eleven_v9" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
@@ -113,6 +115,57 @@ describe("elevenlabs.tts happy path", () => {
       const unknown = r.warnings.find((w) => w.code === "unknown_param");
       expect(unknown?.path).toEqual(["brand_new_param"]);
     }
+  });
+});
+
+describe("elevenlabs.tts eleven_v4 (models refresh 2026-11-12)", () => {
+  test("validates clean on POST /v1/text-to-speech", () => {
+    const r = tts.safe({ voice_id: "abc123", text: "hi", model_id: "eleven_v4" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("prices at $0.08 per 1k characters", () => {
+    const r = tts.safe({ voice_id: "abc123", text: "x".repeat(1000), model_id: "eleven_v4" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.08, 10);
+  });
+
+  test("caps a request at 10,000 characters", () => {
+    expect(models.eleven_v4.limit.characters).toBe(10000);
+    const r = tts.safe({ voice_id: "abc123", text: "x".repeat(10001), model_id: "eleven_v4" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("over_output_limit");
+  });
+
+  test("voice_settings.clone_strength in 0–1 is accepted and reaches the SDK view", () => {
+    const v = tts({
+      voice_id: "abc123",
+      text: "hi",
+      model_id: "eleven_v4",
+      voice_settings: { clone_strength: TTS_CLONE_STRENGTH_MAX },
+    });
+    expect(v.voice_settings).toEqual({ clone_strength: 1 });
+    expect(v.toSdk("elevenlabs").request.voiceSettings).toEqual({ cloneStrength: 1 });
+    expect(
+      tts.safe({
+        voice_id: "abc123",
+        text: "hi",
+        model_id: "eleven_v4",
+        voice_settings: { clone_strength: TTS_CLONE_STRENGTH_MIN },
+      }).ok,
+    ).toBe(true);
+  });
+
+  test("voice_settings.clone_strength above 1 is refused", () => {
+    const r = tts.safe({
+      voice_id: "abc123",
+      text: "hi",
+      model_id: "eleven_v4",
+      voice_settings: { clone_strength: 1.5 },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["voice_settings", "clone_strength"]);
   });
 });
 
@@ -197,7 +250,7 @@ describe("elevenlabs.tts cost estimation", () => {
   });
 
   test("unknown models carry no estimate", () => {
-    const r = tts.safe({ voice_id: "abc123", text: "hi", model_id: "eleven_v4" });
+    const r = tts.safe({ voice_id: "abc123", text: "hi", model_id: "eleven_v9" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
   });

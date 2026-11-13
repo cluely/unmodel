@@ -19,6 +19,7 @@ type PackRefs = UnifiedRef<typeof elevenlabsMusic | typeof stabilityMusic>;
 
 expectAssignable<PackRefs>("elevenlabs/music_v1");
 expectAssignable<PackRefs>("elevenlabs/music_v2");
+expectAssignable<PackRefs>("elevenlabs/music_v2_5");
 expectAssignable<PackRefs>("stability/stable-audio-2");
 expectAssignable<PackRefs>("stability/stable-audio-2.5");
 // @ts-expect-error — stable-audio-3 is catalogued but served by the async routes.

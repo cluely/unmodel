@@ -67,7 +67,7 @@ function base(ref: string): Record<string, unknown> {
 }
 
 test("the sweep walks every ref the pack ships", () => {
-  expect(refs.length).toBe(7);
+  expect(refs.length).toBe(8);
   expect(new Set(refs).size).toBe(refs.length);
   for (const ref of refs) expect(ROWS[modelOf(ref)], ref).toBeDefined();
 });

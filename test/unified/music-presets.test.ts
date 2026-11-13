@@ -156,8 +156,8 @@ describe("every declared music preset is a value the provider accepts", () => {
   }
 
   test("the sweep is not empty", () => {
-    expect(codecCells.length).toBe(24);
-    expect(extraCells.length).toBe(53);
+    expect(codecCells.length).toBe(29);
+    expect(extraCells.length).toBe(58);
   });
 
   test.each(codecCells)("music %s outputFormat %s", (_ref, _codec, probe) => {

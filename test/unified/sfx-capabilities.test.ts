@@ -74,6 +74,16 @@ const TABLE: Readonly<Record<string, Capability>> = {
     bitrateAt: undefined,
     extras: ["loop", "prompt_influence"],
   },
+  // The second `SFXModelId` member: same route, same schema, same row.
+  "elevenlabs/native-v3": {
+    ref: "elevenlabs/eleven_text_to_sound_v3",
+    promptAt: "text",
+    duration: { at: "duration_seconds", min: 0.5, max: 30, int: false },
+    durationAbsent: "model-picks",
+    format: { at: "output_format", kind: "composite", codecs: COMPOSITE },
+    bitrateAt: undefined,
+    extras: ["loop", "prompt_influence"],
+  },
   // ---- ElevenLabs, resold by fal — the NARROWED twin --------------------
   "fal/elevenlabs-v2": {
     ref: "fal/fal-ai/elevenlabs/sound-effects/v2",

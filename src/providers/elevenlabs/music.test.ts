@@ -177,6 +177,28 @@ describe("elevenlabs.music prompt / composition_plan rules", () => {
     }
   });
 
+  test("music_v2_5 takes the chunks plan and refuses the sections plan", () => {
+    const chunks = music.safe({ composition_plan: chunksPlan, model_id: "music_v2_5" });
+    expect(chunks.ok).toBe(true);
+    if (chunks.ok) expect(chunks.warnings).toEqual([]);
+
+    const sections = music.safe({ composition_plan: sectionsPlan, model_id: "music_v2_5" });
+    expect(sections.ok).toBe(false);
+    if (!sections.ok) {
+      expect(sections.errors[0]?.path).toEqual(["composition_plan", "sections"]);
+      expect(sections.errors[0]?.model).toBe("music_v2_5");
+    }
+  });
+
+  test("the chunks refusal names both models that take it", () => {
+    const r = music.safe({ composition_plan: chunksPlan, model_id: "music_v1" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.message).toContain('"music_v2"');
+      expect(r.errors[0]?.message).toContain('"music_v2_5"');
+    }
+  });
+
   test("the default model (music_v1) is what an omitted model_id is checked against", () => {
     const r = music.safe({ composition_plan: chunksPlan });
     expect(r.ok).toBe(false);
@@ -194,6 +216,21 @@ describe("elevenlabs.music ignored-param warnings", () => {
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.warnings.map((w) => w.code)).toEqual(["unsupported_param"]);
+      expect(r.warnings[0]?.meta?.ignored).toBe(true);
+    }
+  });
+
+  test("respect_sections_durations warns on music_v2_5 too", () => {
+    const r = music.safe({
+      composition_plan: chunksPlan,
+      model_id: "music_v2_5",
+      respect_sections_durations: true,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => w.code)).toEqual(["unsupported_param"]);
+      expect(r.warnings[0]?.path).toEqual(["respect_sections_durations"]);
+      expect(r.warnings[0]?.message).toContain("music_v2_5");
       expect(r.warnings[0]?.meta?.ignored).toBe(true);
     }
   });
@@ -344,6 +381,16 @@ describe("elevenlabs.music cost estimation", () => {
     );
     for (const id of ["eleven_multilingual_sts_v2", "eleven_english_sts_v2", "eleven_english_sts_v1"] as const) {
       expect(models[id].cost?.perAudioMinute, id).toBe(VOICE_CHANGER_PER_AUDIO_MINUTE);
+    }
+  });
+
+  test("music_v2_5 validates clean and prices at the same $0.15 per generated minute", () => {
+    expect(models.music_v2_5.cost.perAudioMinute).toBe(MUSIC_PER_AUDIO_MINUTE);
+    const r = music.safe({ prompt: "hi", music_length_ms: 60000, model_id: "music_v2_5" });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(0.15, 10);
     }
   });
 

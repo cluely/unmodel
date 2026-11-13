@@ -37,7 +37,12 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeAudioMinutesCostUSD, minutesFromSeconds } from "../../core/cost";
 import { findMediaDeclaration } from "../../core/media/check";
-import { models, STT_MODEL_IDS, type ElevenlabsSttModelId } from "./models";
+import {
+  models,
+  REALTIME_STT_MODEL_IDS,
+  STT_MODEL_IDS,
+  type ElevenlabsSttModelId,
+} from "./models";
 import { speechToTextConstraints } from "./constraints";
 import {
   checkKeytermRules,
@@ -69,7 +74,7 @@ export const STT_KEYTERM_MAX_WORDS = KEYTERM_MAX_WORDS;
 // ---------------------------------------------------------------------------
 
 export interface SpeechToTextParams {
-  /** Transcription model id; scribe_v2 (current) or scribe_v1 (deprecated). */
+  /** Transcription model id: scribe_v3, scribe_v2, scribe_v2_medical or scribe_v1 (deprecated). */
   model_id: ElevenlabsSttModelId | (string & {});
   /**
    * The audio/video to transcribe (100ms minimum, < 5GB). A Blob/File is
@@ -118,8 +123,20 @@ export interface SpeechToTextParams {
   entity_redaction?: string | string[];
   /** How redacted entities are formatted. */
   entity_redaction_mode?: "redacted" | "entity_type" | "enumerated_entity_type";
-  /** Drop filler words / false starts / non-speech sounds (scribe_v2 only). */
+  /** Drop filler words / false starts / non-speech sounds (not on scribe_v1). */
   no_verbatim?: boolean;
+  /**
+   * Numbers as `"digits"` ("42") or `"words"` ("forty-two"); omitted, the
+   * model chooses. scribe_v3 only — any other model returns
+   * `invalid_parameters`.
+   */
+  numbers_format?: "digits" | "words" | null;
+  /**
+   * Other languages that may be spoken alongside `language_code` (ISO-639-1/3),
+   * for audio that switches languages. scribe_v3 only. Sent as one form field
+   * per code — "A JSON array sent as a single string is not accepted."
+   */
+  secondary_language_codes?: string[] | null;
   /** Match diarized speakers against the workspace speaker library. */
   use_speaker_library?: boolean;
   /** Label speakers "agent"/"customer"; requires diarize=true. +10% cost. */
@@ -163,6 +180,8 @@ export interface SpeechToTextSdkParams {
   entityRedaction?: string | string[];
   entityRedactionMode?: "redacted" | "entity_type" | "enumerated_entity_type";
   noVerbatim?: boolean;
+  numbersFormat?: "digits" | "words";
+  secondaryLanguageCodes?: string[];
   useSpeakerLibrary?: boolean;
   detectSpeakerRoles?: boolean;
   keyterms?: string[];
@@ -197,6 +216,8 @@ const speechToTextSchema = z.looseObject({
   entity_redaction: z.union([z.string(), z.array(z.string())]).optional(),
   entity_redaction_mode: z.enum(["redacted", "entity_type", "enumerated_entity_type"]).optional(),
   no_verbatim: z.boolean().optional(),
+  numbers_format: z.enum(["digits", "words"]).nullable().optional(),
+  secondary_language_codes: z.array(z.string()).nullable().optional(),
   use_speaker_library: z.boolean().optional(),
   detect_speaker_roles: z.boolean().optional(),
   keyterms: z
@@ -339,9 +360,10 @@ const STT_MODEL_ID_SET = new Set<string>(STT_MODEL_IDS);
 
 /**
  * The catalog carries every documented ElevenLabs model id, including ones no
- * batch STT request can use (scribe_v2_realtime is WebSocket-only; TTS/music
- * ids belong to other APIs). Those resolve in the catalog, so without this
- * gate they would pass unremarked. Ids unknown to the catalog stay a warning.
+ * batch STT request can use (scribe_v2_realtime and scribe_v3_live are
+ * WebSocket-only; TTS/music ids belong to other APIs). Those resolve in the
+ * catalog, so without this gate they would pass unremarked. Ids unknown to the
+ * catalog stay a warning.
  */
 function checkSttModelKind(
   params: SpeechToTextParams,
@@ -349,12 +371,12 @@ function checkSttModelKind(
   ctx: PipelineContext,
 ): void {
   if (info === undefined || STT_MODEL_ID_SET.has(params.model_id)) return;
-  const realtime = params.model_id.endsWith("_realtime");
+  const realtime = REALTIME_STT_MODEL_IDS.includes(params.model_id);
   ctx.report({
     code: "unsupported_capability",
     path: ["model_id"],
     model: params.model_id,
-    message: `"${params.model_id}" is not a batch speech-to-text model; POST /v1/speech-to-text accepts ${STT_MODEL_IDS.map((id) => `"${id}"`).join(", ")}.${realtime ? " Realtime Scribe runs over the WebSocket API, which unmodel does not validate." : ""}`,
+    message: `"${params.model_id}" is not a batch speech-to-text model; POST /v1/speech-to-text accepts ${STT_MODEL_IDS.map((id) => `"${id}"`).join(", ")}.${realtime ? " Realtime Scribe runs over the WebSocket wss /v1/speech-to-text/realtime (see `elevenlabs.speechToTextRealtime`)." : ""}`,
     meta: { allowed: [...STT_MODEL_IDS], source: MODELS_DOCS_URL },
   });
 }
@@ -391,14 +413,20 @@ function estimate(params: SpeechToTextParams, info: ModelInfo | undefined, ctx: 
 /** Fields the official SDK JSON-stringifies as a whole into one form part. */
 const JSON_FIELDS = new Set<string>(["additional_formats", "webhook_metadata"]);
 /** Array fields the official SDK appends item-by-item under the same key. */
-const REPEATED_FIELDS = new Set<string>(["entity_detection", "entity_redaction", "keyterms"]);
+const REPEATED_FIELDS = new Set<string>([
+  "entity_detection",
+  "entity_redaction",
+  "keyterms",
+  "secondary_language_codes",
+]);
 
 /**
  * Builds the multipart/form-data body for `POST /v1/speech-to-text` from
  * validated params. Encoding matches the official SDK's serialization:
  * booleans/numbers are stringified, `additional_formats` and an object
  * `webhook_metadata` become one JSON-string part, `entity_detection` /
- * `entity_redaction` / `keyterms` arrays are appended item-by-item, and a
+ * `entity_redaction` / `keyterms` / `secondary_language_codes` arrays are
+ * appended item-by-item, and a
  * string `file` is sent as `source_url`. Null/undefined fields are omitted.
  *
  * ```ts
@@ -464,6 +492,8 @@ const SDK_KEY_MAP: Record<string, string> = {
   entity_redaction: "entityRedaction",
   entity_redaction_mode: "entityRedactionMode",
   no_verbatim: "noVerbatim",
+  numbers_format: "numbersFormat",
+  secondary_language_codes: "secondaryLanguageCodes",
   use_speaker_library: "useSpeakerLibrary",
   detect_speaker_roles: "detectSpeakerRoles",
   keyterms: "keyterms",
@@ -536,7 +566,8 @@ const validator = createValidator<SpeechToTextParams, unknown>({
 
 /**
  * Validates params for ElevenLabs `POST /v1/speech-to-text` (Scribe batch
- * transcription — scribe_v2_realtime is WebSocket-only and not accepted here).
+ * transcription — scribe_v2_realtime and scribe_v3_live are WebSocket-only and
+ * not accepted here).
  *
  * This is a multipart endpoint: the validated output's enumerable props are
  * the validated params (including the `file` Blob), and the raw-fetch path is

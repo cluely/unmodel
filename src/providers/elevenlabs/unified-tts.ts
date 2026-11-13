@@ -52,12 +52,13 @@ export type ElevenlabsTtsWire = TextToSpeechParams;
 /** What a unified call to `elevenlabs/…` returns. */
 export type ElevenlabsTtsResult = ReturnType<typeof validator<ElevenlabsTtsWire>>;
 
-/** The four settings members that live under `voice_settings`, not at the root. */
+/** The settings members that live under `voice_settings`, not at the root. */
 const VOICE_SETTINGS_NESTING: Readonly<Record<string, readonly string[]>> = {
   stability: ["voice_settings"],
   similarity_boost: ["voice_settings"],
   style: ["voice_settings"],
   use_speaker_boost: ["voice_settings"],
+  clone_strength: ["voice_settings"],
 };
 
 export const tts = {

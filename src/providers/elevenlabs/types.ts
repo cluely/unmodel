@@ -169,6 +169,7 @@ export type {
 export type {
   ElevenlabsModelId,
   ElevenlabsTtsModelId,
+  ElevenlabsStreamInputModelId,
   ElevenlabsSttModelId,
   ElevenlabsRealtimeSttModelId,
   ElevenlabsMusicModelId,

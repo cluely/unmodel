@@ -624,7 +624,7 @@ a floor of **0.5** and takes a `loop` and a `prompt_influence`. Merging them wou
 the category floor from three seconds to half of one and put `instrumental?: boolean` on a door
 creak. Each route refuses the other's ids by name.
 
-**ElevenLabs — `elevenlabs.sfx`, 1 model.** Tier: **native**.
+**ElevenLabs — `elevenlabs.sfx`, 2 models** (`eleven_text_to_sound_v2`, `eleven_text_to_sound_v3`). Tier: **native**.
 `POST https://api.elevenlabs.io/v1/sound-generation`, JSON body, `xi-api-key` header. `text` is
 the only required field; `output_format` is a **query param** (the `/v1/music` placement, and
 the same trap: sending it in the body is a silent no-op) whose 21-member enum is NOT the music
@@ -929,7 +929,7 @@ leaves rather than whole validators.
 | `unmodel/video` | `video`, `createVideo` | 13 | alibaba, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu, xai |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 5 | black-forest-labs, fal, ideogram, openai, recraft — the five whose primary editing route is *image + prompt, no mask* |
 | `unmodel/music` | `music`, `createMusic` | 5 | elevenlabs, fal, google, mureka, stability |
-| `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (1 model, `POST /v1/sound-generation`), fal (6 endpoints from five vendors, ElevenLabs' own among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
+| `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (2 models, `POST /v1/sound-generation`), fal (6 endpoints from five vendors, ElevenLabs' own among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 4 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
 | `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (the two engines that render raw image input — Avatar III does not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
 | `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (11 endpoints, seven taking a still and four taking a clip), topaz (15 models over two routes, stills only, multipart bodies) |

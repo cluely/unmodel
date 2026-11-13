@@ -118,7 +118,7 @@ export const availability = {
   },
   "qwen3-32b": {
     "alibaba": "qwen3-32b",
-    "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 16384 } },
+    "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 32768 } },
     "deepinfra": { id: "Qwen/Qwen3-32B", narrows: { context: 40960 } },
     "huggingface": "Qwen/Qwen3-32B",
     "openrouter": "qwen/qwen3-32b",

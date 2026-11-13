@@ -73,7 +73,7 @@ export const availability = {
   },
   "Qwen/Qwen3-32B": {
     "alibaba": "qwen3-32b",
-    "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 16384 } },
+    "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 32768 } },
     "deepinfra": "Qwen/Qwen3-32B",
     "huggingface": "Qwen/Qwen3-32B",
     "openrouter": "qwen/qwen3-32b",
@@ -339,6 +339,7 @@ export const availability = {
     "vercel": "deepseek/deepseek-v4.1-flash-1017",
   },
   "google/gemma-3-12b-it": {
+    "amazon-bedrock": "google.gemma-3-12b-it",
     "deepinfra": "google/gemma-3-12b-it",
     "huggingface": "google/gemma-3-12b-it",
     "novita-ai": "google/gemma-3-12b-it",
@@ -346,6 +347,7 @@ export const availability = {
     "openrouter": "google/gemma-3-12b-it",
   },
   "google/gemma-3-27b-it": {
+    "amazon-bedrock": "google.gemma-3-27b-it",
     "deepinfra": "google/gemma-3-27b-it",
     "huggingface": "google/gemma-3-27b-it",
     "nebius": { id: "google/gemma-3-27b-it", narrows: { context: 110000 } },
@@ -353,7 +355,7 @@ export const availability = {
     "openrouter": "google/gemma-3-27b-it",
   },
   "google/gemma-3-4b-it": {
-    "amazon-bedrock": { id: "google.gemma-3-4b-it", narrows: { context: 128000 } },
+    "amazon-bedrock": "google.gemma-3-4b-it",
     "deepinfra": "google/gemma-3-4b-it",
     "huggingface": "google/gemma-3-4b-it",
     "nvidia": "google/gemma-3-4b-it",
@@ -470,7 +472,7 @@ export const availability = {
     "deepinfra": "nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning",
   },
   "openai/gpt-oss-120b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
@@ -485,7 +487,7 @@ export const availability = {
     "vercel": "openai/gpt-oss-120b",
   },
   "openai/gpt-oss-20b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-20b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-20b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chatMaas" },
@@ -557,7 +559,7 @@ export const availability = {
     "zhipuai": "glm-4.7",
   },
   "zai-org/GLM-4.7-Flash": {
-    "amazon-bedrock": { id: "zai.glm-4.7-flash", narrows: { context: 200000 } },
+    "amazon-bedrock": "zai.glm-4.7-flash",
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-4.7-flash", narrows: { context: 131072 } },
     "deepinfra": "zai-org/GLM-4.7-Flash",
     "huggingface": { id: "zai-org/GLM-4.7-Flash", narrows: { context: 200000 } },
@@ -605,6 +607,7 @@ export const availability = {
     "zhipuai": { id: "glm-5.2", narrows: { context: 1000000 } },
   },
   "zai-org/GLM-5.3": {
+    "amazon-bedrock": { id: "us.zai.glm-5.3", narrows: { context: 1000000 } },
     "baseten": "zai-org/GLM-5.3",
     "cloudflare-workers-ai": "@cf/zai-org/glm-5.3",
     "deepinfra": "zai-org/GLM-5.3",

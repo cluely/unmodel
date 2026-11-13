@@ -30,7 +30,7 @@ export const availability = {
     "vercel": "minimax/minimax-m2",
   },
   "MiniMaxAI/MiniMax-M2.1": {
-    "amazon-bedrock": "minimax.minimax-m2.1",
+    "amazon-bedrock": { id: "minimax.minimax-m2.1", narrows: { context: 196608 } },
     "huggingface": "MiniMaxAI/MiniMax-M2.1",
     "minimax": "MiniMax-M2.1",
     "vercel": "minimax/minimax-m2.1",
@@ -100,7 +100,7 @@ export const availability = {
   },
   "Qwen/Qwen3-32B": {
     "alibaba": "qwen3-32b",
-    "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 16384 } },
+    "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 32768 } },
     "deepinfra": { id: "Qwen/Qwen3-32B", narrows: { context: 40960 } },
     "huggingface": "Qwen/Qwen3-32B",
     "openrouter": "qwen/qwen3-32b",
@@ -119,7 +119,7 @@ export const availability = {
     "huggingface": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
   },
   "Qwen/Qwen3-Coder-Next": {
-    "amazon-bedrock": { id: "qwen.qwen3-coder-next", narrows: { context: 131072 } },
+    "amazon-bedrock": "qwen.qwen3-coder-next",
     "huggingface": "Qwen/Qwen3-Coder-Next",
     "openrouter": "qwen/qwen3-coder-next",
     "vercel": { id: "alibaba/qwen3-coder-next", narrows: { context: 256000 } },
@@ -347,6 +347,7 @@ export const availability = {
     "vercel": "deepseek/deepseek-v4.1-flash-1017",
   },
   "google/gemma-3-12b-it": {
+    "amazon-bedrock": "google.gemma-3-12b-it",
     "deepinfra": "google/gemma-3-12b-it",
     "huggingface": "google/gemma-3-12b-it",
     "novita-ai": "google/gemma-3-12b-it",
@@ -354,6 +355,7 @@ export const availability = {
     "openrouter": "google/gemma-3-12b-it",
   },
   "google/gemma-3-27b-it": {
+    "amazon-bedrock": "google.gemma-3-27b-it",
     "deepinfra": "google/gemma-3-27b-it",
     "huggingface": "google/gemma-3-27b-it",
     "nebius": { id: "google/gemma-3-27b-it", narrows: { context: 110000 } },
@@ -361,7 +363,7 @@ export const availability = {
     "openrouter": "google/gemma-3-27b-it",
   },
   "google/gemma-3-4b-it": {
-    "amazon-bedrock": { id: "google.gemma-3-4b-it", narrows: { context: 128000 } },
+    "amazon-bedrock": "google.gemma-3-4b-it",
     "deepinfra": "google/gemma-3-4b-it",
     "huggingface": "google/gemma-3-4b-it",
     "nvidia": "google/gemma-3-4b-it",
@@ -416,7 +418,7 @@ export const availability = {
     "huggingface": "moonshotai/Kimi-K2-Instruct-0905",
   },
   "moonshotai/Kimi-K2-Thinking": {
-    "amazon-bedrock": { id: "moonshot.kimi-k2-thinking", narrows: { context: 262143 } },
+    "amazon-bedrock": "moonshot.kimi-k2-thinking",
     "google-vertex": { id: "moonshotai/kimi-k2-thinking-maas", endpoint: "google-vertex.chatMaas" },
     "huggingface": "moonshotai/Kimi-K2-Thinking",
     "novita-ai": "moonshotai/kimi-k2-thinking",
@@ -468,7 +470,7 @@ export const availability = {
     "vercel": "moonshotai/kimi-k3",
   },
   "openai/gpt-oss-120b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
@@ -483,7 +485,7 @@ export const availability = {
     "vercel": "openai/gpt-oss-120b",
   },
   "openai/gpt-oss-20b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-20b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-20b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chatMaas" },
@@ -564,7 +566,7 @@ export const availability = {
     "zhipuai": { id: "glm-4.6v-flash", narrows: { context: 128000 } },
   },
   "zai-org/GLM-4.7": {
-    "amazon-bedrock": "zai.glm-4.7",
+    "amazon-bedrock": { id: "zai.glm-4.7", narrows: { context: 202752 } },
     "deepinfra": { id: "zai-org/GLM-4.7", narrows: { context: 202752 } },
     "google-vertex": { id: "zai-org/glm-4.7-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 200000 } },
     "huggingface": "zai-org/GLM-4.7",
@@ -622,6 +624,7 @@ export const availability = {
     "zhipuai": "glm-5.2",
   },
   "zai-org/GLM-5.3": {
+    "amazon-bedrock": { id: "us.zai.glm-5.3", narrows: { context: 1000000 } },
     "baseten": "zai-org/GLM-5.3",
     "cloudflare-workers-ai": "@cf/zai-org/glm-5.3",
     "deepinfra": "zai-org/GLM-5.3",

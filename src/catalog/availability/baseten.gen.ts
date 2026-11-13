@@ -126,6 +126,7 @@ export const availability = {
     "vercel": { id: "zai/glm-5.2-fast", narrows: { context: 1000000, drops: ["image"] } },
   },
   "zai-org/GLM-5.3": {
+    "amazon-bedrock": { id: "us.zai.glm-5.3", narrows: { context: 1000000, drops: ["image"] } },
     "baseten": "zai-org/GLM-5.3",
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.3", narrows: { drops: ["image"] } },
     "deepinfra": { id: "zai-org/GLM-5.3", narrows: { drops: ["image"] } },

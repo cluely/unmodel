@@ -46,6 +46,7 @@ export const availability = {
     "xai": "grok-4.6",
   },
   "grok-4.7": {
+    "amazon-bedrock": "us.xai.grok-4.7",
     "openrouter": "x-ai/grok-4.7",
     "vercel": { id: "spacexai/grok-4.7", narrows: { drops: ["pdf"] } },
     "xai": "grok-4.7",

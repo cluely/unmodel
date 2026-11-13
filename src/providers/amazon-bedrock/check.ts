@@ -1,7 +1,7 @@
 import type { Issue } from "../../core/issues";
 import type { ResponseReport, UsageReport } from "../../core/report";
 import { computeCostUSD } from "../../core/cost";
-import { resolveBedrockModelInfo } from "./chat";
+import { isPastPromptLengthTier, resolveBedrockModelInfo } from "./chat";
 
 /** The `usage` object of a Converse response (API_runtime_TokenUsage). */
 export interface ConverseUsageLike {
@@ -54,7 +54,9 @@ export type ConverseStopReason =
  *
  * The Converse response carries no model id, so pass the `modelId` you
  * requested to get `costUSD`; without it only warnings and usage are
- * reported.
+ * reported. `costUSD` is also omitted for a model priced by prompt length
+ * (Claude Haiku 5.5) once the prompt — input + cache reads + cache writes —
+ * passes 100,000 tokens, where the catalog's rates no longer apply.
  */
 export function checkChat(
   response: ConverseResponseLike,
@@ -131,12 +133,16 @@ export function checkChat(
   if (totalTokens !== undefined) usage.totalTokens = totalTokens;
 
   const info = modelId === undefined ? undefined : resolveBedrockModelInfo(modelId);
-  const costUSD = computeCostUSD(info?.cost, {
-    inputTokens,
-    outputTokens,
-    cachedInputTokens,
-    cacheWriteTokens,
-  });
+  const promptTokens = (inputTokens ?? 0) + (cacheWriteTokens ?? 0);
+  const costUSD =
+    info !== undefined && isPastPromptLengthTier(info.id, promptTokens)
+      ? undefined
+      : computeCostUSD(info?.cost, {
+          inputTokens,
+          outputTokens,
+          cachedInputTokens,
+          cacheWriteTokens,
+        });
 
   return {
     warnings,

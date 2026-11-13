@@ -191,7 +191,7 @@ export const availability = {
     "togetherai": "nvidia/nemotron-3-ultra-550b-a55b",
   },
   "openai/gpt-oss-120b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
@@ -255,6 +255,7 @@ export const availability = {
     "zhipuai": { id: "glm-5.2", narrows: { context: 1000000 } },
   },
   "zai-org/GLM-5.3": {
+    "amazon-bedrock": { id: "us.zai.glm-5.3", narrows: { context: 1000000 } },
     "baseten": "zai-org/GLM-5.3",
     "cloudflare-workers-ai": "@cf/zai-org/glm-5.3",
     "deepinfra": "zai-org/GLM-5.3",

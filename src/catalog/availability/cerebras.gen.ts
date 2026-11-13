@@ -20,7 +20,7 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  */
 export const availability = {
   "gpt-oss-120b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",

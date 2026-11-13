@@ -26,7 +26,7 @@ export const availability = {
     "vercel": "minimax/minimax-m2",
   },
   "MiniMax-M2.1": {
-    "amazon-bedrock": "minimax.minimax-m2.1",
+    "amazon-bedrock": { id: "minimax.minimax-m2.1", narrows: { context: 196608 } },
     "huggingface": "MiniMaxAI/MiniMax-M2.1",
     "minimax": "MiniMax-M2.1",
     "vercel": "minimax/minimax-m2.1",

@@ -90,6 +90,7 @@ export const availability = {
     "vercel": "deepseek/deepseek-v4.1-flash-1017",
   },
   "google/gemma-3-27b-it": {
+    "amazon-bedrock": "google.gemma-3-27b-it",
     "deepinfra": "google/gemma-3-27b-it",
     "huggingface": "google/gemma-3-27b-it",
     "nebius": "google/gemma-3-27b-it",
@@ -134,7 +135,7 @@ export const availability = {
     "openrouter": "nvidia/nemotron-3-super-120b-a12b",
   },
   "openai/gpt-oss-120b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
@@ -169,6 +170,7 @@ export const availability = {
     "zhipuai": { id: "glm-5.2", narrows: { context: 1000000 } },
   },
   "zai-org/GLM-5.3": {
+    "amazon-bedrock": { id: "us.zai.glm-5.3", narrows: { context: 1000000 } },
     "baseten": "zai-org/GLM-5.3",
     "cloudflare-workers-ai": "@cf/zai-org/glm-5.3",
     "deepinfra": "zai-org/GLM-5.3",

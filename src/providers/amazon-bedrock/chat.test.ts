@@ -3,7 +3,7 @@ import { createAmazonBedrock, converseUrl, resolveBedrockModelInfo } from "./cha
 import type { ConverseParams, BedrockMessage } from "./chat";
 
 // Real catalog ids used throughout:
-//   amazon.nova-lite-v1:0    — text+image+video input, toolCall, 8192 output, $0.06/$0.24 per M
+//   amazon.nova-lite-v1:0    — text+image+video input, toolCall, 10000 output, $0.06/$0.24 per M
 //   amazon.nova-micro-v1:0   — text-only input
 //   google.gemma-3-12b-it    — toolCall: false
 //   anthropic.claude-opus-4-6-v1 — catalog id WITHOUT the ":0" version suffix
@@ -119,7 +119,7 @@ describe("amazon-bedrock.chat happy path", () => {
 describe("amazon-bedrock model resolution", () => {
   test("regional inference-profile ids hit the catalog directly", () => {
     const result = bedrock.chat.safe({
-      modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
       messages: HI,
     });
     expect(result.ok).toBe(true);
@@ -246,13 +246,13 @@ describe("amazon-bedrock.chat capabilities", () => {
     const result = bedrock.chat.safe({
       modelId: "amazon.nova-lite-v1:0",
       messages: HI,
-      inferenceConfig: { maxTokens: 10_000 },
+      inferenceConfig: { maxTokens: 10_001 },
     });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors[0]?.code).toBe("over_output_limit");
       expect(result.errors[0]?.path).toEqual(["inferenceConfig", "maxTokens"]);
-      expect(result.errors[0]?.meta).toEqual({ requested: 10_000, limit: 8192 });
+      expect(result.errors[0]?.meta).toEqual({ requested: 10_001, limit: 10_000 });
     }
   });
 
@@ -305,6 +305,93 @@ describe("amazon-bedrock.chat capabilities", () => {
         "messages", 2, "content", 0, "toolResult", "content", 0, "video",
       ]);
     }
+  });
+});
+
+describe("amazon-bedrock.chat 2026-11 models", () => {
+  const TOOLS = [{ toolSpec: { name: "t", inputSchema: { json: {} } } }];
+
+  // [catalog id, input $/M, output $/M] — the generated rates; geo profiles
+  // carry the 10% regional premium over the global row.
+  test.each([
+    ["global.anthropic.claude-fable-5-2", 8, 40],
+    ["us.anthropic.claude-opus-5-5", 4.4, 22],
+    ["eu.anthropic.claude-sonnet-5-5", 2.2, 11],
+    ["global.anthropic.claude-haiku-5-5", 0.1, 0.5],
+    ["us.xai.grok-4.7", 2.2, 6.6],
+    ["global.openai.gpt-6-sol", 2, 10],
+  ] as const)("%s validates and prices from its catalog row", (modelId, input, output) => {
+    const result = bedrock.chat.safe({ modelId, messages: HI, inferenceConfig: { maxTokens: 1000 } });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.warnings).toEqual([]);
+      const expected = ((result.estimate.inputTokens ?? 0) * input + 1000 * output) / 1_000_000;
+      expect(result.estimate.costUSD).toBeCloseTo(expected, 10);
+    }
+  });
+
+  test("forced toolChoice `any` on Opus 5.5 is unsupported_param, sourced to its model card", () => {
+    const result = bedrock.chat.safe({
+      modelId: "us.anthropic.claude-opus-5-5",
+      messages: HI,
+      toolConfig: { tools: TOOLS, toolChoice: { any: {} } },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]?.code).toBe("unsupported_param");
+      expect(result.errors[0]?.path).toEqual(["toolConfig", "toolChoice"]);
+      expect(result.errors[0]?.message).toContain("toolChoice: { auto: {} }");
+      expect(result.errors[0]?.meta?.source).toContain("model-card-anthropic-claude-opus-5-5");
+    }
+  });
+
+  test("forced toolChoice `tool` on Sonnet 5.5 is refused for the bare id and a profile ARN", () => {
+    for (const modelId of [
+      "anthropic.claude-sonnet-5-5",
+      "arn:aws:bedrock:us-east-1:123456789012:inference-profile/global.anthropic.claude-sonnet-5-5",
+    ]) {
+      const result = bedrock.chat.safe({
+        modelId,
+        messages: HI,
+        toolConfig: { tools: TOOLS, toolChoice: { tool: { name: "t" } } },
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors[0]?.code).toBe("unsupported_param");
+        expect(result.errors[0]?.meta).toEqual({
+          toolChoice: "tool",
+          source: expect.stringContaining("model-card-anthropic-claude-sonnet-5-5"),
+        });
+      }
+    }
+  });
+
+  test("automatic toolChoice on Opus 5.5, and forced choice on Opus 5, are accepted", () => {
+    const auto = bedrock.chat.safe({
+      modelId: "global.anthropic.claude-opus-5-5",
+      messages: HI,
+      toolConfig: { tools: TOOLS, toolChoice: { auto: {} } },
+    });
+    expect(auto.ok).toBe(true);
+    const sibling = bedrock.chat.safe({
+      modelId: "global.anthropic.claude-opus-5",
+      messages: HI,
+      toolConfig: { tools: TOOLS, toolChoice: { any: {} } },
+    });
+    expect(sibling.ok).toBe(true);
+  });
+
+  test("Haiku 5.5's estimate is withheld above its 100,000-token prompt tier", () => {
+    const long: BedrockMessage[] = [{ role: "user", content: [{ text: "word ".repeat(120_000) }] }];
+    const haiku = bedrock.chat.safe({ modelId: "global.anthropic.claude-haiku-5-5", messages: long });
+    expect(haiku.ok).toBe(true);
+    if (haiku.ok) {
+      expect(haiku.estimate.inputTokens).toBeGreaterThan(100_000);
+      expect(haiku.estimate.costUSD).toBeUndefined();
+    }
+    // A flat-priced model with the same prompt still prices.
+    const sonnet = bedrock.chat.safe({ modelId: "global.anthropic.claude-sonnet-5-5", messages: long });
+    expect(sonnet.ok && sonnet.estimate.costUSD).toBeGreaterThan(0);
   });
 });
 

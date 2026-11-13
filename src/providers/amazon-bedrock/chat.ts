@@ -1,4 +1,5 @@
 import { models } from "../../catalog/amazon-bedrock.gen";
+import type { AmazonBedrockModelId } from "../../catalog/amazon-bedrock.gen";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
 import { toValidated, JSON_HEADERS } from "../../core/request";
 import type { ExactKeys, RequestMeta, Validated } from "../../core/request";
@@ -90,6 +91,70 @@ function canonicalModelId(modelId: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Per-model rules. Keyed by foundation-model id; an inference profile of that
+// model (a geo or global prefix — "us.", "global.", … — in front of the id)
+// carries the same rules.
+// ---------------------------------------------------------------------------
+
+/**
+ * Foundation models whose Bedrock model card limits client-side tool calling
+ * to automatic tool choice, each mapped to that card. Both cards, checked
+ * 2026-11-12: "Client-side tool calling ( tool_choice types auto and none
+ * only)". On Converse that is `toolChoice: { auto: {} }` or no `toolChoice`;
+ * `any` and `tool` force a tool call.
+ */
+const AUTO_TOOL_CHOICE_ONLY = {
+  "anthropic.claude-opus-5-5":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-opus-5-5.html (checked 2026-11-12)",
+  "anthropic.claude-sonnet-5-5":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-5-5.html (checked 2026-11-12)",
+} as const satisfies Partial<Record<AmazonBedrockModelId, string>>;
+
+/**
+ * Foundation models priced by prompt length. Their catalog rows carry the
+ * rates for prompts up to {@link PROMPT_LENGTH_TIER_THRESHOLD} tokens; above
+ * it every rate differs and `ModelCost` has no tier field, so estimates and
+ * `checkChat` return no `costUSD` there rather than a number 5x too low. The
+ * committed models.dev snapshot carries the tier on every Bedrock Haiku 5.5
+ * row (`"tier": { "size": 100000, "type": "context" }`; input 0.5 and output
+ * 2.5 on the global row), as Anthropic's pricing page does for the model
+ * (platform.claude.com/docs/en/about-claude/pricing, checked 2026-11-12):
+ * "Claude Haiku 5.5 is priced by prompt length: a request whose prompt is
+ * over 100,000 tokens pays higher prices. A request's prompt length counts all
+ * of its input tokens, including cache reads and cache writes."
+ */
+const PROMPT_LENGTH_TIERED_MODEL_IDS = [
+  "anthropic.claude-haiku-5-5",
+] as const satisfies readonly AmazonBedrockModelId[];
+
+/** Prompt tokens (input + cache reads + cache writes) above which the catalog rates no longer apply. */
+const PROMPT_LENGTH_TIER_THRESHOLD = 100_000;
+
+/**
+ * True when `catalogId`'s catalog rates do not price a prompt of
+ * `promptTokens` tokens (see {@link PROMPT_LENGTH_TIERED_MODEL_IDS}).
+ */
+export function isPastPromptLengthTier(catalogId: string, promptTokens: number): boolean {
+  return (
+    promptTokens > PROMPT_LENGTH_TIER_THRESHOLD &&
+    PROMPT_LENGTH_TIERED_MODEL_IDS.some((base) => isModelOrProfile(catalogId, base))
+  );
+}
+
+/** The model card behind `catalogId`'s auto-only tool choice, if it has one. */
+function autoToolChoiceCard(catalogId: string): string | undefined {
+  for (const [base, card] of Object.entries(AUTO_TOOL_CHOICE_ONLY)) {
+    if (isModelOrProfile(catalogId, base)) return card;
+  }
+  return undefined;
+}
+
+/** True when `catalogId` is `base` or an inference profile of it. */
+function isModelOrProfile(catalogId: string, base: string): boolean {
+  return catalogId === base || catalogId.endsWith(`.${base}`);
+}
+
+// ---------------------------------------------------------------------------
 // Checks
 // ---------------------------------------------------------------------------
 
@@ -132,6 +197,19 @@ export function checkCapabilities(
       path: ["toolConfig"],
       model,
       message: `"${model}" does not support tool calling; remove \`toolConfig\`.`,
+    });
+  }
+
+  const choice = params.toolConfig?.toolChoice;
+  const forced = choice?.any !== undefined ? "any" : choice?.tool !== undefined ? "tool" : undefined;
+  const card = forced === undefined ? undefined : autoToolChoiceCard(info.id);
+  if (forced !== undefined && card !== undefined) {
+    ctx.report({
+      code: "unsupported_param",
+      path: ["toolConfig", "toolChoice"],
+      model,
+      message: `toolChoice \`${forced}\` forces a tool call, which "${model}" does not support on Bedrock; its model card allows automatic tool choice only — send \`toolChoice: { auto: {} }\` or omit \`toolChoice\`.`,
+      meta: { toolChoice: forced, source: card },
     });
   }
 
@@ -366,6 +444,10 @@ function estimateConverse(
   for (const tool of params.toolConfig?.tools ?? []) {
     inputTokens += estimateToolDefinitionTokens(tokenizer, tool);
   }
+
+  // A prompt-length-tiered model above its threshold is priced at rates the
+  // catalog row does not carry, so the estimate is withheld there.
+  if (info !== undefined && isPastPromptLengthTier(info.id, inputTokens)) return { inputTokens };
 
   // Worst case: the model fills the requested (or maximum) output budget.
   const outputTokens = params.inferenceConfig?.maxTokens ?? info?.limit.output ?? 0;

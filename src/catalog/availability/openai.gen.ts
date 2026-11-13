@@ -124,7 +124,7 @@ export const availability = {
     "openai": "gpt-5.3-codex-spark",
   },
   "gpt-5.4": {
-    "amazon-bedrock": { id: "openai.gpt-5.4", narrows: { context: 272000 } },
+    "amazon-bedrock": { id: "openai.gpt-5.4", narrows: { context: 1000000 } },
     "azure": "gpt-5.4",
     "openai": "gpt-5.4",
     "openrouter": "openai/gpt-5.4",
@@ -149,7 +149,7 @@ export const availability = {
     "vercel": "openai/gpt-5.4-pro",
   },
   "gpt-5.5": {
-    "amazon-bedrock": { id: "openai.gpt-5.5", narrows: { context: 272000 } },
+    "amazon-bedrock": { id: "openai.gpt-5.5", narrows: { context: 1000000 } },
     "azure": "gpt-5.5",
     "openai": "gpt-5.5",
     "openrouter": "openai/gpt-5.5",
@@ -185,26 +185,31 @@ export const availability = {
     "vercel": "openai/gpt-5.6-terra",
   },
   "gpt-6-astra": {
+    "amazon-bedrock": "openai.gpt-6-astra",
     "openai": "gpt-6-astra",
     "openrouter": "openai/gpt-6-astra",
     "vercel": "openai/gpt-6-astra",
   },
   "gpt-6-luna": {
+    "amazon-bedrock": "openai.gpt-6-luna",
     "openai": "gpt-6-luna",
     "openrouter": "openai/gpt-6-luna",
     "vercel": "openai/gpt-6-luna",
   },
   "gpt-6-sol": {
+    "amazon-bedrock": "openai.gpt-6-sol",
     "openai": "gpt-6-sol",
     "openrouter": "openai/gpt-6-sol",
     "vercel": "openai/gpt-6-sol",
   },
   "gpt-6.1-sol": {
+    "amazon-bedrock": "openai.gpt-6.1-sol",
     "openai": "gpt-6.1-sol",
     "openrouter": "openai/gpt-6.1-sol",
     "vercel": "openai/gpt-6.1-sol",
   },
   "gpt-6.1-terra": {
+    "amazon-bedrock": "openai.gpt-6.1-terra",
     "openai": "gpt-6.1-terra",
     "openrouter": "openai/gpt-6.1-terra",
     "vercel": "openai/gpt-6.1-terra",

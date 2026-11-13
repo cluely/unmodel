@@ -326,6 +326,7 @@ export const availability = {
     "zhipuai": { id: "glm-5.2", narrows: { context: 1000000 } },
   },
   "zai-org/GLM-5.3": {
+    "amazon-bedrock": { id: "us.zai.glm-5.3", narrows: { context: 1000000 } },
     "baseten": { id: "zai-org/GLM-5.3", narrows: { context: 1048576 } },
     "cloudflare-workers-ai": { id: "@cf/zai-org/glm-5.3", narrows: { context: 1048576 } },
     "deepinfra": { id: "zai-org/GLM-5.3", narrows: { context: 1048576 } },

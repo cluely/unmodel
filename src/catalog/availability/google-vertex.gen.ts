@@ -148,14 +148,14 @@ export const availability = {
     "google-vertex": { id: "meta/llama-4-maverick-17b-128e-instruct-maas", endpoint: "google-vertex.chatMaas" },
   },
   "moonshotai/kimi-k2-thinking-maas": {
-    "amazon-bedrock": { id: "moonshot.kimi-k2-thinking", narrows: { context: 262143 } },
+    "amazon-bedrock": "moonshot.kimi-k2-thinking",
     "google-vertex": { id: "moonshotai/kimi-k2-thinking-maas", endpoint: "google-vertex.chatMaas" },
     "huggingface": "moonshotai/Kimi-K2-Thinking",
     "novita-ai": "moonshotai/kimi-k2-thinking",
     "openrouter": "moonshotai/kimi-k2-thinking",
   },
   "openai/gpt-oss-120b-maas": {
-    "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
@@ -170,7 +170,7 @@ export const availability = {
     "vercel": "openai/gpt-oss-120b",
   },
   "openai/gpt-oss-20b-maas": {
-    "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-20b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-20b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chatMaas" },

@@ -59,7 +59,7 @@ export const availability = {
     "zhipuai": "glm-4.6v-flash",
   },
   "glm-4.7": {
-    "amazon-bedrock": "zai.glm-4.7",
+    "amazon-bedrock": { id: "zai.glm-4.7", narrows: { context: 202752 } },
     "deepinfra": { id: "zai-org/GLM-4.7", narrows: { context: 202752 } },
     "google-vertex": { id: "zai-org/glm-4.7-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 200000 } },
     "huggingface": "zai-org/GLM-4.7",
@@ -121,6 +121,7 @@ export const availability = {
     "zhipuai": "glm-5.2",
   },
   "glm-5.3": {
+    "amazon-bedrock": "us.zai.glm-5.3",
     "baseten": "zai-org/GLM-5.3",
     "cloudflare-workers-ai": "@cf/zai-org/glm-5.3",
     "deepinfra": "zai-org/GLM-5.3",

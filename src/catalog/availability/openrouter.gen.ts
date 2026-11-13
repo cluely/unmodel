@@ -69,6 +69,7 @@ export const availability = {
     "vercel": "anthropic/claude-fable-5.1",
   },
   "anthropic/claude-fable-5.2": {
+    "amazon-bedrock": "anthropic.claude-fable-5-2",
     "anthropic": "claude-fable-5-2",
     "openrouter": "anthropic/claude-fable-5.2",
     "vercel": "anthropic/claude-fable-5.2",
@@ -80,6 +81,7 @@ export const availability = {
     "vercel": "anthropic/claude-haiku-4.5",
   },
   "anthropic/claude-haiku-5.5": {
+    "amazon-bedrock": "anthropic.claude-haiku-5-5",
     "anthropic": "claude-haiku-5-5",
     "openrouter": "anthropic/claude-haiku-5.5",
     "vercel": "anthropic/claude-haiku-5.5",
@@ -117,6 +119,7 @@ export const availability = {
     "vercel": "anthropic/claude-opus-5",
   },
   "anthropic/claude-opus-5.5": {
+    "amazon-bedrock": "anthropic.claude-opus-5-5",
     "anthropic": "claude-opus-5-5",
     "openrouter": "anthropic/claude-opus-5.5",
     "vercel": "anthropic/claude-opus-5.5",
@@ -140,6 +143,7 @@ export const availability = {
     "vercel": "anthropic/claude-sonnet-5",
   },
   "anthropic/claude-sonnet-5.5": {
+    "amazon-bedrock": "anthropic.claude-sonnet-5-5",
     "anthropic": "claude-sonnet-5-5",
     "openrouter": "anthropic/claude-sonnet-5.5",
     "vercel": "anthropic/claude-sonnet-5.5",
@@ -429,6 +433,7 @@ export const availability = {
     "openrouter": "google/gemma-2-27b-it",
   },
   "google/gemma-3-12b-it": {
+    "amazon-bedrock": "google.gemma-3-12b-it",
     "deepinfra": "google/gemma-3-12b-it",
     "huggingface": "google/gemma-3-12b-it",
     "novita-ai": "google/gemma-3-12b-it",
@@ -436,6 +441,7 @@ export const availability = {
     "openrouter": "google/gemma-3-12b-it",
   },
   "google/gemma-3-27b-it": {
+    "amazon-bedrock": "google.gemma-3-27b-it",
     "deepinfra": "google/gemma-3-27b-it",
     "huggingface": "google/gemma-3-27b-it",
     "nebius": { id: "google/gemma-3-27b-it", narrows: { context: 110000 } },
@@ -443,7 +449,7 @@ export const availability = {
     "openrouter": "google/gemma-3-27b-it",
   },
   "google/gemma-3-4b-it": {
-    "amazon-bedrock": { id: "google.gemma-3-4b-it", narrows: { context: 128000 } },
+    "amazon-bedrock": "google.gemma-3-4b-it",
     "deepinfra": "google/gemma-3-4b-it",
     "huggingface": "google/gemma-3-4b-it",
     "nvidia": "google/gemma-3-4b-it",
@@ -724,7 +730,7 @@ export const availability = {
     "openrouter": "mistralai/mixtral-8x22b-instruct",
   },
   "mistralai/voxtral-small-24b-2507": {
-    "amazon-bedrock": { id: "mistral.voxtral-small-24b-2507", narrows: { context: 32000, drops: ["pdf"] } },
+    "amazon-bedrock": { id: "mistral.voxtral-small-24b-2507", narrows: { drops: ["pdf"] } },
     "openrouter": "mistralai/voxtral-small-24b-2507",
   },
   "moondream/moondream3-preview": {
@@ -741,7 +747,7 @@ export const availability = {
     "openrouter": "moonshotai/kimi-k2-0905",
   },
   "moonshotai/kimi-k2-thinking": {
-    "amazon-bedrock": { id: "moonshot.kimi-k2-thinking", narrows: { context: 262143 } },
+    "amazon-bedrock": "moonshot.kimi-k2-thinking",
     "google-vertex": { id: "moonshotai/kimi-k2-thinking-maas", endpoint: "google-vertex.chatMaas" },
     "huggingface": "moonshotai/Kimi-K2-Thinking",
     "novita-ai": "moonshotai/kimi-k2-thinking",
@@ -992,7 +998,7 @@ export const availability = {
     "vercel": "openai/gpt-5.3-codex",
   },
   "openai/gpt-5.4": {
-    "amazon-bedrock": { id: "openai.gpt-5.4", narrows: { context: 272000 } },
+    "amazon-bedrock": { id: "openai.gpt-5.4", narrows: { context: 1000000 } },
     "azure": "gpt-5.4",
     "openai": "gpt-5.4",
     "openrouter": "openai/gpt-5.4",
@@ -1020,7 +1026,7 @@ export const availability = {
     "vercel": "openai/gpt-5.4-pro",
   },
   "openai/gpt-5.5": {
-    "amazon-bedrock": { id: "openai.gpt-5.5", narrows: { context: 272000 } },
+    "amazon-bedrock": { id: "openai.gpt-5.5", narrows: { context: 1000000 } },
     "azure": "gpt-5.5",
     "openai": "gpt-5.5",
     "openrouter": "openai/gpt-5.5",
@@ -1062,6 +1068,7 @@ export const availability = {
     "openrouter": "openai/gpt-5.6-terra-pro",
   },
   "openai/gpt-6-astra": {
+    "amazon-bedrock": "openai.gpt-6-astra",
     "openai": "gpt-6-astra",
     "openrouter": "openai/gpt-6-astra",
     "vercel": "openai/gpt-6-astra",
@@ -1070,6 +1077,7 @@ export const availability = {
     "openrouter": "openai/gpt-6-astra-pro",
   },
   "openai/gpt-6-luna": {
+    "amazon-bedrock": "openai.gpt-6-luna",
     "openai": "gpt-6-luna",
     "openrouter": "openai/gpt-6-luna",
     "vercel": "openai/gpt-6-luna",
@@ -1078,6 +1086,7 @@ export const availability = {
     "openrouter": "openai/gpt-6-luna-pro",
   },
   "openai/gpt-6-sol": {
+    "amazon-bedrock": "openai.gpt-6-sol",
     "openai": "gpt-6-sol",
     "openrouter": "openai/gpt-6-sol",
     "vercel": "openai/gpt-6-sol",
@@ -1086,6 +1095,7 @@ export const availability = {
     "openrouter": "openai/gpt-6-sol-pro",
   },
   "openai/gpt-6.1-sol": {
+    "amazon-bedrock": "openai.gpt-6.1-sol",
     "openai": "gpt-6.1-sol",
     "openrouter": "openai/gpt-6.1-sol",
     "vercel": "openai/gpt-6.1-sol",
@@ -1094,6 +1104,7 @@ export const availability = {
     "openrouter": "openai/gpt-6.1-sol-pro",
   },
   "openai/gpt-6.1-terra": {
+    "amazon-bedrock": "openai.gpt-6.1-terra",
     "openai": "gpt-6.1-terra",
     "openrouter": "openai/gpt-6.1-terra",
     "vercel": "openai/gpt-6.1-terra",
@@ -1112,7 +1123,7 @@ export const availability = {
     "openrouter": "openai/gpt-chat-latest",
   },
   "openai/gpt-oss-120b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-120b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-120b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-120b",
@@ -1127,7 +1138,7 @@ export const availability = {
     "vercel": "openai/gpt-oss-120b",
   },
   "openai/gpt-oss-20b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-20b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-20b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chatMaas" },
@@ -1221,6 +1232,7 @@ export const availability = {
     "openrouter": "qwen/qwen3-14b",
   },
   "qwen/qwen3-235b-a22b-2507": {
+    "amazon-bedrock": "qwen.qwen3-235b-a22b-2507-v1:0",
     "openrouter": "qwen/qwen3-235b-a22b-2507",
   },
   "qwen/qwen3-235b-a22b-thinking-2507": {
@@ -1238,7 +1250,7 @@ export const availability = {
   },
   "qwen/qwen3-32b": {
     "alibaba": "qwen3-32b",
-    "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 16384 } },
+    "amazon-bedrock": { id: "qwen.qwen3-32b-v1:0", narrows: { context: 32768 } },
     "deepinfra": { id: "Qwen/Qwen3-32B", narrows: { context: 40960 } },
     "huggingface": "Qwen/Qwen3-32B",
     "openrouter": "qwen/qwen3-32b",
@@ -1256,7 +1268,7 @@ export const availability = {
     "openrouter": "qwen/qwen3-coder-flash",
   },
   "qwen/qwen3-coder-next": {
-    "amazon-bedrock": { id: "qwen.qwen3-coder-next", narrows: { context: 131072 } },
+    "amazon-bedrock": "qwen.qwen3-coder-next",
     "huggingface": "Qwen/Qwen3-Coder-Next",
     "openrouter": "qwen/qwen3-coder-next",
     "vercel": { id: "alibaba/qwen3-coder-next", narrows: { context: 256000 } },
@@ -1592,6 +1604,7 @@ export const availability = {
     "xai": "grok-4.6",
   },
   "x-ai/grok-4.7": {
+    "amazon-bedrock": "us.xai.grok-4.7",
     "openrouter": "x-ai/grok-4.7",
     "vercel": { id: "spacexai/grok-4.7", narrows: { drops: ["pdf"] } },
     "xai": "grok-4.7",
@@ -1662,7 +1675,7 @@ export const availability = {
     "zhipuai": { id: "glm-4.6v", narrows: { context: 128000 } },
   },
   "z-ai/glm-4.7": {
-    "amazon-bedrock": "zai.glm-4.7",
+    "amazon-bedrock": { id: "zai.glm-4.7", narrows: { context: 202752 } },
     "deepinfra": { id: "zai-org/GLM-4.7", narrows: { context: 202752 } },
     "google-vertex": { id: "zai-org/glm-4.7-maas", endpoint: "google-vertex.chatMaas", narrows: { context: 200000 } },
     "huggingface": "zai-org/GLM-4.7",
@@ -1724,6 +1737,7 @@ export const availability = {
     "zhipuai": { id: "glm-5.2", narrows: { context: 1000000 } },
   },
   "z-ai/glm-5.3": {
+    "amazon-bedrock": { id: "us.zai.glm-5.3", narrows: { context: 1000000 } },
     "baseten": "zai-org/GLM-5.3",
     "cloudflare-workers-ai": "@cf/zai-org/glm-5.3",
     "deepinfra": "zai-org/GLM-5.3",

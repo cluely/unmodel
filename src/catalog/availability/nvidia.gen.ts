@@ -33,6 +33,7 @@ export const availability = {
     "nvidia": "google/diffusiongemma-26b-a4b-it",
   },
   "google/gemma-3-12b-it": {
+    "amazon-bedrock": "google.gemma-3-12b-it",
     "deepinfra": "google/gemma-3-12b-it",
     "huggingface": "google/gemma-3-12b-it",
     "novita-ai": "google/gemma-3-12b-it",
@@ -40,7 +41,7 @@ export const availability = {
     "openrouter": "google/gemma-3-12b-it",
   },
   "google/gemma-3-4b-it": {
-    "amazon-bedrock": { id: "google.gemma-3-4b-it", narrows: { context: 128000 } },
+    "amazon-bedrock": "google.gemma-3-4b-it",
     "deepinfra": "google/gemma-3-4b-it",
     "huggingface": "google/gemma-3-4b-it",
     "nvidia": "google/gemma-3-4b-it",
@@ -191,7 +192,7 @@ export const availability = {
     "nvidia": "nvidia/usdvalidate",
   },
   "openai/gpt-oss-20b": {
-    "amazon-bedrock": { id: "openai.gpt-oss-20b", narrows: { context: 128000 } },
+    "amazon-bedrock": "openai.gpt-oss-20b",
     "cloudflare-workers-ai": { id: "@cf/openai/gpt-oss-20b", narrows: { context: 128000 } },
     "deepinfra": "openai/gpt-oss-20b",
     "google-vertex": { id: "openai/gpt-oss-20b-maas", endpoint: "google-vertex.chatMaas" },
@@ -217,6 +218,7 @@ export const availability = {
     "vercel": "stepfun/step-5-preview",
   },
   "z-ai/glm-5.3": {
+    "amazon-bedrock": "us.zai.glm-5.3",
     "baseten": "zai-org/GLM-5.3",
     "cloudflare-workers-ai": "@cf/zai-org/glm-5.3",
     "deepinfra": "zai-org/GLM-5.3",

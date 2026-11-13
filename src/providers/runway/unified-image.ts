@@ -119,9 +119,11 @@ import type { ImageAdapterFor, ImageParams } from "../../core/unified/vocabulary
 import {
   imageConstraints,
   imageRequired,
+  imageShapeRules,
   TEXT_TO_IMAGE_SOURCE,
   type RunwayImageRatio,
 } from "./constraints";
+import { acceptsFreeformRatio } from "./shared";
 import { image as imageValidator, type TextToImageParams } from "./image";
 import { MODELS, RUNWAY_IMAGE_MODEL_PARAMS } from "./image-params";
 
@@ -194,7 +196,10 @@ function sizingFor(model: string): RunwaySizing | undefined {
 }
 
 function buildSizing(model: string): RunwaySizing | undefined {
-  const allowed = imageConstraints[model]?.enums?.["ratio"];
+  // seedream5_lite's sizes are presets beside a freeform range, so its list
+  // lives on its shape rule rather than in `enums`.
+  const allowed =
+    imageConstraints[model]?.enums?.["ratio"] ?? imageShapeRules[model]?.freeformRatio?.presets;
   if (allowed === undefined) return undefined;
 
   const pairs: Array<{ spelling: string; area: number; ratio: number; tier: ResolutionTier }> = [];
@@ -303,9 +308,15 @@ export const image = {
       ctx.from(["ratio"], sizingField(sizing));
       const { width, height } = sizing.dimensions;
       const exact = `${width}:${height}`;
-      if (sizes === undefined || sizes.pairs.includes(exact)) {
+      const freeform = imageShapeRules[ctx.model]?.freeformRatio;
+      if (
+        sizes === undefined ||
+        sizes.pairs.includes(exact) ||
+        (freeform !== undefined && acceptsFreeformRatio(freeform, exact))
+      ) {
         // The lossless path: Runway's `ratio` members are pixel pairs, so the
-        // pixels the caller asked for are the pixels on the wire.
+        // pixels the caller asked for are the pixels on the wire — and an arm
+        // that takes freeform sizes takes any pair inside its range.
         ratio = exact;
       } else {
         // Nearest shape, preferring the entry nearest the requested *area* —

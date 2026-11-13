@@ -58,7 +58,9 @@ export const MODELS = [
  * every one of them through this adapter to prove it.
  *
  * No `sizeFreeform` anywhere: each arm's `ratio` is a closed enum, so a
- * template tail would suggest a size the endpoint refuses. No `ratios` either
+ * template tail would suggest a size the endpoint refuses. (seedream5_lite
+ * also takes freeform sizes inside a pixel range; `dimensions` sends those
+ * verbatim, and its row lists the presets.) No `ratios` either
  * — Runway has no ratio field, only that pixel-pair enum, so a canonical
  * `aspectRatio` is *matched* against the enum rather than sent, and the wide
  * vocabulary is the honest one.
@@ -194,7 +196,7 @@ export const RUNWAY_IMAGE_MODEL_PARAMS = {
     tiers: ["1k", "2k", "4k"],
     extras: {
       quality: EXTRA as "low" | "medium" | "high" | "auto",
-      background: EXTRA as "opaque" | "auto",
+      background: EXTRA as "transparent" | "opaque" | "auto",
     },
   },
   gemini_image3_pro: {

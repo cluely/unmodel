@@ -291,6 +291,18 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     expect(seedream.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["outputFormat"] });
   });
 
+  test("runway's seedream5_lite takes freeform dimensions verbatim, inside its pixel range", () => {
+    const result = image.safe({
+      model: "runway/seedream5_lite",
+      prompt: "a lighthouse in fog",
+      dimensions: { width: 3000, height: 2000 },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.params as unknown as Record<string, unknown>)["ratio"]).toBe("3000:2000");
+    expect(result.params.warnings).toEqual([]);
+  });
+
   test("runway's optional-ratio arms get no invented size when none was asked for", () => {
     const result = image.safe({ model: "runway/ideogram_4_0", prompt: "a lighthouse in fog" });
     expect(result.ok).toBe(true);

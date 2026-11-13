@@ -17,9 +17,10 @@
  *   no schema for.
  * - `referenceImages` counts are capped per model (1 on bria_fibo_1_5 and
  *   ideogram_4_0, 16 on the GPT Image arms), as is `promptText` (up to 45000
- *   chars on the gemini_image3.1 arms and nano_banana_2.1).
- * - The endpoint only starts a task and responds `{ id }`; polling
- *   GET /v1/tasks/{id} is out of unmodel's scope.
+ *   chars on the Gemini image arms and nano_banana_2.1).
+ * - The endpoint only starts a task and responds `{ id, estimatedCost }`
+ *   (`estimatedCost.credits`: "The maximum credits this task may charge");
+ *   polling GET /v1/tasks/{id} is out of unmodel's scope.
  * - Auth is `Authorization: Bearer <RUNWAYML_API_SECRET>` — unmodel never
  *   touches keys; add it yourself when fetching.
  */
@@ -100,10 +101,7 @@ export interface TextToImageParams {
    * ("low" | "medium").
    */
   quality?: RunwayImageQuality;
-  /**
-   * The GPT Image arms; "transparent" on gpt_image_2_5_sunburst and the
-   * gpt_image_2_6 pair only.
-   */
+  /** The GPT Image arms; "transparent" on all of them but gpt_image_2_5_flare. */
   background?: "transparent" | "opaque" | "auto";
   /** Number of output images; supported range varies per model. */
   outputCount?: number;

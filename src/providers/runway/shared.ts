@@ -357,8 +357,31 @@ export interface ModelShapeRules {
   readonly multiPromptSeconds?: { readonly min: number; readonly max: number };
   /** Sub-fields a `referenceImages` item may set beyond `uri`. */
   readonly referenceImageFields?: readonly string[];
+  /**
+   * A `ratio` that is either one of `presets` or a freeform `"W:H"` of at most
+   * `maxLength` characters whose W × H falls in the pixel range — checked here
+   * in place of an `enums.ratio` list, which could only say the first half.
+   */
+  readonly freeformRatio?: {
+    readonly presets: readonly string[];
+    readonly maxLength: number;
+    readonly minPixels: number;
+    readonly maxPixels: number;
+  };
   /** Documented cross-field rules. */
   readonly pairings?: readonly PairingRule[];
+}
+
+/** True when `ratio` is one of the rule's presets or a freeform size it admits. */
+export function acceptsFreeformRatio(
+  rule: NonNullable<ModelShapeRules["freeformRatio"]>,
+  ratio: string,
+): boolean {
+  if (rule.presets.includes(ratio)) return true;
+  const pixels = /^(\d+):(\d+)$/.exec(ratio);
+  if (pixels === null || ratio.length > rule.maxLength) return false;
+  const area = Number(pixels[1]) * Number(pixels[2]);
+  return area >= rule.minPixels && area <= rule.maxPixels;
 }
 
 function arrayLength(value: unknown): number | undefined {
@@ -514,6 +537,24 @@ export function checkShapeRules<P extends { model: string }>(
           });
         }
       }
+    }
+
+    const ratio = record["ratio"];
+    const freeform = rules.freeformRatio;
+    if (freeform !== undefined && typeof ratio === "string" && !acceptsFreeformRatio(freeform, ratio)) {
+      ctx.report({
+        code: "invalid_enum_value",
+        path: ["ratio"],
+        model,
+        message: `\`ratio\` must be one of ${freeform.presets.map((v) => JSON.stringify(v)).join(", ")}, or a freeform "W:H" whose width × height is ${freeform.minPixels}–${freeform.maxPixels} pixels, for "${model}"; got ${JSON.stringify(ratio)}.`,
+        meta: {
+          allowed: [...freeform.presets],
+          minPixels: freeform.minPixels,
+          maxPixels: freeform.maxPixels,
+          value: ratio,
+          source,
+        },
+      });
     }
 
     for (const rule of rules.pairings ?? []) checkPairing(record, rule, model, ctx);

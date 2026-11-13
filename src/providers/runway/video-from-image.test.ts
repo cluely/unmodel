@@ -208,13 +208,13 @@ describe("runway.videoFromImage per-model denies", () => {
     }
   });
 
-  test("seed on veo3.1 is unsupported_param", () => {
-    const r = videoFromImage.safe({
-      model: "veo3.1",
-      promptImage: IMAGE,
-      ratio: "1280:720",
-      seed: 7,
-    });
+  test("seed is a veo3.1 / seedance param; gemini_omni_flash denies it", () => {
+    // "`seed` (integer) - 0-4294967295" on every veo3.1 and seedance arm.
+    expect(
+      videoFromImage.safe({ model: "veo3.1", promptImage: IMAGE, ratio: "1280:720", seed: 7 }).ok,
+    ).toBe(true);
+    expect(videoFromImage.safe({ model: "seedance2_5", promptImage: IMAGE, seed: 7 }).ok).toBe(true);
+    const r = videoFromImage.safe({ model: "gemini_omni_flash", promptImage: IMAGE, seed: 7 });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.errors.find((e) => e.code === "unsupported_param")?.path).toEqual(["seed"]);
@@ -262,11 +262,17 @@ describe("runway.videoFromImage cost estimation", () => {
     if (noAudio.ok) expect(noAudio.estimate.costUSD).toBeCloseTo(1.6, 10);
   });
 
-  test("seedance2_mini applies the 64-credit minimum", () => {
-    // 4s × 16 credits = 64 exactly; shorter is impossible (min duration 4).
-    const r = videoFromImage.safe({ model: "seedance2_mini", promptImage: IMAGE, duration: 4 });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.64, 10);
+  test("seedance2_mini bills its 720p rate, seedance2_fast its 44-credit minimum", () => {
+    // 4s × 15 credits = 60 (the 480p/720p split of its sizes is undocumented,
+    // so the 720p rate stands).
+    const mini = videoFromImage.safe({ model: "seedance2_mini", promptImage: IMAGE, duration: 4 });
+    expect(mini.ok).toBe(true);
+    if (mini.ok) expect(mini.estimate.costUSD).toBeCloseTo(0.6, 10);
+    // 4s × 24 credits = 96, over the 44-credit minimum.
+    const fast = videoFromImage.safe({ model: "seedance2_fast", promptImage: IMAGE, duration: 4 });
+    if (fast.ok) expect(fast.estimate.costUSD).toBeCloseTo(0.96, 10);
+    expect("cost" in models.seedance2_mini).toBe(false);
+    expect("cost" in models.seedance2_fast).toBe(false);
   });
 
   test("no duration → no estimate", () => {
@@ -872,5 +878,97 @@ describe("runway.videoFromImage — Kling, WAN, H3 Max, Grok Lite and Gemini Omn
       promptExpansionMode: "disabled",
     });
     expect(gen.ok).toBe(false);
+  });
+});
+
+describe("runway.videoFromImage — corrected arms and rates (2026-11-12)", () => {
+  test('the seedance arms take duration "auto", estimated at the variant maximum', () => {
+    // "`auto` is billed at the variant maximum up front": 15 s × 15 credits.
+    const mini = videoFromImage.safe({ model: "seedance2_mini", promptImage: IMAGE, duration: "auto" });
+    expect(mini.ok).toBe(true);
+    if (mini.ok) expect(mini.estimate.costUSD).toBeCloseTo(2.25, 10);
+    // 30 s × 30 credits at the default 1280:720.
+    const s25 = videoFromImage.safe({ model: "seedance2_5", promptImage: IMAGE, duration: "auto" });
+    if (s25.ok) expect(s25.estimate.costUSD).toBeCloseTo(9, 10);
+    expect(videoFromImage.safe({ model: "seedance2", promptImage: IMAGE, duration: 16 }).ok).toBe(false);
+  });
+
+  test("seedance2_5: mov output, 1080p and 4K sizes — 4K has no published 2.5 rate", () => {
+    const hd = videoFromImage.safe({
+      model: "seedance2_5",
+      promptImage: IMAGE,
+      ratio: "1920:1080",
+      duration: 5,
+      outputFormat: "mov",
+    });
+    expect(hd.ok).toBe(true);
+    if (hd.ok) expect(hd.estimate.costUSD).toBeCloseTo(3.4, 10); // 68 cr/s, mov like mp4
+    const uhd = videoFromImage.safe({ model: "seedance2_5", promptImage: IMAGE, ratio: "3840:2160", duration: 5 });
+    expect(uhd.ok).toBe(true);
+    if (uhd.ok) expect(uhd.estimate.costUSD).toBeUndefined();
+    expect(models.seedance2_5.cost?.perVideoSecond).toBeCloseTo(0.3, 10);
+    const prores = safeUnchecked({ model: "seedance2_5", promptImage: IMAGE, outputFormat: "prores" });
+    expect(prores.ok).toBe(false);
+    if (!prores.ok) expect(prores.errors[0]?.code).toBe("invalid_enum_value");
+  });
+
+  test("seedance2 / fast / mini prompts run to 10000 characters", () => {
+    expect(videoFromImage.safe({ model: "seedance2_fast", promptImage: IMAGE, promptText: "a".repeat(10000) }).ok).toBe(
+      true,
+    );
+    const over = videoFromImage.safe({ model: "seedance2_fast", promptImage: IMAGE, promptText: "a".repeat(10001) });
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.meta?.max).toBe(10000);
+  });
+
+  test("hailuo3 takes 768p / 2k (and the deprecated 768P / 2K); 2K is the catalog default", () => {
+    const low = videoFromImage.safe({
+      model: "hailuo3",
+      promptImage: IMAGE,
+      promptText: "a horse",
+      resolution: "768p",
+      duration: 5,
+    });
+    expect(low.ok).toBe(true);
+    // 10 cr/s + 2 for the start frame.
+    if (low.ok) expect(low.estimate.costUSD).toBeCloseTo(0.52, 10);
+    expect(models.hailuo3.cost?.perVideoSecond).toBeCloseTo(0.15, 10);
+  });
+
+  test("happyhorse_1_0 image-to-video defaults to 720P and takes the lower-case casing", () => {
+    const omitted = videoFromImage.safe({ model: "happyhorse_1_0", promptImage: IMAGE, duration: 4 });
+    expect(omitted.ok).toBe(true);
+    if (omitted.ok) expect(omitted.estimate.costUSD).toBeCloseTo(0.6, 10);
+    const lower = videoFromImage.safe({ model: "happyhorse_1_0", promptImage: IMAGE, duration: 4, resolution: "1080p" });
+    expect(lower.ok).toBe(true);
+    if (lower.ok) expect(lower.estimate.costUSD).toBeCloseTo(1.2, 10);
+  });
+
+  test("grok_imagine_1_5 defaults to 480p: 10 credits/s + 1 for the start frame", () => {
+    const r = videoFromImage.safe({ model: "grok_imagine_1_5", promptImage: IMAGE, duration: 5 });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.51, 10);
+    expect(models.grok_imagine_1_5.cost?.perVideoSecond).toBeCloseTo(0.1, 10);
+  });
+
+  test("gen4.5's 10-bit and HDR outputs carry the 20 credits/s surcharge", () => {
+    const r = videoFromImage.safe({
+      model: "gen4.5",
+      promptImage: IMAGE,
+      promptText: "x",
+      ratio: "1280:720",
+      duration: 5,
+      outputFormat: "hdr10",
+    });
+    expect(r.ok).toBe(true);
+    // 5 s × (12 + 20) credits.
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(1.6, 10);
+    const turbo = videoFromImage.safe({
+      model: "gen4_turbo",
+      promptImage: IMAGE,
+      ratio: "1280:720",
+      outputFormat: "hdr10",
+    });
+    expect(turbo.ok).toBe(false);
   });
 });

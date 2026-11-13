@@ -2,9 +2,8 @@
 //   https://docs.dev.runwayml.com/guides/models.md   (model ids per route)
 //   https://docs.dev.runwayml.com/guides/pricing.md  (credit costs; "Credit costs are documented only in /guides/pricing.md")
 //   https://docs.dev.runwayml.com/openapi.json       (wire schemas; spec version 2024-11-06)
-// Verified 2026-08-13; the Kling, WAN 3.0, H3 Max, Grok Imagine 1.5 Lite,
-// Gemini Omni Flash 1.x, Muse, Nano Banana 2.1 / 2 Lite, GPT Image 2.5 / 2.6,
-// FIBO, Ideogram and Seedream 5.0 Flash / Pro Layers rows 2026-11-12.
+// Verified 2026-11-12: every row against all three pages, credit price
+// unchanged.
 //
 // Pricing conversion (documented so the arithmetic never rots unexplained):
 // Runway bills in credits; "Credits can be purchased for $0.01 per credit"
@@ -20,7 +19,7 @@
 // estimation for all tiers lives in ./pricing.ts.
 //
 // Ids that appear in the API but are NOT generation models, and so are
-// deliberately absent here (openapi.json, verified 2026-08-13):
+// deliberately absent here (openapi.json, verified 2026-11-12):
 //   gen3a_turbo, gen4_aleph, act_two — `gen3a_turbo` and `gen4_aleph` survive
 //     only in the GET /v1/organization and POST /v1/organization/usage
 //     response enums (historical credit reporting); neither has an arm in any
@@ -138,9 +137,12 @@ export const videoModels = {
     openWeights: false,
     modalities: { input: ["text", "image", "video"], output: ["video"] },
     limit: { context: 0 },
-    // No single rate: 10 credits/s at 768P, 15 credits/s at 2K, plus 2
-    // credits per reference image (guides/pricing.md); no documented default
-    // resolution, so the catalog carries no cost. See ./pricing.ts.
+    // "| `hailuo3` (2K) | 15 credits per second, plus 2 credits per reference
+    // image or keyframe (including an image-to-video start frame)" (10 at
+    // 768P) — guides/pricing.md; "`resolution` of `768P` or `2K` (default
+    // `2K`)" — assets/inputs.md, 2026-11-12. The catalog carries the default
+    // rate. See ./pricing.ts.
+    cost: { perVideoSecond: 15 * CREDIT_USD },
   },
   happyhorse_1_0: {
     id: "happyhorse_1_0",
@@ -151,8 +153,10 @@ export const videoModels = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["video"] },
     limit: { context: 0 },
-    // No single rate: 15 credits/s at 720P, 30 credits/s at 1080P
-    // (guides/pricing.md); no documented default resolution. See ./pricing.ts.
+    // No single rate: 15 credits/s at 720p, 30 credits/s at 1080p
+    // (guides/pricing.md, 2026-11-12). image_to_video defaults to `720P`
+    // (assets/inputs.md); text_to_video documents no default. See
+    // ./pricing.ts.
   },
   seedance2: {
     id: "seedance2",
@@ -163,9 +167,10 @@ export const videoModels = {
     openWeights: false,
     modalities: { input: ["text", "image", "video"], output: ["video"] },
     limit: { context: 0 },
-    // No single rate: 36 credits/s at 480p/720p ratios, 40 at 1080p ratios,
-    // 150 at 4K ratios (guides/pricing.md); the tier follows the requested
-    // `ratio`. See ./pricing.ts.
+    // No single rate: "| `seedance2` (480p) | 14 credits per second (56
+    // credit minimum per generation) |", 30 at 720p, 40 at 1080p, 150 at 4K
+    // (guides/pricing.md, 2026-11-12); the tier follows the requested
+    // `ratio`, and the API reference documents no default. See ./pricing.ts.
   },
   seedance2_fast: {
     id: "seedance2_fast",
@@ -176,8 +181,9 @@ export const videoModels = {
     openWeights: false,
     modalities: { input: ["text", "image", "video"], output: ["video"] },
     limit: { context: 0 },
-    // 29 credits/s (this model only offers 480p/720p ratios) — guides/pricing.md
-    cost: { perVideoSecond: 29 * CREDIT_USD },
+    // No single rate: "| `seedance2_fast` (480p) | 11 credits per second (44
+    // credit minimum per generation) |" and 24 at 720p (guides/pricing.md,
+    // 2026-11-12); no default ratio is documented. See ./pricing.ts.
   },
   seedance2_mini: {
     id: "seedance2_mini",
@@ -188,8 +194,9 @@ export const videoModels = {
     openWeights: false,
     modalities: { input: ["text", "image", "video"], output: ["video"] },
     limit: { context: 0 },
-    // 16 credits/s, 64-credit minimum per generation — guides/pricing.md
-    cost: { perVideoSecond: 16 * CREDIT_USD },
+    // No single rate: "| `seedance2_mini` (480p) | 7 credits per second (28
+    // credit minimum per generation) |" and 15 at 720p (guides/pricing.md,
+    // 2026-11-12); no default ratio is documented. See ./pricing.ts.
   },
   seedance2_5: {
     id: "seedance2_5",
@@ -200,9 +207,12 @@ export const videoModels = {
     openWeights: false,
     modalities: { input: ["text", "image", "video"], output: ["video"] },
     limit: { context: 0 },
-    // No single rate: 30 credits/s of output at 720p ratios, 20 at 480p
-    // ratios, plus 15 (720p) / 10 (480p) credits/s of input & reference
-    // video, 80-credit minimum (guides/pricing.md). See ./pricing.ts.
+    // "| `seedance2_5` (720p) | 30 credits per second of output, plus 15
+    // credits per second of input and reference video" (20 / 10 at 480p, 68 /
+    // 34 at 1080p, 80-credit minimum — guides/pricing.md); the ratio
+    // "Defaults to `1280:720`" (openapi.json, 2026-11-12). The catalog carries
+    // the default (720p) output rate. See ./pricing.ts.
+    cost: { perVideoSecond: 30 * CREDIT_USD },
   },
   grok_imagine_1_5: {
     id: "grok_imagine_1_5",
@@ -213,8 +223,11 @@ export const videoModels = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["video"] },
     limit: { context: 0 },
-    // No single rate: 10/16/29 credits/s at 480p/720p/1080p, plus 1 credit
-    // per image or audio reference (guides/pricing.md). See ./pricing.ts.
+    // "| `grok_imagine_1_5` (480p) | 10 credits per second, plus 1 credit per
+    // image or audio reference" (16 / 29 at 720p / 1080p) — guides/pricing.md;
+    // "`resolution` of `480p`, `720p`, or `1080p` (default `480p`)" —
+    // assets/inputs.md, 2026-11-12. The catalog carries the default rate.
+    cost: { perVideoSecond: 10 * CREDIT_USD },
   },
   gemini_omni_flash: {
     id: "gemini_omni_flash",
@@ -506,7 +519,10 @@ export const imageModels = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // Not yet listed on guides/pricing.md (verified 2026-08-13) — no cost.
+    // No single rate: "| `gemini_image3.1_flash`   | 5 credits per 512px
+    // image, 7 credits per 1K image, 11 credits per 2K image, 16 credits per
+    // 4K image |" — guides/pricing.md, 2026-11-12; the tier follows `ratio`.
+    // See ./pricing.ts.
   },
   seedream5_pro: {
     id: "seedream5_pro",

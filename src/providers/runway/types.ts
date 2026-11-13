@@ -79,6 +79,7 @@ export type {
   RunwayImageQuality,
   RunwayImageOutputFormat,
   RunwayRatioTier,
+  RunwayVideoOutputFormat,
 } from "./constraints";
 
 export type { VideoRoute } from "./pricing";

@@ -11,7 +11,7 @@
 
 import { EXTRA } from "../../core/unified/derive";
 import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
-import type { RunwayTargetAspectRatio } from "./constraints";
+import type { RunwayTargetAspectRatio, RunwayVideoOutputFormat } from "./constraints";
 import type { RunwayAudioReference, RunwayContentModeration, RunwayProviderSettings } from "./shared";
 import type { RunwayVideoKeyframe } from "./video-from-video";
 
@@ -111,7 +111,8 @@ export const MODELS = [
  * `mode` is: its video_to_video arm has none.
  */
 export const OUTPUT_EXTRAS = {
-  outputFormat: EXTRA as "mp4" | "prores" | "png_sequence",
+  // gen4.5's set; aleph2's row narrows it below.
+  outputFormat: EXTRA as Exclude<RunwayVideoOutputFormat, "mov">,
   proresProfile: EXTRA as "422" | "4444" | "422 Proxy" | "422 LT" | "422 HQ" | "4444 XQ",
   contentModeration: EXTRA as RunwayContentModeration,
 } as const;
@@ -208,8 +209,11 @@ export const RUNWAY_VIDEO_MODEL_PARAMS = {
       4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
       16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
     ],
-    resolutions: ["480p", "720p", "1080p"],
-    ratios: ["1:1", "16:9", "9:16", "4:3", "3:4", "21:9", "62:27", "47:35", "35:47", "427:240", "240:427"],
+    resolutions: ["480p", "720p", "1080p", "1440p", "4k"],
+    ratios: [
+      "1:1", "16:9", "9:16", "4:3", "3:4", "21:9", "62:27", "47:35", "35:47", "427:240", "240:427",
+      "1103:473", "1920:823",
+    ],
     extras: SEEDANCE_2_EXTRAS,
   },
   grok_imagine_1_5: {
@@ -227,6 +231,7 @@ export const RUNWAY_VIDEO_MODEL_PARAMS = {
     resolutions: [],
     extras: {
       ...OUTPUT_EXTRAS,
+      outputFormat: EXTRA as "mp4" | "prores" | "png_sequence" | "sdr_rec709_10bit",
       targetAspectRatio: EXTRA as RunwayTargetAspectRatio,
       keyframes: EXTRA as RunwayVideoKeyframe[],
     },

@@ -139,7 +139,9 @@ describe("runway.video cost estimation", () => {
       duration: 10,
     });
     expect(small.ok).toBe(true);
-    if (small.ok) expect(small.estimate.costUSD).toBeCloseTo(3.6, 10); // 36 cr/s
+    // 30 cr/s: the 720p rate, which the 480p/720p sizes bill at (their
+    // split is undocumented).
+    if (small.ok) expect(small.estimate.costUSD).toBeCloseTo(3, 10);
 
     const fourK = video.safe({
       model: "seedance2",
@@ -333,5 +335,31 @@ describe("runway.video — Kling, WAN, H3 Max, Grok Lite and Gemini Omni 1.x arm
       references: [{ uri: "https://example.com/a.png" }],
     });
     expect(refs.ok).toBe(false);
+  });
+});
+
+describe("runway.video — corrected arms and rates (2026-11-12)", () => {
+  test("veo3.1 and the seedance arms take seed", () => {
+    expect(safeUnchecked({ model: "veo3.1_fast", promptText: "hi", ratio: "1280:720", seed: 9 }).ok).toBe(true);
+    expect(safeUnchecked({ model: "seedance2_mini", promptText: "hi", seed: 9 }).ok).toBe(true);
+    expect(safeUnchecked({ model: "seedance2_mini", promptText: "hi", seed: -1 }).ok).toBe(false);
+  });
+
+  test("happyhorse_1_0 text-to-video bills by the ratio's tier", () => {
+    const cost = (ratio: string): number | undefined => {
+      const r = safeUnchecked({ model: "happyhorse_1_0", promptText: "hi", ratio, duration: 4 });
+      return r.ok ? (r.estimate as { costUSD?: number }).costUSD : undefined;
+    };
+    expect(cost("960:960")).toBeCloseTo(0.6, 10); // 720p: 15 cr/s
+    expect(cost("1440:1440")).toBeCloseTo(1.2, 10); // 1080p: 30 cr/s
+  });
+
+  test("seedance2's 480p/720p sizes bill at 30, its 1080p sizes at 40, with a 56-credit floor", () => {
+    const cost = (ratio: string, duration: number): number | undefined => {
+      const r = safeUnchecked({ model: "seedance2", promptText: "hi", ratio, duration });
+      return r.ok ? (r.estimate as { costUSD?: number }).costUSD : undefined;
+    };
+    expect(cost("1920:1080", 4)).toBeCloseTo(1.6, 10);
+    expect(cost("992:432", 4)).toBeCloseTo(1.2, 10);
   });
 });

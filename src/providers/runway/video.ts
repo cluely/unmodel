@@ -8,8 +8,9 @@
  * - Unlike image_to_video there is no `promptImage`; image context comes via
  *   per-model `references` arrays. `promptText` is required by every model's
  *   arm except seedance2_5 and the Kling 3.0 / O3 arms (which require `ratio`).
- * - The endpoint only starts a task and responds `{ id }`; polling
- *   GET /v1/tasks/{id} is out of unmodel's scope.
+ * - The endpoint only starts a task and responds `{ id, estimatedCost }`
+ *   (`estimatedCost.credits`: "The maximum credits this task may charge");
+ *   polling GET /v1/tasks/{id} is out of unmodel's scope.
  * - gen4_turbo (image_to_video-only) and aleph2 (video_to_video-only) have no
  *   arm here — a checker reports them as unsupported_capability.
  * - `promptText` and every reference array are capped per model and enforced
@@ -35,6 +36,8 @@ import {
   MODELS_SOURCE,
   type RunwayVideoRatio,
   type RunwayVideoResolution,
+  type RunwayVideoOutputFormat,
+  VIDEO_OUTPUT_FORMATS,
 } from "./constraints";
 import {
   RUNWAY_BASE_URL,
@@ -82,7 +85,7 @@ export interface TextToVideoParams {
    * model chooses) on the gemini_omni_flash_1.x arms.
    */
   duration?: number | "auto";
-  /** gen4.5 / h3_max only. Integer 0–4294967295. */
+  /** gen4.5 / veo3.1 / seedance / h3_max only. Integer 0–4294967295. */
   seed?: number;
   /** veo3.1 / seedance / Kling 3.0 / O3 / wan3 arms only. */
   audio?: boolean;
@@ -104,9 +107,12 @@ export interface TextToVideoParams {
   providerSettings?: Omit<RunwayProviderSettings, "keepOriginalSound">;
   /** h3_max only. `"balanced"` is the default. */
   promptExpansionMode?: "disabled" | "balanced" | "quality";
-  /** gen4.5 only. */
-  outputFormat?: "mp4" | "prores" | "png_sequence";
-  /** gen4.5 only, with outputFormat "prores". */
+  /**
+   * gen4.5 (mp4 / ProRes / PNG frames and nine 10-bit and HDR profiles) and
+   * seedance2_5 (mp4 | mov) only.
+   */
+  outputFormat?: RunwayVideoOutputFormat;
+  /** gen4.5 only, with outputFormat "prores" or "hdr_prores". */
   proresProfile?: "422" | "4444" | "422 Proxy" | "422 LT" | "422 HQ" | "4444 XQ";
 }
 
@@ -126,7 +132,7 @@ const videoSchema = z.looseObject({
   cfgScale: cfgScaleSchema.optional(),
   providerSettings: providerSettingsSchema.optional(),
   promptExpansionMode: z.string().optional(),
-  outputFormat: z.enum(["mp4", "prores", "png_sequence"]).optional(),
+  outputFormat: z.enum(VIDEO_OUTPUT_FORMATS).optional(),
   proresProfile: z.enum(["422", "4444", "422 Proxy", "422 LT", "422 HQ", "4444 XQ"]).optional(),
 });
 

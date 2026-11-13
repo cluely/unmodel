@@ -171,7 +171,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     imageReference: "native",
     video: "native",
     negativePrompt: "refused",
-    seed: "refused",
+    seed: "native",
     n: "declared",
   },
   kling: {

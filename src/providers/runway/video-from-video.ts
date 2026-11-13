@@ -21,8 +21,9 @@
  *   `ratio` field is marked deprecated in the spec and carries no enum.
  * - `aleph2` has no `duration`: the output length follows the input video,
  *   which "must be 30 seconds or shorter".
- * - The endpoint only starts a task and responds `{ id }`; polling
- *   GET /v1/tasks/{id} is out of unmodel's scope.
+ * - The endpoint only starts a task and responds `{ id, estimatedCost }`
+ *   (`estimatedCost.credits`: "The maximum credits this task may charge");
+ *   polling GET /v1/tasks/{id} is out of unmodel's scope.
  * - Auth is `Authorization: Bearer <RUNWAYML_API_SECRET>` — unmodel never
  *   touches keys; add it yourself when fetching.
  */
@@ -45,6 +46,8 @@ import {
   type RunwayVideoRatio,
   type RunwayVideoResolution,
   type RunwayTargetAspectRatio,
+  type RunwayVideoOutputFormat,
+  VIDEO_OUTPUT_FORMATS,
 } from "./constraints";
 import {
   RUNWAY_BASE_URL,
@@ -114,7 +117,7 @@ export interface VideoToVideoParams {
    * Kling O3 / kling_4. `"auto"` on the gemini_omni_flash_1.x arms.
    */
   duration?: number | "auto";
-  /** `aleph2` only. Integer 0–4294967295. */
+  /** `aleph2` / seedance arms only. Integer 0–4294967295. */
   seed?: number;
   /** seedance arms only. Defaults to true. */
   audio?: boolean;
@@ -135,8 +138,11 @@ export interface VideoToVideoParams {
   referenceAudio?: RunwayAudioReference[];
   /** Kling O3 multishot / editing settings (`keepOriginalSound` defaults to true). */
   providerSettings?: RunwayProviderSettings;
-  /** `aleph2` only. Non-mp4 adds 5 credits per second of output. */
-  outputFormat?: "mp4" | "prores" | "png_sequence";
+  /**
+   * `aleph2` (mp4 / prores / png_sequence / sdr_rec709_10bit — non-mp4 adds a
+   * per-second surcharge) and `seedance2_5` (mp4 | mov) only.
+   */
+  outputFormat?: RunwayVideoOutputFormat;
   /** `aleph2` only, with outputFormat "prores". Defaults to "4444". */
   proresProfile?: "422" | "4444" | "422 Proxy" | "422 LT" | "422 HQ" | "4444 XQ";
 }
@@ -177,7 +183,7 @@ const videoFromVideoSchema = z.looseObject({
   referenceVideos: videoReferenceArraySchema.optional(),
   referenceAudio: audioReferenceArraySchema.optional(),
   providerSettings: editProviderSettingsSchema.optional(),
-  outputFormat: z.enum(["mp4", "prores", "png_sequence"]).optional(),
+  outputFormat: z.enum(VIDEO_OUTPUT_FORMATS).optional(),
   proresProfile: z.enum(["422", "4444", "422 Proxy", "422 LT", "422 HQ", "4444 XQ"]).optional(),
 });
 

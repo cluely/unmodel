@@ -294,7 +294,7 @@ describe("runway.videoFromVideo cost estimation", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
   });
 
-  test("seedance2 at a 720p ratio is 36 credits/second", () => {
+  test("seedance2 at a 720p ratio is 30 credits/second", () => {
     const r = videoFromVideo.safe({
       model: "seedance2",
       promptVideo: VIDEO,
@@ -302,7 +302,7 @@ describe("runway.videoFromVideo cost estimation", () => {
       ratio: "1280:720",
     });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(1.8, 10);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(1.5, 10);
   });
 
   test("hailuo3 adds 2 credits per reference image", () => {
@@ -470,5 +470,38 @@ describe("runway.videoFromVideo — Kling O3 / 4.0 and Gemini Omni Flash 1.x arm
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]).toMatchObject({ code: "unsupported_param", path: ["resolution"] });
+  });
+});
+
+describe("runway.videoFromVideo — corrected arms (2026-11-12)", () => {
+  test("the seedance2 / fast / mini arms take two reference videos here, not three", () => {
+    const clip = { type: "video", uri: VIDEO } as const;
+    expect(
+      safeUnchecked({ model: "seedance2", promptVideo: VIDEO, referenceVideos: [clip, clip] }).ok,
+    ).toBe(true);
+    const three = safeUnchecked({ model: "seedance2_mini", promptVideo: VIDEO, referenceVideos: [clip, clip, clip] });
+    expect(three.ok).toBe(false);
+    if (!three.ok) expect(three.errors[0]?.meta?.max).toBe(2);
+  });
+
+  test('seedance2_5 takes mode "edit", duration "auto" and mov output; seedance2 takes seed', () => {
+    expect(
+      safeUnchecked({
+        model: "seedance2_5",
+        promptVideo: VIDEO,
+        promptText: "make it snow",
+        mode: "edit",
+        duration: "auto",
+        outputFormat: "mov",
+      }).ok,
+    ).toBe(true);
+    expect(safeUnchecked({ model: "seedance2", promptVideo: VIDEO, seed: 3 }).ok).toBe(true);
+  });
+
+  test("aleph2 adds the 10-bit sdr_rec709_10bit output", () => {
+    expect(safeUnchecked({ model: "aleph2", videoUri: VIDEO, outputFormat: "sdr_rec709_10bit" }).ok).toBe(true);
+    const hdr = safeUnchecked({ model: "aleph2", videoUri: VIDEO, outputFormat: "hdr10" });
+    expect(hdr.ok).toBe(false);
+    if (!hdr.ok) expect(hdr.errors[0]?.code).toBe("invalid_enum_value");
   });
 });

@@ -1,10 +1,9 @@
 /**
  * Per-model constraint tables for the Runway API's generation routes,
  * transcribed from the official OpenAPI spec (spec version 2024-11-06):
- * https://docs.dev.runwayml.com/openapi.json — verified 2026-08-13; the Kling,
- * WAN 3.0, MiniMax H3 Max, Grok Imagine 1.5 Lite, Gemini Omni Flash 1.x,
- * Muse, Nano Banana 2.1 / 2 Lite, GPT Image 2.5 / 2.6, FIBO, Ideogram and
- * Seedream 5.0 Flash / Pro Layers arms 2026-11-12. Each route's request body
+ * https://docs.dev.runwayml.com/openapi.json — every arm verified 2026-11-12
+ * (the `bitrate` / `draft` / `draftTaskId` fields of the seedance arms are
+ * not yet typed, so they pass as unknown params). Each route's request body
  * is a strict per-model union there, so a param absent from a model's arm is
  * rejected (or ignored) by the API; those are the `deny` rules. `enums` carry
  * each arm's documented ratio/duration/resolution/quality values; integer
@@ -81,18 +80,24 @@ const GEMINI_OMNI_FLASH_1X_MODELS = ["gemini_omni_flash_1.1", "gemini_omni_flash
 
 const PT_1K = { min: 1, max: 1000 } as const;
 const PT_2500 = { min: 1, max: 2500 } as const;
-const PT_3500 = { min: 1, max: 3500 } as const;
 const PT_4K = { min: 1, max: 4000 } as const;
-const PT_5500 = { min: 1, max: 5500 } as const;
 const PT_6K = { min: 1, max: 6000 } as const;
+/** seedance2 / fast / mini: "max length 10000" on every route (openapi.json, 2026-11-12). */
+const PT_10K = { min: 1, max: 10000 } as const;
 const PT_15K = { min: 1, max: 15000 } as const;
 const PT_20K = { min: 1, max: 20000 } as const;
 const PT_26K = { min: 1, max: 26000 } as const;
+/**
+ * The Gemini image arms' `promptText`: "max length 45000" (openapi.json,
+ * 2026-11-12). The changelog's prose still says 5,500 characters; the
+ * validation schema governs, so a prompt the API accepts is never refused.
+ */
+const PT_45K = { min: 1, max: 45000 } as const;
 /** happyhorse_1_0 and the Kling 2.5 / 3.0 / O3 arms carry minLength 2. */
 const PT_2500_MIN2 = { min: 2, max: 2500 } as const;
 
 // ---------------------------------------------------------------------------
-// Shared ratio enums (openapi.json, verified 2026-08-13)
+// Shared ratio enums (openapi.json, verified 2026-11-12)
 // ---------------------------------------------------------------------------
 
 const GEN4_VIDEO_RATIOS = [
@@ -125,6 +130,29 @@ const SEEDANCE2_RATIOS = [
   "2160:3840",
 ] as const;
 
+/**
+ * seedance2_5 on every route: seedance2's 24-value ladder with `854:480` /
+ * `480:854` in place of `864:496` / `496:864` (openapi.json, 2026-11-12). The
+ * 4K sizes are accepted on the wire, though guides/pricing.md publishes no
+ * Seedance 2.5 4K rate ("4K stays on Seedance 2.0" — the 2026-08-15
+ * changelog), so they get no estimate.
+ */
+export const SEEDANCE2_5_1080P_RATIOS = [
+  "2206:946",
+  "1920:1080",
+  "1664:1248",
+  "1440:1440",
+  "1248:1664",
+  "1080:1920",
+] as const;
+export const SEEDANCE2_5_4K_RATIOS = [
+  "3840:1646",
+  "3840:2160",
+  "3840:2880",
+  "3840:3840",
+  "2880:3840",
+  "2160:3840",
+] as const;
 const SEEDANCE2_5_RATIOS = [
   "992:432",
   "854:480",
@@ -138,7 +166,43 @@ const SEEDANCE2_5_RATIOS = [
   "960:960",
   "834:1112",
   "720:1280",
+  ...SEEDANCE2_5_1080P_RATIOS,
+  ...SEEDANCE2_5_4K_RATIOS,
 ] as const;
+
+/** seedance2_5 `outputFormat`: "one of `mp4`, `mov` … Draft mode only supports `mp4`." */
+const SEEDANCE2_5_OUTPUT_FORMATS = ["mp4", "mov"] as const;
+
+/**
+ * gen4.5 `outputFormat` (image_to_video, text_to_video): "one of `mp4`,
+ * `prores`, `png_sequence`, `hdr10`, `hlg`, `sdr_rec709_10bit`,
+ * `hdr_pq_12bit_master`, `hdr_prores`, `hdr_png_sequence`, `hdr_exr_sequence`,
+ * `hdr_exr_acescg_sequence_1_3`, `hdr_exr_acescg_sequence_2_0`" — api.md,
+ * 2026-11-12 ("These formats are being enabled progressively per account").
+ */
+export const GEN45_OUTPUT_FORMATS = [
+  "mp4",
+  "prores",
+  "png_sequence",
+  "hdr10",
+  "hlg",
+  "sdr_rec709_10bit",
+  "hdr_pq_12bit_master",
+  "hdr_prores",
+  "hdr_png_sequence",
+  "hdr_exr_sequence",
+  "hdr_exr_acescg_sequence_1_3",
+  "hdr_exr_acescg_sequence_2_0",
+] as const;
+
+/** aleph2 `outputFormat`: "one of `mp4`, `prores`, `png_sequence`, `sdr_rec709_10bit`". */
+export const ALEPH2_OUTPUT_FORMATS = ["mp4", "prores", "png_sequence", "sdr_rec709_10bit"] as const;
+
+/** `outputFormat` across every video arm that declares it — the route schemas' enum. */
+export const VIDEO_OUTPUT_FORMATS = [...GEN45_OUTPUT_FORMATS, "mov"] as const;
+
+/** `outputFormat` across every video arm that declares it. */
+export type RunwayVideoOutputFormat = (typeof VIDEO_OUTPUT_FORMATS)[number];
 
 const HAILUO3_RATIOS = ["adaptive", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
@@ -313,14 +377,20 @@ export const RATIO_TIERS: Readonly<Record<string, Readonly<Record<string, Runway
 
 // ---------------------------------------------------------------------------
 // Shared `resolution` enums. The casing is genuinely per model in the spec —
-// hailuo3 uses "2K"/"768P", happyhorse_1_0 "720P"/"1080P",
+// hailuo3 uses "2k"/"768p" (and the deprecated "2K"/"768P"), happyhorse_1_0
+// "720p"/"1080p" (and "720P"/"1080P"),
 // grok_imagine_1_5 lowercase "480p"/"720p"/"1080p", h3_max "480p"/"768p" and
 // gemini_omni_flash_1.2 (video_to_video) "360p"…"4k" — so the per-model
 // tables below stay separate; only the type-level union is shared.
 // ---------------------------------------------------------------------------
 
-const HAILUO3_RESOLUTIONS = ["2K", "768P"] as const;
-const HAPPYHORSE_RESOLUTIONS = ["720P", "1080P"] as const;
+/**
+ * "one of `768p`, `2k`, `768P`, `2K`" on every route; the upper-case pair is
+ * marked deprecated ("Use \"768p\" instead.") — openapi.json, 2026-11-12.
+ */
+const HAILUO3_RESOLUTIONS = ["768p", "2k", "768P", "2K"] as const;
+/** happyhorse_1_0 image_to_video: "one of `720p`, `1080p`, `720P`, `1080P`". */
+const HAPPYHORSE_RESOLUTIONS = ["720p", "1080p", "720P", "1080P"] as const;
 const GROK_IMAGINE_1_5_RESOLUTIONS = ["480p", "720p", "1080p"] as const;
 /** "MiniMax H3 Max supports 480p and 768p." — openapi.json, 2026-11-12. */
 const H3_MAX_RESOLUTIONS = ["480p", "768p"] as const;
@@ -495,17 +565,17 @@ export const videoFromImageShapeRules: Readonly<Partial<Record<string, ModelShap
     promptImagePositionRequired: true,
   },
   seedance2: {
-    promptText: PT_3500,
+    promptText: PT_10K,
     arrays: { referenceAudio: { max: 3 } },
     promptImagePositions: ["first", "last"],
   },
   seedance2_fast: {
-    promptText: PT_3500,
+    promptText: PT_10K,
     arrays: { referenceAudio: { max: 3 } },
     promptImagePositions: ["first", "last"],
   },
   seedance2_mini: {
-    promptText: PT_3500,
+    promptText: PT_10K,
     arrays: { referenceAudio: { max: 3 } },
     promptImagePositions: ["first", "last"],
   },
@@ -627,7 +697,7 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
     enums: {
       ratio: GEN4_VIDEO_RATIOS,
       duration: intRange(2, 10),
-      outputFormat: ["mp4", "prores", "png_sequence"],
+      outputFormat: GEN45_OUTPUT_FORMATS,
       proresProfile: ["422", "4444", "422 Proxy", "422 LT", "422 HQ", "4444 XQ"],
     },
   },
@@ -659,7 +729,6 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
       "referenceVideos",
       "references",
       "resolution",
-      "seed",
     ]),
     enums: { ratio: VEO_RATIOS, duration: [4, 6, 8] },
   },
@@ -675,7 +744,6 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
       "referenceVideos",
       "references",
       "resolution",
-      "seed",
     ]),
     enums: { ratio: VEO_RATIOS, duration: [4, 6, 8] },
   },
@@ -725,9 +793,8 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
       "referenceVideos",
       "references",
       "resolution",
-      "seed",
     ]),
-    enums: { duration: intRange(4, 15), ratio: SEEDANCE2_RATIOS },
+    enums: { duration: [...intRange(4, 15), "auto"], ratio: SEEDANCE2_RATIOS },
   },
   seedance2_fast: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
@@ -741,9 +808,8 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
       "referenceVideos",
       "references",
       "resolution",
-      "seed",
     ]),
-    enums: { duration: intRange(4, 15), ratio: SEEDANCE2_SMALL_RATIOS },
+    enums: { duration: [...intRange(4, 15), "auto"], ratio: SEEDANCE2_SMALL_RATIOS },
   },
   seedance2_mini: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
@@ -757,25 +823,26 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
       "referenceVideos",
       "references",
       "resolution",
-      "seed",
     ]),
-    enums: { duration: intRange(4, 15), ratio: SEEDANCE2_SMALL_RATIOS },
+    enums: { duration: [...intRange(4, 15), "auto"], ratio: SEEDANCE2_SMALL_RATIOS },
   },
   seedance2_5: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "cfgScale",
       "contentModeration",
       "negativePrompt",
-      "outputFormat",
       "promptExpansionMode",
       "proresProfile",
       "providerSettings",
       "referenceVideos",
       "references",
       "resolution",
-      "seed",
     ]),
-    enums: { duration: intRange(4, 30), ratio: SEEDANCE2_5_RATIOS },
+    enums: {
+      duration: [...intRange(4, 30), "auto"],
+      ratio: SEEDANCE2_5_RATIOS,
+      outputFormat: SEEDANCE2_5_OUTPUT_FORMATS,
+    },
   },
   grok_imagine_1_5: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
@@ -1036,17 +1103,17 @@ export const videoShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>>
   },
   happyhorse_1_0: { promptText: PT_2500_MIN2 },
   seedance2: {
-    promptText: PT_3500,
+    promptText: PT_10K,
     arrays: { references: { max: 9 }, referenceVideos: { max: 3 }, referenceAudio: { max: 3 } },
     referenceVideoTyped: true,
   },
   seedance2_fast: {
-    promptText: PT_3500,
+    promptText: PT_10K,
     arrays: { references: { max: 9 }, referenceVideos: { max: 3 }, referenceAudio: { max: 3 } },
     referenceVideoTyped: true,
   },
   seedance2_mini: {
-    promptText: PT_3500,
+    promptText: PT_10K,
     arrays: { references: { max: 9 }, referenceVideos: { max: 3 }, referenceAudio: { max: 3 } },
     referenceVideoTyped: true,
   },
@@ -1102,7 +1169,7 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
     enums: {
       ratio: GEN45_TEXT_TO_VIDEO_RATIOS,
       duration: intRange(2, 10),
-      outputFormat: ["mp4", "prores", "png_sequence"],
+      outputFormat: GEN45_OUTPUT_FORMATS,
       proresProfile: ["422", "4444", "422 Proxy", "422 LT", "422 HQ", "4444 XQ"],
     },
   },
@@ -1118,7 +1185,6 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
       "referenceVideos",
       "references",
       "resolution",
-      "seed",
     ]),
     enums: { ratio: VEO_RATIOS, duration: [4, 6, 8] },
   },
@@ -1134,7 +1200,6 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
       "referenceVideos",
       "references",
       "resolution",
-      "seed",
     ]),
     enums: { ratio: VEO_RATIOS, duration: [4, 6, 8] },
   },
@@ -1183,9 +1248,8 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
       "proresProfile",
       "providerSettings",
       "resolution",
-      "seed",
     ]),
-    enums: { duration: intRange(4, 15), ratio: SEEDANCE2_RATIOS },
+    enums: { duration: [...intRange(4, 15), "auto"], ratio: SEEDANCE2_RATIOS },
   },
   seedance2_fast: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
@@ -1197,9 +1261,8 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
       "proresProfile",
       "providerSettings",
       "resolution",
-      "seed",
     ]),
-    enums: { duration: intRange(4, 15), ratio: SEEDANCE2_SMALL_RATIOS },
+    enums: { duration: [...intRange(4, 15), "auto"], ratio: SEEDANCE2_SMALL_RATIOS },
   },
   seedance2_mini: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
@@ -1211,23 +1274,24 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
       "proresProfile",
       "providerSettings",
       "resolution",
-      "seed",
     ]),
-    enums: { duration: intRange(4, 15), ratio: SEEDANCE2_SMALL_RATIOS },
+    enums: { duration: [...intRange(4, 15), "auto"], ratio: SEEDANCE2_SMALL_RATIOS },
   },
   seedance2_5: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "cfgScale",
       "contentModeration",
       "negativePrompt",
-      "outputFormat",
       "promptExpansionMode",
       "proresProfile",
       "providerSettings",
       "resolution",
-      "seed",
     ]),
-    enums: { duration: intRange(4, 30), ratio: SEEDANCE2_5_RATIOS },
+    enums: {
+      duration: [...intRange(4, 30), "auto"],
+      ratio: SEEDANCE2_5_RATIOS,
+      outputFormat: SEEDANCE2_5_OUTPUT_FORMATS,
+    },
   },
   grok_imagine_1_5: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
@@ -1493,18 +1557,18 @@ export const videoFromVideoShapeRules: Readonly<Partial<Record<string, ModelShap
     referenceVideoTyped: true,
   },
   seedance2: {
-    promptText: PT_3500,
-    arrays: { references: { max: 9 }, referenceVideos: { max: 3 }, referenceAudio: { max: 3 } },
+    promptText: PT_10K,
+    arrays: { references: { max: 9 }, referenceVideos: { max: 2 }, referenceAudio: { max: 3 } },
     referenceVideoTyped: true,
   },
   seedance2_fast: {
-    promptText: PT_3500,
-    arrays: { references: { max: 9 }, referenceVideos: { max: 3 }, referenceAudio: { max: 3 } },
+    promptText: PT_10K,
+    arrays: { references: { max: 9 }, referenceVideos: { max: 2 }, referenceAudio: { max: 3 } },
     referenceVideoTyped: true,
   },
   seedance2_mini: {
-    promptText: PT_3500,
-    arrays: { references: { max: 9 }, referenceVideos: { max: 3 }, referenceAudio: { max: 3 } },
+    promptText: PT_10K,
+    arrays: { references: { max: 9 }, referenceVideos: { max: 2 }, referenceAudio: { max: 3 } },
     referenceVideoTyped: true,
   },
   seedance2_5: {
@@ -1550,7 +1614,7 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
     ]),
     enums: {
       targetAspectRatio: ALEPH2_TARGET_ASPECT_RATIOS,
-      outputFormat: ["mp4", "prores", "png_sequence"],
+      outputFormat: ALEPH2_OUTPUT_FORMATS,
       proresProfile: ["422", "4444", "422 Proxy", "422 LT", "422 HQ", "4444 XQ"],
     },
     // "The input video to edit. Must be 30 seconds or shorter." — openapi.json.
@@ -1586,11 +1650,10 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
       "proresProfile",
       "providerSettings",
       "resolution",
-      "seed",
       "targetAspectRatio",
       "videoUri",
     ]),
-    enums: { duration: intRange(4, 15), ratio: SEEDANCE2_RATIOS },
+    enums: { duration: [...intRange(4, 15), "auto"], ratio: SEEDANCE2_RATIOS },
   },
   seedance2_fast: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
@@ -1602,11 +1665,10 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
       "proresProfile",
       "providerSettings",
       "resolution",
-      "seed",
       "targetAspectRatio",
       "videoUri",
     ]),
-    enums: { duration: intRange(4, 15), ratio: SEEDANCE2_SMALL_RATIOS },
+    enums: { duration: [...intRange(4, 15), "auto"], ratio: SEEDANCE2_SMALL_RATIOS },
   },
   seedance2_mini: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
@@ -1618,31 +1680,29 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
       "proresProfile",
       "providerSettings",
       "resolution",
-      "seed",
       "targetAspectRatio",
       "videoUri",
     ]),
-    enums: { duration: intRange(4, 15), ratio: SEEDANCE2_SMALL_RATIOS },
+    enums: { duration: [...intRange(4, 15), "auto"], ratio: SEEDANCE2_SMALL_RATIOS },
   },
   seedance2_5: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "contentModeration",
       "keyframes",
       "negativePrompt",
-      "outputFormat",
       "proresProfile",
       "providerSettings",
       "resolution",
-      "seed",
       "targetAspectRatio",
       "videoUri",
     ]),
     // `mode` exists on this arm and the gemini_omni_flash_1.x ones, and only
     // on this route.
     enums: {
-      mode: ["reference", "extend"],
-      duration: intRange(4, 30),
+      mode: ["reference", "extend", "edit"],
+      duration: [...intRange(4, 30), "auto"],
       ratio: SEEDANCE2_5_RATIOS,
+      outputFormat: SEEDANCE2_5_OUTPUT_FORMATS,
     },
   },
   gemini_omni_flash: {
@@ -2367,12 +2427,12 @@ export const imageShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>>
     referenceImageFields: ["tag"],
   },
   gemini_image3_pro: {
-    promptText: PT_5500,
+    promptText: { min: 3, max: 45000 },
     arrays: { referenceImages: { max: 14 } },
     referenceImageFields: ["tag", "subject"],
   },
   "gemini_image3.1_flash": {
-    promptText: PT_5500,
+    promptText: PT_45K,
     arrays: { referenceImages: { max: 14 } },
     referenceImageFields: ["tag", "subject"],
   },
@@ -2385,6 +2445,16 @@ export const imageShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>>
     promptText: PT_4K,
     arrays: { referenceImages: { max: 14 } },
     referenceImageFields: [],
+    // `ratio` is "anyOf" the 16-size enum and "string maxLength 32", which
+    // the description narrows: "Also accepts freeform sizes whose
+    // width*height is between 3686400 and 16777216 pixels." (openapi.json,
+    // 2026-11-12).
+    freeformRatio: {
+      presets: SEEDREAM5_LITE_RATIOS,
+      maxLength: 32,
+      minPixels: 3_686_400,
+      maxPixels: 16_777_216,
+    },
   },
   grok_imagine_image_2: {
     promptText: PT_2500,
@@ -2392,7 +2462,7 @@ export const imageShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>>
     referenceImageFields: [],
   },
   "gemini_2.5_flash": {
-    promptText: PT_5500,
+    promptText: PT_45K,
     arrays: { referenceImages: { max: 3 } },
     referenceImageFields: ["tag"],
   },
@@ -2534,7 +2604,7 @@ export const imageConstraints: Readonly<Partial<Record<string, EndpointConstrain
     enums: {
       ratio: GPT_IMAGE_2_RATIOS,
       quality: GPT_IMAGE_2_QUALITIES,
-      background: ["opaque", "auto"],
+      background: TRANSPARENT_BACKGROUNDS,
       outputCount: intRange(1, 10),
     },
   },
@@ -2620,8 +2690,9 @@ export const imageConstraints: Readonly<Partial<Record<string, EndpointConstrain
       "seed",
       "thinkingLevel",
     ]),
+    // `ratio` is checked by `freeformRatio` in `imageShapeRules`: the enum or
+    // a freeform size.
     enums: {
-      ratio: SEEDREAM5_LITE_RATIOS,
       outputFormat: IMAGE_OUTPUT_FORMATS,
       outputCount: intRange(1, 4),
     },

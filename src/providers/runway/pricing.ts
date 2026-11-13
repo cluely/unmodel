@@ -3,12 +3,13 @@
  *
  * Source of truth: https://docs.dev.runwayml.com/guides/pricing.md
  * ("Credit costs are documented only in /guides/pricing.md. Do not infer
- * pricing from anywhere else."), verified 2026-08-13. Credits cost $0.01
+ * pricing from anywhere else."), verified 2026-11-12. Credits cost $0.01
  * each, so USD = credits × 0.01.
  *
  * Estimates are worst-case where the request leaves the tier open: when a
- * price-driving field (`resolution`, `ratio`, `quality`) is omitted, the
- * most expensive documented tier is assumed. Components that depend on the
+ * price-driving field (`resolution`, `ratio`, `quality`) is omitted, its
+ * documented default is assumed, and where no default is documented, the
+ * most expensive documented tier. Components that depend on the
  * duration of referenced media (seedance2_5 input/reference-video seconds,
  * hailuo3 reference-video seconds) are NOT estimable from the wire params
  * (URLs carry no duration) and are excluded — the real bill can exceed the
@@ -38,7 +39,13 @@
  */
 
 import { CREDIT_USD } from "./models";
-import { RATIO_TIERS, SEEDANCE2_SMALL_RATIOS, type RunwayRatioTier } from "./constraints";
+import {
+  RATIO_TIERS,
+  SEEDANCE2_5_1080P_RATIOS,
+  SEEDANCE2_5_4K_RATIOS,
+  SEEDANCE2_SMALL_RATIOS,
+  type RunwayRatioTier,
+} from "./constraints";
 
 /** Splits "W:H" into pixel dimensions; undefined for non-numeric ratios. */
 function ratioDims(ratio: string): { w: number; h: number } | undefined {
@@ -97,48 +104,70 @@ export function videoCreditsPerSecond(
     case "veo3.1_fast":
       return fields.audio === false ? 10 : 15;
     case "hailuo3":
-      // 768P: 10, 2K: 15; no documented default resolution → worst case 15.
-      return fields.resolution === "768P" ? 10 : 15;
-    case "happyhorse_1_0":
-      // 720P: 15, 1080P: 30; no documented default → worst case 30.
-      return fields.resolution === "720P" ? 15 : 30;
+      // 768P / 768p: 10, 2K / 2k: 15 — and 2K is the default ("`resolution`
+      // of `768P` or `2K` (default `2K`)" — inputs.md, 2026-11-12).
+      return fields.resolution === "768P" || fields.resolution === "768p" ? 10 : 15;
+    case "happyhorse_1_0": {
+      // 720p: 15, 1080p: 30. image_to_video sizes by `resolution`, "default
+      // `720P`" (inputs.md, 2026-11-12); text_to_video by `ratio`, whose
+      // first five sizes are the 720p tier (HAPPYHORSE_720P_RATIOS) and which
+      // documents no default → worst case 30.
+      if (fields.route === "image_to_video") {
+        return fields.resolution === "1080P" || fields.resolution === "1080p" ? 30 : 15;
+      }
+      return fields.ratio !== undefined && HAPPYHORSE_720P_RATIOS.has(fields.ratio) ? 15 : 30;
+    }
     case "seedance2": {
-      // 480p/720p ratios: 36; 1080p ratios: 40; 4K (3840-family) ratios: 150.
-      // The 480p/720p tier is exactly the SEEDANCE2_SMALL_RATIOS enum
-      // (membership, not a max-dimension heuristic — 1440:1440 is in the
-      // spec's 1080p group despite its small max dimension). The
-      // 3840/2880-family is 4K; everything else in the enum is 1080p.
-      // Omitted/unknown ratio → worst case 150.
+      // guides/pricing.md, 2026-11-12: 14 at 480p, 30 at 720p, 40 at 1080p,
+      // 150 at 4K (56-credit minimum). No page says which of the twelve
+      // SEEDANCE2_SMALL_RATIOS sizes is 480p and which 720p, so the small
+      // group bills at the 720p rate (worst case). The 3840/2880-family is
+      // 4K; everything else in the enum is 1080p (1440:1440 included, despite
+      // its small max dimension). Omitted/unknown ratio → worst case 150.
       if (fields.ratio === undefined) return 150;
-      if ((SEEDANCE2_SMALL_RATIOS as readonly string[]).includes(fields.ratio)) return 36;
+      if ((SEEDANCE2_SMALL_RATIOS as readonly string[]).includes(fields.ratio)) return 30;
       const max = maxDim(fields.ratio);
       if (max === undefined) return 150;
       if (max < 2880) return 40;
       return 150;
     }
     case "seedance2_fast":
-      return 29;
+      // 11 at 480p, 24 at 720p (44-credit minimum); which size is which tier
+      // is undocumented → 24.
+      return 24;
     case "seedance2_mini":
-      return 16;
+      // 7 at 480p, 15 at 720p (28-credit minimum) → 15, as above.
+      return 15;
     case "seedance2_5": {
-      // 720p ratios: 30 credits/s of output; 480p ratios (854/480-family):
-      // 20. Omitted or unrecognized ratio → worst case 30. Input/reference
-      // video seconds also bill (15/10 credits/s) but are not estimable
+      // 20 / 30 / 68 credits/s of output at 480p / 720p / 1080p (80-credit
+      // minimum). "480p 16:9 / 9:16 use `854:480` / `480:854`" (inputs.md),
+      // the other small sizes bill at the 720p worst case, and an omitted
+      // ratio is the documented default `1280:720`. No 2.5 4K rate is
+      // published, so the 4K sizes get no estimate. Input/reference video
+      // seconds also bill (10 / 15 / 34 credits/s) but are not estimable
       // from URLs.
       if (fields.ratio === "854:480" || fields.ratio === "480:854") return 20;
+      if (fields.ratio !== undefined && (SEEDANCE2_5_4K_RATIOS as readonly string[]).includes(fields.ratio)) {
+        return undefined;
+      }
+      if (fields.ratio !== undefined && (SEEDANCE2_5_1080P_RATIOS as readonly string[]).includes(fields.ratio)) {
+        return 68;
+      }
       return 30;
     }
     case "grok_imagine_1_5": {
-      // 480p: 10, 720p: 16, 1080p: 29; no documented default → worst case 29.
-      if (fields.resolution === "480p") return 10;
+      // 480p: 10, 720p: 16, 1080p: 29; "default `480p`" on both routes
+      // (inputs.md, 2026-11-12).
       if (fields.resolution === "720p") return 16;
-      return 29;
+      if (fields.resolution === "1080p") return 29;
+      return 10;
     }
     case "gemini_omni_flash":
       // text/image-to-video: 10 credits per second of OUTPUT. video-to-video:
-      // 11 credits per second of INPUT video (capped at 10s) — a different
-      // billing basis, and the v2v arm has no `duration` param, so a caller
-      // must pass the input length explicitly to get a number out.
+      // 11 credits per second of INPUT video (capped at 10s), "plus 1 credit
+      // per reference image" — a different billing basis, and the v2v arm
+      // has no `duration` param, so a caller must pass the input length
+      // explicitly to get a number out.
       return fields.route === "video_to_video" ? 11 : 10;
     // guides/pricing.md, 2026-11-12, for every case below.
     case "kling2.5_turbo_pro":
@@ -234,10 +263,20 @@ const GEMINI_OMNI_FLASH_1_2_RATES: Partial<Record<RunwayRatioTier, number>> = {
   "4k": 21,
 };
 
+/**
+ * happyhorse_1_0 text_to_video's 720p sizes — the first five of its ten,
+ * whose other five are the same shapes at 1080p (openapi.json; "10
+ * `width:height` ratios across 720p and 1080p" — inputs.md, 2026-11-12).
+ */
+const HAPPYHORSE_720P_RATIOS = new Set<string>(["1280:720", "720:1280", "960:960", "1108:832", "832:1108"]);
+
 /** Documented per-generation credit minimums (guides/pricing.md). */
 const VIDEO_MINIMUM_CREDITS: Record<string, number> = {
   aleph2: 56,
-  seedance2_mini: 64,
+  // "(56 credit minimum per generation)" / "(44 …)" / "(28 …)" — 2026-11-12.
+  seedance2: 56,
+  seedance2_fast: 44,
+  seedance2_mini: 28,
   seedance2_5: 80,
   // "Rounded up to the next credit; 29-credit minimum" / "a 6-credit
   // minimum per request" — guides/pricing.md, 2026-11-12.
@@ -269,11 +308,16 @@ const PER_REFERENCE_CREDITS: Record<string, number> = {
 /**
  * What `duration: "auto"` reserves, where documented: "With `duration:
  * \"auto\"`, generation and extension reserve 15 seconds of output" —
- * gemini_omni_flash_1.2, guides/pricing.md, 2026-11-12. Elsewhere `"auto"`
- * gets no estimate.
+ * gemini_omni_flash_1.2, guides/pricing.md; "`auto` is billed at the variant
+ * maximum up front; unused credits are refunded" — the seedance arms,
+ * openapi.json (both 2026-11-12). Elsewhere `"auto"` gets no estimate.
  */
 const AUTO_DURATION_SECONDS: Record<string, number> = {
   "gemini_omni_flash_1.2": 15,
+  seedance2: 15,
+  seedance2_fast: 15,
+  seedance2_mini: 15,
+  seedance2_5: 30,
 };
 
 /**
@@ -290,13 +334,29 @@ function ceilCredits(credits: number): number {
 }
 
 /**
- * Non-mp4 output "incur[s] an additional surcharge of 5 credits per second of
- * output" (the `outputFormat` field description in openapi.json, verified
- * 2026-08-13). guides/pricing.md does not carry this row, so the spec is the
- * only source for it. Applies to the two arms that expose `outputFormat`:
- * gen4.5 (image_to_video / text_to_video) and aleph2 (video_to_video).
+ * The professional-output surcharges on gen4.5 and aleph2 — guides/pricing.md,
+ * 2026-11-12: "| `prores`, `png_sequence` | 5 credits per second |" and "|
+ * 10-bit and HDR profiles (`hdr10`, `hlg`, `sdr_rec709_10bit`, … ) | 20 credits
+ * per second; 40 credits per second when the output is larger than 4
+ * megapixels (roughly 4K) |". seedance2_5's `mov` "is billed at the same rates
+ * as the default `mp4`".
  */
 export const NON_MP4_SURCHARGE_CREDITS_PER_SECOND = 5;
+export const HDR_SURCHARGE_CREDITS_PER_SECOND = 20;
+export const HDR_OVER_4MP_SURCHARGE_CREDITS_PER_SECOND = 40;
+
+/**
+ * Per-second surcharge for `outputFormat` at `ratio`. An HDR request whose
+ * output size is unknown (aleph2 follows its input) is charged the >4MP rate.
+ */
+function outputFormatSurcharge(format: string | undefined, ratio: string | undefined): number {
+  if (format === undefined || format === "mp4" || format === "mov") return 0;
+  if (format === "prores" || format === "png_sequence") return NON_MP4_SURCHARGE_CREDITS_PER_SECOND;
+  const dims = ratio === undefined ? undefined : ratioDims(ratio);
+  return dims !== undefined && dims.w * dims.h <= 4_000_000
+    ? HDR_SURCHARGE_CREDITS_PER_SECOND
+    : HDR_OVER_4MP_SURCHARGE_CREDITS_PER_SECOND;
+}
 
 export interface VideoCostInputs extends VideoPricingFields {
   model: string;
@@ -305,7 +365,7 @@ export interface VideoCostInputs extends VideoPricingFields {
   flatReferenceCount?: number;
   /** Extra flat credits (e.g. gemini_omni_flash's 1-credit first frame). */
   flatExtraCredits?: number;
-  /** `prores` / `png_sequence` add 5 credits per second of output. */
+  /** `prores` / `png_sequence` add 5 credits per second of output, HDR profiles 20 or 40. */
   outputFormat?: string;
 }
 
@@ -327,9 +387,7 @@ export function videoCostUSD(inputs: VideoCostInputs): number | undefined {
   // additive on top of it.
   const minimum = VIDEO_MINIMUM_CREDITS[inputs.model];
   if (minimum !== undefined && credits < minimum) credits = minimum;
-  if (inputs.outputFormat !== undefined && inputs.outputFormat !== "mp4") {
-    credits += NON_MP4_SURCHARGE_CREDITS_PER_SECOND * seconds;
-  }
+  credits += outputFormatSurcharge(inputs.outputFormat, inputs.ratio) * seconds;
   // Flat per-reference surcharges (PER_REFERENCE_CREDITS): grok_imagine_1_5
   // bills 1 credit per image or audio reference (including an image-to-video
   // start frame); hailuo3 bills 2 credits per reference image; the Gemini
@@ -440,7 +498,7 @@ const GPT_IMAGE_2_CREDITS: Record<string, { small: number; large: number }> = {
 
 /**
  * gpt_image_2 ratios billed at the 4K tier — the 3840×2160-class family
- * from the request schema's ratio enum (openapi.json, verified 2026-08-13).
+ * from the request schema's ratio enum (openapi.json, verified 2026-11-12).
  */
 const GPT_IMAGE_2_4K_RATIOS = new Set<string>([
   "3840:1648",
@@ -526,6 +584,24 @@ export function imageCostUSD(inputs: ImageCostInputs): number | undefined {
       const per = large ? (low ? 6 : 8) : low ? 4 : 6;
       return (per * count + references) * CREDIT_USD;
     }
+    case "gemini_image3.1_flash": {
+      // "5 credits per 512px image, 7 credits per 1K image, 11 credits per 2K
+      // image, 16 credits per 4K image" (guides/pricing.md, 2026-11-12). Its
+      // 56 sizes cluster at ~0.26MP, ~1MP, ~4MP and ~16.7MP, so 0.5MP, 2MP and
+      // 8MP split the tiers, as for gemini_image3_pro; unrecognized → 16.
+      const pixels = inputs.ratio === undefined ? undefined : ratioPixels(inputs.ratio);
+      const per =
+        pixels === undefined
+          ? 16
+          : pixels < 500_000
+            ? 5
+            : pixels < 2_000_000
+              ? 7
+              : pixels < 8_000_000
+                ? 11
+                : 16;
+      return per * count * CREDIT_USD;
+    }
     // guides/pricing.md, 2026-11-12, for every case below.
     case "muse_image":
       // "1 credit per image, any resolution".
@@ -604,8 +680,7 @@ export function imageCostUSD(inputs: ImageCostInputs): number | undefined {
       // at 1K or 1.5K and 85 credits at 2K or auto" — the worst case.
       return (inputs.resolution === "1k" || inputs.resolution === "1.5k" ? 51 : 85) * CREDIT_USD;
     default:
-      // gemini_image3.1_flash has no pricing row yet; unknown models have
-      // no published rate.
+      // Unknown models have no published rate.
       return undefined;
   }
 }

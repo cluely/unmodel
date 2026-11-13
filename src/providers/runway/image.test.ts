@@ -76,15 +76,19 @@ describe("runway.image per-model rules", () => {
     }
   });
 
-  test("gpt_image_2 background is opaque/auto and transparent is rejected", () => {
+  test("gpt_image_2 background is transparent / opaque / auto, and nothing else", () => {
+    // "one of `transparent`, `opaque`, `auto`" — openapi.json, 2026-11-12.
+    expect(
+      image.safe({ model: "gpt_image_2", promptText: "hi", ratio: "auto", background: "transparent" }).ok,
+    ).toBe(true);
     const r = safeUnchecked({
       model: "gpt_image_2",
       promptText: "hi",
       ratio: "auto",
-      background: "transparent",
+      background: "white",
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_enum_value");
+    if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
   });
 
   test("quality on gen4_image is unsupported_param with a doc source", () => {
@@ -162,19 +166,20 @@ describe("runway.image cost estimation", () => {
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.26, 10);
   });
 
-  test("gemini_image3.1_flash has no published price and no estimate", () => {
-    const r = image.safe({
-      model: "gemini_image3.1_flash",
-      promptText: "hi",
-      ratio: "1024:1024",
-    });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+  test("gemini_image3.1_flash bills 5 / 7 / 11 / 16 credits by size tier", () => {
+    const cost = (ratio: `${number}:${number}`): number | undefined => {
+      const r = image.safe({ model: "gemini_image3.1_flash", promptText: "hi", ratio });
+      return r.ok ? r.estimate.costUSD : undefined;
+    };
+    expect(cost("512:512")).toBeCloseTo(0.05, 10);
+    expect(cost("1024:1024")).toBeCloseTo(0.07, 10);
+    expect(cost("2048:2048")).toBeCloseTo(0.11, 10);
+    expect(cost("11264:1408")).toBeCloseTo(0.16, 10);
   });
 
   test("maxCostUSD under the estimate is over_budget", () => {
     const r = image.safe(
-      { model: "gemini_image3_pro", promptText: "hi", ratio: "4096:4096", outputCount: 4 },
+      { model: "gemini_image3_pro", promptText: "a fox", ratio: "4096:4096", outputCount: 4 },
       { maxCostUSD: 1 },
     );
     // 4 × 40 credits = 160 credits = $1.60 > $1.00
@@ -210,7 +215,7 @@ describe("runway.image reference-image shape rules", () => {
   test("subject is only a field of the gemini_image3 family", () => {
     const ok = image.safe({
       model: "gemini_image3_pro",
-      promptText: "x",
+      promptText: "a fox",
       ratio: "1024:1024",
       referenceImages: [{ uri: IMAGE, subject: "human" }],
     });
@@ -288,18 +293,22 @@ describe("runway.image reference-image shape rules", () => {
   });
 
   test("promptText caps differ by an order of magnitude across arms", () => {
-    const long = "a".repeat(5501);
-    const gemini = image.safe({
-      model: "gemini_image3_pro",
-      promptText: long,
-      ratio: "1024:1024",
-    });
-    expect(gemini.ok).toBe(false);
-    if (!gemini.ok) {
-      expect(gemini.errors.find((e) => e.code === "invalid_shape")?.meta?.max).toBe(5500);
+    const long = "a".repeat(1001);
+    const gen4 = image.safe({ model: "gen4_image", promptText: long, ratio: "1024:1024" });
+    expect(gen4.ok).toBe(false);
+    if (!gen4.ok) {
+      expect(gen4.errors.find((e) => e.code === "invalid_shape")?.meta?.max).toBe(1000);
     }
-    // gpt_image_2 allows 32000.
-    expect(image.safe({ model: "gpt_image_2", promptText: long, ratio: "auto" }).ok).toBe(true);
+    // The Gemini image arms take "max length 45000" (and gemini_image3_pro a
+    // minimum of 3).
+    const longer = "a".repeat(45000);
+    expect(image.safe({ model: "gemini_image3_pro", promptText: longer, ratio: "1024:1024" }).ok).toBe(true);
+    expect(image.safe({ model: "gemini_2.5_flash", promptText: longer, ratio: "1024:1024" }).ok).toBe(true);
+    const over = image.safe({ model: "gemini_image3.1_flash", promptText: `${longer}a`, ratio: "1024:1024" });
+    expect(over.ok).toBe(false);
+    const short = image.safe({ model: "gemini_image3_pro", promptText: "ab", ratio: "1024:1024" });
+    expect(short.ok).toBe(false);
+    if (!short.ok) expect(short.errors[0]?.meta?.min).toBe(3);
   });
 });
 
@@ -315,7 +324,7 @@ describe("runway.image documented enum coverage", () => {
       for (const ratio of ratios) {
         const r = safeUnchecked({
           model,
-          promptText: "hi",
+          promptText: "a fox",
           ratio,
           // gen4_image_turbo requires reference images, and bria_fibo_edit_1_5
           // needs two before it takes a size.
@@ -345,7 +354,7 @@ describe("runway.image documented enum coverage", () => {
           const shape = value === "gif" || model === "bria_fibo_edit_1_5" ? "auto" : ratio;
           const r = safeUnchecked({
             model,
-            promptText: "hi",
+            promptText: "a fox",
             ratio: shape,
             [param]: value,
             // ideogram_4_5's `very_low` requires reference images.
@@ -521,5 +530,25 @@ describe("runway.image — Muse, Nano Banana, GPT Image 2.5 / 2.6, FIBO, Ideogra
       referenceImages: [{ uri: REF.uri, subject: "human" }],
     });
     expect(subject.ok).toBe(false);
+  });
+});
+
+describe("runway.image — seedream5_lite's freeform sizes", () => {
+  const base = { model: "seedream5_lite", promptText: "a lighthouse" } as const;
+
+  test("a preset, or any W:H whose area is 3686400–16777216 pixels", () => {
+    expect(image.safe({ ...base, ratio: "2048:2048" }).ok).toBe(true);
+    expect(image.safe({ ...base, ratio: "3000:2000" }).ok).toBe(true);
+    expect(image.safe({ ...base, ratio: "4096:4096" }).ok).toBe(true);
+  });
+
+  test("a size outside the range, or a non-size, is refused naming both forms", () => {
+    const small = image.safe({ ...base, ratio: "1024:1024" });
+    expect(small.ok).toBe(false);
+    if (!small.ok) {
+      expect(small.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["ratio"] });
+      expect(small.errors[0]?.meta).toMatchObject({ minPixels: 3686400, maxPixels: 16777216 });
+    }
+    expect(safeUnchecked({ ...base, ratio: "auto_2k" }).ok).toBe(false);
   });
 });

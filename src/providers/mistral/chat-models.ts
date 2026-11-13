@@ -27,16 +27,16 @@ const { status: _publicPreview, ...large4 } = models["mistral-large-4"];
 const LARGE_4 = { ...large4, openWeights: true } as const;
 
 /**
- * Mistral Medium 3.5, the row behind the documented `mistral-medium-latest`
- * alias, deprecated: "Mistral Medium 3.5 ↗ 26.04 mistral-medium-3-5 10/31/2026
- * 4/30/2027 Mistral Large 4" (https://docs.mistral.ai/getting-started/models,
- * 2026-11-12) — still served until the second date. Its rates ($1.5 / $0.15
- * cached / $7.5) survive only on the archived pricing page — "Mistral Medium
- * 3.5 ↗ $1.5 $0.15 $7.5"
+ * Mistral Medium 3.5, the 26.04 snapshot row (`mistral-medium-2604`) that the
+ * documented aliases resolve to, deprecated: "Mistral Medium 3.5 ↗ 26.04
+ * mistral-medium-3-5 10/31/2026 4/30/2027 Mistral Large 4"
+ * (https://docs.mistral.ai/getting-started/models, 2026-11-12) — still served
+ * until the second date. Its rates ($1.5 / $0.15 cached / $7.5) survive only
+ * on the archived pricing page — "Mistral Medium 3.5 ↗ $1.5 $0.15 $7.5"
  * (http://web.archive.org/web/20260915134103/https://docs.mistral.ai/inference/pricing);
  * the live page dropped the row when the model was deprecated.
  */
-const MEDIUM_3_5 = { ...models["mistral-medium-latest"], status: "deprecated" } as const;
+const MEDIUM_3_5 = { ...models["mistral-medium-2604"], status: "deprecated" } as const;
 
 /**
  * Ministral 3 3B: "ministral-3b-2512 +1 … Context i 256k" and
@@ -89,8 +89,8 @@ const chatModelOverlay = {
    */
   "mistral-medium-3-5": { ...MEDIUM_3_5, id: "mistral-medium-3-5" },
   "mistral-medium-3": { ...MEDIUM_3_5, id: "mistral-medium-3" },
-  "mistral-medium-latest": MEDIUM_3_5,
-  "mistral-medium-2604": { ...models["mistral-medium-2604"], status: "deprecated" },
+  "mistral-medium-latest": { ...MEDIUM_3_5, id: "mistral-medium-latest" },
+  "mistral-medium-2604": MEDIUM_3_5,
   /**
    * `"names":["ministral-14b-2512","ministral-14b-latest"]`
    * (https://docs.mistral.ai/models/ministral-3-14b-25-12, page source,
@@ -116,6 +116,16 @@ const chatModelOverlay = {
    */
   "zai-glm-5": { ...GLM_5_3, id: "zai-glm-5" },
   "zai-glm-latest": { ...GLM_5_3, id: "zai-glm-latest" },
+  /**
+   * `"names":["codestral-2508","codestral-latest"]`
+   * (https://docs.mistral.ai/models/codestral-25-08, page source, 2026-11-12):
+   * the alias serves Codestral 25.08. models.dev carries the 2024 Codestral row
+   * under it (output 4096, open weights), which refuses max_tokens 4097–8192
+   * that the dated id accepts. The card says "Context i 128k" while both
+   * generated rows carry 256000; this overstates the limit and causes no
+   * refusal, so it stays until a second source gives the exact figure.
+   */
+  "codestral-latest": { ...models["codestral-2508"], id: "codestral-latest" },
 } as const satisfies Record<string, ModelInfo>;
 
 /**

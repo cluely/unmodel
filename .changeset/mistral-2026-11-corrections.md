@@ -38,7 +38,9 @@ docs.mistral.ai on 2026-11-12.
   422 otherwise) and takes at most 8 entries ("At most 8 speaker references are
   supported, got {n}", https://docs.mistral.ai/studio/audio/specs-and-limits/limits)
   — new export `MAX_SPEAKER_REFERENCES`. `toFormData` sends it as one JSON form
-  field, as the Mistral SDK does.
+  field, as the Mistral SDK does. Not every model takes reference clips ("The
+  model doesn't accept reference clips", https://docs.mistral.ai/studio/audio/speech-to-text/diarize-speakers),
+  but Mistral names none, so unmodel refuses the field on no id.
 - `voxtral-mini-2602`, `voxtral-mini-latest`, `voxtral-mini-transcribe-realtime-2602`
   and `voxtral-mini-realtime-latest` now carry `status: "deprecated"`, so the
   two transcription ids warn `deprecated_model`: deprecated 2026-10-31, served

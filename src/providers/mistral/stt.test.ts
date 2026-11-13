@@ -94,19 +94,22 @@ describe("mistral.stt audio source rules", () => {
 });
 
 describe("mistral.stt documented pairings", () => {
-  test("timestamp_granularities and language are incompatible", () => {
-    const r = stt.safe({
-      model: "voxtral-mini-latest",
-      file: audio(),
-      language: "en",
-      timestamp_granularities: ["word"],
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors[0]?.path).toEqual(["timestamp_granularities"]);
-      expect(r.errors[0]?.message).toContain("not compatible with `language`");
-    }
-  });
+  test.each(["voxtral-mini-latest", "voxtral-mini-2602"])(
+    "timestamp_granularities and language are incompatible on %s",
+    (model) => {
+      const r = stt.safe({
+        model,
+        file: audio(),
+        language: "en",
+        timestamp_granularities: ["word"],
+      });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.path).toEqual(["timestamp_granularities"]);
+        expect(r.errors[0]?.message).toContain("not compatible with `language`");
+      }
+    },
+  );
 
   test("language alone and granularities alone both validate", () => {
     expect(stt.safe({ model: "voxtral-mini-latest", file: audio(), language: "fr" }).ok).toBe(
@@ -299,6 +302,15 @@ describe("mistral.stt Voxtral 3", () => {
     expect(stt.safe({ model: "voxtral-mini-2602", file: audio(), diarize: true }).ok).toBe(true);
   });
 
+  test("language and segment timestamps go together, diarized or not", () => {
+    // Only the pre-Voxtral 3 page states the timestamps-versus-language rule.
+    const timed = { model: "voxtral-mini-transcribe-3", file: audio(), language: "fr" } as const;
+    expect(stt.safe({ ...timed, timestamp_granularities: ["segment"] }).ok).toBe(true);
+    expect(
+      stt.safe({ ...timed, diarize: true, timestamp_granularities: ["segment"] }).ok,
+    ).toBe(true);
+  });
+
   test("context_bias takes phrases and has no fixed count", () => {
     const r = stt.safe({
       model: "voxtral-mini-transcribe-3",
@@ -358,7 +370,19 @@ describe("mistral.stt speaker_references", () => {
     if (!r.ok) {
       expect(r.errors[0]?.path).toEqual(["speaker_references"]);
       expect(r.errors[0]?.message).toContain("requires `diarize: true`");
+      expect(String(r.errors[0]?.meta?.source)).toContain("speech-to-text/diarize-speakers");
     }
+  });
+
+  test("no id is refused them: Mistral names no model that lacks reference clips", () => {
+    const r = stt.safe({
+      model: "voxtral-mini-2602",
+      file: audio(),
+      diarize: true,
+      speaker_references: { Alice: clip },
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 
   test(`more than ${MAX_SPEAKER_REFERENCES} references are refused`, () => {

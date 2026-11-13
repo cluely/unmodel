@@ -88,7 +88,9 @@
     "openai:*-codex-*",
     "openai:*-pro",
     "openai:gpt-daybreak-*",
-    "openai:text-embedding-*"
+    "openai:text-embedding-*",
+    "mistral:mistral-embed",
+    "mistral:voxtral-mini-latest"
   ],
 
   "$chatScopeExcludeNotes": {
@@ -98,6 +100,8 @@
     "openai:text-embedding-*": "Embeddings answer POST /v1/embeddings. models.dev files them as text-out, which is how they reached a chat ref table at all. Note the availability half already drops them on the billing signal in scripts/availability.ts (`isChatRow`) — this list is what the weaker `isTextModel` in chatScope needs.",
     "openai:gpt-image-*, openai:chatgpt-image-*": "Image generation answers POST /v1/images/generations, which is `image` from unmodel/openai. They are text-out in models.dev because they accept and echo text.",
     "openai:gpt-realtime-*": "The realtime family answers the WebRTC/WebSocket realtime API, not chat/completions.",
-    "$scope": "This mirrors `NonChatModelId` in src/providers/openai/chat.ts, which states the same eight families as a TYPE (so it can shape `OpenaiChatModelId`) and therefore cannot be read by codegen. `test/chat/refs.test.ts` asserts the two agree. `dall-e-*` is in the type and deliberately absent here: models.dev files DALL·E as image-out only, so `isTextModel` already excludes it and an entry would be inert — and inert entries fail codegen."
+    "mistral:mistral-embed": "An embeddings model: it answers POST /v1/embeddings — https://docs.mistral.ai/models/mistral-embed-23-12 lists \"Features Embeddings /v1/embeddings\" (checked 2026-11-12). models.dev files it as text-out (type \"embedding\"), which is how it reached a chat ref table at all.",
+    "mistral:voxtral-mini-latest": "Transcription only: the card lists `\"names\":[\"voxtral-mini-2602\",\"voxtral-mini-latest\"]` and features only \"Timestamps /v1/audio/transcriptions Transcriptions /v1/audio/transcriptions\" (https://docs.mistral.ai/models/voxtral-mini-transcribe-26-02, checked 2026-11-12) — that is `stt` from unmodel/mistral. The chat-capable Voxtral Mini 25.07 retired 5/31/2026 (https://docs.mistral.ai/getting-started/models); models.dev types the alias \"transcription\" and still files it as text-out.",
+    "$scope": "The openai entries mirror `NonChatModelId` in src/providers/openai/chat.ts, which states the same eight families as a TYPE (so it can shape `OpenaiChatModelId`) and therefore cannot be read by codegen. `test/chat/refs.test.ts` asserts the two agree. `dall-e-*` is in the type and deliberately absent here: models.dev files DALL·E as image-out only, so `isTextModel` already excludes it and an entry would be inert — and inert entries fail codegen. The mistral entries are mistral's own: the two text-out rows models.dev types \"embedding\" and \"transcription\"."
   }
 }

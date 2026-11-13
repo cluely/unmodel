@@ -8,10 +8,11 @@
  * `resolveAudioInput` applies to the canonical object, one layer earlier and
  * in the caller's vocabulary.
  *
- * The pairing worth knowing about is not this adapter's: Voxtral documents
- * that `timestamp_granularities` "is not compatible with `language`". So a
- * request that pins a language *and* asks for word timings is rejected by
- * `mistral.stt`'s own `checkTimestampLanguage`, and the provenance
+ * The pairing worth knowing about is not this adapter's: the pre-Voxtral 3
+ * ids document that `timestamp_granularities` "is not compatible with
+ * `language`" (the Voxtral 3 pages document the two independently). So on
+ * those ids a request that pins a language *and* asks for timings is rejected
+ * by `mistral.stt`'s own `checkTimestampLanguage`, and the provenance
  * declared below is what makes that finding arrive at `timestamps` rather than
  * at a wire field the caller never wrote.
  */

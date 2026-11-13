@@ -340,6 +340,17 @@ describe("bounds and rules the adapter did not copy surface as the provider's ow
     expect(result.errors[0]!.message).toContain("compiled from `timestamp_granularities`");
   });
 
+  test("the rule is the pre-Voxtral 3 ids' alone: Voxtral 3 diarizes a pinned language", () => {
+    const result = stt.safe({
+      model: "mistral/voxtral-mini-transcribe-3",
+      audio: { url: URL_ },
+      diarization: { enabled: true },
+      timestamps: "segment",
+      language: "fr",
+    });
+    expect(result.ok).toBe(true);
+  });
+
   test("openai's whisper-only granularities, reported at `timestamps`", () => {
     // The cast is the point of the test: `gpt-4o-transcribe`'s row now types
     // `timestamps` as `"none"`, so a TypeScript caller cannot write this at

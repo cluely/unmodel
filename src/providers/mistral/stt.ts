@@ -5,9 +5,11 @@
  * publishes at https://docs.mistral.ai/openapi.yaml — the
  * `AudioTranscriptionRequest` schema — plus
  * https://docs.mistral.ai/studio/audio/deprecated/speech_to_text/offline_transcription;
- * the Voxtral 3 rules and `speaker_references` against
+ * the Voxtral 3 rules against
  * https://docs.mistral.ai/studio/audio/speech-to-text/transcribe-files on
- * 2026-11-12):
+ * 2026-11-12, and `speaker_references` against
+ * https://docs.mistral.ai/studio/audio/speech-to-text/diarize-speakers on
+ * 2026-11-13):
  * - This is a multipart/form-data endpoint. The validated output's enumerable
  *   props are the validated params (including the `file` Blob) — do NOT
  *   JSON.stringify them. The raw-fetch path is `.request.url` +
@@ -60,6 +62,9 @@ const TRANSCRIPTION_DOCS =
 /** The Voxtral 3 transcription reference (retrieved 2026-11-12). */
 const VOXTRAL_3_DOCS = "https://docs.mistral.ai/studio/audio/speech-to-text/transcribe-files";
 
+/** The diarization guide, whose error table states the `speaker_references` rules (retrieved 2026-11-13). */
+const DIARIZE_SPEAKERS_DOCS = "https://docs.mistral.ai/studio/audio/speech-to-text/diarize-speakers";
+
 /**
  * "context_bias: Provide up to 100 words or phrases to guide the model toward
  * correct spellings of names, technical terms, or domain-specific vocabulary."
@@ -107,6 +112,14 @@ export interface TranscriptionBody {
    * speakers known to appear in the audio; at most 8, and `diarize` must be
    * true. Sent as ONE form field holding the JSON object, which is how the
    * Mistral SDK encodes it.
+   *
+   * Not every model takes reference clips. Offline, "The model doesn't accept
+   * reference clips" → "Use a model that supports them" (the diarize-speakers
+   * error table and speech-to-text/troubleshooting, 2026-11-13), and Mistral
+   * names none. Voxtral Mini Transcribe 3 "supports every offline feature"
+   * (speech-to-text/overview). The deprecated Voxtral 2 transcription page
+   * never documents the field, and openapi.yaml types it with no per-model
+   * note, so unmodel does not refuse it on any id.
    */
   speaker_references?: Record<string, string>;
   /**
@@ -184,12 +197,20 @@ function audioPath(params: TranscriptionBody): Array<string | number> {
 /**
  * "timestamp_granularities is currently not compatible with language, please
  * use either one or the other." (TRANSCRIPTION_DOCS)
+ *
+ * Only the pre-Voxtral 3 page states the pairing, so it applies only to the
+ * ids that page documents (the {@link TRANSCRIPTION_MAX_AUDIO_SECONDS} keys,
+ * as in {@link checkContextBias}). The Voxtral 3 pages document `language`
+ * ("Pinning the language can improve accuracy.") and
+ * `timestamp_granularities` as independent fields, and their error table lists
+ * no such conflict (VOXTRAL_3_DOCS, 2026-11-12).
  */
 function checkTimestampLanguage(
   params: TranscriptionBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
+  if (!Object.hasOwn(TRANSCRIPTION_MAX_AUDIO_SECONDS, params.model)) return;
   const granularities = params.timestamp_granularities;
   if (!Array.isArray(granularities) || granularities.length === 0) return;
   if (params.language == null) return;
@@ -290,7 +311,7 @@ function checkSpeakerReferences(
       path: ["speaker_references"],
       model: params.model,
       message: "`speaker_references` requires `diarize: true`; without it the API returns a 422.",
-      meta: { source: VOXTRAL_3_DOCS },
+      meta: { source: DIARIZE_SPEAKERS_DOCS },
     });
   }
   const count = Object.keys(references).length;
@@ -300,7 +321,7 @@ function checkSpeakerReferences(
       path: ["speaker_references"],
       model: params.model,
       message: `\`speaker_references\` takes at most ${MAX_SPEAKER_REFERENCES} speakers; got ${count}.`,
-      meta: { limit: MAX_SPEAKER_REFERENCES, count, source: VOXTRAL_3_DOCS },
+      meta: { limit: MAX_SPEAKER_REFERENCES, count, source: DIARIZE_SPEAKERS_DOCS },
     });
   }
 }

@@ -68,6 +68,8 @@ describe("mistral.chat — the 2026-11 models", () => {
     ["zai-glm-latest", 1.4 + 4.4],
     ["mistral-medium-3-5", 1.5 + 7.5],
     ["mistral-medium-3", 1.5 + 7.5],
+    // An alias models.dev carries with a stale row, re-keyed like the rest.
+    ["codestral-latest", 0.3 + 0.9],
   ])("%s validates and prices at its card rate", (model, usd) => {
     const r = chat.safe({ model, messages: hi });
     expect(r.ok).toBe(true);
@@ -82,6 +84,25 @@ describe("mistral.chat — the 2026-11 models", () => {
     expect(chatModels["mistral-large-4"].openWeights).toBe(true);
     expect("status" in chatModels["mistral-large-4"]).toBe(false);
     expect(chatModels["mistral-large-4-0"].openWeights).toBe(true);
+  });
+
+  test("codestral-latest is Codestral 25.08: max_tokens 8192 passes as on the dated id", () => {
+    expect(chatModels["codestral-latest"].limit.output).toBe(
+      chatModels["codestral-2508"].limit.output,
+    );
+    const r = chat.safe({ model: "codestral-latest", messages: hi, max_tokens: 8192 });
+    expect(r.ok).toBe(true);
+  });
+
+  test("every Mistral Medium 3.5 id carries the model's name", () => {
+    for (const model of [
+      "mistral-medium-3-5",
+      "mistral-medium-3",
+      "mistral-medium-latest",
+      "mistral-medium-2604",
+    ] as const) {
+      expect(chatModels[model].name, model).toBe("Mistral Medium 3.5");
+    }
   });
 
   test("Ministral 3 3B carries its 256k window, under both ids", () => {

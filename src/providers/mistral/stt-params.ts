@@ -29,7 +29,8 @@ export const MODELS = [
 /**
  * The four pre-Voxtral 3 ids share one row, because they share one schema, and
  * the one rule they carry (`timestamp_granularities` "is not compatible with
- * `language`") is a *combination* rule that applies to every id equally.
+ * `language`") is a *combination* rule that applies to all four equally. Only
+ * their page states it, so the Voxtral 3 ids below do not carry it.
  *
  * `timestamps` carries `"none"` because it is genuinely expressible here — the
  * field is absent by default and the route returns no timings without it — plus

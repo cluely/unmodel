@@ -301,7 +301,8 @@ describe("codegen: chat tables", () => {
     expect(Object.keys(chatProfiles).length).toBe(32);
     // A vacuous exclusion list would make the filter above a no-op and this
     // test a weaker version of what it replaced. Seventeen openai rows: codex ×2,
-    // pro ×6, Daybreak ×2, embeddings ×3, image ×3, realtime ×1.
-    expect(removed).toBe(17);
+    // pro ×6, Daybreak ×2, embeddings ×3, image ×3, realtime ×1; and two mistral
+    // rows: mistral-embed, voxtral-mini-latest.
+    expect(removed).toBe(19);
   });
 });

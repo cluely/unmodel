@@ -6,6 +6,7 @@ import {
   INWORLD_STT_AUDIO_ENCODINGS,
   STT_MAX_AUDIO_BYTES,
   STT_TRANSCRIBE_URL,
+  TRANSCRIBE_DOCS,
 } from "./stt";
 import { sttModels, STT_1_USD_PER_MINUTE, STT_STREAM_MODEL_IDS, STT_SYNC_MODEL_IDS } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
@@ -84,17 +85,36 @@ describe("inworld.stt happy path", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
-  test("every documented audioEncoding is accepted", () => {
+  test("every documented audioEncoding but the zero value is accepted", () => {
     // The sync enum names three containers whose audio track is transcribed.
     for (const container of ["MP4", "MXF", "WEBM"] as const) {
       expect(INWORLD_STT_AUDIO_ENCODINGS).toContain(container);
     }
     for (const audioEncoding of INWORLD_STT_AUDIO_ENCODINGS) {
+      if (audioEncoding === "AUDIO_ENCODING_UNSPECIFIED") continue;
       const r = safeUnchecked({
         transcribeConfig: { modelId: "inworld/inworld-stt-1", audioEncoding },
         audioData: AUDIO,
       });
       expect(r.ok).toBe(true);
+    }
+  });
+
+  test("the zero-value audioEncoding is refused (INVALID_ARGUMENT), naming the real encodings", () => {
+    // "AUDIO_ENCODING_UNSPECIFIED: Not specified. Will return [google.rpc.Code.INVALID_ARGUMENT]."
+    const r = stt.safe({
+      transcribeConfig: { modelId: "inworld/inworld-stt-1", audioEncoding: "AUDIO_ENCODING_UNSPECIFIED" },
+      audioData: AUDIO,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("invalid_enum_value");
+      expect(r.errors[0]?.path).toEqual(["transcribeConfig", "audioEncoding"]);
+      expect(r.errors[0]?.meta?.allowed).toEqual(
+        INWORLD_STT_AUDIO_ENCODINGS.filter((e) => e !== "AUDIO_ENCODING_UNSPECIFIED"),
+      );
+      expect(r.errors[0]?.meta?.source).toBe(TRANSCRIBE_DOCS);
+      expect(r.errors[0]?.message).toContain('"AUTO_DETECT"');
     }
   });
 

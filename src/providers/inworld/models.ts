@@ -209,8 +209,11 @@ const sttModels = {
     family: "assemblyai",
     ...STT,
   },
-  // "Sub-300ms latency multilingual"; the only model that takes
-  // `assemblyaiConfig.prompt` ("Universal-3 Pro only").
+  // "Sub-300ms latency multilingual"; the model Inworld's assemblyaiConfig
+  // table names for `prompt` ("Universal-3 Pro Streaming only"). The same
+  // page's Realtime AssemblyAI example also sends a `prompt` to
+  // universal-3-5-pro (docs.inworld.ai/stt/third-party, 2026-11-13), so that
+  // route takes it with a warning — see checkTranscribeConfig in ./stt.
   "assemblyai/u3-rt-pro": {
     id: "assemblyai/u3-rt-pro",
     name: "Universal-3 Realtime Pro (via AssemblyAI)",

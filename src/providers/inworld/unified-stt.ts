@@ -116,8 +116,14 @@ export const stt = {
       // A plain boolean, so `"none"` is expressible rather than an omission.
       // The row's own granularities, because the wire accepts the flag on
       // both sync models and only warns where it is ignored (see stt-params).
-      const row = INWORLD_STT_MODEL_PARAMS[ctx.model as keyof typeof INWORLD_STT_MODEL_PARAMS];
-      const offered = (row?.timestamps ?? []).filter((granularity) => granularity !== "none");
+      // An id outside the table has already drawn `unknown_model`, and
+      // model-dependent checks are skipped: it gets what the wire flag can say
+      // (`includeWordTimestamps`).
+      const row = isSyncModel(ctx.model) ? INWORLD_STT_MODEL_PARAMS[ctx.model] : undefined;
+      const offered =
+        row === undefined
+          ? (["word"] as const)
+          : row.timestamps.filter((granularity) => granularity !== "none");
       const granularity = ctx.take(
         toTimestampGranularity(input.timestamps, offered, {
           path: ["timestamps"],
@@ -141,3 +147,7 @@ export const stt = {
   InworldSttWire,
   InworldSttResult
 >;
+
+function isSyncModel(id: string): id is (typeof MODELS)[number] {
+  return (MODELS as readonly string[]).includes(id);
+}

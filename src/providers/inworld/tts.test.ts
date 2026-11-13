@@ -153,9 +153,18 @@ describe("inworld.tts schema enforcement", () => {
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["audioConfig", "sampleRateHertz"]);
   });
 
-  test("temperature 0 is invalid_shape (documented range (0, 2])", () => {
-    const r = safeUnchecked({ text: "x", voiceId: "v", modelId: "inworld-tts-2", temperature: 0 });
-    expect(r.ok).toBe(false);
+  test("temperature takes [0, 2]: 0 selects the default, so it passes", () => {
+    // "If 0 is provided, the default value will be used." — on a model that
+    // honours temperature, so no ignored-param warning rides along.
+    const zero = tts.safe({ text: "x", voiceId: "v", modelId: "inworld-tts-2-flash", temperature: 0 });
+    expect(zero.ok).toBe(true);
+    if (zero.ok) expect(zero.warnings).toEqual([]);
+    expect(tts.safe({ text: "x", voiceId: "v", modelId: "inworld-tts-2-flash", temperature: 2 }).ok).toBe(true);
+    for (const temperature of [-0.1, 2.1]) {
+      const r = safeUnchecked({ text: "x", voiceId: "v", modelId: "inworld-tts-2-flash", temperature });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["temperature"]);
+    }
   });
 
   test("speakingRate outside [0.5, 1.5] is invalid_shape", () => {

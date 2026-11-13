@@ -86,8 +86,7 @@ export const TTS_STREAM_WS_URL = "wss://api.inworld.ai/tts/v1/voice:streamBidire
 
 export const TTS_WEBSOCKET_DOCS =
   "https://docs.inworld.ai/api-reference/ttsAPI/texttospeech/synthesize-speech-websocket";
-export const STT_WEBSOCKET_DOCS =
-  "https://docs.inworld.ai/api-reference/sttAPI/speechtotext/transcribe-stream-websocket";
+export { STT_WEBSOCKET_DOCS } from "./stt";
 
 // ---------------------------------------------------------------------------
 // Realtime STT — the `transcribeConfig` first frame.
@@ -152,14 +151,15 @@ const LINEAR16_ONLY_VENDORS: readonly string[] = ["assemblyai", "soniox"];
 /**
  * The AssemblyAI and Soniox blocks of STT_THIRD_PARTY_DOCS each say
  * "WebSocket streaming only; audio must be `LINEAR16`", while the WebSocket
- * reference lists `AUTO_DETECT` (and the zero value) for every model without
- * a per-vendor note. A warning, not an error: the two pages disagree, and
- * the request may well be served.
+ * reference lists `AUTO_DETECT` for every model without a per-vendor note.
+ * A warning, not an error: the two pages disagree, and the request may well
+ * be served. The zero value is skipped — `checkTranscribeConfig` already
+ * refuses it on every route.
  */
 function checkLinear16Route(params: InworldRealtimeTranscribeConfig, ctx: PipelineContext): void {
   const vendor = sttVendorOf(params.modelId);
   if (vendor === undefined || !LINEAR16_ONLY_VENDORS.includes(vendor)) return;
-  if (params.audioEncoding === "LINEAR16") return;
+  if (params.audioEncoding === "LINEAR16" || params.audioEncoding === "AUDIO_ENCODING_UNSPECIFIED") return;
   ctx.report({
     code: "invalid_enum_value",
     severity: "warning",
@@ -266,13 +266,14 @@ export type InworldTimestampTransportStrategy =
   | "ASYNC";
 
 /**
- * The socket's `audioConfig` — the REST object, whose encoding enum here also
- * lists the proto zero value: `"AUDIO_ENCODING_UNSPECIFIED", "LINEAR16",
- * "MP3", …` (TTS_WEBSOCKET_DOCS).
+ * The socket's `audioConfig` — the REST object, except that its encoding enum
+ * differs from REST's: it adds the proto zero value and has no `FLAC`.
+ * "options: "AUDIO_ENCODING_UNSPECIFIED", "LINEAR16", "MP3", "OGG_OPUS",
+ * "ALAW", "MULAW", "PCM", "WAV"" (TTS_WEBSOCKET_DOCS, 2026-11-12).
  */
 export interface InworldVoiceContextAudioConfig extends Omit<InworldAudioConfig, "audioEncoding"> {
   /** Default: "MP3". */
-  audioEncoding?: InworldAudioEncoding | "AUDIO_ENCODING_UNSPECIFIED";
+  audioEncoding?: Exclude<InworldAudioEncoding, "FLAC"> | "AUDIO_ENCODING_UNSPECIFIED";
 }
 
 /**
@@ -288,7 +289,12 @@ export interface InworldVoiceContextConfig {
   voiceId: string;
   modelId: InworldTtsModelId | (string & {});
   audioConfig?: InworldVoiceContextAudioConfig;
-  /** Range (0, 2]; default 1.0. Ignored by inworld-tts-2. */
+  /**
+   * "Defaults to 1.0. Accepts values between 0 (exclusive) and 2 (inclusive)."
+   * and, in the same paragraph, "If 0 is provided, the default value will be
+   * used." (TTS_WEBSOCKET_DOCS, 2026-11-13) — so 0 is accepted, as a request
+   * for the default. Ignored by inworld-tts-2.
+   */
   temperature?: number;
   /** Default "TIMESTAMP_TYPE_UNSPECIFIED". */
   timestampType?: InworldTimestampType;
@@ -319,16 +325,19 @@ export interface RealtimeVoiceContextFrame<
 const voiceContextSchema = z.looseObject({
   voiceId: z.string().min(1, "voiceId must not be empty."),
   modelId: z.string().min(1, "modelId must not be empty."),
-  // Same object, same bounds as the REST body, plus the zero-value encoding
-  // this page's enum lists.
+  // Same object, same bounds as the REST body, except the encoding enum: this
+  // page's adds the proto zero value and has no FLAC — "options:
+  // "AUDIO_ENCODING_UNSPECIFIED", "LINEAR16", "MP3", "OGG_OPUS", "ALAW",
+  // "MULAW", "PCM", "WAV"" (TTS_WEBSOCKET_DOCS, 2026-11-12).
   audioConfig: audioConfigSchema
     .extend({
       audioEncoding: z
-        .enum(["AUDIO_ENCODING_UNSPECIFIED", "LINEAR16", "MP3", "OGG_OPUS", "ALAW", "MULAW", "FLAC", "PCM", "WAV"])
+        .enum(["AUDIO_ENCODING_UNSPECIFIED", "LINEAR16", "MP3", "OGG_OPUS", "ALAW", "MULAW", "PCM", "WAV"])
         .optional(),
     })
     .optional(),
-  temperature: z.number().gt(0).max(2).optional(),
+  // 0 is "the default value" (see InworldVoiceContextConfig.temperature).
+  temperature: z.number().min(0).max(2).optional(),
   timestampType: z.enum(["TIMESTAMP_TYPE_UNSPECIFIED", "WORD", "CHARACTER"]).optional(),
   maxBufferDelayMs: z.number().int().min(0).optional(),
   bufferCharThreshold: z

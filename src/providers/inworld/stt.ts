@@ -56,6 +56,12 @@ export const STT_OVERVIEW_DOCS = "https://docs.inworld.ai/stt/overview";
 export const STT_THIRD_PARTY_DOCS = "https://docs.inworld.ai/stt/third-party";
 /** The per-surface encoding table and the sync size cap. */
 export const STT_AUDIO_FORMATS_DOCS = "https://docs.inworld.ai/stt/audio-formats";
+/**
+ * The WebSocket reference. Defined here rather than in ./realtime because the
+ * shared config checks below cite it; ./realtime re-exports it.
+ */
+export const STT_WEBSOCKET_DOCS =
+  "https://docs.inworld.ai/api-reference/sttAPI/speechtotext/transcribe-stream-websocket";
 
 /**
  * "Sync transcription accepts audio files up to **~16 MB**. How much audio
@@ -86,10 +92,11 @@ export const STT_DEFAULT_CHANNELS = 1;
  * "WEBM"` (TRANSCRIBE_DOCS, 2026-11-12). Both references document the
  * zero value as an error — "Not specified. Will return
  * [google.rpc.Code.INVALID_ARGUMENT]" (sync), "Not specified. Will return an
- * error." (WebSocket); it is listed because it is a member of the wire enum,
- * and the schema does not refuse it. `MP4`, `MXF` and `WEBM` name video /
- * recording containers whose audio track is transcribed — "Not supported for
- * streaming transcription".
+ * error." (STT_WEBSOCKET_DOCS); it is listed because it is a member of the
+ * wire enum, and `checkTranscribeConfig` refuses it on both surfaces, naming
+ * the encodings that work. `MP4`, `MXF` and `WEBM` name video / recording
+ * containers whose audio track is transcribed — "Not supported for streaming
+ * transcription".
  */
 export type InworldSttAudioEncoding =
   | "AUDIO_ENCODING_UNSPECIFIED"
@@ -162,7 +169,15 @@ export interface InworldAssemblyaiConfig {
   maxTurnSilence?: number;
   /** Range [0.0, 1.0]; default 0.5. */
   vadThreshold?: number;
-  /** Custom instructions — "Universal-3 Pro only" (assemblyai/u3-rt-pro). */
+  /**
+   * Custom instructions. Inworld's `assemblyaiConfig` table reads "Custom
+   * transcription instructions for the model. Universal-3 Pro Streaming
+   * only", while the same page's Realtime "Example: AssemblyAI" sends
+   * `"model": "assemblyai/universal-3-5-pro"` with a `"prompt"`
+   * (STT_THIRD_PARTY_DOCS, 2026-11-13). So it is clean on
+   * `assemblyai/u3-rt-pro`, a warning on `assemblyai/universal-3-5-pro`, and
+   * an error on every other route.
+   */
   prompt?: string;
 }
 
@@ -385,6 +400,12 @@ const VENDOR_CONFIG_KEYS = [
  */
 const REJECTED_PROMPT_CHARACTERS = ["#", "/", "@", "|"] as const;
 
+/** The AssemblyAI routes `assemblyaiConfig.prompt` reaches — see the gate in `checkTranscribeConfig`. */
+const ASSEMBLYAI_PROMPT_MODEL_IDS = [
+  "assemblyai/u3-rt-pro",
+  "assemblyai/universal-3-5-pro",
+] as const satisfies readonly InworldSttModelId[];
+
 export interface TranscribeConfigCheckOptions {
   /** Path prefix of the config inside the validated params. */
   path: Array<string | number>;
@@ -425,6 +446,27 @@ export function checkTranscribeConfig(
     });
   }
 
+  // The proto zero value is in both enums and documented as an error on both
+  // surfaces (see INWORLD_STT_AUDIO_ENCODINGS).
+  if (config.audioEncoding === "AUDIO_ENCODING_UNSPECIFIED") {
+    const excluded: readonly string[] =
+      options.surface === "sync" ? [] : INWORLD_STT_STREAM_UNSUPPORTED_ENCODINGS;
+    const allowed = INWORLD_STT_AUDIO_ENCODINGS.filter(
+      (encoding) => encoding !== "AUDIO_ENCODING_UNSPECIFIED" && !excluded.includes(encoding),
+    );
+    ctx.report({
+      code: "invalid_enum_value",
+      path: at("audioEncoding"),
+      model: modelId,
+      message: `\`audioEncoding: "AUDIO_ENCODING_UNSPECIFIED"\` is the proto zero value, documented as "Not specified" and rejected by the API; send ${allowed.map((encoding) => `"${encoding}"`).join(", ")}.`,
+      meta: {
+        value: config.audioEncoding,
+        allowed,
+        source: options.surface === "sync" ? TRANSCRIBE_DOCS : STT_WEBSOCKET_DOCS,
+      },
+    });
+  }
+
   // At most one provider block ("Mutually exclusive; set at most one"), and
   // the one that is set must belong to the model's vendor.
   const present = VENDOR_CONFIG_KEYS.filter(([key]) => record[key] != null);
@@ -451,15 +493,39 @@ export function checkTranscribeConfig(
     }
   }
 
-  // "prompt … Custom instructions (Universal-3 Pro only)".
+  // `assemblyaiConfig.prompt`. STT_THIRD_PARTY_DOCS's table reads "| `prompt`
+  // | string | Custom transcription instructions for the model. Universal-3
+  // Pro Streaming only |", while the same page's Realtime "Example:
+  // AssemblyAI" sends `"model": "assemblyai/universal-3-5-pro"` with
+  // `"prompt": "Patient intake call. …"` (2026-11-13). AssemblyAI lists
+  // "Native prompting" for "Universal-3.6 Pro / 3.5 Pro Realtime"
+  // (https://www.assemblyai.com/docs/streaming/select-the-speech-model) and
+  // marks `prompt` "Not supported" on Universal Streaming
+  // (https://www.assemblyai.com/docs/streaming/migration-guides/universal-to-universal-3-5-pro-streaming),
+  // both 2026-11-13. The Pro line therefore takes it — universal-3-5-pro
+  // with a warning, because Inworld's own table names only the 3 generation —
+  // and every other route is refused.
   if (config.assemblyaiConfig?.prompt != null && modelId !== "assemblyai/u3-rt-pro") {
-    ctx.report({
-      code: "unsupported_param",
-      path: at("assemblyaiConfig", "prompt"),
-      model: modelId,
-      message: `\`assemblyaiConfig.prompt\` is documented as Universal-3 Pro only; use "assemblyai/u3-rt-pro" or drop the prompt.`,
-      meta: { allowed: ["assemblyai/u3-rt-pro"], source: STT_THIRD_PARTY_DOCS },
-    });
+    const path = at("assemblyaiConfig", "prompt");
+    const allowed = [...ASSEMBLYAI_PROMPT_MODEL_IDS];
+    if (modelId === "assemblyai/universal-3-5-pro") {
+      ctx.report({
+        code: "unsupported_param",
+        severity: "warning",
+        path,
+        model: modelId,
+        message: `\`assemblyaiConfig.prompt\` on "${modelId}": Inworld's assemblyaiConfig table reads "Universal-3 Pro Streaming only", while Inworld's own Realtime AssemblyAI example sends \`prompt\` with this model and AssemblyAI documents Universal-3.5 Pro Realtime as promptable; "assemblyai/u3-rt-pro" is the route the table names.`,
+        meta: { allowed, source: STT_THIRD_PARTY_DOCS },
+      });
+    } else {
+      ctx.report({
+        code: "unsupported_param",
+        path,
+        model: modelId,
+        message: `\`assemblyaiConfig.prompt\` is documented for the Universal-3 Pro streaming line only, and AssemblyAI documents \`prompt\` as not supported on Universal Streaming; use ${allowed.map((id) => `"${id}"`).join(" or ")}, or drop the prompt.`,
+        meta: { allowed, source: STT_THIRD_PARTY_DOCS },
+      });
+    }
   }
 
   // Voice Profile "works with every STT model on the API — including

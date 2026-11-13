@@ -171,7 +171,12 @@ interface TtsVoiceCommon {
   language?: string;
   /** "Only supported by `inworld-tts-2`. The field is ignored on other models." */
   deliveryMode?: InworldDeliveryMode;
-  /** Range (0, 2]; default 1.0. Ignored by inworld-tts-2. */
+  /**
+   * "Defaults to 1.0. Accepts values between 0 (exclusive) and 2 (inclusive)."
+   * and, in the same paragraph, "If 0 is provided, the default value will be
+   * used." (SYNTHESIZE_DOCS, 2026-11-13) — so 0 is accepted, as a request for
+   * the default. Ignored by inworld-tts-2.
+   */
   temperature?: number;
   timestampType?: InworldTimestampType;
   applyTextNormalization?: InworldApplyTextNormalization;
@@ -286,7 +291,8 @@ const schema = z.looseObject({
   audioConfig: audioConfigSchema.optional(),
   language: z.string().optional(),
   deliveryMode: deliveryModeSchema.optional(),
-  temperature: z.number().gt(0).max(2).optional(),
+  // 0 is "the default value" (see TtsVoiceCommon.temperature).
+  temperature: z.number().min(0).max(2).optional(),
   timestampType: z.enum(["TIMESTAMP_TYPE_UNSPECIFIED", "WORD", "CHARACTER"]).optional(),
   applyTextNormalization: z
     .enum(["APPLY_TEXT_NORMALIZATION_UNSPECIFIED", "ON", "OFF"])

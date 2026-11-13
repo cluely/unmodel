@@ -498,9 +498,10 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * the headroom is one small provider. Two accounting notes from the landing
  * measurement, both cuts rather than additions:
  *
- * - `inworld/audio-bytes.ts` exists because this pack's 4MB sample check
- *   needs `decodedBase64Bytes`, which lived inside `inworld/stt.ts` — a
- *   ~30 KiB transcription validator this pack has no other reason to carry.
+ * - `inworld/audio-bytes.ts` exists because this pack's per-sample byte cap
+ *   check (`VOICE_CLONE_MAX_SAMPLE_BYTES`) needs `decodedBase64Bytes`, which
+ *   lived inside `inworld/stt.ts` — a ~30 KiB transcription validator this
+ *   pack has no other reason to carry.
  *   The helper moved to an import-free leaf; measured, the move took the pack
  *   240.9 → 208.7.
  * - `minimax/tts.ts` was in this graph for one array (`T2A_LANGUAGE_BOOSTS`,

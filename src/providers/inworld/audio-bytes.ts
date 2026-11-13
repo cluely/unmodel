@@ -1,6 +1,6 @@
 /**
  * The one byte-arithmetic helper three Inworld surfaces share — sync STT
- * (16 MB cap), voice cloning (4MB per sample) and, transitively, voice
+ * (16 MB cap), voice cloning (12MB per sample) and, transitively, voice
  * design. Its own import-free leaf so the voice-creation packs can size a
  * base64 payload without paying for the STT validator it used to live in.
  */

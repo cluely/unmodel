@@ -55,9 +55,10 @@
  *   "Unverifiable → caveat, never catalog". (Do not read the pricing page's
  *   separate "Speech-to-speech" row as this route — it is flagged `eviToggle`
  *   and belongs to EVI, the realtime product.)
- * - SUNSET: Hume ends TTS API access on November 13, 2026 at 12:01 a.m. EST,
- *   and this route ships as a TTS API addition under /v0/tts/; the catalog
- *   row is `status: "deprecated"`, so each request warns `deprecated_model`.
+ * - SUNSET: Hume retired the TTS API on November 13, 2026 at 12:01 a.m. EST,
+ *   and this route, a TTS API addition under /v0/tts/, has answered 404 since
+ *   then. The catalog row is `status: "deprecated"`, so each request warns
+ *   `deprecated_model`, and a request that validates here is one Hume refuses.
  *   Source and quote in ./models.ts.
  * - The response is a binary file download; the reference documents no
  *   Content-Type, and there is no JSON envelope, so there is no response

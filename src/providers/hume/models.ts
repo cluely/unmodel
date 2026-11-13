@@ -14,11 +14,17 @@
 // "Hume is sunsetting the TTS and EVI APIs. Access ends November 13, 2026 at
 // 12:01 a.m. EST, and both APIs remain fully supported until then. Any data in
 // your account is permanently deleted after November 13, 2026." (12:01 a.m.
-// EST is 05:01 UTC.) On 2026-11-12 unauthenticated POSTs to /v0/tts,
-// /v0/tts/file and /v0/tts/voice_conversion/file still answered 401, not 404.
-// Voice conversion is not named in the notice; it is covered because Hume
-// shipped it as a "TTS API addition" under /v0/tts/, and its reference page
-// redirects with the rest of the TTS docs.
+// EST is 05:01 UTC.) RETIRED: probed on 2026-11-13, after the cutoff, a POST
+// to /v0/tts, /v0/tts/file, /v0/tts/stream/json, /v0/tts/stream/file,
+// /v0/tts/voice_conversion/file or /v0/tts/voice_conversion/json, and a GET
+// to /v0/tts/voices, all answer HTTP 404 with `sunset: Fri, 13 Nov 2026 05:01:00
+// GMT`, `deprecation: @1790899200` (2026-10-02) and the body {"code":404,
+// "message":"This API was retired on 2026-11-13 and is no longer available.
+// For questions, contact assist@hume.ai."}. An unknown route answers a bare
+// 404 with no body, so the message is the retirement. Every id below still
+// validates, so a request that passes here is one Hume now refuses. Voice
+// conversion is not named in the notice, but its route answers the same
+// retirement 404; Hume shipped it as a "TTS API addition" under /v0/tts/.
 //
 // MODEL IDS: Hume's TTS API has NO `model` field. The Octave generation is
 // selected with the `version` enum, whose documented values are the strings

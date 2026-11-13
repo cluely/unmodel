@@ -2,7 +2,7 @@
 "unmodel": patch
 ---
 
-hume: `hume/octave-2` is priced at its own rate, and every Hume row is flagged deprecated ahead of Hume's 2026-11-13 TTS shutdown
+hume: `hume/octave-2` is priced at its own rate, and every Hume row is flagged deprecated: Hume retired its TTS API on 2026-11-13
 
 - `hume/octave-2` now prices at $75 per 1M characters, down from $150.
   Hume's pricing page has an Octave 1 view and an Octave 2 view, and the
@@ -21,6 +21,11 @@ hume: `hume/octave-2` is priced at its own rate, and every Hume row is flagged d
   a.m. EST, and both APIs remain fully supported until then. Any data in your
   account is permanently deleted after November 13, 2026."
   (https://web.archive.org/web/20261003165626/https://dev.hume.ai/changelog).
-  The notice does not name voice conversion, but Hume shipped that route as a
-  TTS API addition under `/v0/tts/`. Nothing is removed: the routes still
-  answered on 2026-11-12, and every id still validates.
+  The cutoff has passed. Probed on 2026-11-13, `POST /v0/tts`,
+  `/v0/tts/file` and `/v0/tts/voice_conversion/file` and
+  `GET /v0/tts/voices` all answer 404 with
+  `sunset: Fri, 13 Nov 2026 05:01:00 GMT` and the body "This API was retired
+  on 2026-11-13 and is no longer available." Voice conversion is retired with
+  the rest. Nothing is removed in this release and every id still validates,
+  so a `hume.tts` or `hume.sts` request that passes unmodel is one Hume now
+  refuses.

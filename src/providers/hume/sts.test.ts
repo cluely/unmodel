@@ -79,7 +79,7 @@ describe("hume.sts synthetic model id", () => {
     expect("cost" in info).toBe(false);
   });
 
-  test("the row is deprecated — Hume ends TTS API access on 2026-11-13", () => {
+  test("the row is deprecated — Hume retired the TTS API on 2026-11-13", () => {
     expect(models["voice-conversion"].status).toBe("deprecated");
     const r = sts.safe({ audio: clip() });
     expect(r.ok).toBe(true);

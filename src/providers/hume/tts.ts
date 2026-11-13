@@ -15,9 +15,11 @@
  * so whichever model serves the request the cap holds and the estimate is a
  * ceiling; this is deliberately NOT a claim about Hume's routing.
  *
- * SUNSET: Hume ends TTS API access on November 13, 2026 at 12:01 a.m. EST;
- * every catalog row is `status: "deprecated"`, so each request warns
- * `deprecated_model`. Source and quote in ./models.ts.
+ * SUNSET: Hume retired the TTS API on November 13, 2026 at 12:01 a.m. EST, and
+ * since then every /v0/tts route answers 404. Every catalog row is
+ * `status: "deprecated"`, so each request warns `deprecated_model`, and a
+ * request that validates here is one Hume refuses. Source, quote and probe in
+ * ./models.ts.
  *
  * CAPS ARE PER UTTERANCE, NOT PER REQUEST: "5,000 characters per Utterance"
  * for `text`, "1,000 characters per Utterance" for `description`. A request

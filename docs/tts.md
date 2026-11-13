@@ -5,6 +5,12 @@ canonical vocabulary deliberately hides: where the request goes, which header th
 credential rides in, where the audio comes back, and which endpoint quirks are silent
 no-ops rather than errors.
 
+The `hume` rows describe a retired API. Hume retired its TTS API on 2026-11-13 at 05:01 UTC.
+Probed that day, every `/v0/tts` route answers `404` with "This API was retired on
+2026-11-13 and is no longer available." `hume/*` refs still validate and warn only
+`deprecated_model`, so a request that passes here is one Hume refuses. The sources are in
+[`docs/providers.md`](providers.md).
+
 ## Why this file is split in two
 
 Three of these facts are already machine-readable and four are not, so the file is

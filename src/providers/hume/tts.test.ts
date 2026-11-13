@@ -343,7 +343,7 @@ describe("hume catalog", () => {
     expect(models["octave-2"].cost.perMillionCharacters).toBe(75);
   });
 
-  test("every row is deprecated — Hume ends TTS API access on 2026-11-13", () => {
+  test("every row is deprecated — Hume retired the TTS API on 2026-11-13", () => {
     for (const info of Object.values(models)) expect(info.status).toBe("deprecated");
     for (const version of ["1", "2"] as const) {
       const r = tts.safe({ utterances: [{ text: "x", voice: { id: "v" } }], version });

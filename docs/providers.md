@@ -114,8 +114,8 @@ whether the solar-mini `reasoning_effort` deny retires with its model.
 law — the wire spellings `/v1/text-to-speech/{voice_id}`, `/tts/bytes`, `/v1/speak`,
 `/v1/t2a_v2`, `/synthesize`, `:generateContent` survive only on the URL constants and wire
 types): openai (tts-1/tts-1-hd/gpt-4o-mini-tts/gpt-4o-mini-tts-2025-12-15), cartesia,
-deepgram (Aura 1/2 on `/v1/speak`), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave — deprecated,
-access ends 2026-11-13; see `hume.sts` below), inworld,
+deepgram (Aura 1/2 on `/v1/speak`), elevenlabs, fish-audio, google (Gemini TTS), hume (Octave — deprecated;
+the API was retired 2026-11-13 and every route answers 404; see `hume.sts` below), inworld,
 lmnt (`tts` + `ttsDetailed`), minimax (T2A v2), murf (`tts` + `ttsStream`),
 resemble (`tts` + `ttsStream`; closed to new customers since 2026-08-13, existing customers
 still served — see `src/providers/resemble/models.ts`), rime, smallest-ai,
@@ -803,15 +803,22 @@ draws down a character quota is documented nowhere, so `cost` is omitted and the
 returns `undefined` — "Unverifiable → caveat, never catalog". (The page's separate
 "Speech-to-speech" row is flagged `eviToggle` and belongs to EVI, the realtime product.)
 
-**Sunset — every Hume row is `status: "deprecated"`.** Hume's changelog, last captured at
-`https://web.archive.org/web/20261003165626/https://dev.hume.ai/changelog` (read 2026-11-12):
-"Hume is sunsetting the TTS and EVI APIs. Access ends November 13, 2026 at 12:01 a.m. EST, and
-both APIs remain fully supported until then." Voice conversion ships under `/v0/tts/` as a "TTS
-API addition", so `hume/voice-conversion` is flagged with `hume/octave` and `hume/octave-2`,
-and every `hume.tts` / `hume.sts` request warns `deprecated_model`. The live docs and pricing
-URLs answer 308 to Hume's Audio Decisions docs; `src/providers/hume/models.ts` cites the
-archived captures. Removing `unmodel/hume` after the cutoff (which leaves `unmodel/sts` one
-witness) is an owner decision.
+**Retired 2026-11-13 — every Hume row is `status: "deprecated"`.** Hume's changelog, last
+captured at `https://web.archive.org/web/20261003165626/https://dev.hume.ai/changelog` (read
+2026-11-12): "Hume is sunsetting the TTS and EVI APIs. Access ends November 13, 2026 at 12:01
+a.m. EST, and both APIs remain fully supported until then." The cutoff (05:01 UTC) has passed.
+Probed 2026-11-13, a `POST` to `/v0/tts`, `/v0/tts/file`, `/v0/tts/stream/json`,
+`/v0/tts/stream/file`, `/v0/tts/voice_conversion/file` or `/v0/tts/voice_conversion/json`, and a
+`GET` to `/v0/tts/voices`, all answer `404` with `sunset: Fri, 13 Nov 2026 05:01:00 GMT`,
+`deprecation: @1790899200` (2026-10-02) and the body "This API was retired on 2026-11-13 and is
+no longer available. For questions, contact assist@hume.ai." An unknown route answers a bare
+`404` with no body, so that message is the retirement and not a wrong path. Voice conversion
+answers the same retirement `404`, so `hume/voice-conversion` is retired with `hume/octave` and
+`hume/octave-2`. Every id still validates and warns only `deprecated_model`, so a `hume.tts` /
+`hume.sts` request that passes here is one Hume now refuses. The live docs and pricing URLs
+answer 308 to Hume's Audio Decisions docs; `src/providers/hume/models.ts` cites the archived
+captures. Removing `unmodel/hume` (which leaves `unmodel/sts` one witness) is an owner decision
+that was still open on 2026-11-13.
 
 **Excluded: cartesia — the route was SUNSET eleven days before this wave landed.**
 `docs.cartesia.ai/build-with-cartesia/tts-models/api-changes` lists
@@ -1006,7 +1013,7 @@ leaves rather than whole validators.
 | `unmodel/chat` | `chat` | n/a — three dialect codecs, composed with all 32 concrete provider `chat` validators | 32: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
 | `unmodel/chat/factory` | `createChat` | the same three codecs, no registry | whichever provider validators you register: `createChat({ anthropic, openai })` |
 | `unmodel/image` | `image`, `createImage` | 17 | black-forest-labs, bria, bytedance, fal, google, ideogram, kling, krea, leonardo, luma, openai, recraft, reve, runway, stability, vidu, xai |
-| `unmodel/tts` | `tts`, `createTts` | 19 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume, inworld, lmnt, minimax, murf, openai, resemble, rime, smallest-ai, speechify, stepfun |
+| `unmodel/tts` | `tts`, `createTts` | 19 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume (API retired 2026-11-13; every route answers 404), inworld, lmnt, minimax, murf, openai, resemble, rime, smallest-ai, speechify, stepfun |
 | `unmodel/stt` | `stt`, `createStt` | 13 | assemblyai, cartesia, deepgram, elevenlabs, fal, gladia, google, inworld, mistral, openai, revai, soniox, speechmatics |
 | `unmodel/video` | `video`, `createVideo` | 14 | alibaba, atlascloud, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, runway, vidu, xai |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 5 | black-forest-labs, fal, ideogram, openai, recraft — the five whose primary editing route is *image + prompt, no mask* |
@@ -1016,7 +1023,7 @@ leaves rather than whole validators.
 | `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (`avatar_iv`, the one engine that renders raw image input — Avatar V and Avatar III do not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
 | `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (11 endpoints, seven taking a still and four taking a clip), topaz (18 models over two routes, stills only, multipart bodies) |
 | `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (5 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
-| `unmodel/sts` | `sts`, `createSts` | 2 | elevenlabs (3 models, `POST /v1/speech-to-speech/{voice_id}`), hume (1 synthetic id, `POST /v0/tts/voice_conversion/file`) — the smallest pack in the library, the only one with no fal arm, and the only category where three of five words are REQUIRED. Both endpoints are `MULTIPART_ONLY`, so there is no `unified.sts` CLI entry |
+| `unmodel/sts` | `sts`, `createSts` | 2 | elevenlabs (3 models, `POST /v1/speech-to-speech/{voice_id}`), hume (1 synthetic id, `POST /v0/tts/voice_conversion/file`; the API was retired 2026-11-13 and the route answers 404) — the smallest pack in the library, the only one with no fal arm, and the only category where three of five words are REQUIRED. Both endpoints are `MULTIPART_ONLY`, so there is no `unified.sts` CLI entry |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |
 | `unmodel/voice-design` | `voiceDesign`, `createVoiceDesign` | 4 | elevenlabs, fish-audio, inworld, minimax — the unified surface is phase 1 (the generative call); the ElevenLabs/Inworld save steps are wire-only (`voiceDesignSave`, `voiceDesignPublish`) |
 

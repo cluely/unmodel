@@ -228,10 +228,13 @@ the docs are explicit that streaming requests must not go to `app.resemble.ai`. 
 also no `model` field by design — the voice selects the model — so these validators
 resolve no model id, and therefore no catalog gate and no cost estimate.
 
-**Rime — the host is `users.rime.ai`.** Not `api.rime.ai`, which "serves internal
-infrastructure and returns 404 for TTS requests". Format is chosen with `Accept`, not a
-body field; and speed is direction-inverted across models (`timeScaleFactor` below 1.0
-is *faster*, `speedAlpha` above 1.0 is faster), which no validator can fix.
+**Rime — the validated route is `users.rime.ai/v1/rime-tts`.** It takes `modelId` in the
+body. Rime's docs now also send HTTP TTS to per-model hosts (`https://coda.api.rime.ai/`,
+`https://mist.api.rime.ai/`): "The host selects the model, so the body needs no
+`modelId`." Those hosts are a different contract and are not validated. Format is chosen
+with `Accept`, not a body field; and speed is direction-inverted across models
+(`timeScaleFactor` below 1.0 is *faster*, `speedAlpha` above 1.0 is faster), which no
+validator can fix.
 
 **Smallest AI — the budget can silently never fire.** A per-character list price is
 published for `lightning_v3.1_pro` only, and an omitted `model` resolves to the standard

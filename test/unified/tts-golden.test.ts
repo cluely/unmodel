@@ -31,9 +31,11 @@
  * The cases are chosen so that every audio-format *shape* is covered — a bare
  * codec (OpenAI, Murf, Hume), a composite string (ElevenLabs, Speechify), an
  * object (Cartesia, MiniMax), query params (Deepgram) and an `Accept` header
- * (Rime) — and so that both speed inversions appear: Rime's `timeScaleFactor`
- * on Coda and its `speedAlpha` on Mist v2, which are the same reciprocal in two
- * different fields.
+ * (Rime) — and so that Rime's speed inversion appears: `timeScaleFactor` on
+ * Coda and on Mist v3. Its `speedAlpha` twin on Mist v2, the same reciprocal in
+ * a different field, is pinned in `src/providers/rime/tts.test.ts` instead:
+ * Mist v2 is deprecated, and a golden request names a model that validates
+ * with no issue warnings.
  */
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";

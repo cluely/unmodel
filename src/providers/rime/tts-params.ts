@@ -43,9 +43,9 @@ export const FORMAT: AudioFormatSpec = {
  *
  * | | codecs | languages | extras |
  * |---|---|---|---|
- * | `coda` | mp3, PCM, μ-law, **Opus** | all 16 spellings | *none* |
- * | `mistv3` | mp3, PCM, μ-law, **Opus** | the Mist 8 | inline speed, bracket pauses |
- * | `mistv2`, `mist` | mp3, PCM, μ-law | the Mist 8 | those two, plus phonemes and normalization |
+ * | `coda` | mp3, PCM, μ-law, **Opus** | all 20 spellings | *none* |
+ * | `mistv3` | mp3, PCM, μ-law, **Opus** | the Mist 8 | inline speed, bracket pauses, phonemes |
+ * | `mistv2`, `mist` | mp3, PCM, μ-law | the Mist 8 | those three, plus normalization |
  *
  * **Codecs.** "Opus and WAV arrived with Coda and Mist v3" — `checkAccept`
  * refuses anything outside `MIST_V2_ACCEPT_VALUES` on the two legacy ids, so
@@ -55,7 +55,7 @@ export const FORMAT: AudioFormatSpec = {
  * claim to carry and `resolveAudioFormat` reports at run time.
  *
  * **Languages** are the provider's own two arrays by reference —
- * {@link LANGUAGES} (both the 639-1 and the 639-2/3 spelling of eight
+ * {@link LANGUAGES} (both the 639-1 and the 639-2/3 spelling of ten
  * languages) and {@link MIST_LANGUAGES} — so `checkLanguage`'s allow-list and
  * the editor's completion list are literally the same value. The Mist
  * *generation* is what narrows, which is why `mistv3` has the eight while
@@ -74,12 +74,16 @@ export const MIST_EXTRAS = {
   inlineSpeedAlpha: EXTRA as string,
   /** Honour `<200>`-style angle-bracket pauses. */
   pauseBetweenBrackets: EXTRA as boolean,
+  /**
+   * Read phonemes written in `{curly}` brackets. "`phonemizeBetweenBrackets`
+   * works on English Mist v3 only. French, German, and Spanish requests
+   * ignore it." (https://docs.rime.ai/docs/migrate-legacy-mist, 2026-11-12)
+   */
+  phonemizeBetweenBrackets: EXTRA as boolean,
 } as const;
 
 export const LEGACY_MIST_EXTRAS = {
   ...MIST_EXTRAS,
-  /** Read phonemes written in `{curly}` brackets. */
-  phonemizeBetweenBrackets: EXTRA as boolean,
   /** Skip text normalization. "mist/mistv2 only." */
   noTextNormalization: EXTRA as boolean,
 } as const;

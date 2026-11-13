@@ -235,6 +235,10 @@ function extrasNarrowingTests(): void {
   tts({ model: "rime/mistv3", text: "hi", voice: "astra", pauseBetweenBrackets: true });
   // @ts-expect-error — …which Coda does not have either.
   tts({ model: "rime/coda", text: "hi", voice: "astra", pauseBetweenBrackets: true });
+  // "`phonemizeBetweenBrackets` works on English Mist v3 only."
+  tts({ model: "rime/mistv3", text: "hi", voice: "astra", phonemizeBetweenBrackets: true });
+  // @ts-expect-error — "Coda and non-English Mist v3 ignore it."
+  tts({ model: "rime/coda", text: "hi", voice: "astra", phonemizeBetweenBrackets: true });
 
   // Inworld's two rules cross: `deliveryMode` is TTS-2's, `temperature` is not.
   tts({ model: "inworld/inworld-tts-2", text: "hi", voice: "v1", deliveryMode: "STABLE" });

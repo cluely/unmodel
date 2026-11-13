@@ -1,8 +1,8 @@
 // Hand-maintained — Rime is not in models.dev; refresh from
 // https://docs.rime.ai/docs/models, https://docs.rime.ai/api-reference/coda/http,
 // https://docs.rime.ai/api-reference/mistv3/http,
-// https://docs.rime.ai/api-reference/mistv2/http and https://rime.ai/pricing
-// (last checked 2026-08-13).
+// https://docs.rime.ai/docs/migrate-legacy-mist and https://rime.ai/pricing
+// (last checked 2026-08-13; languages and statuses 2026-11-12).
 //
 // MODEL IDS: `modelId` is a body field on POST /v1/rime-tts. The documented
 // values are `coda`, `mistv3`, `mistv2` and `mist`. "Requests that omit
@@ -28,8 +28,10 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  // "Rime's flagship TTS model", released May 2026. 184 voices, eight cloud
-  // languages, word-level timestamps.
+  // "Rime's flagship TTS model", released May 2026, with word-level
+  // timestamps. "Through the cloud API, Coda serves 10 languages across 313
+  // voices, but 185 of those voices are English and only 1 is Dutch."
+  // (https://docs.rime.ai/docs/models, 2026-11-12)
   coda: {
     id: "coda",
     name: "Coda",
@@ -59,6 +61,9 @@ export const models = {
     cost: { perMillionCharacters: 30 },
   },
   // "The Mist model with inline pronunciation control", released Feb 2025.
+  // Deprecated: "Mist v1 (`mist`) and Mist v2 (`mistv2`) are legacy models.
+  // Both retire on December 3, 2026." (https://docs.rime.ai/docs/models,
+  // 2026-11-12)
   mistv2: {
     id: "mistv2",
     name: "Mist v2",
@@ -68,6 +73,7 @@ export const models = {
     toolCall: false,
     openWeights: false,
     releaseDate: "2025-02",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0, characters: 1000 },
     cost: { perMillionCharacters: 30 },
@@ -97,7 +103,12 @@ export const RIME_MODEL_IDS = ["coda", "mistv3", "mistv2", "mist"] as const sati
 
 /**
  * Both the ISO 639-1 and the ISO 639-2/3 spelling are accepted for each of the
- * eight documented languages.
+ * ten documented languages. The Coda reference
+ * (https://docs.rime.ai/api-reference/coda/http, 2026-11-12) lists the tags
+ * `en`, `es`, `fr`, `pt`, `de`, `ja`, `ar`, `hi`, `it` ("| `it` | Italian |")
+ * and `nl` ("| `nl` | Dutch |"), and: "The 3-letter ISO 639-2 codes that older
+ * integrations send (`eng`, `spa`, `fra`, `por`, `ger`, `jpn`, `ara`, `hin`,
+ * `ita`, `nld`) remain accepted, and will stay accepted."
  */
 export const LANGUAGES = [
   "en",
@@ -116,11 +127,15 @@ export const LANGUAGES = [
   "ara",
   "hi",
   "hin",
+  "it",
+  "ita",
+  "nl",
+  "nld",
 ] as const;
 
 /**
  * "The Mist column reflects Mist v3 and Mist v2, which both serve English,
- * French, German, and Spanish" — Coda serves all eight.
+ * French, German, and Spanish" — Coda serves all ten.
  */
 export const MIST_LANGUAGES = [
   "en",

@@ -115,7 +115,7 @@ export const tts = {
       const language = ctx.take(
         toPrimaryLanguage(input.language, { path: ["language"], warn: ctx.warn }, { source: CODA_DOCS }),
       );
-      // Rime publishes both the 639-1 and the 639-2 spelling of its eight
+      // Rime publishes both the 639-1 and the 639-2 spelling of its ten
       // languages and gates them per model; its own enum is the authority.
       if (language !== undefined) body.lang = language as RimeLanguage;
     }

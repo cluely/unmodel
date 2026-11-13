@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { tts, RIME_TTS_URL, MAX_CHARACTERS, MIST_V2_ACCEPT_VALUES } from "./tts";
 import { models, RIME_MODEL_IDS } from "./models";
 import { MODELS, RIME_TTS_MODEL_PARAMS } from "./tts-params";
+import { tts as unifiedTts } from "../../unified/tts";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -38,15 +39,23 @@ describe("rime.tts happy path", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
-  test("unknown model warns; legacy Mist warns as deprecated", () => {
+  test("unknown model warns; Mist v2 and legacy Mist warn as deprecated", () => {
     const unknown = tts.safe({ text: "x", speaker: "v", modelId: "mistv9" });
     expect(unknown.ok).toBe(true);
     if (unknown.ok) expect(unknown.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
 
-    expect(models.mist.status).toBe("deprecated");
-    const r = tts.safe({ text: "x", speaker: "v", modelId: "mist" });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("deprecated_model");
+    // "Both retire on December 3, 2026." — docs/models, 2026-11-12.
+    for (const modelId of ["mistv2", "mist"] as const) {
+      expect(models[modelId].status).toBe("deprecated");
+      const r = tts.safe({ text: "x", speaker: "v", modelId });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+    }
+    for (const modelId of ["coda", "mistv3"] as const) {
+      const r = tts.safe({ text: "x", speaker: "v", modelId });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
   });
 
   test("unknown top-level key warns", () => {
@@ -197,29 +206,69 @@ describe("rime.tts sampling rate ranges", () => {
 });
 
 describe("rime.tts per-model gates (doc audit 2026-08-13)", () => {
-  test("phonemizeBetweenBrackets is Mist v2 / Mist v1 only", () => {
-    for (const modelId of ["coda", "mistv3"] as const) {
+  test("phonemizeBetweenBrackets works on English Mist v3 (doc audit 2026-11-12)", () => {
+    // "`phonemizeBetweenBrackets` works on English Mist v3 only." — the
+    // custom-pronunciation page's own example sends it with `modelId: mistv3`.
+    for (const lang of [undefined, "en", "eng"] as const) {
       const r = tts.safe({
         text: "{h'El.o} World",
+        speaker: "peak",
+        modelId: "mistv3",
+        phonemizeBetweenBrackets: true,
+        ...(lang !== undefined && { lang }),
+      });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+    // Omitting `modelId` is Mist v3, and its `lang` defaults to English.
+    const bare = tts.safe({ text: "x", speaker: "peak", phonemizeBetweenBrackets: true });
+    expect(bare.ok).toBe(true);
+    if (bare.ok) expect(bare.warnings).toEqual([]);
+  });
+
+  test("non-English Mist v3 and Coda ignore phonemizeBetweenBrackets, so it warns", () => {
+    // "French, German, and Spanish requests ignore it."
+    for (const lang of ["fr", "ger", "es"] as const) {
+      const r = tts.safe({
+        text: "x",
         speaker: "astra",
-        modelId,
+        modelId: "mistv3",
+        lang,
         phonemizeBetweenBrackets: true,
       });
-      expect(r.ok).toBe(false);
-      if (!r.ok) {
-        const issue = r.errors.find((e) => e.code === "unsupported_param");
-        expect(issue?.path).toEqual(["phonemizeBetweenBrackets"]);
-        expect(String(issue?.meta?.source)).toContain("docs.rime.ai");
-      }
+      expect(r.ok).toBe(true);
+      if (!r.ok) continue;
+      const issue = r.warnings.find((w) => w.code === "unsupported_param");
+      expect(issue?.path).toEqual(["phonemizeBetweenBrackets"]);
+      expect(issue?.message).toContain("silently ignored");
+      expect(issue?.meta?.ignored).toBe(true);
+      expect(String(issue?.meta?.source)).toContain("docs.rime.ai/docs/migrate-legacy-mist");
     }
-    for (const modelId of ["mistv2", "mist"] as const) {
-      expect(
-        tts.safe({ text: "x", speaker: "astra", modelId, phonemizeBetweenBrackets: true }).ok,
-      ).toBe(true);
+    // "Coda and non-English Mist v3 ignore it."
+    const coda = tts.safe({
+      text: "x",
+      speaker: "astra",
+      modelId: "coda",
+      phonemizeBetweenBrackets: true,
+    });
+    expect(coda.ok).toBe(true);
+    if (coda.ok) {
+      const issue = coda.warnings.find((w) => w.code === "unsupported_param");
+      expect(issue?.path).toEqual(["phonemizeBetweenBrackets"]);
+      expect(issue?.meta?.ignored).toBe(true);
+      expect(issue?.message).toContain("mistv3");
     }
   });
 
-  test("noTextNormalization is mist/mistv2 only", () => {
+  test("phonemizeBetweenBrackets still validates on Mist v2 and Mist v1", () => {
+    for (const modelId of ["mistv2", "mist"] as const) {
+      const r = tts.safe({ text: "x", speaker: "astra", modelId, phonemizeBetweenBrackets: true });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+    }
+  });
+
+  test("noTextNormalization: refused on Coda, ignored on Mist v3, honoured on mist/mistv2", () => {
     const denied = tts.safe({
       text: "x",
       speaker: "astra",
@@ -227,6 +276,22 @@ describe("rime.tts per-model gates (doc audit 2026-08-13)", () => {
       noTextNormalization: true,
     });
     expect(denied.ok).toBe(false);
+
+    // "`noTextNormalization` has no effect on Mist v3, which always normalizes text."
+    const mistv3 = tts.safe({
+      text: "x",
+      speaker: "astra",
+      modelId: "mistv3",
+      noTextNormalization: true,
+    });
+    expect(mistv3.ok).toBe(true);
+    if (mistv3.ok) {
+      const issue = mistv3.warnings.find((w) => w.code === "unsupported_param");
+      expect(issue?.path).toEqual(["noTextNormalization"]);
+      expect(issue?.meta?.ignored).toBe(true);
+      expect(String(issue?.meta?.source)).toContain("docs.rime.ai/docs/migrate-legacy-mist");
+    }
+
     expect(
       tts.safe({ text: "x", speaker: "astra", modelId: "mistv2", noTextNormalization: true }).ok,
     ).toBe(true);
@@ -258,7 +323,7 @@ describe("rime.tts per-model gates (doc audit 2026-08-13)", () => {
     for (const modelId of ["coda", "mistv3", "mistv2"] as const) {
       const r = tts.safe({ text: "x", speaker: "astra", modelId, timeScaleFactor: 0.85 });
       expect(r.ok).toBe(true);
-      if (r.ok) expect(r.warnings).toEqual([]);
+      if (r.ok) expect(r.warnings.filter((w) => w.code !== "deprecated_model")).toEqual([]);
     }
   });
 
@@ -286,7 +351,7 @@ describe("rime.tts per-model gates (doc audit 2026-08-13)", () => {
 
   test("Mist models reject languages only Coda serves", () => {
     for (const modelId of ["mistv3", "mistv2", "mist"] as const) {
-      for (const lang of ["ja", "hin", "ar", "pt"] as const) {
+      for (const lang of ["ja", "hin", "ar", "pt", "it", "nld"] as const) {
         const r = tts.safe({ text: "x", speaker: "astra", modelId, lang });
         expect(r.ok).toBe(false);
         if (!r.ok) {
@@ -301,7 +366,7 @@ describe("rime.tts per-model gates (doc audit 2026-08-13)", () => {
     }
   });
 
-  test("Coda accepts all eight documented languages in both ISO spellings", () => {
+  test("Coda accepts all ten documented languages in both ISO spellings", () => {
     for (const lang of [
       "en",
       "eng",
@@ -319,8 +384,14 @@ describe("rime.tts per-model gates (doc audit 2026-08-13)", () => {
       "ara",
       "hi",
       "hin",
+      "it",
+      "ita",
+      "nl",
+      "nld",
     ] as const) {
-      expect(tts.safe({ text: "x", speaker: "astra", modelId: "coda", lang }).ok).toBe(true);
+      const r = tts.safe({ text: "x", speaker: "astra", modelId: "coda", lang });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
     }
   });
 
@@ -331,7 +402,55 @@ describe("rime.tts per-model gates (doc audit 2026-08-13)", () => {
   test("constraintsFor exposes the Coda denies with their sources", () => {
     const coda = tts.constraintsFor("coda").at(0);
     expect(coda?.deny?.inlineSpeedAlpha?.source).toContain("docs.rime.ai/docs/speed");
-    expect(coda?.deny?.phonemizeBetweenBrackets?.reason).toContain("Mist v2 and Mist v1 only");
+    expect(coda?.deny?.phonemizeBetweenBrackets?.reason).toContain("English Mist v3 only");
+    expect(coda?.deny?.phonemizeBetweenBrackets?.ignored).toBe(true);
+    const mistv3 = tts.constraintsFor("mistv3").at(0);
+    expect(mistv3?.deny?.phonemizeBetweenBrackets).toBeUndefined();
+    expect(mistv3?.deny?.noTextNormalization?.ignored).toBe(true);
+  });
+});
+
+describe("rime unified tts (doc audit 2026-11-12)", () => {
+  test("Italian and Dutch compile to Coda's own tags", () => {
+    for (const [language, lang] of [
+      ["it-IT", "it"],
+      ["nl", "nl"],
+    ] as const) {
+      const r = unifiedTts.safe({ model: "rime/coda", text: "x", voice: "astra", language });
+      expect(r.ok).toBe(true);
+      if (!r.ok) continue;
+      expect((r.params as unknown as Record<string, unknown>)["lang"]).toBe(lang);
+      expect(r.warnings).toEqual([]);
+    }
+  });
+
+  test("phonemizeBetweenBrackets is a Mist v3 extra, and Coda's row still refuses it", () => {
+    const mistv3 = unifiedTts.safe({
+      model: "rime/mistv3",
+      text: "{h'El.o} World",
+      voice: "peak",
+      phonemizeBetweenBrackets: true,
+    });
+    expect(mistv3.ok).toBe(true);
+    if (mistv3.ok) {
+      expect((mistv3.params as unknown as Record<string, unknown>)["phonemizeBetweenBrackets"]).toBe(true);
+      expect(mistv3.warnings).toEqual([]);
+    }
+    const coda = unifiedTts.safe({
+      model: "rime/coda",
+      text: "x",
+      voice: "astra",
+      phonemizeBetweenBrackets: true,
+    } as never);
+    expect(coda.ok).toBe(false);
+  });
+
+  test("speed on Mist v2 compiles to the reciprocal in speedAlpha", () => {
+    const r = unifiedTts.safe({ model: "rime/mistv2", text: "x", voice: "astra", speed: 1.25 });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect((r.params as unknown as Record<string, unknown>)["speedAlpha"]).toBe(0.8);
+    expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
   });
 });
 

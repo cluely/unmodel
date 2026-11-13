@@ -5,11 +5,22 @@
  * https://docs.rime.ai/api-reference/mistv3/http,
  * https://docs.rime.ai/api-reference/mistv2/http,
  * https://docs.rime.ai/docs/models, https://docs.rime.ai/docs/speed and
- * https://docs.rime.ai/docs/api-cheat-sheet (all verified 2026-08-13).
+ * https://docs.rime.ai/docs/api-cheat-sheet (all verified 2026-08-13);
+ * https://docs.rime.ai/docs/migrate-legacy-mist,
+ * https://docs.rime.ai/docs/custom-pronunciation and
+ * https://docs.rime.ai/docs/errors (verified 2026-11-12).
  * Params mirror the wire body exactly.
  *
- * HOST: `users.rime.ai`, not `api.rime.ai` — "the latter serves internal
- * infrastructure and returns 404 for TTS requests".
+ * HOST: this validator addresses `POST https://users.rime.ai/v1/rime-tts`, the
+ * route that takes `modelId` in the body. Rime's error reference still
+ * documents it ("| HTTP `POST /v1/rime-tts` | Any | HTTP status, plain-text
+ * body with the message |") and the Rime CLI's `--api-url` defaults to it
+ * (https://docs.rime.ai/cli-reference/rime-tts). The docs now also send HTTP
+ * TTS to per-model hosts — "| TTS over HTTP |
+ * `https://coda.api.rime.ai/` (Coda), `https://mist.api.rime.ai/` (Mist v3) |"
+ * — where "The host selects the model, so the body needs no `modelId`"
+ * (https://docs.rime.ai/docs/api-cheat-sheet, 2026-11-12). Those hosts are a
+ * different contract and are not validated here.
  *
  * FORMAT IS A HEADER, NOT A BODY FIELD. Over HTTP the container is chosen
  * with `Accept`; the `audioFormat` field some integrations reach for is a
@@ -79,6 +90,7 @@ export const MAX_CHARACTERS = 1000;
 const CODA_DOCS = "https://docs.rime.ai/api-reference/coda/http";
 const MISTV2_DOCS = "https://docs.rime.ai/api-reference/mistv2/http";
 const MODELS_DOCS = "https://docs.rime.ai/docs/models";
+const MIGRATE_LEGACY_MIST_DOCS = "https://docs.rime.ai/docs/migrate-legacy-mist";
 const SPEED_DOCS = "https://docs.rime.ai/docs/speed";
 const CHEAT_SHEET_DOCS = "https://docs.rime.ai/docs/api-cheat-sheet";
 
@@ -134,9 +146,12 @@ export interface RimeTtsBody {
   inlineSpeedAlpha?: string;
   /** Pause on `<200>`-style angle brackets. Mist family only. Default false. */
   pauseBetweenBrackets?: boolean;
-  /** Phonemes in `{curly}` brackets. Mist v2 / Mist v1 only. Default false. */
+  /**
+   * Phonemes in `{curly}` brackets. English Mist v3, Mist v2 and Mist v1; Coda
+   * and non-English Mist v3 ignore it. Default false.
+   */
   phonemizeBetweenBrackets?: boolean;
-  /** Skip text normalization. "mist/mistv2 only." Default false. */
+  /** Skip text normalization. "mist/mistv2 only"; no effect on Mist v3. Default false. */
   noTextNormalization?: boolean;
 }
 
@@ -179,11 +194,18 @@ const schema = z.looseObject({
 // Constraints — per-model gates the model matrix documents explicitly.
 // ---------------------------------------------------------------------------
 
-const phonemizeDeny = {
+/**
+ * "`phonemizeBetweenBrackets` works on English Mist v3 only. Coda and
+ * non-English Mist v3 ignore it." (docs/models, 2026-11-12) Ignored, not
+ * rejected, so the Coda gate warns. The non-English Mist v3 half depends on
+ * `lang` and lives in `checkPhonemizeLanguage`.
+ */
+const codaPhonemizeDeny = {
   phonemizeBetweenBrackets: {
     reason:
-      "inline pronunciation control is available on Mist v2 and Mist v1 only — Mist v3 and Coda do not carry inline phoneme overrides, and no error is raised when they are dropped",
+      'inline `{phoneme}` overrides work on English Mist v3 only ("Coda and non-English Mist v3 ignore it"). Send the request with `modelId: "mistv3"` and an English voice, or give Coda a custom lexicon, which Rime documents for its Coda host `https://coda.api.rime.ai/`',
     source: MODELS_DOCS,
+    ignored: true,
   },
 } as const;
 
@@ -194,8 +216,22 @@ const noTextNormalizationDeny = {
   },
 } as const;
 
+/**
+ * "`noTextNormalization` has no effect on Mist v3, which always normalizes
+ * text. Remove it" (docs/migrate-legacy-mist, 2026-11-12) — ignored, so it
+ * warns.
+ */
+const mistv3NoTextNormalizationDeny = {
+  noTextNormalization: {
+    reason:
+      '"`noTextNormalization` has no effect on Mist v3, which always normalizes text." Remove it; Mist v2 and Mist v1 still honour it',
+    source: MIGRATE_LEGACY_MIST_DOCS,
+    ignored: true,
+  },
+} as const;
+
 const codaOnlyDenies = {
-  ...phonemizeDeny,
+  ...codaPhonemizeDeny,
   ...noTextNormalizationDeny,
   pauseBetweenBrackets: {
     reason:
@@ -211,7 +247,7 @@ const codaOnlyDenies = {
 
 export const ttsConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   coda: { deny: codaOnlyDenies },
-  mistv3: { deny: { ...phonemizeDeny, ...noTextNormalizationDeny } },
+  mistv3: { deny: mistv3NoTextNormalizationDeny },
 };
 
 // ---------------------------------------------------------------------------
@@ -223,6 +259,7 @@ const MIST_V2_ACCEPT_SET = new Set<string>(MIST_V2_ACCEPT_VALUES);
 const MIST_LANGUAGE_SET = new Set<string>(MIST_LANGUAGES);
 const MIST_GENERATION = new Set(["mistv3", "mistv2", "mist"]);
 const LEGACY_MIST = new Set(["mistv2", "mist"]);
+const ENGLISH = new Set<string>(["en", "eng"]);
 
 function modelOf(params: RimeTtsParams): string {
   return params.modelId ?? DEFAULT_MODEL_ID;
@@ -303,7 +340,7 @@ function checkTimeScaleFactor(
   });
 }
 
-/** Coda serves eight languages; the Mist family serves English/French/German/Spanish. */
+/** Coda serves ten languages; the Mist family serves English/French/German/Spanish. */
 function checkLanguage(
   params: RimeTtsParams,
   info: ModelInfo | undefined,
@@ -317,8 +354,34 @@ function checkLanguage(
     code: "invalid_enum_value",
     path: ["lang"],
     model,
-    message: `\`lang\` ${JSON.stringify(lang)} is not served by "${model}" — the Mist models cover English, French, German and Spanish. Use \`modelId: "coda"\` for Arabic, Hindi, Japanese or Portuguese.`,
+    message: `\`lang\` ${JSON.stringify(lang)} is not served by "${model}" — the Mist models cover English, French, German and Spanish. Use \`modelId: "coda"\` for Arabic, Dutch, Hindi, Italian, Japanese or Portuguese.`,
     meta: { allowed: [...MIST_LANGUAGES], value: lang, source: MODELS_DOCS },
+  });
+}
+
+/**
+ * Inline phonemes work on English Mist v3 only: "French, German, and Spanish
+ * requests ignore it" (docs/migrate-legacy-mist, 2026-11-12), and the Mist v3
+ * reference gives `lang` "(default: en)", so an omitted `lang` is English. The
+ * changelog's 400 for German, Spanish and French requests is an on-prem image
+ * release note (release `20261104`); with the cloud pages saying ignored, a
+ * warning is the verdict that never refuses a request the API fulfils.
+ */
+function checkPhonemizeLanguage(
+  params: RimeTtsParams,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const lang = params.lang;
+  if (params.phonemizeBetweenBrackets === undefined || lang === undefined) return;
+  if (modelOf(params) !== "mistv3" || ENGLISH.has(lang)) return;
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["phonemizeBetweenBrackets"],
+    model: "mistv3",
+    message: `\`phonemizeBetweenBrackets\` is silently ignored by the API for "mistv3" with \`lang\` ${JSON.stringify(lang)}: inline \`{phoneme}\` overrides work on English Mist v3 only ("French, German, and Spanish requests ignore it"). Use an English voice with \`lang: "en"\`, or remove it.`,
+    meta: { source: MIGRATE_LEGACY_MIST_DOCS, ignored: true, value: lang },
   });
 }
 
@@ -420,6 +483,7 @@ const validator = createValidator<RimeTtsParams, unknown>({
     checkSamplingRate,
     checkTimeScaleFactor,
     checkLanguage,
+    checkPhonemizeLanguage,
     checkAccept,
   ],
   estimate,

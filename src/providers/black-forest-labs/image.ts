@@ -36,9 +36,18 @@
  *   routes, so nothing beyond the ≥ 64 floor is enforced — over-narrowing here
  *   would reject sizes the API accepts. (The FLUX.1 routes DO document
  *   multiple-of-32 and 256–1440; see image-flux1.ts.)
+ * - `safety_tolerance` is 0–7 on Flux2Inputs, Flux2FlexInputs and
+ *   Flux2KleinInputs (OpenAPI `maximum: 7`, verified 2026-11-12): "Harm
+ *   moderation tolerance from 0 to 7, with 0 the strictest. The route and
+ *   organization determine the approved maximum and per-category ceilings.
+ *   Unapproved levels return 422 with approved levels." That ceiling is
+ *   per organization and server-side, so only 0–7 is enforced here.
+ * - Every BFL request schema carries an optional `user` (see
+ *   {@link bflUserField}).
  * - Pricing is megapixel-based ("from $X/MP"); the cost estimate is the
  *   documented 1MP text-to-image base price — actual cost can be higher for
- *   larger outputs or editing. The response's `cost` field is authoritative.
+ *   larger outputs or editing. The response's `cost` field is authoritative
+ *   (in credits, 1 credit = $0.01: "Cost in credits for this request").
  * - Auth is an `x-key` header — unmodel never touches keys; add it yourself
  *   when fetching.
  */
@@ -75,6 +84,20 @@ export function bflModelUrl(model: string): string {
 export const BFL_OUTPUT_FORMATS = ["jpeg", "png", "webp"] as const;
 export type BflOutputFormat = (typeof BFL_OUTPUT_FORMATS)[number];
 
+/**
+ * `user`, identical on every BFL request schema in
+ * https://api.bfl.ai/openapi.json (verified 2026-11-12): `string | null`,
+ * `minLength: 1`, `maxLength: 256`, `pattern: ^[^\x00]*$` — "Opaque
+ * identifier for the end user supplied by the calling platform."
+ */
+export const bflUserField = z
+  .string()
+  .min(1, "user must be 1–256 characters")
+  .max(256, "user must be 1–256 characters")
+  .regex(/^[^\x00]*$/, "user must not contain NUL characters")
+  .nullable()
+  .optional();
+
 // ---------------------------------------------------------------------------
 // Wire types — Tier A: one arm per route family, carrying exactly the params
 // that route's input schema documents (api.bfl.ai/openapi.json, 2026-08-13).
@@ -95,10 +118,15 @@ interface Flux2CoreFields {
   width?: number | null;
   /** Height in pixels, ≥ 64. Omit (server default 0) for automatic sizing. */
   height?: number | null;
-  /** Moderation strictness 0 (strictest) – 5 (least strict). Default 2. */
+  /**
+   * Moderation strictness 0 (strictest) – 7 (least strict). Default 2. Your
+   * organization's approved ceiling may be lower (a 422 lists it).
+   */
   safety_tolerance?: number;
   /** Output image format. Default "jpeg". */
   output_format?: BflOutputFormat | null;
+  /** Opaque end-user identifier from the calling platform: 1–256 chars, no NUL. */
+  user?: string | null;
   /** URL (1–2083 chars) to receive the async result instead of polling. */
   webhook_url?: string | null;
   /** Secret for webhook signature verification. */
@@ -300,10 +328,11 @@ const flux2Schema = z.looseObject({
   height: z.number().int().min(64, "height must be at least 64 pixels").nullable().optional(),
   guidance: z.number().min(1.5).max(10).nullable().optional(),
   steps: z.number().int().min(1).max(50).nullable().optional(),
-  safety_tolerance: z.number().int().min(0).max(5).optional(),
+  safety_tolerance: z.number().int().min(0).max(7).optional(),
   output_format: z.enum(BFL_OUTPUT_FORMATS).nullable().optional(),
   webhook_url: z.string().min(1).max(2083).nullable().optional(),
   webhook_secret: z.string().nullable().optional(),
+  user: bflUserField,
   finetune_id: z.string().optional(),
   finetune_strength: z.number().optional(),
 });

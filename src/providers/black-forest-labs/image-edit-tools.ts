@@ -8,17 +8,22 @@
  *   its own endpoint fn (mirroring the docs) rather than one discriminated
  *   union. Only `vto` takes a model selector, because v1 and v2 share one
  *   schema (Flux2KleinTryonInputs) and differ only in output resolution.
- * - The tools are FLUX.2-backed, so `safety_tolerance` is 0–5 here (the
+ * - The tools are FLUX.2-backed, so `safety_tolerance` is 0–7 here
+ *   (`maximum: 7` on FluxOutpaintingInputs, Flux2EraseInputs,
+ *   Flux2DeblurInputs and Flux2KleinTryonInputs, verified 2026-11-12; the
  *   FLUX.1 routes allow 0–6) and `output_format` defaults to "png" on
- *   outpainting/erase/deblur but "jpeg" on VTO.
+ *   outpainting/erase/deblur but "jpeg" on VTO. Every tool also takes the
+ *   optional `user` every BFL schema carries.
  * - Outpainting differs from FLUX.1 Expand: instead of per-side margins it
  *   takes a target canvas (`width`/`height`, both REQUIRED, ≥ 64) plus an
  *   optional reference offset; `mode` trades quality for speed and
  *   `auto_crop` decides whether an over-hanging input errors or is cropped.
  * - Erase requires a black/white `mask` the same size as the image
  *   (white = remove); `dilate_pixels` grows it by 0–25 px.
- * - None of these routes are itemized on the pricing page, so no cost is
- *   estimated for them.
+ * - Pricing is per megapixel (./pricing.ts). Outpainting is estimated
+ *   exactly from its canvas and `mode`; erase and deblur bill on the input's
+ *   size, which the request does not carry, and VTO has no per-route rate, so
+ *   those three estimate nothing.
  * - ASYNC-JOB API: the POST returns `{ id, polling_url }`; polling is
  *   transport — out of scope. Auth is an `x-key` header.
  */
@@ -31,7 +36,8 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models } from "./models";
-import { bflModelUrl, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
+import { bflModelUrl, bflUserField, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
+import { outpaintingCostUSD } from "./pricing";
 
 const OPENAPI_URL = "https://api.bfl.ai/openapi.json";
 
@@ -61,7 +67,10 @@ export const FLUX_TOOLS_MIN_DIMENSION = 64;
 interface FluxToolCommonFields {
   /** Optional seed for reproducibility. */
   seed?: number | null;
-  /** Moderation strictness 0 (strictest) – 5 (least strict). Default 2. */
+  /**
+   * Moderation strictness 0 (strictest) – 7 (least strict). Default 2. Your
+   * organization's approved ceiling may be lower (a 422 lists it).
+   */
   safety_tolerance?: number;
   /** Output image format. */
   output_format?: BflOutputFormat | null;
@@ -69,14 +78,17 @@ interface FluxToolCommonFields {
   webhook_url?: string | null;
   /** Secret for webhook signature verification. */
   webhook_secret?: string | null;
+  /** Opaque end-user identifier from the calling platform: 1–256 chars, no NUL. */
+  user?: string | null;
 }
 
 const commonShape = {
   seed: z.number().int().nullable().optional(),
-  safety_tolerance: z.number().int().min(0).max(5).optional(),
+  safety_tolerance: z.number().int().min(0).max(7).optional(),
   output_format: z.enum(BFL_OUTPUT_FORMATS).nullable().optional(),
   webhook_url: z.string().min(1).max(2083).nullable().optional(),
   webhook_secret: z.string().nullable().optional(),
+  user: bflUserField,
 };
 
 // ---------------------------------------------------------------------------
@@ -230,13 +242,22 @@ function checkOutpaintingOffsets(
 }
 
 // ---------------------------------------------------------------------------
-// Estimation — none of the tools routes are itemized on the pricing page, so
-// `cost.perImage` is absent for all of them and no estimate is produced.
+// Estimation — per-megapixel rates live in ./pricing.ts, not on the catalog
+// rows: no tools row carries `cost.perImage`, so `estimate` yields nothing for
+// erase, deblur and VTO, and outpainting computes its exact price.
 // ---------------------------------------------------------------------------
 
 function estimate(_params: unknown, info: ModelInfo | undefined) {
   const perImage = info?.cost?.perImage;
   return perImage === undefined ? {} : { costUSD: perImage };
+}
+
+/**
+ * Exact: the `width × height` canvas is the billed output (see ./pricing.ts).
+ * Runs only on params the schema accepted, so both sides and `mode` are valid.
+ */
+function estimateOutpainting(params: FluxOutpaintingParams) {
+  return { costUSD: outpaintingCostUSD(params) };
 }
 
 /**
@@ -266,7 +287,7 @@ const outpaintingValidator = createValidator<FluxOutpaintingParams, unknown>({
   modelId: () => FLUX_OUTPAINTING_MODEL_ID,
   catalog: models,
   checks: [checkOutpaintingOffsets],
-  estimate,
+  estimate: estimateOutpainting,
   finalize: finalizeTo(FLUX_OUTPAINTING_MODEL_ID),
 });
 

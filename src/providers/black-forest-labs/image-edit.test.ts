@@ -57,7 +57,13 @@ describe("black-forest-labs.imageEdit happy path", () => {
     });
   });
 
-  test("kontext allows safety_tolerance up to 6 (unlike flux-2's 0–5)", () => {
+  test("kontext takes the user field", () => {
+    const r = imageEdit.safe({ model: "flux-kontext-pro", prompt: "hi", user: "end-user-42" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("kontext caps safety_tolerance at 6 (FLUX.2 goes to 7)", () => {
     const ok = imageEdit.safe({ model: "flux-kontext-pro", prompt: "hi", safety_tolerance: 6 });
     expect(ok.ok).toBe(true);
     const bad = safeUnchecked({ model: "flux-kontext-pro", prompt: "hi", safety_tolerance: 7 });

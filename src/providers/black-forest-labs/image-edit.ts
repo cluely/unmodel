@@ -12,7 +12,7 @@
  *   `.request.url` (the model is the route on this API).
  * - Kontext differs from the FLUX.2 routes: sizing is `aspect_ratio`
  *   (21:9 … 9:21) instead of width/height, upsampling is `prompt_upsampling`
- *   (default false), `safety_tolerance` ranges 0–6 (not 0–5), and
+ *   (default false), `safety_tolerance` ranges 0–6 (FLUX.2 goes to 7), and
  *   `output_format` defaults to "png" (not "jpeg").
  * - ASYNC-JOB API: the POST returns `{ id, polling_url }`; polling
  *   `GET https://api.bfl.ai/v1/get_result?id=…` is transport — out of scope.
@@ -27,7 +27,7 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type BflKontextModelId } from "./models";
-import { bflModelUrl, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
+import { bflModelUrl, bflUserField, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
 import { checkAspectRatioRange, type BflAspectRatio } from "./aspect";
 
 const KONTEXT_SCHEMA_URL = "https://api.bfl.ai/openapi.json#/components/schemas/FluxKontextProInputs";
@@ -67,6 +67,8 @@ export interface FluxKontextParams {
   prompt_upsampling?: boolean;
   /** Moderation strictness 0 (strictest) – 6 (least strict). Default 2. */
   safety_tolerance?: number;
+  /** Opaque end-user identifier from the calling platform: 1–256 chars, no NUL. */
+  user?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +89,7 @@ const kontextSchema = z.looseObject({
   webhook_secret: z.string().nullable().optional(),
   prompt_upsampling: z.boolean().optional(),
   safety_tolerance: z.number().int().min(0).max(6).optional(),
+  user: bflUserField,
 });
 
 // ---------------------------------------------------------------------------

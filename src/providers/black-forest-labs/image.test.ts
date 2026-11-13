@@ -219,10 +219,24 @@ describe("black-forest-labs.image per-route param enforcement", () => {
 });
 
 describe("black-forest-labs.image shape", () => {
-  test("safety_tolerance above 5 is invalid_shape on flux-2 routes", () => {
-    const r = safeUnchecked({ model: "flux-2-pro", prompt: "hi", safety_tolerance: 6 });
+  test("safety_tolerance runs 0–7 on every flux-2 schema", () => {
+    for (const model of ["flux-2-pro", "flux-2-flex", "flux-2-klein-4b"] as const) {
+      expect(image.safe({ model, prompt: "hi", safety_tolerance: 7 }).ok).toBe(true);
+    }
+    const r = safeUnchecked({ model: "flux-2-pro", prompt: "hi", safety_tolerance: 8 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
+  });
+
+  test("user is a known 1–256-char field on every flux-2 route", () => {
+    const r = image.safe({ model: "flux-2-max", prompt: "hi", user: "end-user-42" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+    for (const user of ["", "x".repeat(257), "a\u0000b"]) {
+      const bad = safeUnchecked({ model: "flux-2-max", prompt: "hi", user });
+      expect(bad.ok, JSON.stringify(user)).toBe(false);
+      if (!bad.ok) expect(bad.errors[0]?.path).toEqual(["user"]);
+    }
   });
 
   test("width below 64 is invalid_shape", () => {

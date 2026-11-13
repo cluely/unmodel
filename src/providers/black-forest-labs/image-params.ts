@@ -87,7 +87,7 @@ export const MODELS = [...FLUX2_MODELS, ...FLUX1_MODELS] as const;
 
 /**
  * Fifteen generation routes, three sizing shapes and a `safety_tolerance` whose
- * *range* differs between the two generations — 0–5 on FLUX.2, 0–6 on FLUX.1
+ * *range* differs between the two generations — 0–7 on FLUX.2, 0–6 on FLUX.1
  * — which the endpoints' own schemas check and this table does not restate.
  *
  * **Sizes.** The FLUX.2 and FLUX.1 pixel routes take a free `width`/`height`
@@ -123,7 +123,7 @@ export const FLUX_1_SIZES = [
   "576x1344",
 ] as const;
 
-/** 0–5 on FLUX.2 and the tools routes, 0–6 on FLUX.1 — the schemas check it. */
+/** 0–7 on FLUX.2 and the tools routes, 0–6 on FLUX.1 — the schemas check it. */
 export const SAFETY_TOLERANCE = EXTRA as number;
 
 export const PROMPT_UPSAMPLING = EXTRA as boolean;

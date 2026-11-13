@@ -104,6 +104,8 @@ export type {
   FluxVtoParams,
 } from "./image-edit-tools";
 
+export type { BflMegapixelRate } from "./pricing";
+
 export type {
   BflModelId,
   BflFlux2ModelId,

@@ -18,7 +18,7 @@
  *   the image's dimensions — a rule the API validates server-side and unmodel
  *   cannot check from a base64 string). `expand` takes per-side pixel margins
  *   `top`/`bottom`/`left`/`right`, each 0–2048.
- * - `safety_tolerance` is 0–6 on these routes (FLUX.2 caps it at 5).
+ * - `safety_tolerance` is 0–6 on these routes (FLUX.2 goes to 7).
  * - ASYNC-JOB API: the POST returns `{ id, polling_url }`; polling
  *   `GET /v1/get_result` is transport — out of scope.
  * - Auth is an `x-key` header — unmodel never touches keys.
@@ -32,7 +32,7 @@ import type { ValidateResult } from "../../core/result";
 import type { FutureModelId, ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models } from "./models";
-import { bflModelUrl, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
+import { bflModelUrl, bflUserField, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
 
 const OPENAPI_URL = "https://api.bfl.ai/openapi.json";
 const FILL_SCHEMA_URL = `${OPENAPI_URL}#/components/schemas/FluxProFillInputs`;
@@ -66,6 +66,8 @@ interface FluxEditCoreFields {
   webhook_url?: string | null;
   /** Secret for webhook signature verification. */
   webhook_secret?: string | null;
+  /** Opaque end-user identifier from the calling platform: 1–256 chars, no NUL. */
+  user?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -159,6 +161,7 @@ const editCoreShape = {
   safety_tolerance: z.number().int().min(0).max(6).optional(),
   webhook_url: z.string().min(1).max(2083).nullable().optional(),
   webhook_secret: z.string().nullable().optional(),
+  user: bflUserField,
 };
 
 const fillSchema = z.looseObject({

@@ -62,6 +62,10 @@ function flux2TypeTests(): void {
   // @ts-expect-error the LoRA routes keep klein's 4-image cap
   image({ model: "flux-2-klein-9b-finetuned", prompt: "hi", finetune_id: "x", input_image_5: "y" });
 
+  // `user` and the 0–7 tolerance are on every FLUX.2 schema.
+  image({ model: "flux-2-flex", prompt: "hi", user: "end-user-42", safety_tolerance: 7 });
+  image({ model: "flux-2-klein-4b", prompt: "hi", user: null });
+
   // Unknown models fall back to the loose escape-hatch arm.
   image({ model: "flux-9-mega", prompt: "hi", some_new_param: 1 });
 
@@ -103,6 +107,8 @@ function kontextTypeTests(): void {
   expectAssignable<{ prompt: string }>(v);
   expectAssignable<string>(JSON.stringify(v));
 
+  imageEdit({ model: "flux-kontext-max", prompt: "hi", user: "end-user-42" });
+
   // @ts-expect-error kontext sizes via aspect_ratio, not width
   imageEdit({ model: "flux-kontext-pro", prompt: "hi", width: 1024 });
   // @ts-expect-error ExactKeys rejects typo'd keys
@@ -124,6 +130,8 @@ function flux1TypeTests(): void {
   imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "16:9" });
   imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "1:2" });
   imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "7:3" });
+  imageFlux1({ model: "flux-dev", prompt: "hi", user: "end-user-42" });
+  imageEditFill({ model: "flux-pro-1.0-fill", image: "base64", user: "end-user-42" });
   // @ts-expect-error banana is not a ratio (was a bare `string`)
   imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "banana" });
   // @ts-expect-error the width/height routes do not take aspect_ratio at all

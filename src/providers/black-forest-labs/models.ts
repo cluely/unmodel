@@ -1,8 +1,10 @@
 // Hand-maintained — Black Forest Labs (FLUX API) is not in models.dev; refresh from
 //   https://api.bfl.ai/openapi.json         (routes + request schemas; ground truth)
-//   https://docs.bfl.ml/quick_start/pricing (per-image / per-megapixel rates)
+//   https://bfl.ai/pricing                  (USD rates as text, incl. FLUX.1 [dev] and the tools)
+//   https://docs.bfl.ml/quick_start/pricing (the same rates in credits; rendered client-side
+//                                            from an embedded `rates` table, so its text shows blanks)
 //   https://docs.bfl.ml/llms.txt            (docs index; also served at docs.bfl.ai)
-// Verified 2026-08-13.
+// Verified 2026-11-12.
 //
 // Every id below is a REAL BFL route (`POST https://api.bfl.ai/v1/{id}`) taken
 // from the OpenAPI `paths` list — the model is the route on this API, so the
@@ -17,19 +19,26 @@
 //   incrementally (docs: "a 2MP image with Klein 4B costs $0.014 + $0.001").
 //   `cost.perImage` records the 1MP text-to-image base price — the documented
 //   floor for one generated image. Larger outputs and editing requests cost
-//   more (flux-2-pro editing is quoted from $0.045/MP); the BFL response's
-//   `cost` field reports the exact charge per request.
+//   more (each reference image adds its own per-MP rate: flux-2-pro editing
+//   starts at $0.045, flux-2-max and flux-2-flex at $0.10); the BFL
+//   response's `cost` field reports the exact charge per request, in credits
+//   ("Cost in credits for this request").
 // - FLUX.1 is flat per-image pricing (1 credit = $0.01): Kontext [pro] 4
 //   credits $0.04, Kontext [max] 8 credits $0.08, FLUX1.1 [pro] 4 credits
 //   $0.04, FLUX1.1 [pro] Ultra 6 credits $0.06 (Raw mode is the same 6
-//   credits), FLUX.1 Fill [pro] 5 credits $0.05.
+//   credits), FLUX.1 Fill [pro] 5 credits $0.05, FLUX.1 [dev] $0.025 (a
+//   bfl.ai/pricing row only; the docs `rates` table has none).
 // - Fine-tuned endpoints are "billed at the same rate as their base
 //   endpoints" during public beta, so the -finetuned rows copy their base
 //   route's price — except flux-2-klein-9b-kv-bf16-finetuned, whose base
 //   route no pricing page names.
+// - The `flux-tools/` routes are priced per megapixel with no per-image
+//   floor a row could state, so their rows carry no `cost` and the rates
+//   live in ./pricing.ts (outpainting estimates exactly from its canvas).
 // - Routes with NO published price carry no `cost` (no estimate, no budget
-//   check): the `-preview` routes, `flux-dev`, `flux-pro-1.0-expand` and the
-//   whole `flux-tools/` family.
+//   check): the `-preview` routes, `flux-pro-1.0-expand` (no row on either
+//   pricing page), the VTO routes (one "FLUX VTO" row, two routes, no
+//   per-route rate) and flux-2-klein-9b-kv-bf16-finetuned.
 
 import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 
@@ -51,7 +60,9 @@ const flux2Models = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // from $0.07/MP (text-to-image and editing) — docs.bfl.ml/quick_start/pricing
+    // https://bfl.ai/pricing (2026-11-12): "FLUX.2 [max] 1st MP $0.07 Add'l
+    // MP $0.03 Ref img $0.03 /MP" — text-to-image from $0.07, editing from
+    // $0.10 (one 1 MP reference).
     cost: { perImage: 0.07 },
   },
   "flux-2-pro": {
@@ -64,7 +75,8 @@ const flux2Models = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // from $0.03/MP text-to-image (editing from $0.045/MP, not captured here).
+    // https://bfl.ai/pricing (2026-11-12): "FLUX.2 [pro] 1st MP $0.03 Add'l
+    // MP $0.015 Ref img $0.015 /MP" — editing from $0.045, not captured here.
     cost: { perImage: 0.03 },
   },
   "flux-2-pro-preview": {
@@ -90,7 +102,9 @@ const flux2Models = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // from $0.05/MP — docs.bfl.ml/quick_start/pricing
+    // https://docs.bfl.ml/quick_start/pricing `rates` (2026-11-12):
+    // "/v1/flux-2-flex":{firstMpPrice:5,mpPrice:5,inputMpPrice:5} credits →
+    // $0.05 first MP; editing from $0.10.
     cost: { perImage: 0.05 },
   },
   "flux-2-klein-9b": {
@@ -104,7 +118,8 @@ const flux2Models = {
     openWeights: true,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // from $0.015/MP — docs.bfl.ml/quick_start/pricing
+    // https://bfl.ai/pricing (2026-11-12): "FLUX.2 [klein] 9B 1st MP $0.015
+    // Add'l MP $0.002 Ref img $0.002 /MP".
     cost: { perImage: 0.015 },
   },
   "flux-2-klein-9b-preview": {
@@ -130,7 +145,8 @@ const flux2Models = {
     openWeights: true,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // from $0.014/MP — docs.bfl.ml/quick_start/pricing
+    // https://bfl.ai/pricing (2026-11-12): "FLUX.2 [klein] 4B 1st MP $0.014
+    // Add'l MP $0.001 Ref img $0.001 /MP".
     cost: { perImage: 0.014 },
   },
   // FLUX.2 [klein] LoRA routes — https://docs.bfl.ml/flux_2/flux2_lora_inference
@@ -224,7 +240,8 @@ const kontextModels = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // $0.04 per image (flat) — docs.bfl.ml/quick_start/pricing
+    // $0.04 per image (flat) — https://docs.bfl.ml/quick_start/pricing `rates`
+    // (2026-11-12): "/v1/flux-kontext-pro":{priceUnit:4} credits.
     cost: { perImage: 0.04 },
   },
   "flux-kontext-max": {
@@ -237,15 +254,13 @@ const kontextModels = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // $0.08 per image (flat) — docs.bfl.ml/quick_start/pricing
+    // https://bfl.ai/pricing (2026-11-12): "FLUX.1 Kontext [max] Per image
+    // $0.08 /img".
     cost: { perImage: 0.08 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
-/**
- * Previous-generation FLUX.1 text-to-image routes. `flux-dev` is open-weights
- * and has no row on the pricing page, so it carries no cost.
- */
+/** Previous-generation FLUX.1 text-to-image routes, flat per-image prices. */
 const flux1Models = {
   "flux-pro-1.1": {
     id: "flux-pro-1.1",
@@ -257,7 +272,8 @@ const flux1Models = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // 4 credits per image → $0.04 — docs.bfl.ml/quick_start/pricing
+    // 4 credits per image → $0.04 — https://docs.bfl.ml/quick_start/pricing
+    // `rates` (2026-11-12): "/v1/flux-pro-1.1":{priceUnit:4}.
     cost: { perImage: 0.04 },
   },
   "flux-pro-1.1-ultra": {
@@ -270,7 +286,9 @@ const flux1Models = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // 6 credits per image → $0.06 (Raw mode is the same 6 credits).
+    // 6 credits per image → $0.06 (Raw mode is the same 6 credits) —
+    // https://docs.bfl.ml/quick_start/pricing `rates` (2026-11-12):
+    // "/v1/flux-pro-1.1-ultra":{priceUnit:6}.
     cost: { perImage: 0.06 },
   },
   "flux-pro-1.1-ultra-finetuned": {
@@ -281,6 +299,14 @@ const flux1Models = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
+    // Deprecated with the FLUX.1 Finetuning API, still served (in the OpenAPI
+    // `paths` on 2026-11-12). https://docs.bfl.ml/release-notes: "As of
+    // today, the Flux Pro 1.0 endpoints (`flux-pro-1.0`, `flux-pro-1.0-depth`,
+    // `flux-pro-1.0-canny`) and the Finetuning API are officially
+    // deprecated." The finetuning list names "* `flux-pro-1.1-ultra-finetuned`"
+    // under "No migration path available. Finetuning functionality will be
+    // discontinued."
+    status: "deprecated",
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
     // Fine-tuned endpoints bill at the base endpoint's rate.
@@ -297,7 +323,9 @@ const flux1Models = {
     openWeights: true,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // No row on the pricing page → no cost estimate.
+    // https://bfl.ai/pricing (2026-11-12): "FLUX.1 [dev] Per image $0.025
+    // /img Our distilled model of FLUX.1 [pro]." (no docs `rates` entry).
+    cost: { perImage: 0.025 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
@@ -313,7 +341,8 @@ const flux1EditModels = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // 5 credits per image → $0.05 — docs.bfl.ml/quick_start/pricing
+    // 5 credits per image → $0.05 — https://docs.bfl.ml/quick_start/pricing
+    // `rates` (2026-11-12): "/v1/flux-pro-1.0-fill":{priceUnit:5}.
     cost: { perImage: 0.05 },
   },
   "flux-pro-1.0-expand": {
@@ -326,14 +355,15 @@ const flux1EditModels = {
     openWeights: false,
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0 },
-    // No row on the pricing page → no cost estimate.
+    // No row on either pricing page (2026-11-12) → no cost estimate.
   },
 } as const satisfies Record<string, ModelInfo>;
 
 /**
  * FLUX tools routes (`POST /v1/flux-tools/{tool}`). The catalog id is the
- * route path so `bflModelUrl()` interpolates it verbatim. None of them are
- * itemized on the pricing page, so none carry a cost.
+ * route path so `bflModelUrl()` interpolates it verbatim. They bill per
+ * megapixel with no flat floor, so no row carries a `cost`: outpainting,
+ * erase and deblur rates live in ./pricing.ts, and VTO has no per-route rate.
  */
 const fluxToolsModels = {
   "flux-tools/outpainting-v1": {

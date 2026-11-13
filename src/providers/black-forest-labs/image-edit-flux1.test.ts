@@ -70,6 +70,13 @@ describe("black-forest-labs.imageEditFill", () => {
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
 
+  test("fill and expand take the user field", () => {
+    const fill = imageEditFill.safe({ model: "flux-pro-1.0-fill", image: "x", user: "u-1" });
+    expect(fill.ok).toBe(true);
+    if (fill.ok) expect(fill.warnings).toEqual([]);
+    expect(imageEditExpand.safe({ image: "x", top: 64, user: "u-1" }).ok).toBe(true);
+  });
+
   test("fill is $0.05 per image (5 credits)", () => {
     const r = imageEditFill.safe({ model: "flux-pro-1.0-fill", image: "x" });
     expect(r.ok).toBe(true);

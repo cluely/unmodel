@@ -41,7 +41,10 @@
  * - **`safety_tolerance` is a *string* enum at fal** (`"1".."5"` on the FLUX.2
  *   rows, `"1".."6"` on the FLUX.1 pro rows) and an *integer* natively, where
  *   `0` is the strictest setting. `0` is unreachable on fal, and promoting it
- *   to `"1"` would LOOSEN moderation, so it is refused.
+ *   to `"1"` would LOOSEN moderation, so it is refused; so are FLUX.2's native
+ *   `6` and `7`, which fal's enum does not reach.
+ * - **`user` is refused.** Every BFL schema takes an end-user identifier and
+ *   no fal FLUX row has one.
  */
 import type { ApiRetargeter } from "../../core/request";
 import {
@@ -129,7 +132,7 @@ function imageSize(
   return { width, height };
 }
 
-/** Native integer 0–6 → fal's string enum, refusing the strictest setting. */
+/** Native integer (0–7 FLUX.2, 0–6 FLUX.1) → fal's string enum, refusing the strictest setting. */
 function safetyTolerance(
   body: Record<string, unknown>,
   max: 5 | 6,
@@ -188,6 +191,17 @@ function refuseWebhook(
   );
 }
 
+/** BFL's end-user identifier, refused: no fal FLUX row has a field for it. */
+function refuseUser(body: Record<string, unknown>, ctx: MediaMapContext, endpoint: string): void {
+  if (body["user"] == null) return;
+  refuseParam(
+    ctx,
+    ["user"],
+    endpoint,
+    "publishes no end-user identifier field — BFL's `user` attributes the request to your platform's end user, and fal has nowhere to carry it",
+  );
+}
+
 /** The image-reference inputs, refused: these are fal's TEXT-to-image rows. */
 function refuseImageInputs(
   body: Record<string, unknown>,
@@ -233,6 +247,7 @@ const FLUX2_IMAGE_INPUTS = [
  */
 function mapFlux2(params: AnyFlux2, ctx: MediaMapContext, endpoint: string): FalFlux2Pro {
   refuseWebhook(params, ctx, endpoint);
+  refuseUser(params, ctx, endpoint);
   refuseImageInputs(params, FLUX2_IMAGE_INPUTS, ctx, endpoint);
   if (readBoolean(params, "disable_pup") !== undefined) {
     refuseParam(
@@ -324,6 +339,7 @@ function refuseImagePrompt(params: AnyFlux1, ctx: MediaMapContext, endpoint: str
 function mapFluxProV11(params: AnyFlux1, ctx: MediaMapContext): FalFluxProV11 {
   const endpoint = "fal-ai/flux-pro/v1.1";
   refuseWebhook(params, ctx, endpoint);
+  refuseUser(params, ctx, endpoint);
   refuseImagePrompt(params, ctx, endpoint);
   const size = imageSize(params, ctx, endpoint);
   const tolerance = safetyTolerance(params, 6, ctx, endpoint);
@@ -355,6 +371,7 @@ function mapFluxProV11(params: AnyFlux1, ctx: MediaMapContext): FalFluxProV11 {
 function mapFluxProV11Ultra(params: AnyFlux1, ctx: MediaMapContext): FalFluxProV11Ultra {
   const endpoint = "fal-ai/flux-pro/v1.1-ultra";
   refuseWebhook(params, ctx, endpoint);
+  refuseUser(params, ctx, endpoint);
   refuseImagePrompt(params, ctx, endpoint);
   const tolerance = safetyTolerance(params, 6, ctx, endpoint);
   const format = outputFormat(params, ctx, endpoint);
@@ -395,6 +412,7 @@ function mapFluxProV11Ultra(params: AnyFlux1, ctx: MediaMapContext): FalFluxProV
 function mapFluxDev(params: AnyFlux1, ctx: MediaMapContext): FalFluxDev {
   const endpoint = "fal-ai/flux/dev";
   refuseWebhook(params, ctx, endpoint);
+  refuseUser(params, ctx, endpoint);
   refuseImagePrompt(params, ctx, endpoint);
   if (readBoolean(params, "prompt_upsampling") !== undefined) {
     refuseParam(

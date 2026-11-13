@@ -153,6 +153,15 @@ export type {
   FluxVtoParams,
 } from "./image-edit-tools";
 
+export {
+  BFL_MEGAPIXEL,
+  FLUX_OUTPAINTING_RATES,
+  FLUX_ERASE_RATE,
+  FLUX_DEBLUR_RATE,
+  outpaintingCostUSD,
+} from "./pricing";
+export type { BflMegapixelRate } from "./pricing";
+
 export { imageConstraints, imageFlux1Constraints } from "./constraints";
 
 // No response checker: the submit POST returns an async job envelope

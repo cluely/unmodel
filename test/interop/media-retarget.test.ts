@@ -675,6 +675,17 @@ describe("black-forest-labs → fal", () => {
     expect(result.errors[0]?.message).toContain("loosen moderation");
   });
 
+  test("refused: BFL's end-user id and FLUX.2's 6–7 tolerances have no fal field", () => {
+    const user = bflImageFlux1({ model: "flux-pro-1.1", prompt: "x", user: "u-1" }).toApiSafe("fal");
+    expect(user.ok).toBe(false);
+    if (!user.ok) expect(user.errors[0]?.path).toEqual(["user"]);
+
+    const seven = bflImage({ model: "flux-2-pro", prompt: "x", safety_tolerance: 7 }).toApiSafe(
+      "fal",
+    );
+    expect(seven.ok).toBe(false);
+  });
+
   test("refused: webp, a lone dimension, and the two asymmetric flux-dev fields", () => {
     const webp = bflImage({ model: "flux-2-pro", prompt: "x", output_format: "webp" }).toApiSafe(
       "fal",

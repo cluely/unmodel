@@ -39,6 +39,7 @@ export {
   VIDU_MOVEMENT_AMPLITUDES,
   VIDU_AUDIO_TYPES,
   VIDU_STYLES,
+  VIDU_WM_POSITIONS,
   PROMPT_MAX_CHARS,
   PROMPT_CAPS,
   IMAGE_PROMPT_MAX_CHARS,
@@ -52,6 +53,8 @@ export type {
   ViduMovementAmplitude,
   ViduResolution,
   ViduStyle,
+  ViduWatermarkParams,
+  ViduWatermarkPosition,
 } from "./shared";
 
 export { CREDIT_USD, models, videoModels, imageModels, provider } from "./models";

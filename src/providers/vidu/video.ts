@@ -7,8 +7,12 @@
  *   documented default. Only four models have an arm here — the img2video-only
  *   variants (`viduq3-pro-fast`, the q2-pro/turbo family, `viduq1-classic`,
  *   `vidu2.0`) are reported as unsupported_capability.
- * - `audio` (direct audio-video generation) is q3-only and defaults to true
- *   there; `bgm` is unavailable on q3 and is ignored at 9–10s on q2;
+ * - `audio` (direct audio-video generation) defaults to true on every arm
+ *   ("Whether to use the direct audio-video output capability. Default:
+ *   true." —
+ *   https://platform.vidu.com/docs/api-reference/video-models/vidu-q2/text-to-video,
+ *   2026-11-12, and the same on the q1 page); `bgm` is unavailable on q3 and
+ *   is ignored at 9–10s on q2;
  *   `movement_amplitude` and `style` "do not take effect" on q2/q3. Params the
  *   API accepts and drops are reported as `ignored` deny rules — warnings, not
  *   errors.
@@ -25,7 +29,7 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { videoModels, type ViduModelId } from "./models";
 import {
-  DOCS_BASE,
+  VIDEO_DOCS,
   VIDU_ASPECT_RATIOS,
   VIDU_BASE_URL,
   VIDU_HEADERS,
@@ -35,17 +39,19 @@ import {
   checkRouteSupport,
   payloadSchema,
   promptSchema,
+  watermarkShape,
   type RouteSupport,
   type ViduAspectRatio,
   type ViduMovementAmplitude,
   type ViduResolution,
   type ViduStyle,
+  type ViduWatermarkParams,
 } from "./shared";
 import { videoCostUSD } from "./pricing";
 
 export const TEXT2VIDEO_URL = `${VIDU_BASE_URL}/text2video`;
 
-const SOURCE = `${DOCS_BASE}/text-to-video`;
+const SOURCE = `${VIDEO_DOCS}/text-to-video`;
 
 /** Models with a text2video arm, and what each accepts. */
 export const TEXT2VIDEO_SUPPORT: RouteSupport = {
@@ -55,7 +61,7 @@ export const TEXT2VIDEO_SUPPORT: RouteSupport = {
   viduq1: { resolutions: ["1080p"], duration: { min: 5, max: 5 }, durations: [5] },
 };
 
-export interface Text2VideoParams {
+export interface Text2VideoParams extends ViduWatermarkParams {
   model: ViduModelId | (string & {});
   /** Required; up to 20000 characters on q3, 5000 on q2 / q1. */
   prompt: string;
@@ -77,7 +83,7 @@ export interface Text2VideoParams {
   movement_amplitude?: ViduMovementAmplitude;
   /** Background music. Default false; unavailable on q3. */
   bgm?: boolean;
-  /** Direct audio-video generation. q3 only; defaults to true there. */
+  /** Direct audio-video generation. Defaults to true. */
   audio?: boolean;
   /** Passthrough data echoed back on the task; up to 1048576 characters. */
   payload?: string;
@@ -99,6 +105,7 @@ const videoSchema = z.looseObject({
   audio: z.boolean().optional(),
   payload: payloadSchema.optional(),
   off_peak: z.boolean().optional(),
+  ...watermarkShape,
   callback_url: z.string().optional(),
 });
 
@@ -136,11 +143,6 @@ function q2Ignored(): EndpointConstraints {
       style: { reason: "`style` is not effective on the q2 models.", source: SOURCE, ignored: true },
       movement_amplitude: {
         reason: "`movement_amplitude` does not take effect on the q2 models.",
-        source: SOURCE,
-        ignored: true,
-      },
-      audio: {
-        reason: "direct audio-video generation (`audio`) is only supported by the q3 models.",
         source: SOURCE,
         ignored: true,
       },

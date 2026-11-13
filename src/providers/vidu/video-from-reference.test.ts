@@ -178,6 +178,79 @@ describe("vidu.videoFromReference", () => {
     }
   });
 
+  test("subjects take server_id, and a bare name is a text subject", () => {
+    const r = videoFromReference.safe({
+      model: "viduq3",
+      prompt: "@saved meets @narrator",
+      subjects: [{ name: "saved", server_id: "subject-123" }, { name: "narrator" }],
+      watermark: true,
+      wm_position: 1,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("viduq2-pro takes subjects: 4 image or text, 2 video (1 temporary)", () => {
+    const image = (name: string) => ({ name, images: [`https://example.com/${name}.png`] });
+    const clip = "https://example.com/clip.mp4";
+    const ok = videoFromReference.safe({
+      model: "viduq2-pro",
+      prompt: "hi",
+      subjects: [
+        image("a"),
+        image("b"),
+        image("c"),
+        image("d"),
+        { name: "v1", videos: [clip] },
+        { name: "v2", videos: [clip], server_id: "subject-123" },
+      ],
+      duration: 5,
+    });
+    expect(ok.ok).toBe(true);
+
+    const fiveImages = videoFromReference.safe({
+      model: "viduq2-pro",
+      prompt: "hi",
+      subjects: ["a", "b", "c", "d", "e"].map(image),
+      duration: 5,
+    });
+    expect(fiveImages.ok).toBe(false);
+    if (!fiveImages.ok) {
+      const issue = fiveImages.errors.find((e) => e.code === "invalid_shape");
+      expect(issue?.path).toEqual(["subjects"]);
+      expect(issue?.meta?.max).toBe(4);
+    }
+
+    const twoTemporary = videoFromReference.safe({
+      model: "viduq2-pro",
+      prompt: "hi",
+      subjects: [
+        { name: "v1", videos: [clip] },
+        { name: "v2", videos: [clip] },
+      ],
+      duration: 5,
+    });
+    expect(twoTemporary.ok).toBe(false);
+    if (!twoTemporary.ok) {
+      expect(twoTemporary.errors.find((e) => e.code === "invalid_shape")?.meta?.temporary).toBe(2);
+    }
+
+    const twoClips = videoFromReference.safe({
+      model: "viduq2-pro",
+      prompt: "hi",
+      subjects: [{ name: "v1", videos: [clip, clip] }],
+      duration: 5,
+    });
+    expect(twoClips.ok).toBe(false);
+    if (!twoClips.ok) {
+      expect(twoClips.errors.find((e) => e.code === "invalid_shape")?.path).toEqual([
+        "subjects",
+        0,
+        "videos",
+      ]);
+    }
+  });
+
   test("viduq4-preview has no subjects form", () => {
     const r = videoFromReference.safe({
       model: "viduq4-preview",

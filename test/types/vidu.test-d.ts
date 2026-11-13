@@ -44,6 +44,16 @@ function videoResolutionTypeTests(): void {
   // @ts-expect-error "" is not a resolution (was a bare `string`)
   videoFromReference({ model: "viduq3", prompt: "hi", images: ["https://e.com/a.png"], resolution: "" });
 
+  video({ model: "viduq2", prompt: "hi", watermark: true, wm_position: 2, wm_url: "https://e.com/m.png", meta_data: "{}" });
+  videoFromImage({ model: "viduq3-pro", images: ["https://e.com/a.png"], watermark: false });
+  // @ts-expect-error wm_position is one of the integers 1–4
+  video({ model: "viduq2", prompt: "hi", wm_position: 5 });
+  videoFromReference({
+    model: "viduq2-pro",
+    prompt: "hi",
+    subjects: [{ name: "saved", server_id: "subject-123" }, { name: "clip", videos: ["https://e.com/c.mp4"] }, { name: "text" }],
+  });
+
   // Model ids keep their escape hatch: unknown ids stay legal and warn at runtime.
   video({ model: "viduq9", prompt: "hi", resolution: "720p" });
 }

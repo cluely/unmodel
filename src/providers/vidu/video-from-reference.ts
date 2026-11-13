@@ -4,9 +4,10 @@
  * Wire notes (verified against https://platform.vidu.com/docs/reference-to-video
  * on 2026-08-13):
  * - The page documents TWO request-body forms on this one endpoint:
- *   "Subjects-Reference to Video" (a `subjects` list of named
- *   `{ name, images }` entries, addressable from the prompt as `@name`, plus
- *   `auto_subjects`) and plain "Reference to Video" (a flat `images` array,
+ *   "Subjects-Reference to Video" (a `subjects` list of named entries —
+ *   temporary `images` / `videos`, a saved `server_id`, or a bare `name` text
+ *   subject — addressable from the prompt as `@name`, plus `auto_subjects`)
+ *   and plain "Reference to Video" (a flat `images` array,
  *   or `videos` on `viduq2-pro`). Both ride the same params type here; a
  *   check requires at least one of the three and rejects the combinations the
  *   docs rule out.
@@ -18,8 +19,9 @@
  *   2026-11-12); `videos` is `viduq2-pro`-only.
  * - `images` takes 1–7 references (1–15 on `viduq4-preview`; 1–4 on
  *   `viduq2-pro` when a video is also uploaded); each subject in `subjects`
- *   takes up to 3 images and the whole list is capped at 7 entries (4 on
- *   `viduq2-pro`).
+ *   takes up to 3 images and the list is capped at 7 image or text subjects
+ *   (4 on `viduq2-pro`, which also takes up to 2 video subjects, 1 of them
+ *   temporary).
  * - `sounds` (mp3 audio references, up to 3) is documented on `viduq3-mix`,
  *   `viduq3-ad`, `viduq3-drama` and `viduq4-preview` only.
  * - `audio` defaults to true on `viduq3` / `viduq3-turbo`, `viduq4-preview`
@@ -46,7 +48,7 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { videoModels, type ViduModelId } from "./models";
 import {
-  DOCS_BASE,
+  VIDEO_DOCS,
   VIDU_ASPECT_RATIOS,
   VIDU_AUDIO_TYPES,
   VIDU_BASE_URL,
@@ -58,17 +60,19 @@ import {
   checkRouteSupport,
   payloadSchema,
   promptSchema,
+  watermarkShape,
   type RouteSupport,
   type ViduAspectRatio,
   type ViduAudioType,
   type ViduMovementAmplitude,
   type ViduResolution,
+  type ViduWatermarkParams,
 } from "./shared";
 import { videoCostUSD } from "./pricing";
 
 export const REFERENCE2VIDEO_URL = `${VIDU_BASE_URL}/reference2video`;
 
-const SOURCE = `${DOCS_BASE}/reference-to-video`;
+const SOURCE = `${VIDEO_DOCS}/reference-to-video`;
 
 /** Models with a reference2video arm (union of both documented forms). */
 export const REFERENCE2VIDEO_SUPPORT: RouteSupport = {
@@ -106,15 +110,20 @@ export const REFERENCE2VIDEO_SUPPORT: RouteSupport = {
 /**
  * Models that accept the `subjects` (named-entity) form. viduq3-drama's
  * section carries one ("| `subjects` | `array` | Required |" under "## Q3
- * Drama Create Task" —
+ * Drama Create Task"), and viduq2-pro is named by the form's own `subjects`
+ * row: "When using the q2-pro model, video subjects, text subjects, and image
+ * subjects can be used. The number of image or text subjects should not
+ * exceed 4. The number of video subjects should not exceed 2 (or 1 for
+ * temporary video subjects)." — both
  * https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video,
- * 2026-11-12).
+ * 2026-11-12.
  */
 export const SUBJECTS_MODELS = [
   "viduq3-turbo",
   "viduq3",
   "viduq3-drama",
   "viduq2",
+  "viduq2-pro",
   "viduq1",
   "vidu2.0",
 ] as const;
@@ -147,15 +156,24 @@ const SOUND_COUNTS: Readonly<Record<string, { min: number; max: number }>> = {
   "viduq3-drama": { min: 0, max: 3 },
 };
 
-/** A named subject: up to 3 images, addressable in the prompt as `@name`. */
+/**
+ * A named subject, addressable in the prompt as `@name`: temporary `images`,
+ * a temporary `videos` clip (viduq2-pro), a saved `server_id`, or `name` alone
+ * for a text subject.
+ */
 export interface ViduSubject {
   name: string;
-  images: string[];
+  /** Temporary subject images, up to 3. */
+  images?: string[];
+  /** Temporary subject video — viduq2-pro only; one clip of up to 5 seconds. */
+  videos?: string[];
+  /** A subject saved through the Create Subject API; without it the subject is temporary. */
+  server_id?: string;
   /** Voice character for this subject. Not effective on the Q3 series. */
   voice_id?: string;
 }
 
-export interface Reference2VideoParams {
+export interface Reference2VideoParams extends ViduWatermarkParams {
   model: ViduModelId | (string & {});
   /**
    * Required; up to 20000 characters on q3 / q4, 5000 on q2 / q1 / vidu2.0.
@@ -213,7 +231,9 @@ export interface Reference2VideoParams {
 
 const subjectSchema = z.looseObject({
   name: z.string().min(1),
-  images: z.array(assetSchema),
+  images: z.array(assetSchema).optional(),
+  videos: z.array(assetSchema).optional(),
+  server_id: z.string().optional(),
   voice_id: z.string().optional(),
 });
 
@@ -236,6 +256,7 @@ const videoFromReferenceSchema = z.looseObject({
   audio_type: z.enum(VIDU_AUDIO_TYPES).optional(),
   payload: payloadSchema.optional(),
   off_peak: z.boolean().optional(),
+  ...watermarkShape,
   callback_url: z.string().optional(),
 });
 
@@ -309,28 +330,62 @@ function checkReferences(
       meta: { max, count: params.images!.length, source: SOURCE },
     });
   }
-  if (hasSubjects) {
-    if (params.subjects!.length > max) {
-      ctx.report({
-        code: "invalid_shape",
-        path: ["subjects"],
-        model,
-        message: `\`subjects\` accepts at most ${max} entries for "${model}"; got ${params.subjects!.length}.`,
-        meta: { max, count: params.subjects!.length, source: SOURCE },
-      });
-    }
-    params.subjects!.forEach((subject, index) => {
-      if (Array.isArray(subject.images) && subject.images.length > 3) {
-        ctx.report({
-          code: "invalid_shape",
-          path: ["subjects", index, "images"],
-          model,
-          message: `each subject supports up to 3 images; got ${subject.images.length}.`,
-          meta: { max: 3, count: subject.images.length, source: SOURCE },
-        });
-      }
+  if (hasSubjects) checkSubjects(model, params.subjects!, ctx);
+}
+
+/**
+ * The subjects caps quoted on {@link SUBJECTS_MODELS}: 7 image or text
+ * subjects (4 on viduq2-pro), up to 3 images each, and — on viduq2-pro, the
+ * one model with video subjects — at most 2 video subjects, 1 of them
+ * temporary, each one clip ("Supports uploading at most one 5-second video").
+ */
+function checkSubjects(model: string, subjects: readonly ViduSubject[], ctx: PipelineContext): void {
+  const videoSubjects =
+    model === VIDEO_REFERENCE_MODEL
+      ? subjects.filter((subject) => Array.isArray(subject.videos) && subject.videos.length > 0)
+      : [];
+  const max = model === VIDEO_REFERENCE_MODEL ? 4 : 7;
+  const imageOrText = subjects.length - videoSubjects.length;
+  if (imageOrText > max) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["subjects"],
+      model,
+      message: `\`subjects\` accepts at most ${max} image or text subjects for "${model}"; got ${imageOrText}.`,
+      meta: { max, count: imageOrText, source: SOURCE },
     });
   }
+  const temporary = videoSubjects.filter((subject) => subject.server_id === undefined).length;
+  if (videoSubjects.length > 2 || temporary > 1) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["subjects"],
+      model,
+      message: `\`subjects\` accepts at most 2 video subjects for "${model}", at most 1 of them temporary (no \`server_id\`); got ${videoSubjects.length} (${temporary} temporary).`,
+      meta: { max: 2, maxTemporary: 1, count: videoSubjects.length, temporary, source: SOURCE },
+    });
+  }
+  subjects.forEach((subject, index) => {
+    if (Array.isArray(subject.images) && subject.images.length > 3) {
+      ctx.report({
+        code: "invalid_shape",
+        path: ["subjects", index, "images"],
+        model,
+        message: `each subject supports up to 3 images; got ${subject.images.length}.`,
+        meta: { max: 3, count: subject.images.length, source: SOURCE },
+      });
+    }
+    const clips = subject.videos;
+    if (model === VIDEO_REFERENCE_MODEL && Array.isArray(clips) && clips.length > 1) {
+      ctx.report({
+        code: "invalid_shape",
+        path: ["subjects", index, "videos"],
+        model,
+        message: `a video subject takes one clip of up to 5 seconds; got ${clips.length}.`,
+        meta: { max: 1, count: clips.length, source: SOURCE },
+      });
+    }
+  });
 }
 
 export const videoFromReferenceConstraints = {

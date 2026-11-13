@@ -26,7 +26,7 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { videoModels, type ViduModelId } from "./models";
 import {
-  DOCS_BASE,
+  VIDEO_DOCS,
   VIDU_AUDIO_TYPES,
   VIDU_BASE_URL,
   VIDU_HEADERS,
@@ -37,16 +37,18 @@ import {
   checkRouteSupport,
   payloadSchema,
   promptSchema,
+  watermarkShape,
   type RouteSupport,
   type ViduAudioType,
   type ViduMovementAmplitude,
   type ViduResolution,
+  type ViduWatermarkParams,
 } from "./shared";
 import { videoCostUSD } from "./pricing";
 
 export const IMG2VIDEO_URL = `${VIDU_BASE_URL}/img2video`;
 
-const SOURCE = `${DOCS_BASE}/image-to-video`;
+const SOURCE = `${VIDEO_DOCS}/image-to-video`;
 
 /** Models with an img2video arm, and what each accepts. */
 export const IMG2VIDEO_SUPPORT: RouteSupport = {
@@ -77,7 +79,7 @@ const IMAGE_COUNTS = Object.fromEntries(
   Object.keys(IMG2VIDEO_SUPPORT).map((model) => [model, { min: 1, max: 1 }]),
 );
 
-export interface Img2VideoParams {
+export interface Img2VideoParams extends ViduWatermarkParams {
   model: ViduModelId | (string & {});
   /** Exactly one start-frame image: public URL or base64 data URI. */
   images: string[];
@@ -129,6 +131,7 @@ const videoFromImageSchema = z.looseObject({
   movement_amplitude: z.enum(VIDU_MOVEMENT_AMPLITUDES).optional(),
   payload: payloadSchema.optional(),
   off_peak: z.boolean().optional(),
+  ...watermarkShape,
   callback_url: z.string().optional(),
 });
 

@@ -1,11 +1,13 @@
 // Hand-maintained — Vidu is not in models.dev; refresh from
-//   https://platform.vidu.com/docs/text-to-video       (text2video wire schema)
-//   https://platform.vidu.com/docs/image-to-video      (img2video wire schema)
-//   https://platform.vidu.com/docs/start-end-to-video  (start-end2video)
-//   https://platform.vidu.com/docs/reference-to-video  (reference2video, both forms)
-//   https://platform.vidu.com/docs/reference-to-image  (imageFromReference)
-//   https://platform.vidu.com/docs/pricing             (credit price + per-model rates)
-// Verified 2026-08-13.
+//   https://platform.vidu.com/docs/llms.txt  (index; append `.md` to any page for markdown)
+//   https://platform.vidu.com/docs/api-reference/video-models/{vidu-q4-preview,vidu-q3,vidu-q2,vidu-q1}/
+//     {text-to-video,image-to-video,start-end-to-video,reference-to-video}
+//     (one page per family and route; q4 has image-to-video and reference-to-video only)
+//   https://platform.vidu.com/docs/api-reference/image-generation  (imageFromReference)
+//   https://platform.vidu.com/docs/overview/pricing  (per-model credit rates)
+//   https://platform.vidu.com/docs/api-reference/updates  (model launches)
+//   https://platform.vidu.cn/docs/llms.txt  (CN mirror; fresher where the two disagree)
+// Verified 2026-08-13 unless a row cites its own date.
 //
 // Pricing conversion (documented so the arithmetic never rots unexplained):
 // "Credits are available for $0.005 each" (docs/pricing), and the same page
@@ -47,7 +49,8 @@ import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 export const provider = {
   id: "vidu",
   name: "Vidu",
-  // Auth is `Authorization: Token <key>` — https://platform.vidu.com/docs/text-to-video
+  // Auth is `Authorization: Token <key>` —
+  // https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/text-to-video
   env: ["VIDU_API_KEY"],
   doc: "https://platform.vidu.com/docs",
 } as const satisfies ProviderInfo;

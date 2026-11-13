@@ -101,6 +101,44 @@ describe("vidu.video route rules", () => {
     }
   });
 
+  test("audio on viduq2 is a documented field, not an ignored one", () => {
+    const r = video.safe({ model: "viduq2", prompt: "hi", audio: true });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("issues cite the live API reference", () => {
+    const r = video.safe({ model: "viduq2", prompt: "hi", duration: 16 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.meta?.source).toBe(
+        "https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/text-to-video",
+      );
+    }
+  });
+
+  test("the watermark fields ride every video route", () => {
+    const watermark = {
+      watermark: true,
+      wm_position: 3,
+      wm_url: "https://example.com/mark.png",
+      meta_data: '{"Label":"unmodel"}',
+    } as const;
+    const t = video({ model: "viduq3-pro", prompt: "hi", ...watermark });
+    expect(t.toSdk("vidu")).toMatchObject(watermark);
+    const i = videoFromImage.safe({
+      model: "viduq3-pro",
+      images: ["https://example.com/a.png"],
+      ...watermark,
+    });
+    expect(i.ok).toBe(true);
+    if (i.ok) expect(i.warnings).toEqual([]);
+
+    const bad = safeUnchecked({ model: "viduq3-pro", prompt: "hi", wm_position: 5 });
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) expect(bad.errors[0]?.path).toEqual(["wm_position"]);
+  });
+
   test("2K / 4K are not text2video tiers", () => {
     const r = safeUnchecked({ model: "viduq3-pro", prompt: "hi", resolution: "4K" });
     expect(r.ok).toBe(false);

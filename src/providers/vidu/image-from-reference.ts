@@ -23,7 +23,7 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { imageModels, type ViduImageModelId } from "./models";
 import {
-  DOCS_BASE,
+  IMAGE_DOCS,
   IMAGE_PROMPT_MAX_CHARS,
   VIDU_BASE_URL,
   VIDU_HEADERS,
@@ -34,7 +34,7 @@ import { imageCostUSD } from "./pricing";
 
 export const REFERENCE2IMAGE_URL = `${VIDU_BASE_URL}/reference2image`;
 
-const SOURCE = `${DOCS_BASE}/reference-to-image`;
+const SOURCE = IMAGE_DOCS;
 
 /** Aspect ratios per model — `viduq2` is the wider set. */
 export const IMAGE_ASPECT_RATIOS = {

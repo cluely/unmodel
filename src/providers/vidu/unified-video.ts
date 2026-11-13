@@ -56,7 +56,7 @@ import type {
   VideoParams,
   VideoResolution,
 } from "../../core/unified/vocabulary/video";
-import { DOCS_BASE, VIDU_ASPECT_RATIOS } from "./shared";
+import { VIDEO_DOCS, VIDU_ASPECT_RATIOS } from "./shared";
 import { TEXT2VIDEO_SUPPORT, video as textValidator, type Text2VideoParams } from "./video";
 import {
   IMG2VIDEO_SUPPORT,
@@ -145,7 +145,7 @@ export const video = {
     const derived = ctx.take(
       resolveVideoRoute(
         input,
-        { model: ctx.model, routes: routesFor(ctx.model), source: `${DOCS_BASE}/text-to-video` },
+        { model: ctx.model, routes: routesFor(ctx.model), source: `${VIDEO_DOCS}/text-to-video` },
         { path: ["image"], warn: ctx.warn },
       ),
     );
@@ -153,7 +153,7 @@ export const video = {
     // body is still compiled (and never validated) so one pass reports
     // everything else wrong with the request too.
     const route = derived ?? videoRoute(input);
-    const source = `${DOCS_BASE}/${
+    const source = `${VIDEO_DOCS}/${
       route === "image" ? "image-to-video" : route === "text" ? "text-to-video" : "reference-to-video"
     }`;
 

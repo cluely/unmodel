@@ -515,9 +515,10 @@ function estimate(
 // ---------------------------------------------------------------------------
 
 /**
- * SDK targets shared by both Murf speech endpoints. The official `murf`
- * Python/JS SDKs take wire-shaped params, so the single `"murf"` formatter is
- * the identity. No `"ai-sdk"` target: the AI SDK has no Murf speech provider,
+ * SDK targets shared by both Murf speech endpoints. Murf ships no official JS
+ * SDK (the docs drive these routes with raw fetch; the only official SDK,
+ * `murf` on PyPI, takes snake_case kwargs), so the single `"murf"` formatter
+ * is the identity: the wire body itself. No `"ai-sdk"` target: the AI SDK has no Murf speech provider,
  * and a target that emits params nothing accepts is worse than no target at
  * all. Type alias, not interface — an interface has no implicit index
  * signature and cannot satisfy `SdkFormatters`.
@@ -568,8 +569,8 @@ const streamValidator = createValidator<
  * that response to `checkTts` from this module's `./check`.
  *
  * The result's enumerable properties are the exact fetch JSON body;
- * `.toSdk("murf")` returns it unchanged (the official `murf` Python/JS SDKs take
- * wire-shaped params) and `.request` carries the URL, method and
+ * `.toSdk("murf")` returns it unchanged (Murf has no official JS SDK; the docs
+ * call these routes with raw fetch) and `.request` carries the URL, method and
  * `content-type`. Auth is your job: add an `api-key` header.
  *
  * ```ts

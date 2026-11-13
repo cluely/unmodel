@@ -26,8 +26,6 @@ FALCON are still accepted and use Falcon 2.1"
   `FALCON_STYLE` and the `PronunciationDetail` / `PronunciationDetailType` types.
 - On every Falcon spelling, a `style` other than `"Conversational"` warns ("Falcon 2.1
   voices speak in a single style, `Conversational`." —
-  https://murf.ai/api/docs/text-to-speech/speech-customization), and the `variation`
-  no-op warning now fires for `falcon-2.1`, `falcon2` and `FALCON` too, not only
-  `falcon-2`.
+  https://murf.ai/api/docs/text-to-speech/speech-customization).
 - `unmodel/tts` serves `murf/falcon-2.1` on the stream route (bytes). Both Falcon refs
   take `volumeOffset` and `pronunciationDictionary` as extras.

@@ -53,7 +53,7 @@ export interface SonioxContextObject {
 }
 
 export interface TranscriptionsBody {
-  /** Async model id, e.g. "stt-async-v5" (max 32 chars). */
+  /** Async model id, e.g. "stt-async-v6" (max 32 chars). */
   model: SonioxAsyncModelId | (string & {});
   /** HTTPS/HTTP URL of the audio file (max 4096 chars); exclusive with `file_id`. */
   audio_url?: string;
@@ -261,8 +261,11 @@ const validator = createValidator<
  * Cost estimation: declare the audio length via
  * `options.media = [{ path: ["audio_url"], durationSeconds }]` (or
  * `["file_id"]`) to get a `costUSD` estimate and 5-hour cap enforcement.
+ * Context and translation are billed per input text token on top of the
+ * $0.10/hour rate (soniox.com/pricing), so the estimate is a lower bound for a
+ * request that uses them.
  *
- * Realtime STT (stt-rt-v5) runs over the WebSocket API; validate that
+ * Realtime STT (stt-rt-v6) runs over the WebSocket API; validate that
  * session's configuration message with `realtimeTranscription` instead.
  */
 export const stt = validator as unknown as {

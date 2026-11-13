@@ -144,11 +144,11 @@ describe("soniox.realtimeTranscription bounds + model gate", () => {
       expect(r.errors[0]?.path).toEqual(["model"]);
       expect(r.errors[0]?.message).toContain("stt-rt-v5");
     }
-    expect(REALTIME_MODEL_IDS).toEqual(["stt-rt-v5", "stt-rt-v4"]);
+    expect(REALTIME_MODEL_IDS).toEqual(["stt-rt-v6", "stt-rt-v5", "stt-rt-v4"]);
   });
 
   test("an unknown model warns but passes — it may be new", () => {
-    const r = realtimeTranscription.safe({ model: "stt-rt-v6", audio_format: "auto" });
+    const r = realtimeTranscription.safe({ model: "stt-rt-v9", audio_format: "auto" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
@@ -299,6 +299,78 @@ describe("soniox.realtimeTranscription bounds + model gate", () => {
       translation: { type: "two_way", language_a: "en" },
     });
     expect(incomplete.ok).toBe(false);
+  });
+});
+
+// https://docs.soniox.com/api-reference/stt/websocket-api (2026-11-12):
+// endpoint tuning is "Supported by `stt-rt-v5` and `stt-rt-v6`.", and
+// `enable_agent_text_input` is "Supported only by `stt-rt-v6`."
+describe("soniox.realtimeTranscription stt-rt-v6", () => {
+  test("stt-rt-v6 takes every v5 field plus agent text input, warning-free", () => {
+    const r = realtimeTranscription.safe({
+      model: "stt-rt-v6",
+      audio_format: "pcm_s16le",
+      sample_rate: 16000,
+      num_channels: 1,
+      enable_endpoint_detection: true,
+      endpoint_sensitivity: 0.5,
+      endpoint_latency_adjustment_level: 2,
+      enable_agent_text_input: true,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("agent text input on a model without it is refused, naming stt-rt-v6", () => {
+    for (const model of ["stt-rt-v5", "stt-rt-v4"]) {
+      const r = realtimeTranscription.safe({
+        model,
+        audio_format: "auto",
+        enable_agent_text_input: true,
+      });
+      expect(r.ok, model).toBe(false);
+      if (r.ok) continue;
+      expect(r.errors).toHaveLength(1);
+      expect(r.errors[0]?.code).toBe("unsupported_param");
+      expect(r.errors[0]?.path).toEqual(["enable_agent_text_input"]);
+      expect(r.errors[0]?.message).toContain('"stt-rt-v6"');
+      expect(r.errors[0]?.meta?.source).toBe("https://docs.soniox.com/stt/rt/agent-text-input");
+    }
+  });
+
+  test("agent text input set to false asks for nothing and passes on v5", () => {
+    const r = realtimeTranscription.safe({
+      model: "stt-rt-v5",
+      audio_format: "auto",
+      enable_agent_text_input: false,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("an unknown id keeps agent text input; an async id is refused by the model gate alone", () => {
+    const unknown = realtimeTranscription.safe({
+      model: "stt-rt-v9",
+      audio_format: "auto",
+      enable_agent_text_input: true,
+    });
+    expect(unknown.ok).toBe(true);
+    if (unknown.ok) expect(unknown.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+
+    const async = realtimeTranscription.safe({
+      model: "stt-async-v6",
+      audio_format: "auto",
+      enable_agent_text_input: true,
+    });
+    expect(async.ok).toBe(false);
+    if (!async.ok) expect(async.errors.map((e) => e.code)).toEqual(["unsupported_capability"]);
+  });
+
+  test("stt-rt-v6 prices at the realtime $0.12/hour rate", () => {
+    expect(models["stt-rt-v6"].cost?.perAudioMinute).toBeCloseTo(0.12 / 60, 12);
+    const r = realtimeTranscription.safe({ model: "stt-rt-v6", audio_format: "auto" }, tenMinutes);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.02, 10);
   });
 });
 

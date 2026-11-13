@@ -13,12 +13,14 @@ import { EXTRA } from "../../core/unified/derive";
 import type { SttModelParamTable } from "../../core/unified/vocabulary/stt";
 import type { SonioxTranslation } from "./stt";
 
-/** The two async models — the ref union for `soniox/…`. */
-export const MODELS = ["stt-async-v5", "stt-async-v4"] as const;
+/** The async models — the ref union for `soniox/…`. */
+export const MODELS = ["stt-async-v6", "stt-async-v5", "stt-async-v4"] as const;
 
 /**
- * Both async models share one row: one schema, one param surface, no per-model
- * constraint table.
+ * Every async model shares one row: one schema, one param surface, no
+ * per-model constraint table ("The v6 models are fully compatible with the
+ * existing v5 models and Soniox API.", https://docs.soniox.com/stt/models,
+ * 2026-11-12).
  *
  * `timestamps: ["word"]` and no `"none"` — Soniox returns per-token timing on
  * every response and offers no switch, so `"word"` agrees and costs nothing
@@ -47,6 +49,7 @@ export const SONIOX_ROW = {
 } as const;
 
 export const SONIOX_STT_MODEL_PARAMS = {
+  "stt-async-v6": SONIOX_ROW,
   "stt-async-v5": SONIOX_ROW,
   "stt-async-v4": SONIOX_ROW,
 } as const satisfies SttModelParamTable;

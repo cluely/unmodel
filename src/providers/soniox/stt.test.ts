@@ -150,6 +150,32 @@ describe("soniox.stt duration + cost", () => {
   });
 });
 
+// https://docs.soniox.com/stt/models (2026-11-12): "The v6 models are fully
+// compatible with the existing v5 models and Soniox API."
+describe("soniox.stt stt-async-v6", () => {
+  test("validates warning-free and prices at the async $0.10/hour rate", () => {
+    expect(models["stt-async-v6"].cost?.perAudioMinute).toBeCloseTo(0.1 / 60, 12);
+    const r = stt.safe(
+      { model: "stt-async-v6", audio_url: "https://a.com/x.mp3", enable_speaker_diarization: true },
+      { media: [{ path: ["audio_url"], durationSeconds: 3600 }] },
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(0.1, 10);
+    }
+  });
+
+  test("the realtime v6 id is gated off the async endpoint", () => {
+    const r = stt.safe({ model: "stt-rt-v6", audio_url: "https://a.com/x.mp3" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("unsupported_capability");
+      expect(r.errors[0]?.message).toContain('"stt-async-v6"');
+    }
+  });
+});
+
 describe("soniox toUploadFormData", () => {
   test("builds the multipart body with file and client_reference_id", () => {
     const blob = new Blob(["abc"], { type: "audio/mpeg" });

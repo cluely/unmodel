@@ -5,7 +5,9 @@
  * client sends as the first message after opening
  * `wss://stt-rt.soniox.com/transcribe-websocket` (verified 2026-08-13 against
  * https://soniox.com/docs/stt/api-reference/websocket-api and
- * https://soniox.com/docs/stt/rt/real-time-transcription). Everything the
+ * https://soniox.com/docs/stt/rt/real-time-transcription; the stt-rt-v6
+ * additions re-verified 2026-11-12 against
+ * https://docs.soniox.com/api-reference/stt/websocket-api). Everything the
  * session does — model, audio format, language hints, diarization, endpoint
  * detection, translation — is decided by that one object, which is why it is
  * worth validating even though the socket itself is not.
@@ -43,9 +45,11 @@ import { models, REALTIME_MODEL_IDS, type SonioxRealtimeModelId } from "./models
 /** "wss://stt-rt.soniox.com/transcribe-websocket" — the real-time STT socket. */
 export const REALTIME_URL = "wss://stt-rt.soniox.com/transcribe-websocket";
 
-const WEBSOCKET_DOCS = "https://soniox.com/docs/stt/api-reference/websocket-api";
+const WEBSOCKET_DOCS = "https://docs.soniox.com/api-reference/stt/websocket-api";
+/** The page that defines `enable_agent_text_input` and what happens on a model without it. */
+const AGENT_TEXT_INPUT_DOCS = "https://docs.soniox.com/stt/rt/agent-text-input";
 const AUDIO_FORMATS_DOCS = "https://soniox.com/docs/speech-to-text/core-concepts/audio-formats";
-const MODELS_DOCS = "https://soniox.com/docs/stt/models";
+const MODELS_DOCS = "https://docs.soniox.com/stt/models";
 /**
  * The page that defines what `context` is and what its limit counts:
  * "Context size limit — Maximum 8,000 tokens (~10,000 characters)."
@@ -121,10 +125,10 @@ const AUDIO_FORMAT_SET: ReadonlySet<string> = new Set([
 /** `max_endpoint_delay_ms`: "500–3000, default 2000". */
 export const MAX_ENDPOINT_DELAY_MS_MIN = 500;
 export const MAX_ENDPOINT_DELAY_MS_MAX = 3000;
-/** `endpoint_sensitivity`: "-1.0 to 1.0, default 0.0"; v5 only. */
+/** `endpoint_sensitivity`: "-1.0 to 1.0, default 0.0"; stt-rt-v5 and stt-rt-v6 only. */
 export const ENDPOINT_SENSITIVITY_MIN = -1;
 export const ENDPOINT_SENSITIVITY_MAX = 1;
-/** `endpoint_latency_adjustment_level`: "0–3, default 0"; v5 only. */
+/** `endpoint_latency_adjustment_level`: "0–3, default 0"; stt-rt-v5 and stt-rt-v6 only. */
 export const ENDPOINT_LATENCY_ADJUSTMENT_LEVEL_MIN = 0;
 export const ENDPOINT_LATENCY_ADJUSTMENT_LEVEL_MAX = 3;
 /**
@@ -151,8 +155,16 @@ export const MAX_CONTEXT_CHARACTERS = 10_000;
 /** `client_reference_id` — "Max 256 characters". */
 export const MAX_CLIENT_REFERENCE_ID_CHARACTERS = 256;
 
-/** The model ids whose docs read "Supported only by the Soniox v5 model". */
-const V5_MODEL_IDS: ReadonlySet<string> = new Set(["stt-rt-v5"]);
+/**
+ * The model ids `endpoint_sensitivity` and `endpoint_latency_adjustment_level`
+ * name: "Supported by `stt-rt-v5` and `stt-rt-v6`." (WEBSOCKET_DOCS, 2026-11-12).
+ */
+const ENDPOINT_TUNING_MODEL_IDS: ReadonlySet<string> = new Set(["stt-rt-v6", "stt-rt-v5"]);
+/**
+ * The model ids `enable_agent_text_input` names: "Supported only by
+ * `stt-rt-v6`." (WEBSOCKET_DOCS, 2026-11-12).
+ */
+const AGENT_TEXT_INPUT_MODEL_IDS: ReadonlySet<string> = new Set(["stt-rt-v6"]);
 
 // ---------------------------------------------------------------------------
 // Wire type — the configuration message, field for field.
@@ -165,7 +177,7 @@ export interface RealtimeTranscriptionConfig {
    * alone. Browser clients should carry a temporary key, not the real one.
    */
   api_key?: string;
-  /** Real-time model id, e.g. "stt-rt-v5". Async (stt-async-*) ids are not served here. */
+  /** Real-time model id, e.g. "stt-rt-v6". Async (stt-async-*) ids are not served here. */
   model: SonioxRealtimeModelId | (string & {});
   /**
    * Format of the audio frames. `"auto"` (or a container name) lets Soniox
@@ -193,16 +205,22 @@ export interface RealtimeTranscriptionConfig {
   max_endpoint_delay_ms?: number;
   /**
    * Endpoint eagerness, {@link ENDPOINT_SENSITIVITY_MIN}–{@link ENDPOINT_SENSITIVITY_MAX}.
-   * Default 0. "Supported only by the Soniox v5 model."
+   * Default 0. "Supported by `stt-rt-v5` and `stt-rt-v6`."
    */
   endpoint_sensitivity?: number;
   /**
    * Latency/accuracy trade-off for endpointing, an integer
    * {@link ENDPOINT_LATENCY_ADJUSTMENT_LEVEL_MIN}–
-   * {@link ENDPOINT_LATENCY_ADJUSTMENT_LEVEL_MAX}. Default 0. "Supported only
-   * by the Soniox v5 model."
+   * {@link ENDPOINT_LATENCY_ADJUSTMENT_LEVEL_MAX}. Default 0. "Supported by
+   * `stt-rt-v5` and `stt-rt-v6`."
    */
   endpoint_latency_adjustment_level?: number;
+  /**
+   * "Lets you send your voice agent's text with `agent_text` messages.
+   * Supported only by `stt-rt-v6`." `true` on a model without it ends the
+   * stream. The `agent_text` frames themselves are socket lifecycle.
+   */
+  enable_agent_text_input?: boolean;
   /**
    * Structured or free-form customization context. The four sections combined
    * carry at most {@link MAX_CONTEXT_CHARACTERS} characters of content — see
@@ -250,6 +268,7 @@ const schema = z.looseObject({
     .min(ENDPOINT_LATENCY_ADJUSTMENT_LEVEL_MIN)
     .max(ENDPOINT_LATENCY_ADJUSTMENT_LEVEL_MAX)
     .optional(),
+  enable_agent_text_input: z.boolean().optional(),
   context: z.union([z.string(), z.looseObject({})]).nullable().optional(),
   translation: z
     .union([
@@ -316,17 +335,19 @@ function checkRealtimeModel(
 
 /**
  * `endpoint_sensitivity` and `endpoint_latency_adjustment_level` are
- * "Supported only by the Soniox v5 model". A warning rather than an error:
- * the only other catalogued real-time id, stt-rt-v4, is an alias that
- * auto-routes to v5, so the request is not necessarily rejected — it just is
- * not documented to honour these two fields.
+ * "Supported by `stt-rt-v5` and `stt-rt-v6`." (WEBSOCKET_DOCS, 2026-11-12),
+ * whose error list carries "Model does not support endpoint_sensitivity." and
+ * "Model does not support endpoint_latency_adjustment_level." for a model
+ * without them. A warning rather than an error all the same: the only other
+ * catalogued real-time id, stt-rt-v4, is an alias — "| **stt-rt-v4** |
+ * `stt-rt-v5` |" (MODELS_DOCS) — of a model that has both.
  */
-function checkV5OnlyEndpointParams(
+function checkEndpointTuningParams(
   params: RealtimeTranscriptionConfig,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
-  if (info === undefined || V5_MODEL_IDS.has(params.model)) return;
+  if (info === undefined || ENDPOINT_TUNING_MODEL_IDS.has(params.model)) return;
   for (const field of ["endpoint_sensitivity", "endpoint_latency_adjustment_level"] as const) {
     if (params[field] !== undefined) {
       ctx.report({
@@ -334,11 +355,48 @@ function checkV5OnlyEndpointParams(
         severity: "warning",
         path: [field],
         model: params.model,
-        message: `\`${field}\` is "supported only by the Soniox v5 model"; "${params.model}" is not documented to honour it.`,
-        meta: { source: WEBSOCKET_DOCS },
+        message: `\`${field}\` is supported by ${quoteIds(ENDPOINT_TUNING_MODEL_IDS)}; "${params.model}" is not documented to honour it.`,
+        meta: { supportedModels: [...ENDPOINT_TUNING_MODEL_IDS], source: WEBSOCKET_DOCS },
       });
     }
   }
+}
+
+/**
+ * `enable_agent_text_input: true` on a catalogued real-time model other than
+ * stt-rt-v6. An error: AGENT_TEXT_INPUT_DOCS lists "`enable_agent_text_input`
+ * on a model that doesn't support it." under "These errors end the stream"
+ * (2026-11-12), and stt-rt-v4 is an alias of stt-rt-v5, which lacks it too.
+ * `false` asks for nothing and passes; so do ids unknown to the catalog (they
+ * may be newer models) and async ids, which `checkRealtimeModel` already
+ * refuses.
+ *
+ * Time-bound: "After December 15, 2026, requests using stt-rt-v5 will
+ * automatically route to stt-rt-v6" (MODELS_DOCS) — revisit this gate when
+ * the v5 rows become aliases of v6.
+ */
+function checkAgentTextInput(
+  params: RealtimeTranscriptionConfig,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.enable_agent_text_input !== true) return;
+  if (info?.family !== "stt-rt" || AGENT_TEXT_INPUT_MODEL_IDS.has(params.model)) return;
+  ctx.report({
+    code: "unsupported_param",
+    path: ["enable_agent_text_input"],
+    model: params.model,
+    message: `\`enable_agent_text_input\` is supported only by ${quoteIds(AGENT_TEXT_INPUT_MODEL_IDS)}; on "${params.model}" Soniox ends the stream. Switch the model, or drop the field.`,
+    meta: {
+      supportedModels: [...AGENT_TEXT_INPUT_MODEL_IDS],
+      source: AGENT_TEXT_INPUT_DOCS,
+      wireSource: WEBSOCKET_DOCS,
+    },
+  });
+}
+
+function quoteIds(ids: ReadonlySet<string>): string {
+  return [...ids].map((id) => `"${id}"`).join(" and ");
 }
 
 /**
@@ -448,7 +506,13 @@ const validator = createValidator<RealtimeTranscriptionConfig, unknown>({
   schema,
   modelId: (params) => params.model,
   catalog: models,
-  checks: [checkAudioFormat, checkRealtimeModel, checkV5OnlyEndpointParams, checkContextLength],
+  checks: [
+    checkAudioFormat,
+    checkRealtimeModel,
+    checkEndpointTuningParams,
+    checkAgentTextInput,
+    checkContextLength,
+  ],
   estimate: estimateSession,
   finalize,
 });
@@ -465,11 +529,13 @@ const validator = createValidator<RealtimeTranscriptionConfig, unknown>({
  * Cost estimation: a live session has no length until it ends, so declare the
  * expected one — `options.media = [{ path: [], durationSeconds }]` — to price
  * it at the catalog's real-time rate ($0.12/hour), and pair it with
- * `options.maxCostUSD` for a budget check.
+ * `options.maxCostUSD` for a budget check. Context, translation and agent text
+ * are billed per input text token on top of that rate (soniox.com/pricing), so
+ * the estimate is a lower bound for a session that uses them.
  *
  * ```ts
  * const config = soniox.realtimeTranscription({
- *   model: "stt-rt-v5",
+ *   model: "stt-rt-v6",
  *   audio_format: "pcm_s16le",
  *   sample_rate: 16000,
  *   num_channels: 1,

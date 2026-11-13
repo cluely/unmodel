@@ -34,7 +34,7 @@ provider — not their quality ranking.
 | elevenlabs | tts (r11), stt (Scribe, r1), music, sfx, sts, dubbing | native | **native** (TTS+STT+music+sfx+sts+dubbing live; realtime configs live) | ✋ | per-character pricing; `textToSpeechStreamInput` + `speechToTextRealtime` validate the socket configs; `dub` + `dubLanguage` are wire-only (no `unmodel/dubbing` — see "Dubbing" below); `sts` (voice changer) is `MULTIPART_ONLY` — its `audio` is a required `Blob` |
 | cartesia | tts (Sonic, r6), stt (Ink) | native | **native** (TTS+STT live; realtime configs live) | ✋ | `ttsWebsocket` (generation message) + `sttWebsocket` (connection query set) |
 | inworld | tts (Realtime TTS, r7), stt | native | **native** (TTS+STT live; realtime configs live) | ✋ | STT validates the JSON body (inline base64; the multipart variant is not described); `realtimeTranscribeConfig` + `realtimeVoiceContext` validate the first frames |
-| soniox | stt (v5, r11) | native | **native** (STT live; realtime config live) | ✋ | async `stt` + `realtimeTranscription` config message |
+| soniox | stt (v6, r11) | native | **native** (STT live; realtime config live) | ✋ | async `stt` + `realtimeTranscription` config message |
 | stepfun | llm (r83), tts (r5) | openai-compatible | **oai-base** (chat live) + native `tts` (stepaudio-3-tts, stepaudio-2.5-tts, live) | ✅ | speech is a hand catalog mirroring the generated rows, plus `stepaudio-3-tts` by hand (not in models.dev yet); image generation/edit is gone — "`step-2x-large` and `step-image-edit-2` were retired on October 10, 2026" (platform.stepfun.ai pricing page, 2026-11-12) |
 
 ## Wave 2 — inference hosts & aggregators (all openai-compatible, all in models.dev → oai-base)

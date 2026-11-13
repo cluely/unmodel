@@ -46,6 +46,12 @@ describe("soniox.checkTranscription", () => {
     expect(report.costUSD).toBeCloseTo(0.12, 10);
   });
 
+  test("the v6 ids price at their mode's rate", () => {
+    const hour = { status: "completed", audio_duration_ms: 3_600_000 } as const;
+    expect(checkTranscription({ ...hour, model: "stt-async-v6" }).costUSD).toBeCloseTo(0.1, 10);
+    expect(checkTranscription({ ...hour, model: "stt-rt-v6" }).costUSD).toBeCloseTo(0.12, 10);
+  });
+
   test("never throws on an empty object", () => {
     const report = checkTranscription({});
     expect(report.warnings).toEqual([]);

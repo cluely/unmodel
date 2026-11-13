@@ -87,6 +87,21 @@ describe("murf.tts happy path", () => {
     }
   });
 
+  test("pronunciationDictionary is a generate field too, with the same entry types", () => {
+    const ok = tts.safe({
+      text: "tomato",
+      voiceId: "v",
+      pronunciationDictionary: { tomato: { type: "IPA", pronunciation: "təˈmɑːtəʊ" } },
+    });
+    expect(ok.ok && ok.warnings).toEqual([]);
+    const bad = safeGenerate({
+      text: "hi",
+      voiceId: "v",
+      pronunciationDictionary: { hi: { type: "ARPABET" } },
+    });
+    expect(bad.ok).toBe(false);
+  });
+
   test("unknown top-level params warn", () => {
     const r = safeGenerate({ text: "hi", voiceId: "v", model: "falcon-2" });
     expect(r.ok).toBe(true);
@@ -124,31 +139,34 @@ describe("murf.tts numeric bounds", () => {
 });
 
 describe("murf companded-codec rules", () => {
-  test("ULAW with a non-8000 sample rate errors", () => {
+  // "If you specify a different channel type or sample rate, the API will
+  // default to the supported values" — so these warn; they never fail.
+  test("ULAW with a non-8000 sample rate warns that 8000 Hz is used", () => {
     const r = tts.safe({
       text: "hi",
       voiceId: "v",
       format: "ULAW",
       sampleRate: 44100,
     });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const err = r.errors.find((e) => e.path[0] === "sampleRate");
-      expect(err?.code).toBe("invalid_enum_value");
-      expect(err?.meta?.allowed).toEqual([COMPANDED_SAMPLE_RATE]);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const warn = r.warnings.find((w) => w.path[0] === "sampleRate");
+      expect(warn?.code).toBe("invalid_enum_value");
+      expect(warn?.severity).toBe("warning");
+      expect(warn?.meta?.allowed).toEqual([COMPANDED_SAMPLE_RATE]);
     }
   });
 
-  test("ALAW with STEREO errors", () => {
+  test("ALAW with STEREO warns that MONO is used", () => {
     const r = tts.safe({
       text: "hi",
       voiceId: "v",
       format: "ALAW",
       channelType: "STEREO",
     });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors.find((e) => e.path[0] === "channelType")?.meta?.allowed).toEqual([
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.find((w) => w.path[0] === "channelType")?.meta?.allowed).toEqual([
         COMPANDED_CHANNEL_TYPE,
       ]);
     }
@@ -167,9 +185,9 @@ describe("murf companded-codec rules", () => {
   });
 
   test("the rule also applies on the streaming route", () => {
-    expect(
-      ttsStream.safe({ text: "hi", voiceId: "v", format: "ULAW", sampleRate: 24000 }).ok,
-    ).toBe(false);
+    const r = ttsStream.safe({ text: "hi", voiceId: "v", format: "ULAW", sampleRate: 24000 });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.path[0])).toEqual(["sampleRate"]);
   });
 
   test("non-companded formats are unaffected", () => {
@@ -243,6 +261,12 @@ describe("murf.ttsStream", () => {
       expect(r.warnings).toEqual([]);
       expect(r.estimate.costUSD).toBeCloseTo((1000 * 10) / 1_000_000, 12);
     }
+  });
+
+  test("the falcon-2 row is Falcon 2.1 under its earlier id, at the same rate", () => {
+    expect(models["falcon-2"].name).toBe("Falcon 2.1 (earlier id falcon-2)");
+    expect(models["falcon-2"].cost).toEqual(models["falcon-2.1"].cost);
+    expect(models["falcon-2"].limit).toEqual(models["falcon-2.1"].limit);
   });
 
   test("the earlier spellings falcon2 and FALCON price as falcon-2.1", () => {
@@ -393,6 +417,23 @@ describe("murf unified tts", () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.params.request.url).toBe(SPEECH_STREAM_URL);
   });
+
+  test("murf/gen2 takes pronunciationDictionary on the generate route", () => {
+    const r = unified.safe({
+      model: "murf/gen2",
+      text: "hi",
+      voice: "en-US-natalie",
+      pronunciationDictionary: { hi: { type: "SAY_AS", pronunciation: "high" } },
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([]);
+    expect(r.params.request.url).toBe(SPEECH_GENERATE_URL);
+    expect(JSON.parse(JSON.stringify(r.params))).toMatchObject({
+      modelVersion: "GEN2",
+      pronunciationDictionary: { hi: { type: "SAY_AS", pronunciation: "high" } },
+    });
+  });
 });
 
 describe("murf character limit", () => {
@@ -407,6 +448,8 @@ describe("murf character limit", () => {
       expect(err?.meta).toMatchObject({
         limitCharacters: MURF_MAX_CHARACTERS,
         actualCharacters: MURF_MAX_CHARACTERS + 1,
+        // The FAQ states the cap; the TTS overview page does not.
+        source: "https://murf.ai/api/docs/resources/faq",
       });
     }
   });

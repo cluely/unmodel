@@ -4,8 +4,9 @@
  *
  * Wire reference:
  * https://murf.ai/api/docs/api-reference/text-to-speech/generate and
- * https://murf.ai/api/docs/api-reference/text-to-speech/stream
- * (verified 2026-08-13). Params mirror the wire bodies exactly (camelCase).
+ * https://murf.ai/api/docs/api-reference/text-to-speech/stream, and their
+ * request schemas in https://murf.ai/api/docs/openapi.json
+ * (verified 2026-11-12). Params mirror the wire bodies exactly (camelCase).
  *
  * - TWO MODEL SPELLINGS, ONE CATALOG: `/v1/speech/generate` selects the model
  *   with `modelVersion: "GEN2"` (upper-case, and GEN2 is its only documented
@@ -20,12 +21,14 @@
  *   `/v1/speech/generate`, and `gen2` on `/v1/speech/stream`, where "The
  *   Gen2 model has been decommissioned for the Streaming API."
  * - CHARACTER CAP: "The API supports up to 3,000 characters per request."
- *   A breach is reported as `over_output_limit` — there is no
+ *   (https://murf.ai/api/docs/resources/faq). A breach is reported as `over_output_limit` — there is no
  *   character-specific issue code, so the message and meta
  *   ({ limitCharacters, actualCharacters }) spell out that the limit is in
  *   characters, not tokens.
  * - COMPANDED CODECS: "ULAW and ALAW formats only support mono channel type
- *   and a sample rate of 8000 Hz." Both halves are enforced as errors.
+ *   and a sample rate of 8000 Hz. If you specify a different channel type or
+ *   sample rate, the API will default to the supported values." Both halves
+ *   are therefore warnings: the request succeeds, at 8000 Hz / MONO.
  * - RESPONSE CHECKER, PER ROUTE — Murf has one, for exactly one of its two
  *   routes, so "murf has no checker" and "murf has a checker" are both wrong.
  *   `/v1/speech/generate` answers with JSON (`audioFile`,
@@ -68,6 +71,7 @@ const GENERATE_DOCS = "https://murf.ai/api/docs/api-reference/text-to-speech/gen
 const STREAM_DOCS = "https://murf.ai/api/docs/api-reference/text-to-speech/stream";
 const CUSTOMIZATION_DOCS = "https://murf.ai/api/docs/text-to-speech/speech-customization";
 const TTS_OVERVIEW_DOCS = "https://murf.ai/api/docs/text-to-speech/overview";
+const FAQ_DOCS = "https://murf.ai/api/docs/resources/faq";
 const GEN2_STREAM_DECOMMISSION_DOCS = "https://murf.ai/api/docs/changelog/2026/10/5";
 
 /**
@@ -141,7 +145,10 @@ export interface PronunciationDetail {
 
 /** Fields both speech routes share. */
 interface SpeechCommon {
-  /** "The text that is to be synthesised"; supports pause syntax (`[pause 1s]`). Max 3,000 characters. */
+  /**
+   * "The text that is to be synthesised". Max 3,000 characters. Pause syntax
+   * (`[pause 1s]`) is Gen2's: "custom pause tags … are Synthesize (Gen 2) only".
+   */
   text: string;
   /** "Use the GET /v1/speech/voices API to find supported voiceIds" (e.g. "en-US-natalie"). */
   voiceId: string;
@@ -155,8 +162,10 @@ interface SpeechCommon {
   format?: MurfFormat;
   /** Default "MONO". */
   channelType?: MurfChannelType;
-  /** Language code, e.g. "en-US", "es-ES". Gen2 only. */
+  /** Language code, e.g. "en-US", "es-ES" — on both routes, for Falcon 2.1 and Gen2 alike. */
   locale?: string;
+  /** "Custom pronunciations for words in `text`." */
+  pronunciationDictionary?: Record<string, PronunciationDetail>;
 }
 
 export interface SpeechGenerateBody extends SpeechCommon {
@@ -190,8 +199,6 @@ export interface SpeechStreamBody extends SpeechCommon {
    * nearest limit."
    */
   volumeOffset?: number;
-  /** "Custom pronunciations for words in `text`." */
-  pronunciationDictionary?: Record<string, PronunciationDetail>;
   /** @deprecated Superseded by `locale`. */
   multiNativeLocale?: string;
 }
@@ -209,6 +216,15 @@ const commonShape = {
   format: z.string().optional(),
   channelType: z.string().optional(),
   locale: z.string().optional(),
+  pronunciationDictionary: z
+    .record(
+      z.string(),
+      z.looseObject({
+        type: z.enum(PRONUNCIATION_TYPES).optional(),
+        pronunciation: z.string().optional(),
+      }),
+    )
+    .optional(),
 };
 
 const generateSchema = z.looseObject({
@@ -223,20 +239,11 @@ const generateSchema = z.looseObject({
   multiNativeLocale: z.string().optional(),
 });
 
-const pronunciationDictionarySchema = z.record(
-  z.string(),
-  z.looseObject({
-    type: z.enum(PRONUNCIATION_TYPES).optional(),
-    pronunciation: z.string().optional(),
-  }),
-);
-
 const streamSchema = z.looseObject({
   ...commonShape,
   model: z.string().optional(),
   sampleRate: z.literal(STREAM_SAMPLE_RATES).optional(),
   volumeOffset: z.number().int().optional(),
-  pronunciationDictionary: pronunciationDictionarySchema.optional(),
   multiNativeLocale: z.string().optional(),
 });
 
@@ -289,8 +296,10 @@ function checkSharedEnums(
 
 /**
  * "ULAW and ALAW formats only support mono channel type and a sample rate of
- * 8000 Hz." Both halves are hard requirements, so a mismatch is an error —
- * the API cannot fulfil the requested combination.
+ * 8000 Hz. If you specify a different channel type or sample rate, the API
+ * will default to the supported values." (overview, 2026-11-12). The API
+ * substitutes rather than refuses, so a mismatch is a warning naming the
+ * value that is actually applied.
  */
 function checkCompandedFormat(
   params: SpeechCommon & { sampleRate?: number },
@@ -303,9 +312,10 @@ function checkCompandedFormat(
   if (params.sampleRate !== undefined && params.sampleRate !== COMPANDED_SAMPLE_RATE) {
     ctx.report({
       code: "invalid_enum_value",
+      severity: "warning",
       path: ["sampleRate"],
       model,
-      message: `\`format\` ${JSON.stringify(format)} only supports a sample rate of ${COMPANDED_SAMPLE_RATE} Hz; got ${params.sampleRate}.`,
+      message: `\`format\` ${JSON.stringify(format)} only supports a sample rate of ${COMPANDED_SAMPLE_RATE} Hz; got ${params.sampleRate}, so the API uses ${COMPANDED_SAMPLE_RATE} Hz instead.`,
       meta: {
         allowed: [COMPANDED_SAMPLE_RATE],
         value: params.sampleRate,
@@ -317,9 +327,10 @@ function checkCompandedFormat(
   if (params.channelType !== undefined && params.channelType !== COMPANDED_CHANNEL_TYPE) {
     ctx.report({
       code: "invalid_enum_value",
+      severity: "warning",
       path: ["channelType"],
       model,
-      message: `\`format\` ${JSON.stringify(format)} only supports the ${COMPANDED_CHANNEL_TYPE} channel type; got ${JSON.stringify(params.channelType)}.`,
+      message: `\`format\` ${JSON.stringify(format)} only supports the ${COMPANDED_CHANNEL_TYPE} channel type; got ${JSON.stringify(params.channelType)}, so the API uses ${COMPANDED_CHANNEL_TYPE} instead.`,
       meta: {
         allowed: [COMPANDED_CHANNEL_TYPE],
         value: params.channelType,
@@ -349,7 +360,7 @@ function checkCharacterLimit(
     path: ["text"],
     model,
     message: `\`text\` is ${actual} characters; the Murf API "supports up to ${limit} characters per request" (this limit is in characters, not tokens). Split the input into multiple requests.`,
-    meta: { limitCharacters: limit, actualCharacters: actual, source: TTS_OVERVIEW_DOCS },
+    meta: { limitCharacters: limit, actualCharacters: actual, source: FAQ_DOCS },
   });
 }
 

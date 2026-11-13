@@ -26,17 +26,17 @@ export const MODELS = ["gen2", "falcon-2.1", "falcon-2"] as const;
  * arise: an extra declared on a row is a field of the one body that row
  * compiles to.
  *
- * `style`, `pitch` and `channelType` are `SpeechCommon` and therefore on both.
+ * `style`, `pitch`, `channelType` and `pronunciationDictionary` are
+ * `SpeechCommon` and therefore on both.
  * The four the generate body adds are Gen2's alone: `variation` and
  * `audioDuration` are marked "Gen2 only" in the reference, and
  * `encodeAsBase64` / `wordDurationsAsOriginalText` exist only on
  * `SpeechGenerateBody`. Sending any of them to `/v1/speech/stream` would put a
  * key on a body that has no such field, which is the silent-drop the loss
- * contract forbids — so the Falcon rows take the shared three plus the two
- * fields only the stream body has, `volumeOffset` and
- * `pronunciationDictionary`. Both Falcon rows carry the same extras because
- * they are one model on one body: `falcon-2` is an earlier identifier that
- * "now use[s] Falcon 2.1" (changelog 2026-10-19).
+ * contract forbids — so the Falcon rows take the shared four plus the one
+ * field only the stream body has, `volumeOffset`. Both Falcon rows carry the
+ * same extras because they are one model on one body: `falcon-2` is an
+ * earlier identifier that "now use[s] Falcon 2.1" (changelog 2026-10-19).
  *
  * No `languages`: `locale` is BCP-47 and passes through unmapped (Murf
  * publishes a voice list, not a language enum), so there is nothing closed to
@@ -50,6 +50,11 @@ export const SHARED_MURF_EXTRAS = {
   /** Integer −50…50, like `rate`; the canonical vocabulary has no word for pitch. */
   pitch: EXTRA as number,
   channelType: EXTRA as MurfChannelType,
+  /**
+   * An inline word → pronunciation map — no second provider spells it this
+   * way (ElevenLabs takes dictionary locators), so it stays an extra.
+   */
+  pronunciationDictionary: EXTRA as Record<string, PronunciationDetail>,
 } as const;
 
 /** The stream body's extras — every Falcon row's. */
@@ -57,7 +62,6 @@ const FALCON_MURF_EXTRAS = {
   ...SHARED_MURF_EXTRAS,
   /** Integer −50…50, default 0; Murf clamps anything outside the range. */
   volumeOffset: EXTRA as number,
-  pronunciationDictionary: EXTRA as Record<string, PronunciationDetail>,
 } as const;
 
 export const MURF_CODECS = ["mp3", "flac", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] as const;

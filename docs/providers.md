@@ -1054,8 +1054,11 @@ Resemble's voice building is a create-then-upload-then-build multi-endpoint flow
 models.ts already catalogs unvalidated capabilities and this is one); Google's
 `voices:generateVoiceCloningKey` is allowlist-gated and returns an opaque key rather than a
 voice; smallest.ai's `add_voice` survives only in archived docs (the current docs describe
-cloning as console-only); OpenAI, Gemini, Deepgram, Murf and Rime publish no self-serve
-voice-creation endpoint at all.
+cloning as console-only); Murf's Instant Voice Cloning (`POST /v1/speech/voices/create`)
+"is available on the Enterprise plan only … until it has been turned on for yours, the
+voice cloning endpoints return `403`" (murf.ai/api/docs/voices-styles/instant-voice-cloning,
+2026-11-12), so it is not a public developer API; OpenAI, Gemini, Deepgram and Rime publish
+no self-serve voice-creation endpoint at all.
 
 **Dubbing — shipped as wire, declined as a category.** `elevenlabs.dub` (multipart,
 `POST /v1/dubbing/project`) and `elevenlabs.dubLanguage` (JSON,

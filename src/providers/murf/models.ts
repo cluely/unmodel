@@ -1,12 +1,14 @@
 // Hand-maintained — Murf AI is not in models.dev; refresh from
 //   https://murf.ai/api/docs/introduction/overview               (model line-up)
-//   https://murf.ai/api/docs/text-to-speech-models/falcon-2      (Falcon 2 capabilities + its published rate)
+//   https://murf.ai/api/docs/changelog                           (launches, renames, decommissions; index at /api/docs/changelog/llms.txt)
 //   https://murf.ai/api/docs/text-to-speech-models/falcon-2-1    (Falcon 2.1 + its published rate)
 //   https://murf.ai/api/docs/api-reference/text-to-speech/generate (Gen2 `modelVersion` enum)
 //   https://murf.ai/api/docs/api-reference/text-to-speech/stream   (the `model` enum of the streaming endpoint)
+//   https://murf.ai/api/docs/openapi.json                        (both request schemas)
 //   https://murf.ai/api/docs/resources/faq                       (3,000-character per-request cap)
 //   https://help.murf.ai/murf-api-plans-and-limits               (pay-as-you-go USD rate)
-// Verified 2026-08-13.
+//   https://help.murf.ai/murf-api-pay-as-you-go                  (both per-model rates in one line)
+// Verified 2026-11-12.
 //
 // MODEL ID SPELLING: Murf names its models differently per endpoint.
 // POST /v1/speech/generate takes `modelVersion: "GEN2"` (upper-case,
@@ -25,12 +27,16 @@
 // PRICING conversions (documented so the arithmetic never rots unexplained):
 // - Falcon 2.1: "Falcon 2.1 costs 1 cent per 1000 characters."
 //   (https://murf.ai/api/docs/text-to-speech-models/falcon-2-1, 2026-11-12)
-//   → 0.01 × 1,000 = $10 per 1M characters.
-// - Falcon 2: "Falcon 2 costs 1 cent per 1000 characters"
-//   → 0.01 × 1,000 = $10 per 1M characters.
+//   → 0.01 × 1,000 = $10 per 1M characters. `falcon-2` is the same model at
+//   the same rate; /text-to-speech-models/falcon-2 308-redirects to that page.
 // - Gen2: pay-as-you-go "you can purchase 1000 characters at $0.03"
-//   → 0.03 × 1,000 = $30 per 1M characters. This is the self-serve list
-//   rate; enterprise metered billing is negotiated separately.
+//   (https://help.murf.ai/murf-api-plans-and-limits, 2026-11-12), and "Gen 2
+//   model: $0.03/1000 characters • Falcon model: $0.01/1000 characters"
+//   (https://help.murf.ai/murf-api-pay-as-you-go, 2026-11-12)
+//   → 0.03 × 1,000 = $30 per 1M characters. The Gen2 model page carries no
+//   pricing section, so the help center is the only vendor provenance. This
+//   is the self-serve list rate; enterprise metered billing is negotiated
+//   separately.
 //
 // LIMITS: "The API supports up to 3,000 characters per request. For longer
 // text, split it into multiple requests." — encoded as `limit.characters`.
@@ -50,8 +56,6 @@ export const MURF_MAX_CHARACTERS = 3000;
 
 /** "Falcon 2.1 costs 1 cent per 1000 characters." → USD per 1M characters. */
 const FALCON_2_1_PER_MILLION_CHARACTERS = 10;
-/** "1 cent per 1000 characters" → USD per 1M characters. */
-const FALCON2_PER_MILLION_CHARACTERS = 10;
 /** Pay-as-you-go "1000 characters at $0.03" → USD per 1M characters. */
 const GEN2_PER_MILLION_CHARACTERS = 30;
 
@@ -76,14 +80,14 @@ export const models = {
     limit: { context: 0, characters: MURF_MAX_CHARACTERS },
     cost: { perMillionCharacters: FALCON_2_1_PER_MILLION_CHARACTERS },
   },
-  // "Ultra-fast streaming model, optimized for conversational AI and
-  // real-time voice agents" with "time-to-first-audio under 100ms".
-  // STREAMING ONLY: `modelVersion` on POST /v1/speech/generate documents
-  // GEN2 as its sole value, so Falcon 2 is reachable through
-  // POST /v1/speech/stream (and the WebSocket API) alone.
+  // An earlier identifier for Falcon 2.1, not a separate model: "The earlier
+  // identifiers `falcon-2`, `falcon2` and `FALCON` keep working and now use
+  // Falcon 2.1" (https://murf.ai/api/docs/changelog/2026/10/19, 2026-11-12).
+  // Same rate, cap and route as `falcon-2.1`. No `status: "deprecated"`:
+  // Murf says "still accepted", never deprecated.
   "falcon-2": {
     id: "falcon-2",
-    name: "Falcon 2",
+    name: "Falcon 2.1 (earlier id falcon-2)",
     family: "falcon",
     attachment: false,
     reasoning: false,
@@ -91,11 +95,12 @@ export const models = {
     openWeights: false,
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0, characters: MURF_MAX_CHARACTERS },
-    cost: { perMillionCharacters: FALCON2_PER_MILLION_CHARACTERS },
+    cost: { perMillionCharacters: FALCON_2_1_PER_MILLION_CHARACTERS },
   },
   // "The most customizable model, designed for studio-quality speech
   // synthesis" — the only model POST /v1/speech/generate serves, and the
-  // only one that honours `variation`, `audioDuration` and `locale`.
+  // only one that honours `variation` and `audioDuration` (`locale` is on
+  // both routes).
   // GENERATE ONLY: "The Gen2 model has been decommissioned for the Streaming
   // API." (https://murf.ai/api/docs/changelog/2026/10/5, 2026-11-12) — "Gen2
   // remains available via Synthesize or non-streaming (Gen2)"

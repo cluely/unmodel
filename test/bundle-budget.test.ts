@@ -1781,7 +1781,7 @@ describe("unmodel/chat", () => {
    * M3.1-Flash deny and enum tables, a types-only literal leaf imported by
    * `minimax/chat.ts` — the groq/upstage shape, not barrel leakage.
    *
-   * **55 → 56 with zhipuai's GLM-5.3 rules** (56 measured, 2026-11-12):
+   * **+1 (→ 61) with zhipuai's GLM-5.3 rules** (61 measured, 2026-11-12):
    * `zhipuai/constraints.ts` is the import-free enum leaf
    * `retarget/target-constraints.ts` registers for `.toApi("zhipuai")`, the
    * same shape as `groq/constraints.ts`. No catalog came with it.
@@ -1911,6 +1911,10 @@ describe("unmodel/chat", () => {
       "src/catalog/availability/siliconflow.gen.ts",
       "src/catalog/availability/stepfun.gen.ts",
       "src/catalog/availability/xai.gen.ts",
+      // Not new bytes either, for moonshotai's reason: zhipuai's index.ts
+      // declares `chatModels` (its file-input correction) before the
+      // createOpenAICompatible call (measured 2026-11-13).
+      "src/catalog/availability/zhipuai.gen.ts",
     ]);
 
     const CHAT_TABLES = new Set([

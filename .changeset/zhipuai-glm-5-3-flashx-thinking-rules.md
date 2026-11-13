@@ -5,9 +5,11 @@
 zhipuai (2026-11-12): `glm-4.6v-flash` and `glm-5.3-flashx` join the catalog, and `zhipuai.chat` enforces GLM-5.3's always-on thinking
 
 - New models: `glm-4.6v-flash` (free vision model, 128K context / 32,768 max
-  output) and `glm-5.3-flashx` (1M context / 131,072 max output, image, video
-  and file input). Both validate, price and retarget like their siblings, and
-  `unmodel/chat` accepts `zhipuai/glm-4.6v-flash` and `zhipuai/glm-5.3-flashx`.
+  output, image, video and file input) and `glm-5.3-flashx` (1M context /
+  131,072 max output, image, video and file input). Both validate, price and
+  retarget from their catalog rows, and `unmodel/chat` accepts
+  `zhipuai/glm-4.6v-flash` and `zhipuai/glm-5.3-flashx`. `glm-4.6v-flash`'s
+  file input is a correction to models.dev's row (see the file-input entry).
 - `zhipuai.chat` refuses a `reasoning_effort` other than `"low"`, `"high"` or
   `"max"` on `glm-5.3`, `glm-5.3-flash` and `glm-5.3-flashx`. Zhipu's
   thinking guide (https://docs.bigmodel.cn/cn/guide/capabilities/thinking):

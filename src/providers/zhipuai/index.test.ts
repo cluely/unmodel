@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { chat, CHAT_COMPLETIONS_URL, checkChat } from "./index";
+import { chat, chatModels, CHAT_COMPLETIONS_URL, checkChat, models } from "./index";
 import { chat as openrouterChat } from "../openrouter";
 import { chat as unifiedChat } from "../../chat";
 
@@ -66,6 +66,66 @@ describe("models added 2026-11-12", () => {
       usage: { prompt_tokens: 1_000_000, completion_tokens: 1_000_000, total_tokens: 2_000_000 },
     });
     expect(report.costUSD).toBeCloseTo(0.29879 + 1.04577, 6);
+  });
+});
+
+describe("GLM vision models take file parts (输入模态 \"视频、图像、文本、文件\")", () => {
+  const VISION = ["glm-4.6v-flash", "glm-4.6v", "glm-4.5v"] as const;
+  const TEXT = { type: "text" as const, text: "What do these files show?" };
+  const BY_FILE_ID = [
+    { role: "user" as const, content: [TEXT, { type: "file" as const, file: { file_id: "file-abc" } }] },
+  ];
+
+  for (const model of VISION) {
+    test(`${model} accepts a file part by file_id`, () => {
+      const r = chat.safe({ model, messages: BY_FILE_ID });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    });
+
+    // `file.file_url` is Zhipu's own field ("文件的`URL`地址，支持`pdf、txt、word、jsonl、xlsx、pptx`等格式"),
+    // outside the shared dialect's `ChatFilePart`, hence the cast.
+    test(`${model} accepts a file part by file_url`, () => {
+      const part = { type: "file", file: { file_url: "https://cdn.bigmodel.cn/static/demo/demo1.pdf" } };
+      const r = chat.safe({ model, messages: [{ role: "user", content: [TEXT, part] }] } as never);
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    });
+  }
+
+  test("a text-only model still refuses the same part", () => {
+    const r = chat.safe({ model: "glm-4.6", messages: BY_FILE_ID });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.errors.map((e) => [e.code, e.path])).toEqual([
+      ["unsupported_capability", ["messages", 0, "content", 1]],
+    ]);
+  });
+
+  test("the unified entry reaches the same catalog", () => {
+    const r = unifiedChat.safe({
+      model: "zhipuai/glm-4.6v-flash",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Summarise this." },
+            { type: "file", data: "JVBERi0xLjQK", mediaType: "application/pdf" },
+          ],
+        },
+      ],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.params.warnings).toEqual([]);
+  });
+
+  test("chatModels states the correction; models stays the generated row", () => {
+    for (const model of VISION) {
+      expect(chatModels[model].modalities.input).toEqual(["text", "image", "video", "pdf"]);
+      // Fails once models.dev lists file input — then delete the correction in ./index.ts.
+      expect(models[model].modalities.input).not.toContain("pdf");
+    }
+    expect(chatModels["glm-5.3-flashx"]).toBe(models["glm-5.3-flashx"]);
   });
 });
 

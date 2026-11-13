@@ -1329,6 +1329,14 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
  * 482.7–567.2 and upscale 486.9–557.2 (video 1072.3–1292.8, tts 1153.0–1272.8).
  * A pin is therefore set from the MAXIMUM of several builds, ~10% over it:
  * image 1260 → 1495, avatar 600 → 625, upscale 560 → 615.
+ *
+ * A second pass once the whole wave had landed (five more builds, plus the
+ * outliers the replay itself hit) found single-build spikes well above the
+ * typical figure: lipsync 477.2–768.2, upscale 482.4–751.2, 3d 518.8–591.3. A
+ * spike is a whole shared chunk joining the walk, not drift, so the pin has to
+ * clear it: lipsync 770 → 845, upscale 615 → 830, 3d 590 → 650. The spread is
+ * the measurement's, not the code's — a walker that counted each declaration
+ * once regardless of chunking would let these pins tighten back.
  */
 const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   image: 1495,
@@ -1358,7 +1366,7 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // runner, because rolldown-plugin-dts assigns one shared-vocabulary chunk to
   // a different side of the lipsync/avatar boundary per platform. 770 is the
   // Linux figure ×1.1; the number that matters is still the SPREAD test.
-  lipsync: 770,
+  lipsync: 845,
   // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
   // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
   // components — the 3D roster added `ModelUrls`, `BasicAnimations` and their
@@ -1397,13 +1405,13 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // tables — between eight and twenty-four typed dials each — so `tsc` has
   // fifteen distinct object types to instantiate where fal's ten share three
   // shapes. That is the declaration cost of the thing this provider exists for.
-  upscale: 615,
+  upscale: 830,
   // `unmodel/3d`: 534.1 measured. The most expensive of the four small packs
   // and the only one with two providers, which is most of the difference — the
   // `tripo3d` half brings four literal model ids, two quality ladders and its
   // own wire interfaces. The other part is fal's nineteen endpoint interfaces,
   // where Trellis 2's thirty parameters are one declaration.
-  "3d": 590,
+  "3d": 650,
   tts: 2320,
   stt: 2450,
   music: 1360,

@@ -33,7 +33,9 @@
  * TWO MODELS: the reference is explicit — "Currently supports
  * `stepaudio-3-tts` and `stepaudio-2.5-tts`". The generated catalog also
  * carries `step-tts-2` (2026-03-01), which is off that enum; sending it gets
- * an `invalid_enum_value` warning rather than a silent pass. The SSE/WebSocket
+ * an `invalid_enum_value` warning rather than a silent pass. It is not
+ * deprecated — the China reference's enum still lists `step-tts-2` and
+ * `step-tts-mini` beside the two above (2026-11-12). The SSE/WebSocket
  * streaming routes (`stream_format: "sse"` frames on this URL, and
  * wss://api.stepfun.ai/v1/realtime/audio) and the ASR routes
  * (POST /v1/audio/asr/sse — SSE-only, no batch variant) are not validated by

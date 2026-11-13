@@ -21,6 +21,8 @@ export interface ChatCompletionLike {
     prompt_tokens?: number;
     completion_tokens?: number;
     total_tokens?: number;
+    /** StepFun's top-level spelling of `prompt_tokens_details.cached_tokens` — see the read below. */
+    cached_tokens?: number | null;
     prompt_tokens_details?: {
       cached_tokens?: number;
       cache_write_tokens?: number;
@@ -120,7 +122,18 @@ export function createCheckChat(
       if (rawUsage.prompt_tokens !== undefined) usage.inputTokens = rawUsage.prompt_tokens;
       if (rawUsage.completion_tokens !== undefined) usage.outputTokens = rawUsage.completion_tokens;
       if (rawUsage.total_tokens !== undefined) usage.totalTokens = rawUsage.total_tokens;
-      const cached = rawUsage.prompt_tokens_details?.cached_tokens;
+      // The nested field is OpenAI's spelling and is read first. The top-level
+      // `usage.cached_tokens` is StepFun's: "A positive
+      // `response.usage.cached_tokens` value indicates a cache hit and reports
+      // the number of cached input tokens."
+      // (https://platform.stepfun.ai/docs/en/guides/developer/prompt-cache.md,
+      // retrieved 2026-11-12), while its China chat reference nests the same
+      // count under `prompt_tokens_details` — so it is a fallback, never a
+      // replacement. The count is part of `prompt_tokens` (the guide's example
+      // is `"cached_tokens": 512, "prompt_tokens": 591`), the same as the
+      // nested field, so it rides the existing cachedInputTokens cost path
+      // unchanged. Hosts that never send it are unaffected.
+      const cached = rawUsage.prompt_tokens_details?.cached_tokens ?? rawUsage.cached_tokens ?? undefined;
       if (cached !== undefined) usage.cachedInputTokens = cached;
       const cacheWrite = rawUsage.prompt_tokens_details?.cache_write_tokens;
       if (cacheWrite !== undefined) usage.cacheWriteTokens = cacheWrite;

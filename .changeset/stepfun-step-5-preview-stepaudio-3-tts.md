@@ -5,10 +5,15 @@
 stepfun: `step-5-preview` on `stepfun.chat`, `stepaudio-3-tts` on `stepfun.tts` with its 500-character instruction cap
 
 - `stepfun.chat` (models.dev refresh, 2026-11-12) adds `step-5-preview`
-  (text, image and video in; 1,000,000-token context, 65,536-token output;
-  tools, structured output, reasoning). `max_tokens` above 65,536 is
-  `over_output_limit`, matching the model page's "64k tokens"
+  (1,000,000-token context, 65,536-token output; tools, structured output,
+  reasoning). `max_tokens` above 65,536 is `over_output_limit`, matching the
+  model page's "64k tokens"
   (https://platform.stepfun.ai/docs/en/guides/models/step-5-preview.md).
+  Its catalog row lists text, image and video input, but video does not
+  validate yet: a `video_url` content part is refused with `invalid_shape`,
+  as it already was on `step-3.7-flash`. The shared openai-compatible
+  dialect has no `video_url` arm, and how to add one is an open owner
+  decision (docs/providers.md, the stepfun row).
   The other StepFun chat rows pick up models.dev's new prices and the
   `structuredOutput` flag.
 - `step-1-32k` and `step-2-16k` are removed from the StepFun catalog and from

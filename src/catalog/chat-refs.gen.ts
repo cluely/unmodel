@@ -45,7 +45,7 @@ export type ChatProviderId =
   | "zhipuai";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1434 of them.
+ * Every `"provider/model"` pair `chat()` accepts — 1433 of them.
  *
  * Model ids may themselves contain slashes (openrouter serves
  * `"anthropic/claude-opus-5"`, so the ref is
@@ -1092,7 +1092,6 @@ export type ChatModelRef =
   | "stepfun/step-3.5-flash-2603"
   | "stepfun/step-3.7-flash"
   | "stepfun/step-5-preview"
-  | "stepfun/stepaudio-2.5-asr"
   | "togetherai/LiquidAI/LFM2-24B-A2B"
   | "togetherai/MiniMaxAI/MiniMax-M2.5"
   | "togetherai/MiniMaxAI/MiniMax-M2.7"

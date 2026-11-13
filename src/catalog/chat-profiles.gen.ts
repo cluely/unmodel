@@ -1176,7 +1176,6 @@ export const chatProfiles: ChatCatalog = {
     "step-3.5-flash-2603": { attachment: false, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT__TEXT, limit: { context: 256000, output: 256000, input: 256000 }, cost: { input: 0.10461, output: 0.31384, cacheRead: 0.02092 } },
     "step-3.7-flash": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO__TEXT, limit: { context: 256000, output: 256000, input: 256000 }, cost: { input: 0.20175, output: 1.21052, cacheRead: 0.04035 } },
     "step-5-preview": { attachment: true, reasoning: true, toolCall: true, structuredOutput: true, temperature: true, modalities: M_TEXT_IMAGE_VIDEO__TEXT, limit: { context: 1000000, output: 65536, input: 1000000 }, cost: { input: 1.04613, output: 2.98895, cacheRead: 0.10461 } },
-    "stepaudio-2.5-asr": { attachment: true, reasoning: false, toolCall: false, temperature: false, modalities: M_AUDIO__TEXT, limit: { context: 0, output: 0 } },
   },
   "togetherai": {
     "LiquidAI/LFM2-24B-A2B": { attachment: false, reasoning: false, toolCall: false, temperature: true, status: "deprecated", modalities: M_TEXT__TEXT, limit: { context: 32768, output: 32768 }, cost: { input: 0.03, output: 0.12 } },

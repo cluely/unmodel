@@ -26,9 +26,10 @@
 // own reason, on its row.
 //
 // `step-tts-2` is in the generated catalog (released 2026-03-01) but the
-// create-speech reference's model enum names only `stepaudio-3-tts` and
-// `stepaudio-2.5-tts` — the older id is carried for catalog completeness and
-// ./tts.ts warns when it is sent.
+// Global create-speech reference's model enum names only `stepaudio-3-tts` and
+// `stepaudio-2.5-tts`, so ./tts.ts warns `invalid_enum_value` when it is sent.
+// It is NOT marked deprecated: the China reference still lists it and the
+// Global pricing page still prices it (see its row).
 
 import type { ModelInfo } from "../../core/catalog-types";
 
@@ -88,8 +89,14 @@ export const speechModels = {
     name: "Step TTS 2",
     releaseDate: "2026-03-01",
     lastUpdated: "2026-07-02",
-    // Off the current create-speech enum — see the header note.
-    status: "deprecated",
+    // Off the Global reference's model enum (stepaudio-3-tts,
+    // stepaudio-2.5-tts; https://platform.stepfun.ai/docs/en/api-reference/audio/create-audio.md,
+    // 2026-11-12). Not deprecated: the China reference still lists it
+    // ("当前支持 `stepaudio-3-tts`、`stepaudio-2.5-tts`、`step-tts-2` 和
+    // `step-tts-mini`。", https://platform.stepfun.com/docs/zh/api-reference/audio/create-audio.md,
+    // 2026-11-12), the Global pricing page prices it ("| `step-tts-2` |
+    // $40.00 / 1M characters |", https://platform.stepfun.ai/docs/en/guides/pricing/details.md,
+    // 2026-11-12), and only `step-tts-vivid` is called deprecated.
   },
 } as const satisfies Record<string, ModelInfo>;
 

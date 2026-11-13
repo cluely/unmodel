@@ -91,7 +91,8 @@
     "openai:gpt-daybreak-*",
     "openai:text-embedding-*",
     "mistral:mistral-embed",
-    "mistral:voxtral-mini-latest"
+    "mistral:voxtral-mini-latest",
+    "stepfun:stepaudio-2.5-asr"
   ],
 
   "$chatScopeExcludeNotes": {
@@ -104,6 +105,7 @@
     "openai:gpt-realtime-*": "The realtime family answers the WebRTC/WebSocket realtime API, not chat/completions.",
     "mistral:mistral-embed": "An embeddings model: it answers POST /v1/embeddings — https://docs.mistral.ai/models/mistral-embed-23-12 lists \"Features Embeddings /v1/embeddings\" (checked 2026-11-12). models.dev files it as text-out (type \"embedding\"), which is how it reached a chat ref table at all.",
     "mistral:voxtral-mini-latest": "Transcription only: the card lists `\"names\":[\"voxtral-mini-2602\",\"voxtral-mini-latest\"]` and features only \"Timestamps /v1/audio/transcriptions Transcriptions /v1/audio/transcriptions\" (https://docs.mistral.ai/models/voxtral-mini-transcribe-26-02, checked 2026-11-12) — that is `stt` from unmodel/mistral. The chat-capable Voxtral Mini 25.07 retired 5/31/2026 (https://docs.mistral.ai/getting-started/models); models.dev types the alias \"transcription\" and still files it as text-out.",
+    "stepfun:stepaudio-2.5-asr": "stepaudio-2.5-asr is speech recognition, served by \"POST https://api.stepfun.ai/v1/audio/asr/sse\" — the ASR reference \"Supports `stepaudio-3-asr-max` and `stepaudio-2.5-asr`\" (https://platform.stepfun.ai/docs/en/api-reference/audio/asr-sse.md, checked 2026-11-12), and its model page (https://platform.stepfun.ai/docs/en/guides/models/stepaudio-2.5-asr.md, checked 2026-11-12) names only that route and WSS /v1/realtime/asr/stream. models.dev files it audio-in/text-out, which is how it reached a chat ref table. unmodel has no validator for the ASR route. Same treatment as codex: `stepfun.chat` keeps accepting it with a signpost warning naming the route (NON_CHAT_ROUTES in src/providers/stepfun/chat.ts, pinned against this entry in src/providers/stepfun/index.test.ts); only the unified ref is withdrawn.",
     "$scope": "The openai entries mirror `NonChatModelId` in src/providers/openai/chat.ts, which states the same eight families as a TYPE (so it can shape `OpenaiChatModelId`) and therefore cannot be read by codegen. `test/chat/refs.test.ts` asserts the two agree. `dall-e-*` is in the type and deliberately absent here: models.dev files DALL·E as image-out only, so `isTextModel` already excludes it and an entry would be inert — and inert entries fail codegen. The mistral entries are mistral's own: the two text-out rows models.dev types \"embedding\" and \"transcription\"."
   }
 }

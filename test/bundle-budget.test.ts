@@ -1798,6 +1798,9 @@ describe("unmodel/chat", () => {
    * leaf — the `video_url` user part and `image_url.detail: "default"` the
    * shared dialect refuses, as the schema `minimax/chat.ts` validates
    * against. Chat's own, imported by the chat leaf, not barrel leakage.
+   * **+1 (→ 62) with `stepfun/constraints.ts`** (2026-11-12): the
+   * step-3.5-flash-2603 `reasoning_effort` ladder, a types-only literal leaf
+   * imported by `stepfun/chat.ts` — the groq/mistral shape, not barrel leakage.
    */
   test("its provider graph is exactly the enumerated 62 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
@@ -1871,6 +1874,7 @@ describe("unmodel/chat", () => {
       "src/providers/scaleway/index.ts",
       "src/providers/siliconflow/index.ts",
       "src/providers/stepfun/chat.ts",
+      "src/providers/stepfun/constraints.ts",
       "src/providers/togetherai/index.ts",
       "src/providers/upstage/index.ts",
       "src/providers/vercel/index.ts",

@@ -11,6 +11,7 @@ import { speechModels } from "./audio-models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
+import type { ModelInfo } from "../../core/catalog-types";
 
 const safeUnchecked = tts.safe as unknown as (
   params: unknown,
@@ -308,7 +309,13 @@ describe("stepfun speech catalog", () => {
     if (!r.ok) expect(r.errors[0]?.meta?.limitCharacters).toBe(1000);
   });
 
-  test("step-tts-2 is deprecated (off the current create-speech enum)", () => {
-    expect(speechModels["step-tts-2"].status).toBe("deprecated");
+  test("step-tts-2 is off the Global enum but not deprecated — no deprecated_model warning", () => {
+    // The China reference still lists it and the Global pricing page still
+    // prices it; only `step-tts-vivid` is called deprecated (2026-11-12).
+    const row: ModelInfo = speechModels["step-tts-2"];
+    expect(row.status).toBeUndefined();
+    const r = tts.safe({ model: "step-tts-2", input: "x", voice: "v" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["invalid_enum_value"]);
   });
 });

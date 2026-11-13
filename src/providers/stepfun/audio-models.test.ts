@@ -33,23 +33,22 @@ test("stepaudio-2.5-tts mirrors its generated row except the character cap", () 
   expect(handRest).toEqual(genRest);
 });
 
-test("step-tts-2 mirrors its generated row except the cap and the deprecation", () => {
+test("step-tts-2 mirrors its generated row except the cap", () => {
   const hand: Record<string, unknown> = speechModels["step-tts-2"];
   const generated = models["step-tts-2"];
   expect(generated, "step-tts-2 vanished from the generated catalog").toBeDefined();
 
-  // Divergence 1: the same endpoint-wide character cap.
+  // The divergence: the same endpoint-wide character cap.
   expect(hand["limit"]).toEqual({ ...generated.limit, characters: SPEECH_MAX_INPUT_CHARACTERS });
   expect("characters" in generated.limit).toBe(false);
 
-  // Divergence 2: the mirror deprecates the id (the create-speech reference's
-  // enum is "stepaudio-3-tts and stepaudio-2.5-tts"); models.dev carries no
-  // status. If the generated row ever gains one, reconcile.
-  expect(hand["status"]).toBe("deprecated");
-  expect("status" in generated).toBe(false);
+  // No status on either side. Being off the Global reference's enum is not a
+  // deprecation — the China reference still lists the id and the Global
+  // pricing page still prices it (see the row) — so the mirror adds none.
+  expect("status" in hand).toBe(false);
 
   // …and nothing else differs.
-  const { limit: _handLimit, status: _handStatus, ...handRest } = hand;
+  const { limit: _handLimit, ...handRest } = hand;
   const { limit: _genLimit, ...genRest } = generated as unknown as Record<string, unknown>;
   expect(handRest).toEqual(genRest);
 });

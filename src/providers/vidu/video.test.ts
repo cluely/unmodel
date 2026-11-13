@@ -83,10 +83,28 @@ describe("vidu.video route rules", () => {
     }
   });
 
-  test("prompt over 5000 characters is invalid_shape", () => {
-    const r = safeUnchecked({ model: "viduq3-pro", prompt: "a".repeat(5001) });
+  test("q3 prompts run to the 20000-character ceiling", () => {
+    expect(safeUnchecked({ model: "viduq3-pro", prompt: "a".repeat(20000) }).ok).toBe(true);
+    const r = safeUnchecked({ model: "viduq3-pro", prompt: "a".repeat(20001) });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["prompt"]);
+  });
+
+  test("q2 / q1 prompts stay capped at 5000 characters", () => {
+    expect(safeUnchecked({ model: "viduq2", prompt: "a".repeat(5000) }).ok).toBe(true);
+    const r = safeUnchecked({ model: "viduq2", prompt: "a".repeat(5001) });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      const issue = r.errors.find((e) => e.code === "invalid_shape");
+      expect(issue?.path).toEqual(["prompt"]);
+      expect(issue?.meta?.max).toBe(5000);
+    }
+  });
+
+  test("2K / 4K are not text2video tiers", () => {
+    const r = safeUnchecked({ model: "viduq3-pro", prompt: "hi", resolution: "4K" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.find((e) => e.code === "invalid_enum_value")?.path).toEqual(["resolution"]);
   });
 });
 
@@ -197,9 +215,10 @@ describe("vidu.videoFromImage", () => {
   test("every ViduResolution preset validates on the model that offers it", () => {
     // Keep in sync with ViduResolution in shared.ts: the union spans every
     // documented resolution across the video routes and each route's support
-    // table narrows it per model. No single model offers all four — 360p is
-    // vidu2.0's alone (and vidu2.0 has no 540p tier), so the presets are
-    // looped against the model that allows each.
+    // table narrows it per model. No single model offers all six — 360p is
+    // vidu2.0's alone (and vidu2.0 has no 540p tier), 2K / 4K are
+    // viduq4-preview's — so the presets are looped against the model that
+    // allows each.
     for (const resolution of ["540p", "720p", "1080p"] as const) {
       const r = video.safe({ model: "viduq3-pro", prompt: "hi", resolution });
       expect(r.ok, `text2video ${resolution} should validate`).toBe(true);
@@ -222,6 +241,51 @@ describe("vidu.videoFromImage", () => {
     });
     expect(r540.ok).toBe(true);
     if (r540.ok) expect(r540.warnings).toEqual([]);
+    for (const resolution of ["2K", "4K"] as const) {
+      const r = videoFromImage.safe({
+        model: "viduq4-preview",
+        images: ["https://example.com/a.png"],
+        resolution,
+      });
+      expect(r.ok, `img2video ${resolution} should validate`).toBe(true);
+      if (r.ok) expect(r.warnings, `img2video ${resolution}`).toEqual([]);
+    }
+  });
+
+  test("viduq4-preview takes 2K / 4K and 3–16 seconds, unpriced", () => {
+    const r = videoFromImage.safe({
+      model: "viduq4-preview",
+      images: ["https://example.com/a.png"],
+      prompt: "a".repeat(20000),
+      resolution: "4K",
+      duration: 16,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      // Credits only, with no USD price published — no estimate.
+      expect(r.estimate.costUSD).toBeUndefined();
+    }
+
+    const short = videoFromImage.safe({
+      model: "viduq4-preview",
+      images: ["https://example.com/a.png"],
+      duration: 2,
+    });
+    expect(short.ok).toBe(false);
+    if (!short.ok) {
+      expect(short.errors.find((e) => e.code === "invalid_enum_value")?.meta?.min).toBe(3);
+    }
+  });
+
+  test("q2 img2video prompts stay capped at 5000 characters", () => {
+    const r = videoFromImage.safe({
+      model: "viduq2-pro",
+      images: ["https://example.com/a.png"],
+      prompt: "a".repeat(5001),
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.find((e) => e.code === "invalid_shape")?.path).toEqual(["prompt"]);
   });
 
   test("viduq1 charges the flat 5s generation price", () => {

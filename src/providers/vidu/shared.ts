@@ -25,8 +25,14 @@ export const VIDU_HEADERS: Record<string, string> = JSON_HEADERS;
 
 export const DOCS_BASE = "https://platform.vidu.com/docs";
 
-/** Every documented `resolution` value across the video routes. */
-export const VIDU_RESOLUTIONS = ["360p", "540p", "720p", "1080p"] as const;
+/**
+ * Every documented `resolution` value across the video routes. `2K` and `4K`
+ * (uppercase on the wire) are viduq4-preview's alone, on img2video and
+ * reference2video: "Allowed values: `540p` / `720p` / `1080p` / `2K` / `4K`" —
+ * https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/image-to-video,
+ * 2026-11-12. No text2video arm offers either.
+ */
+export const VIDU_RESOLUTIONS = ["360p", "540p", "720p", "1080p", "2K", "4K"] as const;
 export type ViduResolution = (typeof VIDU_RESOLUTIONS)[number];
 
 /** Every documented `aspect_ratio` value. */
@@ -43,8 +49,17 @@ export type ViduAudioType = (typeof VIDU_AUDIO_TYPES)[number];
 export const VIDU_STYLES = ["general", "anime"] as const;
 export type ViduStyle = (typeof VIDU_STYLES)[number];
 
-/** Documented `prompt` ceiling on the video routes. */
-export const PROMPT_MAX_CHARS = 5000;
+/**
+ * Documented `prompt` ceiling on the video routes — the q3 and q4 pages:
+ * "Note: Maximum length of **20000 characters**." —
+ * https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/image-to-video,
+ * and "Note: Character length cannot exceed 20000 characters" —
+ * https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/text-to-video,
+ * both 2026-11-12. Some q3 sections still print 5000 on the EN site while the
+ * CN mirror prints 20000 for the same model and form, so no q3 model is held
+ * below this ceiling. {@link PROMPT_CAPS} narrows it for the older families.
+ */
+export const PROMPT_MAX_CHARS = 20_000;
 /** Documented `prompt` ceiling on imageFromReference. */
 export const IMAGE_PROMPT_MAX_CHARS = 2000;
 /** Documented `payload` ceiling. */
@@ -55,6 +70,35 @@ export const assetSchema = z.string().min(1);
 
 export const promptSchema = z.string().max(PROMPT_MAX_CHARS);
 export const payloadSchema = z.string().max(PAYLOAD_MAX_CHARS);
+
+/**
+ * `prompt` caps below {@link PROMPT_MAX_CHARS}: the q2 / q1 / vidu2.0 models,
+ * on every video route. Their text2video and reference2video pages print 5000
+ * (all retrieved 2026-11-12):
+ * - "Note: Maximum length is 5000 characters" —
+ *   https://platform.vidu.com/docs/api-reference/video-models/vidu-q2/text-to-video
+ *   and https://platform.vidu.com/docs/api-reference/video-models/vidu-q1/text-to-video
+ * - "Note: The maximum length is 5000 characters." (Q2 Pro) —
+ *   https://platform.vidu.com/docs/api-reference/video-models/vidu-q2/reference-to-video
+ * - "Note: The maximum length is **5000 characters**" —
+ *   https://platform.vidu.com/docs/api-reference/video-models/vidu-q1/reference-to-video,
+ *   whose subjects form covers "the q3, q2, q1, and 2.0 models".
+ *
+ * The q2 / q1 img2video sections print a tighter cap ("Note 1: The length must
+ * not exceed 2000 characters" —
+ * https://platform.vidu.com/docs/api-reference/video-models/vidu-q2/image-to-video);
+ * this table holds these models at the family's 5000 there too, so that route
+ * still passes 2001–5000-character prompts its page rules out.
+ */
+export const PROMPT_CAPS: Readonly<Record<string, number>> = {
+  viduq2: 5000,
+  "viduq2-pro": 5000,
+  "viduq2-pro-fast": 5000,
+  "viduq2-turbo": 5000,
+  viduq1: 5000,
+  "viduq1-classic": 5000,
+  "vidu2.0": 5000,
+};
 
 // ---------------------------------------------------------------------------
 // Per-route model support — resolutions and durations differ per model AND per
@@ -161,5 +205,28 @@ export function checkArrayLength<P>(
         meta: { min: limit.min, max: limit.max, count: value.length, source },
       });
     }
+  };
+}
+
+interface PromptedParams {
+  model: string;
+  prompt?: string;
+}
+
+/** Enforces {@link PROMPT_CAPS} — the per-model caps under the schema's ceiling. */
+export function checkPromptCap<P extends PromptedParams>(
+  source: string,
+): (params: P, info: ModelInfo | undefined, ctx: PipelineContext) => void {
+  return (params, info, ctx) => {
+    if (info === undefined || typeof params.prompt !== "string") return;
+    const cap = PROMPT_CAPS[params.model];
+    if (cap === undefined || params.prompt.length <= cap) return;
+    ctx.report({
+      code: "invalid_shape",
+      path: ["prompt"],
+      model: params.model,
+      message: `\`prompt\` is ${params.prompt.length} characters, over the ${cap}-character cap "${params.model}" documents; the q3 and q4 models take up to ${PROMPT_MAX_CHARS}.`,
+      meta: { max: cap, length: params.prompt.length, source },
+    });
   };
 }

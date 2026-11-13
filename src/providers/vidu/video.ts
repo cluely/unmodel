@@ -31,6 +31,7 @@ import {
   VIDU_HEADERS,
   VIDU_MOVEMENT_AMPLITUDES,
   VIDU_STYLES,
+  checkPromptCap,
   checkRouteSupport,
   payloadSchema,
   promptSchema,
@@ -56,7 +57,7 @@ export const TEXT2VIDEO_SUPPORT: RouteSupport = {
 
 export interface Text2VideoParams {
   model: ViduModelId | (string & {});
-  /** Required; up to 5000 characters. */
+  /** Required; up to 20000 characters on q3, 5000 on q2 / q1. */
   prompt: string;
   /** "general" (default) or "anime". Not effective on q2 / q3. */
   style?: ViduStyle;
@@ -68,9 +69,10 @@ export interface Text2VideoParams {
   /**
    * Default "720p" (viduq1: "1080p"). Autocomplete over every documented
    * value; `TEXT2VIDEO_SUPPORT` narrows it per model at runtime (360p is
-   * img2video/reference2video-only, viduq1 is 1080p-only).
+   * img2video/reference2video-only, viduq1 is 1080p-only). `2K` / `4K` are
+   * viduq4-preview's, which has no text2video arm.
    */
-  resolution?: ViduResolution;
+  resolution?: Exclude<ViduResolution, "2K" | "4K">;
   /** Default "auto". Not effective on q2 / q3. */
   movement_amplitude?: ViduMovementAmplitude;
   /** Background music. Default false; unavailable on q3. */
@@ -183,7 +185,7 @@ const validator = createValidator<Text2VideoParams, unknown>({
   modelId: (params) => params.model,
   catalog: videoModels,
   constraints: videoConstraints,
-  checks: [checkRouteSupport("text2video", TEXT2VIDEO_SUPPORT, SOURCE)],
+  checks: [checkRouteSupport("text2video", TEXT2VIDEO_SUPPORT, SOURCE), checkPromptCap(SOURCE)],
   estimate,
   finalize,
 });

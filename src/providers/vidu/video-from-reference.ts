@@ -11,18 +11,29 @@
  *   check requires at least one of the three and rejects the combinations the
  *   docs rule out.
  * - `subjects` is not available on `viduq3-mix` ("viduq3-mix does not support
- *   the use of entities for the time being"); `videos` is `viduq2-pro`-only.
- * - `images` takes 1–7 references (1–4 on `viduq2-pro` when a video is also
- *   uploaded); each subject in `subjects` takes up to 3 images and the whole
- *   list is capped at 7 entries (4 on `viduq2-pro`).
- * - `audio` defaults to true on `viduq3` / `viduq3-turbo` and false elsewhere;
+ *   the use of entities for the time being"), `viduq3-ad` (no subjects form)
+ *   or `viduq4-preview` ("viduq4-preview does not support the subject
+ *   invocation method for the time being." —
+ *   https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/reference-to-video,
+ *   2026-11-12); `videos` is `viduq2-pro`-only.
+ * - `images` takes 1–7 references (1–15 on `viduq4-preview`; 1–4 on
+ *   `viduq2-pro` when a video is also uploaded); each subject in `subjects`
+ *   takes up to 3 images and the whole list is capped at 7 entries (4 on
+ *   `viduq2-pro`).
+ * - `sounds` (mp3 audio references, up to 3) is documented on `viduq3-mix`,
+ *   `viduq3-ad`, `viduq3-drama` and `viduq4-preview` only.
+ * - `audio` defaults to true on `viduq3` / `viduq3-turbo`, `viduq4-preview`
+ *   and viduq3-drama's images form, and false elsewhere;
  *   `bgm` is unsupported on q3; `movement_amplitude` does not take effect on
  *   q2/q3.
- * - `aspect_ratio` is left as the union of both forms' lists. The two forms
- *   contradict each other — the subjects form prints "16:9 9:16 1:1" plus
- *   "q2、q3 model supports any aspect ratio", while the images form prints all
- *   five with "3:4 & 4:3 only support q2 model" — so unmodel does not narrow
- *   per model here rather than reject a documented value.
+ * - `aspect_ratio` takes the five fixed ratios plus `auto` ("Defaults to
+ *   `16:9`. Accepted values: 1:1, 9:16, 16:9, 3:4, 4:3 auto: Automatically
+ *   recommended based on the input image or video." —
+ *   https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video,
+ *   2026-11-12), and is not narrowed per model: the forms of one model list
+ *   different sets (viduq3-drama's images form prints only `9:16` `16:9`
+ *   `auto`, its subjects form all six) and viduq4-preview's page omits
+ *   `auto`, so a per-model enum would reject a documented value.
  * - Auth is `Authorization: Token <VIDU_API_KEY>`.
  */
 
@@ -42,6 +53,8 @@ import {
   VIDU_HEADERS,
   VIDU_MOVEMENT_AMPLITUDES,
   assetSchema,
+  checkArrayLength,
+  checkPromptCap,
   checkRouteSupport,
   payloadSchema,
   promptSchema,
@@ -59,6 +72,27 @@ const SOURCE = `${DOCS_BASE}/reference-to-video`;
 
 /** Models with a reference2video arm (union of both documented forms). */
 export const REFERENCE2VIDEO_SUPPORT: RouteSupport = {
+  // "Resolution parameter；Default: `720p`；Allowed values: `540p` / `720p` /
+  // `1080p` / `2K` / `4K`" and "Video duration parameter；Default: `5`；Allowed
+  // values: `3 - 16`" —
+  // https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/reference-to-video,
+  // 2026-11-12.
+  "viduq4-preview": {
+    resolutions: ["540p", "720p", "1080p", "2K", "4K"],
+    duration: { min: 3, max: 16 },
+  },
+  // The two drama forms disagree on length — the images form prints
+  // "`viduq3-drama`: Default is 8s, available options: 2-15s.", the subjects
+  // form "`viduq3-drama`: Default is 8s, available options: 2-16s." — so the
+  // union is kept and neither is refused. "`viduq3-drama` (2-15s): Default is
+  // 1080p, available options: 720p and 1080p." —
+  // https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video,
+  // 2026-11-12.
+  "viduq3-drama": { resolutions: ["720p", "1080p"], duration: { min: 2, max: 16 } },
+  // "`viduq3-ad`: Default is 5 seconds, available options: 3-15" and
+  // "`viduq3-ad` (3-15 seconds): Default is 720p, available options: 720p and
+  // 1080p" — same page, 2026-11-12.
+  "viduq3-ad": { resolutions: ["720p", "1080p"], duration: { min: 3, max: 15 } },
   "viduq3-mix": { resolutions: ["720p", "1080p"], duration: { min: 1, max: 16 } },
   "viduq3-turbo": { resolutions: ["540p", "720p", "1080p"], duration: { min: 3, max: 16 } },
   viduq3: { resolutions: ["540p", "720p", "1080p"], duration: { min: 3, max: 16 } },
@@ -69,11 +103,49 @@ export const REFERENCE2VIDEO_SUPPORT: RouteSupport = {
   "vidu2.0": { resolutions: ["360p", "720p"], duration: { min: 4, max: 4 }, durations: [4] },
 };
 
-/** Models that accept the `subjects` (named-entity) form. */
-export const SUBJECTS_MODELS = ["viduq3-turbo", "viduq3", "viduq2", "viduq1", "vidu2.0"] as const;
+/**
+ * Models that accept the `subjects` (named-entity) form. viduq3-drama's
+ * section carries one ("| `subjects` | `array` | Required |" under "## Q3
+ * Drama Create Task" —
+ * https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video,
+ * 2026-11-12).
+ */
+export const SUBJECTS_MODELS = [
+  "viduq3-turbo",
+  "viduq3",
+  "viduq3-drama",
+  "viduq2",
+  "viduq1",
+  "vidu2.0",
+] as const;
 
 /** The only model that accepts `videos` references. */
 export const VIDEO_REFERENCE_MODEL = "viduq2-pro";
+
+/**
+ * Flat `images` caps that differ from the default 7: "Note 1:
+ * `viduq4-preview` model supports uploading 1 to 15 images;" —
+ * https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/reference-to-video,
+ * 2026-11-12.
+ */
+const IMAGE_CAPS: Readonly<Record<string, number>> = { "viduq4-preview": 15 };
+
+/**
+ * The models whose pages document `sounds`, and how many each takes: "Audio
+ * references support uploading 1 to 3 audio files." on the viduq3-mix,
+ * viduq3-ad and viduq3-drama sections of
+ * https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video,
+ * and "Up to 0 to 3 audio files are supported for upload" on
+ * https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/reference-to-video,
+ * both 2026-11-12. The CN mirror prints "支持上传 0～3 个音频" for the q3
+ * sections, so an empty list is not refused.
+ */
+const SOUND_COUNTS: Readonly<Record<string, { min: number; max: number }>> = {
+  "viduq4-preview": { min: 0, max: 3 },
+  "viduq3-mix": { min: 0, max: 3 },
+  "viduq3-ad": { min: 0, max: 3 },
+  "viduq3-drama": { min: 0, max: 3 },
+};
 
 /** A named subject: up to 3 images, addressable in the prompt as `@name`. */
 export interface ViduSubject {
@@ -85,33 +157,52 @@ export interface ViduSubject {
 
 export interface Reference2VideoParams {
   model: ViduModelId | (string & {});
-  /** Required; up to 5000 characters. Reference subjects as `@name`. */
+  /**
+   * Required; up to 20000 characters on q3 / q4, 5000 on q2 / q1 / vidu2.0.
+   * Reference subjects as `@name`.
+   */
   prompt: string;
-  /** Named subjects form. Not available on `viduq3-mix`. */
+  /** Named subjects form. Not available on `viduq3-mix`, `viduq3-ad` or `viduq4-preview`. */
   subjects?: ViduSubject[];
   /** Use Vidu's intelligent entity library. Default false. */
   auto_subjects?: boolean;
-  /** Flat reference images: 1–7 (1–4 on viduq2-pro alongside `videos`). */
+  /**
+   * Flat reference images: 1–7 (1–15 on viduq4-preview; 1–4 on viduq2-pro
+   * alongside `videos`).
+   */
   images?: string[];
   /** Video references — `viduq2-pro` only; 1×8s or 2×5s. */
   videos?: string[];
+  /**
+   * Audio references: up to 3 mp3 files, each 3–12s and ≤50MB (URL or
+   * base64 data URI). Documented on viduq3-mix, viduq3-ad, viduq3-drama and
+   * viduq4-preview.
+   */
+  sounds?: string[];
   /** Voice character; not effective on the Q3 series. */
   voice_id?: string;
   /** Seconds; bounds vary per model (default 5, or 4 on vidu2.0). */
   duration?: number;
   seed?: number;
-  /** Default "16:9". */
-  aspect_ratio?: ViduAspectRatio;
   /**
-   * Default "720p" (viduq1: "1080p"; vidu2.0: "360p"). Autocomplete over every
-   * documented value; `REFERENCE2VIDEO_SUPPORT` narrows it per model at runtime.
+   * Default "16:9". `auto` lets the model pick from the references;
+   * viduq4-preview's page lists the five fixed ratios only.
+   */
+  aspect_ratio?: ViduAspectRatio | "auto";
+  /**
+   * Default "720p" (viduq1 / viduq3-drama: "1080p"; vidu2.0: "360p").
+   * Autocomplete over every documented value (`2K` / `4K` are
+   * viduq4-preview's); `REFERENCE2VIDEO_SUPPORT` narrows it per model at runtime.
    */
   resolution?: ViduResolution;
   /** Default "auto". Not effective on q2 / q3. */
   movement_amplitude?: ViduMovementAmplitude;
   /** Background music. Default false; unsupported on q3. */
   bgm?: boolean;
-  /** Audio-video output. Defaults to true on viduq3 / viduq3-turbo. */
+  /**
+   * Audio-video output. Defaults to true on viduq3 / viduq3-turbo,
+   * viduq4-preview and viduq3-drama's images form.
+   */
   audio?: boolean;
   /** Required when `audio` is true; defaults to "all". */
   audio_type?: ViduAudioType;
@@ -133,10 +224,11 @@ const videoFromReferenceSchema = z.looseObject({
   auto_subjects: z.boolean().optional(),
   images: z.array(assetSchema).optional(),
   videos: z.array(assetSchema).optional(),
+  sounds: z.array(assetSchema).optional(),
   voice_id: z.string().optional(),
   duration: z.number().int().optional(),
   seed: z.number().int().optional(),
-  aspect_ratio: z.enum(VIDU_ASPECT_RATIOS).optional(),
+  aspect_ratio: z.enum([...VIDU_ASPECT_RATIOS, "auto"]).optional(),
   resolution: z.string().optional(),
   movement_amplitude: z.enum(VIDU_MOVEMENT_AMPLITUDES).optional(),
   bgm: z.boolean().optional(),
@@ -147,9 +239,13 @@ const videoFromReferenceSchema = z.looseObject({
   callback_url: z.string().optional(),
 });
 
-/** Max reference count per model: 7, or 4 on viduq2-pro when a video rides along. */
+/**
+ * Max reference count per model: 7 unless {@link IMAGE_CAPS} says otherwise,
+ * or 4 on viduq2-pro when a video rides along.
+ */
 function maxReferences(model: string, hasVideos: boolean): number {
-  return model === VIDEO_REFERENCE_MODEL && hasVideos ? 4 : 7;
+  if (model === VIDEO_REFERENCE_MODEL && hasVideos) return 4;
+  return IMAGE_CAPS[model] ?? 7;
 }
 
 function checkReferences(
@@ -238,6 +334,8 @@ function checkReferences(
 }
 
 export const videoFromReferenceConstraints = {
+  "viduq3-drama": q3Ignored(),
+  "viduq3-ad": q3Ignored(),
   "viduq3-mix": q3Ignored(),
   "viduq3-turbo": q3Ignored(),
   viduq3: q3Ignored(),
@@ -316,7 +414,12 @@ const validator = createValidator<Reference2VideoParams, unknown>({
   modelId: (params) => params.model,
   catalog: videoModels,
   constraints: videoFromReferenceConstraints,
-  checks: [checkRouteSupport("reference2video", REFERENCE2VIDEO_SUPPORT, SOURCE), checkReferences],
+  checks: [
+    checkRouteSupport("reference2video", REFERENCE2VIDEO_SUPPORT, SOURCE),
+    checkReferences,
+    checkArrayLength("sounds", SOUND_COUNTS, SOURCE),
+    checkPromptCap(SOURCE),
+  ],
   estimate,
   finalize,
 });

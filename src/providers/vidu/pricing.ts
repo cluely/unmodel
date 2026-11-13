@@ -19,6 +19,9 @@
  * rather than guessing. The page also notes two surcharges unmodel does not
  * model: `is_rec` adds 10 credits, and audio on img2video/reference2video
  * adds 15 credits on the Q2 family.
+ *
+ * Nor are viduq4-preview, viduq3-drama and viduq3-ad: q4 is priced in credits
+ * only, and the pricing pages have no drama or ad row (see ./models.ts).
  */
 
 /** The four generation routes that have their own price tables. */
@@ -84,11 +87,21 @@ const VIDU2_GENERATION: Readonly<Record<string, number>> = {
 
 /** Documented default resolution per model, used when `resolution` is omitted. */
 export const DEFAULT_RESOLUTION: Readonly<Record<string, string>> = {
+  // "Default: `720p`" on both q4 pages —
+  // https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/image-to-video,
+  // 2026-11-12. Unpriced (no USD rate), so no estimate reads it.
+  "viduq4-preview": "720p",
   "viduq3-pro": "720p",
   "viduq3-pro-fast": "720p",
   "viduq3-turbo": "720p",
   viduq3: "720p",
   "viduq3-mix": "720p",
+  // "`viduq3-drama` (2-15s): Default is 1080p" and "`viduq3-ad` (3-15
+  // seconds): Default is 720p" —
+  // https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video,
+  // 2026-11-12. Both unpriced.
+  "viduq3-drama": "1080p",
+  "viduq3-ad": "720p",
   viduq2: "720p",
   "viduq2-pro": "720p",
   "viduq2-pro-fast": "720p",
@@ -100,11 +113,17 @@ export const DEFAULT_RESOLUTION: Readonly<Record<string, string>> = {
 
 /** Documented default duration per model family (seconds). */
 export const DEFAULT_DURATION: Readonly<Record<string, number>> = {
+  // "Default: `5`" on both q4 pages (see DEFAULT_RESOLUTION).
+  "viduq4-preview": 5,
   "viduq3-pro": 5,
   "viduq3-pro-fast": 5,
   "viduq3-turbo": 5,
   viduq3: 5,
   "viduq3-mix": 5,
+  // "`viduq3-drama`: Default is 8s" and "`viduq3-ad`: Default is 5 seconds"
+  // (same page as DEFAULT_RESOLUTION's).
+  "viduq3-drama": 8,
+  "viduq3-ad": 5,
   viduq2: 5,
   "viduq2-pro": 5,
   "viduq2-pro-fast": 5,

@@ -30,9 +30,10 @@
  *
  * `360p` and `540p` are documented values with no canonical tier name, so they
  * are absent from the table below and reachable through
- * `providerOptions.vidu.resolution`; `480p`, `1440p` and `4k` are errors
- * naming what exists rather than a snap onto the nearest, which at 360p would
- * be a quarter of the pixels the caller asked for.
+ * `providerOptions.vidu.resolution`, as are viduq4-preview's `2K` and `4K`;
+ * `480p`, `1440p` and `4k` are errors naming the two tiers this table maps
+ * rather than a snap onto the nearest, which at 360p would be a quarter of the
+ * pixels the caller asked for.
  *
  * `img2video` has no `aspect_ratio` at all — the start frame sets the frame —
  * so a shape passed with an image is an `unsupported_param` saying which of

@@ -15,11 +15,14 @@ import { VIDU_ASPECT_RATIOS, type ViduMovementAmplitude } from "./shared";
 
 /** Every model with a video arm on any of the three routes. */
 export const MODELS = [
+  "viduq4-preview",
   "viduq3-pro",
   "viduq3-pro-fast",
   "viduq3-turbo",
   "viduq3",
   "viduq3-mix",
+  "viduq3-drama",
+  "viduq3-ad",
   "viduq2",
   "viduq2-pro",
   "viduq2-pro-fast",
@@ -44,9 +47,10 @@ export const MODELS = [
  * now says so instead of the adapter saying it after the fact. The models that
  * also serve text2video or reference2video keep the five-value enum.
  *
- * `resolutions` is `720p`/`1080p` almost everywhere: `360p` and `540p` are real
- * wire values with no canonical name (they live on
- * `providerOptions.vidu.resolution`), and the q1 pair renders 1080p only.
+ * `resolutions` is `720p`/`1080p` almost everywhere: `360p`, `540p` and
+ * viduq4-preview's `2K` / `4K` are real wire values this row does not name
+ * (they live on `providerOptions.vidu.resolution`), and the q1 pair renders
+ * 1080p only.
  *
  * The three extras are the fields present on **all three** routes. `style`,
  * `audio_type`, `voice_id`, `is_rec`, `auto_subjects` and `subjects` are
@@ -78,11 +82,14 @@ export const FRAME_ONLY_ROW = {
 } as const;
 
 export const VIDU_VIDEO_MODEL_PARAMS = {
+  "viduq4-preview": SHAPED_ROW,
   "viduq3-pro": SHAPED_ROW,
   "viduq3-pro-fast": FRAME_ONLY_ROW,
   "viduq3-turbo": SHAPED_ROW,
   viduq3: SHAPED_ROW,
   "viduq3-mix": SHAPED_ROW,
+  "viduq3-drama": SHAPED_ROW,
+  "viduq3-ad": SHAPED_ROW,
   viduq2: SHAPED_ROW,
   "viduq2-pro": SHAPED_ROW,
   "viduq2-pro-fast": FRAME_ONLY_ROW,

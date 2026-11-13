@@ -14,8 +14,8 @@ import type { TtsDeliverySpec, TtsModelParamTable } from "../../core/unified/voc
 import type { SmallestLanguage } from "./models";
 import { LANGUAGES, PRO_ONLY_LANGUAGES } from "./models";
 
-/** The two Lightning pools — the ref union for `smallest-ai/…`. */
-export const MODELS = ["lightning_v3.1", "lightning_v3.1_pro"] as const;
+/** The two Lightning pools and the Pro preview checkpoint — the ref union for `smallest-ai/…`. */
+export const MODELS = ["lightning_v3.1", "lightning_v3.1_pro", "lightning_v3.1_pro_10_26"] as const;
 
 export const SYNTHESIZE_DOCS =
   "https://docs.smallest.ai/models/api-reference/text-to-speech/synthesize-speech";
@@ -91,9 +91,19 @@ export const SHARED_EXTRAS = {
 
 export const CODECS = ["mp3", "pcm_s16le", "pcm_mulaw", "pcm_alaw"] as const;
 
+/**
+ * `lightning_v3.1_pro_10_26` is a checkpoint of the Pro pool — "Accepts every
+ * Pro voice", and "Other request parameters behave identically" (endpoint
+ * reference, read 2026-11-12) — so its row is the Pro row. The reference says
+ * to "use `en` (English), `es` (Spanish with English code-switching) or `hi`
+ * (Hindi with English code-switching)" on it, but no page says the API rejects
+ * another code there, and the validator does not refuse one, so the list is
+ * not narrowed to those three.
+ */
 export const SMALLEST_TTS_MODEL_PARAMS = {
   "lightning_v3.1": { codecs: CODECS, languages: BASE_LANGUAGES, extras: SHARED_EXTRAS },
   "lightning_v3.1_pro": { codecs: CODECS, languages: PRO_LANGUAGES, extras: SHARED_EXTRAS },
+  "lightning_v3.1_pro_10_26": { codecs: CODECS, languages: PRO_LANGUAGES, extras: SHARED_EXTRAS },
 } as const satisfies TtsModelParamTable;
 
 /**

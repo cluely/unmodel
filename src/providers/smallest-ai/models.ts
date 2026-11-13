@@ -4,10 +4,16 @@
 // https://docs.smallest.ai/models/model-cards/text-to-speech/lightning-v-3-1-pro
 // and https://smallest.ai/pricing (last checked 2026-08-13).
 //
-// MODEL IDS: the Waves TTS routes take a single `model` enum with exactly two
-// values — `lightning_v3.1` (default) and `lightning_v3.1_pro`. These are
-// documented as model *pools*, so successive Pro builds ship behind the one
-// `lightning_v3.1_pro` id; there is no dated or build-specific id to encode.
+// MODEL IDS: the Waves TTS routes take a single `model` enum with three values
+// — "Allowed values: `lightning_v3.1`, `lightning_v3.1_pro`,
+// `lightning_v3.1_pro_10_26`" (endpoint reference,
+// https://docs.smallest.ai/api-reference/models/text-to-speech/synthesize-speech,
+// read 2026-11-12). The first two are model *pools*, so successive builds ship
+// behind one stable id. New Pro builds are previewed under dated ids: "A dated
+// ID such as `lightning_v3.1_pro_10_26` lets you try a new checkpoint during its
+// 30-day preview" (https://docs.smallest.ai/model-cards/text-to-speech/lightning-v-3-1-pro,
+// read 2026-11-12), after which the checkpoint becomes the stable Pro id and
+// the dated id stays served for a further 30 days.
 // Lightning v2 and lightning-large are documented only as deprecated
 // predecessors with no current endpoint reference, so they are not catalogued.
 //
@@ -69,6 +75,35 @@ export const models = {
     // "Pricing (Standard Plan): ~$0.195/10K characters" (model card).
     cost: { perMillionCharacters: 19.5 },
   },
+  // The Pro pool's preview checkpoint: "`lightning_v3.1_pro_10_26` — [preview]
+  // New Lightning v3.1 Pro checkpoint for English, Spanish and Hindi. Accepts
+  // every Pro voice. On 2026-11-28, it becomes the stable `lightning_v3.1_pro`
+  // for these three languages only; all other languages are unchanged.
+  // `lightning_v3.1_pro_10_26` remains available until 2026-12-28." (endpoint
+  // reference, read 2026-11-12). Released 2026-10-29
+  // (https://docs.smallest.ai/changelog/lightning-v-3-1/2026/10/29). The row
+  // is removed in a changeset once the id stops being served.
+  "lightning_v3.1_pro_10_26": {
+    id: "lightning_v3.1_pro_10_26",
+    name: "Lightning v3.1 Pro (10_26 preview)",
+    family: "lightning-v3.1",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    releaseDate: "2026-10-29",
+    status: "beta",
+    modalities: { input: ["text"], output: ["audio"] },
+    // "Endpoints, regions, sample rates, pricing, concurrency and features are
+    // the same as `lightning_v3.1_pro`." (changelog 2026-10-29, read
+    // 2026-11-12), so the limit is the Pro row's — see LIMITS above.
+    limit: { context: 0, characters: 250 },
+    // Same changelog quote for pricing; the Pro pool's rate is "Usage-based
+    // Lightning v3.1 Pro text-to-speech pricing at approximately USD 0.195 per
+    // 10,000 characters." (https://smallest.ai/pricing/models, read
+    // 2026-11-12) → $19.50 per 1M characters.
+    cost: { perMillionCharacters: 19.5 },
+  },
   // "44.1 kHz audio output, ~200ms TTFB, expressive human-like speech, and
   // voice cloning." The server default when `model` is omitted.
   // No `cost`: no per-character list price is published for this pool — see
@@ -87,12 +122,13 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type SmallestModelId = keyof typeof models;
-/** Both catalogued pools serve the TTS routes. */
+/** Every catalogued id serves the TTS routes. */
 export type SmallestTtsModelId = SmallestModelId;
 
 export const SMALLEST_MODEL_IDS = [
   "lightning_v3.1",
   "lightning_v3.1_pro",
+  "lightning_v3.1_pro_10_26",
 ] as const satisfies readonly SmallestModelId[];
 
 /**

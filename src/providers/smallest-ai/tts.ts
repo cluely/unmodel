@@ -8,7 +8,10 @@
  *
  * ONE ROUTE, TWO POOLS: `/waves/v1/tts` is unified — `model` selects the pool
  * (`lightning_v3.1` by default, `lightning_v3.1_pro` for the premium
- * catalogue). Every other body field behaves identically across both.
+ * catalogue, `lightning_v3.1_pro_10_26` for the Pro pool's preview
+ * checkpoint). Every other body field behaves identically across them: "Same
+ * concurrency and latency profile across all three. Other request parameters
+ * behave identically." (endpoint reference, read 2026-11-12).
  *
  * HEADERS: `Accept: audio/wav` is documented as REQUIRED ("Omitting it can
  * return an empty or unplayable response"), so it ships as a static header on
@@ -191,6 +194,7 @@ const wordTimestampsDeny = {
 export const ttsConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   "lightning_v3.1": { deny: wordTimestampsDeny },
   "lightning_v3.1_pro": { deny: wordTimestampsDeny },
+  "lightning_v3.1_pro_10_26": { deny: wordTimestampsDeny },
 };
 
 // ---------------------------------------------------------------------------

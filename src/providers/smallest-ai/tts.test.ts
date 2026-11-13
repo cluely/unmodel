@@ -254,8 +254,46 @@ describe("smallest-ai cost estimation", () => {
   });
 });
 
+describe("smallest-ai lightning_v3.1_pro_10_26 (Pro preview checkpoint, 2026-10-29)", () => {
+  test("validates as a catalogued id, with no warnings", () => {
+    const r = tts.safe({
+      text: "Hola, ¿qué tal?",
+      voice_id: "meher",
+      model: "lightning_v3.1_pro_10_26",
+      language: "es",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
+  test("prices at the Pro pool's $19.5/1M characters", () => {
+    const r = tts.safe({ text: "a".repeat(200), voice_id: "meher", model: "lightning_v3.1_pro_10_26" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.0039, 10);
+  });
+
+  test("word_timestamps is accepted but ignored, as on the stable pools", () => {
+    const r = tts.safe({
+      text: "x",
+      voice_id: "meher",
+      model: "lightning_v3.1_pro_10_26",
+      word_timestamps: true,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const issue = r.warnings.find((w) => w.code === "unsupported_param");
+      expect(issue?.path).toEqual(["word_timestamps"]);
+      expect(issue?.meta?.ignored).toBe(true);
+    }
+  });
+
+  test("the catalog row is marked beta (preview)", () => {
+    expect(models["lightning_v3.1_pro_10_26"].status).toBe("beta");
+  });
+});
+
 describe("smallest-ai catalog", () => {
-  test("both pools are TTS-shaped with the 250-character cap", () => {
+  test("every catalogued id is TTS-shaped with the 250-character cap", () => {
     for (const info of Object.values(models)) {
       expect(info.limit.context).toBe(0);
       expect(info.limit.characters).toBe(250);

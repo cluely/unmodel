@@ -1169,7 +1169,7 @@ really is a `google.chat` (`:generateContent`) request.
 Currently denied there, each for a wire surface unmodel has not verified or has no
 module for:
 
-- `*  → azure:*claude*` — models.dev lists 11 Claude rows on Azure but records `api: null`,
+- `*  → azure:*claude*` — models.dev lists 16 Claude rows on Azure but records `api: null`,
   and unmodel's Azure module is OpenAI-compatible only. The surface is unconfirmed.
 - `*  → google-vertex:*claude*` — Vertex serves Claude through an Anthropic-shaped
   `rawPredict` route that unmodel has no module for.

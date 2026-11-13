@@ -237,7 +237,6 @@ export const availability = {
     "openrouter": { id: "xiaomi/mimo-v2.5-pro", narrows: { context: 1024000 } },
   },
   "deepseek-ai/DeepSeek-R1": {
-    "azure": "deepseek-r1",
     "huggingface": "deepseek-ai/DeepSeek-R1",
     "togetherai": "deepseek-ai/DeepSeek-R1",
     "vercel": "deepseek/deepseek-r1",
@@ -325,6 +324,7 @@ export const availability = {
     "vercel": "deepseek/deepseek-v4-pro-0813",
   },
   "deepseek-ai/DeepSeek-V4.1-Flash": {
+    "azure": { id: "deepseek-v4.1-flash", narrows: { context: 1000000 } },
     "baseten": "deepseek-ai/DeepSeek-V4.1-Flash",
     "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash",
     "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash",

@@ -323,7 +323,6 @@ export const availability = {
     "vercel": "cohere/rerank-v5-pro",
   },
   "deepseek/deepseek-r1": {
-    "azure": "deepseek-r1",
     "huggingface": { id: "deepseek-ai/DeepSeek-R1", narrows: { context: 64000 } },
     "togetherai": "deepseek-ai/DeepSeek-R1",
     "vercel": "deepseek/deepseek-r1",
@@ -399,6 +398,7 @@ export const availability = {
     "vercel": "deepseek/deepseek-v4-pro-0813",
   },
   "deepseek/deepseek-v4.1-flash": {
+    "azure": { id: "deepseek-v4.1-flash", narrows: { context: 1000000, drops: ["pdf"] } },
     "baseten": { id: "deepseek-ai/DeepSeek-V4.1-Flash", narrows: { drops: ["pdf"] } },
     "deepinfra": { id: "deepseek-ai/DeepSeek-V4.1-Flash", narrows: { drops: ["pdf"] } },
     "huggingface": { id: "deepseek-ai/DeepSeek-V4.1-Flash", narrows: { drops: ["pdf"] } },
@@ -938,7 +938,7 @@ export const availability = {
     "vercel": "nvidia/nemotron-nano-9b-v2",
   },
   "openai/gpt-4.1": {
-    "azure": { id: "gpt-4.1", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-4.1",
     "openai": "gpt-4.1",
     "openrouter": "openai/gpt-4.1",
     "vercel": "openai/gpt-4.1",
@@ -947,7 +947,7 @@ export const availability = {
     "vercel": "openai/gpt-4.1-fast",
   },
   "openai/gpt-4.1-mini": {
-    "azure": { id: "gpt-4.1-mini", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-4.1-mini",
     "openai": "gpt-4.1-mini",
     "openrouter": "openai/gpt-4.1-mini",
     "vercel": "openai/gpt-4.1-mini",
@@ -956,13 +956,13 @@ export const availability = {
     "vercel": "openai/gpt-4.1-mini-fast",
   },
   "openai/gpt-4.1-nano": {
-    "azure": { id: "gpt-4.1-nano", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-4.1-nano",
     "openai": { id: "gpt-4.1-nano", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-4.1-nano",
     "vercel": "openai/gpt-4.1-nano",
   },
   "openai/gpt-4o": {
-    "azure": { id: "gpt-4o", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-4o",
     "openai": "gpt-4o",
     "openrouter": "openai/gpt-4o",
     "vercel": "openai/gpt-4o",
@@ -971,7 +971,7 @@ export const availability = {
     "vercel": "openai/gpt-4o-fast",
   },
   "openai/gpt-4o-mini": {
-    "azure": { id: "gpt-4o-mini", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-4o-mini",
     "openai": "gpt-4o-mini",
     "openrouter": "openai/gpt-4o-mini",
     "vercel": "openai/gpt-4o-mini",
@@ -986,20 +986,20 @@ export const availability = {
     "vercel": "openai/gpt-4o-transcribe",
   },
   "openai/gpt-5": {
-    "azure": { id: "gpt-5", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5",
     "openai": { id: "gpt-5", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5",
     "vercel": "openai/gpt-5",
   },
   "openai/gpt-5-codex": {
-    "azure": { id: "gpt-5-codex", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5-codex",
     "vercel": "openai/gpt-5-codex",
   },
   "openai/gpt-5-fast": {
     "vercel": "openai/gpt-5-fast",
   },
   "openai/gpt-5-mini": {
-    "azure": { id: "gpt-5-mini", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5-mini",
     "openai": { id: "gpt-5-mini", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5-mini",
     "vercel": "openai/gpt-5-mini",
@@ -1008,29 +1008,29 @@ export const availability = {
     "vercel": "openai/gpt-5-mini-fast",
   },
   "openai/gpt-5-nano": {
-    "azure": { id: "gpt-5-nano", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5-nano",
     "openai": { id: "gpt-5-nano", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5-nano",
     "vercel": "openai/gpt-5-nano",
   },
   "openai/gpt-5-pro": {
-    "azure": { id: "gpt-5-pro", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5-pro",
     "openai": { id: "gpt-5-pro", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5-pro",
     "vercel": "openai/gpt-5-pro",
   },
   "openai/gpt-5.1-codex": {
-    "azure": { id: "gpt-5.1-codex", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5.1-codex",
     "openrouter": { id: "openai/gpt-5.1-codex", narrows: { drops: ["pdf"] } },
     "vercel": "openai/gpt-5.1-codex",
   },
   "openai/gpt-5.1-codex-max": {
-    "azure": { id: "gpt-5.1-codex-max", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5.1-codex-max",
     "openrouter": { id: "openai/gpt-5.1-codex-max", narrows: { drops: ["pdf"] } },
     "vercel": "openai/gpt-5.1-codex-max",
   },
   "openai/gpt-5.1-codex-mini": {
-    "azure": { id: "gpt-5.1-codex-mini", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5.1-codex-mini",
     "openrouter": { id: "openai/gpt-5.1-codex-mini", narrows: { drops: ["pdf"] } },
     "vercel": "openai/gpt-5.1-codex-mini",
   },
@@ -1041,13 +1041,13 @@ export const availability = {
     "vercel": "openai/gpt-5.1-thinking-fast",
   },
   "openai/gpt-5.2": {
-    "azure": { id: "gpt-5.2", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5.2",
     "openai": { id: "gpt-5.2", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5.2",
     "vercel": "openai/gpt-5.2",
   },
   "openai/gpt-5.2-codex": {
-    "azure": { id: "gpt-5.2-codex", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5.2-codex",
     "openrouter": { id: "openai/gpt-5.2-codex", narrows: { drops: ["pdf"] } },
     "vercel": "openai/gpt-5.2-codex",
   },
@@ -1058,7 +1058,7 @@ export const availability = {
     "vercel": "openai/gpt-5.2-pro",
   },
   "openai/gpt-5.3-codex": {
-    "azure": { id: "gpt-5.3-codex", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5.3-codex",
     "openai": "gpt-5.3-codex",
     "openrouter": "openai/gpt-5.3-codex",
     "vercel": "openai/gpt-5.3-codex",
@@ -1092,7 +1092,7 @@ export const availability = {
     "vercel": "openai/gpt-5.4-nano",
   },
   "openai/gpt-5.4-pro": {
-    "azure": { id: "gpt-5.4-pro", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-5.4-pro",
     "openai": { id: "gpt-5.4-pro", narrows: { drops: ["pdf"] } },
     "openrouter": "openai/gpt-5.4-pro",
     "vercel": "openai/gpt-5.4-pro",
@@ -1144,6 +1144,7 @@ export const availability = {
   },
   "openai/gpt-6-astra": {
     "amazon-bedrock": "openai.gpt-6-astra",
+    "azure": "gpt-6-astra",
     "openai": "gpt-6-astra",
     "openrouter": "openai/gpt-6-astra",
     "vercel": "openai/gpt-6-astra",
@@ -1153,6 +1154,7 @@ export const availability = {
   },
   "openai/gpt-6-luna": {
     "amazon-bedrock": "openai.gpt-6-luna",
+    "azure": "gpt-6-luna",
     "openai": "gpt-6-luna",
     "openrouter": "openai/gpt-6-luna",
     "vercel": "openai/gpt-6-luna",
@@ -1162,6 +1164,7 @@ export const availability = {
   },
   "openai/gpt-6-sol": {
     "amazon-bedrock": "openai.gpt-6-sol",
+    "azure": "gpt-6-sol",
     "openai": "gpt-6-sol",
     "openrouter": "openai/gpt-6-sol",
     "vercel": "openai/gpt-6-sol",
@@ -1171,6 +1174,7 @@ export const availability = {
   },
   "openai/gpt-6.1-sol": {
     "amazon-bedrock": "openai.gpt-6.1-sol",
+    "azure": "gpt-6.1-sol",
     "openai": "gpt-6.1-sol",
     "openrouter": "openai/gpt-6.1-sol",
     "vercel": "openai/gpt-6.1-sol",
@@ -1180,6 +1184,7 @@ export const availability = {
   },
   "openai/gpt-6.1-terra": {
     "amazon-bedrock": "openai.gpt-6.1-terra",
+    "azure": "gpt-6.1-terra",
     "openai": "gpt-6.1-terra",
     "openrouter": "openai/gpt-6.1-terra",
     "vercel": "openai/gpt-6.1-terra",
@@ -1242,12 +1247,12 @@ export const availability = {
     "vercel": "openai/gpt-realtime-whisper",
   },
   "openai/o1": {
-    "azure": { id: "o1", narrows: { drops: ["pdf"] } },
+    "azure": "o1",
     "openai": "o1",
     "vercel": "openai/o1",
   },
   "openai/o3": {
-    "azure": { id: "o3", narrows: { drops: ["pdf"] } },
+    "azure": "o3",
     "openai": "o3",
     "openrouter": "openai/o3",
     "vercel": "openai/o3",
@@ -1266,7 +1271,7 @@ export const availability = {
     "vercel": "openai/o3-pro",
   },
   "openai/o4-mini": {
-    "azure": { id: "o4-mini", narrows: { drops: ["pdf"] } },
+    "azure": "o4-mini",
     "openai": { id: "o4-mini", narrows: { drops: ["pdf"] } },
     "vercel": "openai/o4-mini",
   },
@@ -1360,6 +1365,7 @@ export const availability = {
   },
   "spacexai/grok-4.6": {
     "amazon-bedrock": "xai.grok-4.6",
+    "azure": { id: "grok-4.6", narrows: { context: 200000 } },
     "google-vertex": { id: "xai/grok-4.6", endpoint: "google-vertex.chatMaas" },
     "openrouter": "x-ai/grok-4.6",
     "vercel": "spacexai/grok-4.6",
@@ -1367,6 +1373,7 @@ export const availability = {
   },
   "spacexai/grok-4.7": {
     "amazon-bedrock": "us.xai.grok-4.7",
+    "azure": "grok-4.7",
     "google-vertex": { id: "xai/grok-4.7", endpoint: "google-vertex.chatMaas" },
     "openrouter": "x-ai/grok-4.7",
     "vercel": "spacexai/grok-4.7",

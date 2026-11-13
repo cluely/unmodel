@@ -20,6 +20,7 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  */
 export const availability = {
   "deepseek-ai/deepseek-v4.1-flash": {
+    "azure": "deepseek-v4.1-flash",
     "baseten": "deepseek-ai/DeepSeek-V4.1-Flash",
     "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash",
     "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash",

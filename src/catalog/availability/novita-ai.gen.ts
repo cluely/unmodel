@@ -82,6 +82,7 @@ export const availability = {
     "vercel": { id: "deepseek/deepseek-v4-pro-0813", narrows: { context: 1000000 } },
   },
   "deepseek/deepseek-v4.1-flash": {
+    "azure": { id: "deepseek-v4.1-flash", narrows: { context: 1000000 } },
     "baseten": "deepseek-ai/DeepSeek-V4.1-Flash",
     "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash",
     "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash",

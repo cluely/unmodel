@@ -49,6 +49,7 @@
 import { createOpenAICompatible, type OpenAICompatibleProvider } from "../openai-compatible";
 import { models, provider } from "../../catalog/azure.gen";
 import type { AzureTextModelId } from "../../catalog/azure.gen";
+import { chatModels } from "./chat-models";
 import { createDeploymentCatalog } from "./deployment-catalog";
 import { azureMaiImagesGenerationsUrl, createMaiImage, type AzureMaiImage } from "./image";
 import { azureMaiImagesEditsUrl, createMaiImageEdit, type AzureMaiImageEdit } from "./image-edit";
@@ -108,9 +109,11 @@ export function azureChatCompletionsUrl(endpoint: string, apiVersion?: string): 
  * the MAI image surfaces — see ./deployment-catalog.ts) routes every lookup
  * through core's shared `resolveModelInfo` semantics ("models/" strip, exact
  * match, date-suffix strip, longest "-"/"." boundary prefix); names that
- * still don't resolve surface as `unknown_model` warnings.
+ * still don't resolve surface as `unknown_model` warnings. The rows it
+ * resolves to are `chatModels` (./chat-models.ts): the generated catalog with
+ * Azure's documented corrections on top.
  */
-const deploymentCatalog = createDeploymentCatalog(models);
+const deploymentCatalog = createDeploymentCatalog(chatModels);
 
 /**
  * Creates a validator surface bound to one Azure resource. See the module
@@ -146,7 +149,7 @@ export function createAzure(config: AzureConfig): AzureProvider {
   };
 }
 
-export { models, provider };
+export { models, provider, chatModels };
 export { azureMaiImagesGenerationsUrl, createMaiImage } from "./image";
 export { azureMaiImagesEditsUrl, createMaiImageEdit, toMaiEditFormData } from "./image-edit";
 export {

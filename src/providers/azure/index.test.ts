@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createAzure, azureChatCompletionsUrl } from "./index";
+import { createAzure, azureChatCompletionsUrl, chatModels, models, type AzureTextModelId } from "./index";
 
 const azure = createAzure({ endpoint: "https://my-resource.openai.azure.com" });
 
@@ -124,6 +124,85 @@ describe("azure deployment-name catalog matching", () => {
       // gpt-5: $1.25/M input, $10/M output.
       expect(r.estimate.costUSD).toBeCloseTo((7 * 1.25 + 100 * 10) / 1e6, 12);
     }
+  });
+});
+
+describe("azure catalog rows from the 2026-11-12 models.dev slice", () => {
+  // [deployment name, $/1M input + $/1M output, or undefined when the row is unpriced]
+  const NEW_CHAT_ROWS: ReadonlyArray<readonly [AzureTextModelId, number | undefined]> = [
+    ["claude-fable-5-2", 8 + 40],
+    ["claude-opus-5-5", 4 + 20],
+    ["claude-sonnet-5-5", 2 + 10],
+    ["claude-haiku-5-5", 0.1 + 0.5],
+    ["deepseek-v4.1-flash", 0.3 + 1.2],
+    ["gpt-6-astra", 10 + 50],
+    ["gpt-6-sol", 2 + 10],
+    ["gpt-6-luna", 0.1 + 0.5],
+    ["gpt-6.1-sol", 2 + 10],
+    ["gpt-6.1-terra", 1 + 5],
+    ["grok-4.6", 2 + 6],
+    // models.dev's azure row carries no cost for grok-4.7: unpriced, never guessed.
+    ["grok-4.7", undefined],
+  ];
+
+  test.each(NEW_CHAT_ROWS)("%s validates against its own row and prices", (model, perMillion) => {
+    const r = azure.chat.safe({ model, messages: [userMessage("hi")] });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).not.toContain("unknown_model");
+    const report = azure.checkChat({
+      model,
+      choices: [{ finish_reason: "stop" }],
+      usage: { prompt_tokens: 1_000_000, completion_tokens: 1_000_000 },
+    });
+    if (perMillion === undefined) expect(report.costUSD).toBeUndefined();
+    else expect(report.costUSD).toBeCloseTo(perMillion, 10);
+  });
+
+  test("claude-opus-5-5 is its own row, not claude-opus-5 by longest prefix", () => {
+    const report = azure.checkChat({
+      model: "claude-opus-5-5-prod",
+      usage: { prompt_tokens: 1_000_000, completion_tokens: 1_000_000 },
+    });
+    // $4 / $20 (its own row), not claude-opus-5's $5 / $25.
+    expect(report.costUSD).toBeCloseTo(24, 10);
+  });
+});
+
+describe("azure chatModels: Azure's documented corrections to generated rows", () => {
+  test.each(["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6.1-sol", "gpt-6.1-terra"] as const)(
+    "%s takes temperature and top_p (Azure's GPT-6 feature table)",
+    (model) => {
+      expect(models[model].temperature).toBe(false);
+      expect(chatModels[model].temperature).toBe(true);
+      const r = azure.chat.safe({ model, messages: [userMessage("hi")], temperature: 0.2, top_p: 0.5 });
+      expect(r.ok).toBe(true);
+    },
+  );
+
+  test("the GPT-5.6 sibling keeps its fixed sampling: temperature other than 1 is refused", () => {
+    const r = azure.chat.safe({ model: "gpt-5.6-sol", messages: [userMessage("hi")], temperature: 0.2 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("unsupported_param");
+      expect(r.errors[0]?.path).toEqual(["temperature"]);
+    }
+  });
+
+  test("deepseek-v4.1-flash takes Azure's 384,000-token output, and refuses past it", () => {
+    expect(models["deepseek-v4.1-flash"].limit.output).toBe(128000);
+    const ok = azure.chat.safe({
+      model: "deepseek-v4.1-flash",
+      messages: [userMessage("hi")],
+      max_completion_tokens: 384_000,
+    });
+    expect(ok.ok).toBe(true);
+    const over = azure.chat.safe({
+      model: "deepseek-v4.1-flash",
+      messages: [userMessage("hi")],
+      max_completion_tokens: 384_001,
+    });
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.errors[0]?.code).toBe("over_output_limit");
   });
 });
 

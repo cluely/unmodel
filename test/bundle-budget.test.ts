@@ -1294,9 +1294,18 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
  * every pack here is the shared kernel and vocabulary, not the adapters. A
  * pack that jumps well above its neighbours has acquired something structural,
  * not another model.
+ *
+ * **These figures are not deterministic.** rolldown-plugin-dts draws chunk
+ * boundaries differently from build to build, and this walker counts every
+ * chunk an entry's declaration reaches, so the same tree measures differently
+ * on consecutive builds. Five identical builds on 2026-11-12, after the model
+ * wave's image/avatar/upscale rows, gave image 1252.2–1355.8, avatar
+ * 482.7–567.2 and upscale 486.9–557.2 (video 1072.3–1292.8, tts 1153.0–1272.8).
+ * A pin is therefore set from the MAXIMUM of several builds, ~10% over it:
+ * image 1260 → 1495, avatar 600 → 625, upscale 560 → 615.
  */
 const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
-  image: 1260,
+  image: 1495,
   "image-edit": 1660,
   video: 1880,
   // The three fal-only packs, and the cheapest declarations in the table.
@@ -1355,14 +1364,14 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Re-checked on the finished wave, which is when the chunk boundary settles:
   // **543.0** measured, against lipsync's 539.6 — still within 0.7% of each
   // other, and 600 is measured x 1.1. The artefact reading holds; the pin stays.
-  avatar: 600,
+  avatar: 625,
   // Bumped 450 → 560 by the Topaz wave: 508.8 measured, the largest jump of the
   // three and the one with a real cause rather than a chunking artefact. Topaz
   // brings FIFTEEN rows whose `extras` are hand-transcribed per-model settings
   // tables — between eight and twenty-four typed dials each — so `tsc` has
   // fifteen distinct object types to instantiate where fal's ten share three
   // shapes. That is the declaration cost of the thing this provider exists for.
-  upscale: 560,
+  upscale: 615,
   // `unmodel/3d`: 534.1 measured. The most expensive of the four small packs
   // and the only one with two providers, which is most of the difference — the
   // `tripo3d` half brings four literal model ids, two quality ladders and its

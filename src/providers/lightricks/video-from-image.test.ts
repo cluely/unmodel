@@ -206,6 +206,29 @@ describe("lightricks.videoFromAudio", () => {
       const issue = bad.errors.find((e) => e.code === "invalid_enum_value");
       expect(issue?.path).toEqual(["fps"]);
       expect(issue?.meta?.allowed).toEqual([24, 25, 48, 50]);
+      // Without an image the server default is exactly 1920x1080.
+      expect(issue?.meta?.resolution).toBe("1920x1080");
+      expect(issue?.message).toContain("at 1920x1080 ");
+    }
+  });
+
+  test("with an image and no resolution, the fps issue names the tier, not one orientation", () => {
+    // The server follows the image's orientation (1920x1080 or 1080x1920).
+    const bad = safeUnchecked({
+      audio_uri: AUDIO,
+      image_uri: "https://example.com/first.png",
+      prompt: "hi",
+      fps: 30,
+    });
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) {
+      const issue = bad.errors.find((e) => e.code === "invalid_enum_value");
+      expect(issue?.path).toEqual(["fps"]);
+      expect(issue?.meta?.allowed).toEqual([24, 25, 48, 50]);
+      expect(issue?.meta?.resolution).toBeUndefined();
+      expect(issue?.meta?.tier).toBe("1080p");
+      expect(issue?.message).not.toContain("at 1920x1080");
+      expect(issue?.message).toContain("1080x1920 for a portrait image");
     }
   });
 

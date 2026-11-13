@@ -62,6 +62,15 @@ export const DEFAULT_AUDIO_TO_VIDEO_MODEL = "ltx-2-3-pro";
  */
 const DEFAULT_RESOLUTION = "1920x1080";
 
+/**
+ * How a matrix issue names an omitted `resolution` when `image_uri` is sent:
+ * the server follows the image's orientation (OpenAPI: "portrait images
+ * produce 1080x1920 video, landscape images produce 1920x1080 video"), which
+ * unmodel cannot see, so only the tier is stated.
+ */
+const IMAGE_DEFAULT_RESOLUTION_LABEL =
+  "the default 1080p resolution (1920x1080, or 1080x1920 for a portrait image)";
+
 const REFERENCE_SOURCE =
   "https://docs.ltx.io/api-documentation/api-reference/async-video-generation/submit-audio-to-video.md";
 
@@ -77,7 +86,11 @@ export interface AudioToVideoParams {
    * orientation, else "1920x1080".
    */
   resolution?: LtxResolution;
-  /** CFG. Defaults to 5 (text-only) or 9 (with an image). */
+  /**
+   * Not in the current OpenAPI `AudioToVideoRequest` or the reference page
+   * (read 2026-11-12); LTX states neither whether it is honoured nor its
+   * default. Passed through, checked only as a number.
+   */
   guidance_scale?: number;
   /** Defaults to "ltx-2-3-pro". `ltx-2-3-fast` has no arm here. */
   model?: LightricksModelId | (string & {});
@@ -112,8 +125,14 @@ function checkAudioMatrix(
 ): void {
   const model = params.model ?? DEFAULT_AUDIO_TO_VIDEO_MODEL;
   if (!(AUDIO_TO_VIDEO_MODELS as readonly string[]).includes(model)) return;
+  const followsImage = params.resolution == null && params.image_uri != null;
   checkSupportMatrix(
-    { model, resolution: params.resolution ?? DEFAULT_RESOLUTION, fps: params.fps },
+    {
+      model,
+      resolution: params.resolution ?? DEFAULT_RESOLUTION,
+      resolutionLabel: followsImage ? IMAGE_DEFAULT_RESOLUTION_LABEL : undefined,
+      fps: params.fps,
+    },
     info,
     ctx,
   );

@@ -168,6 +168,12 @@ export const AUTOMATIC_DURATION_MODELS = ["ltx-2-5-fast", "ltx-2-5-pro"] as cons
 interface MatrixParams {
   model: string;
   resolution?: string;
+  /**
+   * Names the resolution in fps/duration issues when `resolution` only stands
+   * in for its tier (a server default the request cannot pin down). When set,
+   * issue `meta` carries `tier` in place of `resolution`.
+   */
+  resolutionLabel?: string;
   fps?: number;
   duration?: number | null;
 }
@@ -212,6 +218,8 @@ export function checkSupportMatrix<P extends MatrixParams>(
   }
 
   const tierRows = rows.filter((row) => row.tiers.includes(tier));
+  const resolutionText = params.resolutionLabel ?? resolution;
+  const resolutionMeta = params.resolutionLabel === undefined ? { resolution } : { tier };
   const fps = params.fps ?? DEFAULT_FPS;
   const allowedFps = unique(tierRows.flatMap((row) => [...row.fps]));
   if (!allowedFps.includes(fps)) {
@@ -219,8 +227,8 @@ export function checkSupportMatrix<P extends MatrixParams>(
       code: "invalid_enum_value",
       path: ["fps"],
       model,
-      message: `\`fps\` must be one of ${allowedFps.join(", ")} at ${resolution} for "${model}"; got ${fps}.`,
-      meta: { allowed: allowedFps, value: fps, resolution, source },
+      message: `\`fps\` must be one of ${allowedFps.join(", ")} at ${resolutionText} for "${model}"; got ${fps}.`,
+      meta: { allowed: allowedFps, value: fps, ...resolutionMeta, source },
     });
     return;
   }
@@ -247,11 +255,11 @@ export function checkSupportMatrix<P extends MatrixParams>(
       code: "invalid_enum_value",
       path: ["duration"],
       model,
-      message: `\`duration\` must be one of ${allowedDurations.join(", ")} seconds at ${resolution}/${fps}fps for "${model}"; got ${duration}.`,
+      message: `\`duration\` must be one of ${allowedDurations.join(", ")} seconds at ${resolutionText}/${fps}fps for "${model}"; got ${duration}.`,
       meta: {
         allowed: allowedDurations,
         value: duration,
-        resolution,
+        ...resolutionMeta,
         fps,
         source,
       },

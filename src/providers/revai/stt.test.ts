@@ -260,6 +260,25 @@ describe("revai.stt transcriber scoping", () => {
     if (!r.ok) {
       expect(r.errors).toHaveLength(2);
       expect(r.errors[0]?.message).toContain("low-cost environment");
+      expect(r.errors[0]?.meta?.source).toBe(
+        "https://web.archive.org/web/20250601173112/https://docs.rev.ai/api/asynchronous/reference",
+      );
+    }
+  });
+
+  test("low_cost restrictions do not apply to non-English jobs, which ignore the transcriber", () => {
+    const r = stt.safe({
+      source_config: { url: MEDIA },
+      transcriber: "low_cost",
+      language: "es",
+      forced_alignment: true,
+      diarization_type: "premium",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model", "unsupported_param"]);
+      expect(r.warnings[1]?.path).toEqual(["transcriber"]);
+      expect(r.warnings[1]?.meta?.ignored).toBe(true);
     }
   });
 });

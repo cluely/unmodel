@@ -59,6 +59,13 @@ const REFERENCE_DOCS = "https://docs.rev.ai/api/asynchronous/reference";
 const TRANSCRIBERS_DOCS = "https://docs.rev.ai/api/asynchronous/transcribers";
 /** Where the deprecated `low_cost` transcriber is still documented. */
 const CHANGELOG_DOCS = "https://docs.rev.ai/api/asynchronous/changelog";
+/**
+ * The Rev AI reference as archived on 2025-06-01 (same capture digest through
+ * the 2025-12-03 revisit). It carries the `low_cost` clauses verbatim. The live
+ * reference no longer documents `low_cost` (checked 2026-11-12).
+ */
+const LOW_COST_REFERENCE_DOCS =
+  "https://web.archive.org/web/20250601173112/https://docs.rev.ai/api/asynchronous/reference";
 
 /**
  * "Most languages support media files with duration up to 17 hours, with the
@@ -393,20 +400,24 @@ function checkTranscriberScope(
  * "This option is not available for human transcription jobs and low-cost
  * environment" (`diarization_type`) and "This option is not available in
  * low-cost environment" (`forced_alignment`) — quoted from the reference on
- * 2026-08-13. The 2026-11-12 reference no longer documents `low_cost` at all
- * (the transcriber is deprecated but still served, per {@link CHANGELOG_DOCS}),
- * so these clauses have no live source; the rule stays for as long as the
- * transcriber is served.
+ * 2026-08-13; both appear verbatim on {@link LOW_COST_REFERENCE_DOCS}. The
+ * 2026-11-12 reference no longer documents `low_cost` at all (the transcriber
+ * is deprecated but still served, per {@link CHANGELOG_DOCS}), so the rule
+ * cites the archived page and stays for as long as the transcriber is served.
+ *
+ * The low-cost environment applies only to English jobs: "The `transcriber`
+ * option is ignored for non-English transcription requests." (TRANSCRIBERS_DOCS,
+ * checked 2026-11-12).
  */
 function checkLowCost(params: JobsBody, _info: ModelInfo | undefined, ctx: PipelineContext): void {
-  if (transcriberOf(params) !== "low_cost") return;
+  if (transcriberOf(params) !== "low_cost" || !isEnglishJob(params)) return;
   if (params.diarization_type != null) {
     ctx.report({
       code: "unsupported_param",
       path: ["diarization_type"],
       model: "low_cost",
       message: "`diarization_type` is not available in the low-cost environment.",
-      meta: { source: CHANGELOG_DOCS },
+      meta: { source: LOW_COST_REFERENCE_DOCS },
     });
   }
   if (params.forced_alignment != null) {
@@ -415,7 +426,7 @@ function checkLowCost(params: JobsBody, _info: ModelInfo | undefined, ctx: Pipel
       path: ["forced_alignment"],
       model: "low_cost",
       message: "`forced_alignment` is not available in the low-cost environment.",
-      meta: { source: CHANGELOG_DOCS },
+      meta: { source: LOW_COST_REFERENCE_DOCS },
     });
   }
 }

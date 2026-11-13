@@ -108,7 +108,7 @@ describe.each(caseDirs)("golden avatar/%s", (name) => {
       // | fal | `endpoint`, unmodel's own pseudo-param | the URL, stripped from the body |
       // | sync. | `model`, a real body field | the body, at ONE url for the whole provider |
       // | VEED | none | the PATH is the model |
-      // | HeyGen | `mode` / `engine.type`, real body fields | the body, under a different name from the id |
+      // | HeyGen | none — the raw-image arm declares no `engine` | nowhere; the arm runs on Avatar IV |
       expect(Object.keys(fixture.params)).not.toContain("endpoint");
       const provider = fixture.ref.slice(0, fixture.ref.indexOf("/"));
       const model = fixture.ref.slice(fixture.ref.indexOf("/") + 1);
@@ -129,14 +129,13 @@ describe.each(caseDirs)("golden avatar/%s", (name) => {
         return;
       }
       expect(provider).toBe("heygen");
-      // One url per CATEGORY, and the id is spelled differently on the wire
-      // from the way a ref spells it: `lipsync-speed` becomes `mode: "speed"`
-      // and `avatar_iv` becomes `engine: { type: "avatar_iv" }`.
+      // One url for the category and no selector in the body at all:
+      // `CreateVideoFromImage` declares no `engine` and runs on Avatar IV,
+      // which is the adapter's whole roster.
       expect(fixture.params["model"]).toBeUndefined();
-      expect(fixture.url.startsWith("https://api.heygen.com/v3/")).toBe(true);
-      const mode = fixture.params["mode"];
-      const engine = fixture.params["engine"] as { type?: string } | undefined;
-      expect(mode === undefined ? engine?.type : `lipsync-${String(mode)}`).toBe(model);
+      expect(fixture.params["engine"]).toBeUndefined();
+      expect(fixture.url).toBe("https://api.heygen.com/v3/videos");
+      expect(model).toBe("avatar_iv");
     });
   });
 });

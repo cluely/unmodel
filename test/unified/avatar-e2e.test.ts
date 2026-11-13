@@ -244,11 +244,12 @@ describe("the result is VEED's own Validated, and it insists on a resolution", (
  * in the library where two media fields on ONE request disagree about it.
  */
 describe("the result is HeyGen's own Validated, and the bytes go in structurally", () => {
-  test("the engine is written out, because an omitted one is a price decision", () => {
+  test("the image arm carries no engine, because it declares none", () => {
+    // `CreateVideoFromImage` has no `engine` property and is
+    // `additionalProperties: false`; Talking Photo runs on Avatar IV.
     const result = avatar({ model: "heygen/avatar_iv", image: STILL, audio: VOICE });
     expect(JSON.parse(JSON.stringify(result))).toEqual({
       type: "image",
-      engine: { type: "avatar_iv" },
       image: { type: "url", url: STILL.url },
       audio_url: VOICE.url,
     });
@@ -280,22 +281,25 @@ describe("the result is HeyGen's own Validated, and the bytes go in structurally
 
   test("Avatar V is not on this arm, and the refusal names the engine that is", () => {
     // HeyGen's engine comparison marks "Arbitrary image input" ✗ for Avatar V,
-    // so it is not on this roster. The ref still compiles — an unrostered id
-    // is a warning — and the validator refuses it by name.
-    const result = avatar.safe({ model: "heygen/avatar_v", image: STILL, audio: VOICE } as never);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.warnings.map((issue) => issue.code)).toContain("unknown_model");
-    const issue = result.errors.find((error) => error.path.join(".") === "engine.type");
-    expect(issue?.code).toBe("unsupported_capability");
-    expect(issue?.message).toContain('"avatar_iv"');
+    // so it is not on this roster — and the arm has no `engine` field it could
+    // be written into, so the ref is refused at `model` rather than compiled
+    // into a body that would silently render Avatar IV.
+    for (const model of ["heygen/avatar_v", "heygen/avatar_iii"]) {
+      const result = avatar.safe({ model, image: STILL, audio: VOICE } as never);
+      expect(result.ok, model).toBe(false);
+      if (result.ok) continue;
+      expect(result.warnings.map((issue) => issue.code), model).toContain("unknown_model");
+      const issue = result.errors.find((error) => error.path.join(".") === "model");
+      expect(issue?.code, model).toBe("unsupported_capability");
+      expect(issue?.message, model).toContain('"avatar_iv"');
+      expect(issue?.message, model).toContain('type: "avatar"');
+    }
   });
 
   test("it ends in the SAME validator the hand surface calls", () => {
     const unified = avatar({ model: "heygen/avatar_iv", image: STILL, audio: VOICE });
     const byHand = heygenAvatar({
       type: "image",
-      engine: { type: "avatar_iv" },
       image: { type: "url", url: STILL.url },
       audio_url: VOICE.url,
     });

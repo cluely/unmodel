@@ -5,8 +5,7 @@
  *
  * ```ts
  * avatar({ model: "heygen/avatar_iv", image: { url }, audio: { url } });
- * // → { type: "image", image: { type: "url", url: "…" },
- * //     audio_url: "…", engine: { type: "avatar_iv" } }
+ * // → { type: "image", image: { type: "url", url: "…" }, audio_url: "…" }
  * //   POST https://api.heygen.com/v3/videos
  *
  * avatar({ model: "heygen/avatar_iv", image: { data, mimeType: "image/png" }, audio: { url } });
@@ -26,24 +25,28 @@
  * request. The refusal says so, because a caller who has bytes for both would
  * otherwise read the second error as a contradiction of the first.
  *
- * # There is no `model` field, so the ref writes the ENGINE
+ * # There is no `engine` on this arm, so the ref must BE its engine
  *
- * `engine` is optional on the wire and an omitted one means `avatar_iv` — which
- * is also a four-fold price decision, since Avatar III is $0.0167/sec for a
- * digital twin and Avatar IV is $0.0667. So this adapter always writes the
- * engine out. A body compiled here never depends on a server-side default for
- * something that costs money.
+ * `CreateVideoFromImage` declares no `engine` field and is
+ * `additionalProperties: false` (OpenAPI document, 2026-11-12), and the Talking
+ * Photo page lists its engine as Avatar IV. So the body this adapter compiles
+ * names no engine — it is the body HeyGen documents — and the price is not left
+ * to a default, because there is only one engine to default to. A ref naming
+ * any other engine has no field to become, so it is refused at `model` before
+ * the validator runs, naming `avatar_iv` and the arm the other engines render.
+ * That is the one place this adapter refuses an unrostered ref rather than
+ * passing it through: the wire has nowhere to pass it to.
  *
  * # One row where the wire address has three engines
  *
  * `avatar_iii` and `avatar_v` are absent because neither renders raw image
  * input — HeyGen's engine comparison marks it ✗ for both — and this adapter
- * compiles the raw-image arm. A `heygen/avatar_v` ref still reaches the
- * validator with an `unknown_model` warning, and is refused there by name.
- * Which arm, and why, is argued in `./avatar-params.ts`; the short version is
- * that the catalogued-look arm needs an `avatar_id` that is account-scoped and
- * unpublishable, and that an avatar row can say "required", "forbidden" or
- * "unknown" about `image` but never "optional".
+ * compiles the raw-image arm. A `heygen/avatar_v` ref draws an `unknown_model`
+ * warning and the refusal above. Which arm, and why, is argued in
+ * `./avatar-params.ts`; the short version is that the catalogued-look arm needs
+ * an `avatar_id` that is account-scoped and unpublishable, and that an avatar
+ * row can say "required", "forbidden" or "unknown" about `image` but never
+ * "optional".
  *
  * # There is no `seed`
  *
@@ -85,10 +88,22 @@ export const avatar = {
     input: AvatarParams,
     ctx: CompileContext<AvatarParams>,
   ): CompiledCall<HeygenAvatarWire, HeygenAvatarResult> {
-    // `type` and `engine` are both written unconditionally: the first is the
-    // arm this adapter serves and the second is a price decision that must not
-    // be left to a server-side default.
-    const body: Record<string, unknown> = { type: "image", engine: { type: ctx.model } };
+    // `type` is the arm this adapter serves, and that arm has no `engine`: it
+    // renders on Avatar IV, the roster's one id. Any other ref has no field to
+    // become — see the module header.
+    const body: Record<string, unknown> = { type: "image" };
+    if (!(MODELS as readonly string[]).includes(ctx.model)) {
+      ctx.fail({
+        code: "unsupported_capability",
+        path: ["model"],
+        message:
+          `"${ctx.model}" does not render HeyGen's raw-image arm: \`type: "image"\` declares no ` +
+          '`engine` field and runs on "avatar_iv", which is this adapter\'s whole roster. Avatar V ' +
+          "and Avatar III render the catalogued-look arm instead — " +
+          '`heygen.avatar({ type: "avatar", avatar_id, engine: { type } })`.',
+        meta: { source: SOURCE_URL, models: [...MODELS] },
+      });
+    }
 
     // --- the still ---------------------------------------------------------
     const image = input.image;

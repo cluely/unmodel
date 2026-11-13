@@ -12,7 +12,7 @@
  *   picture you supply (`type: "image"`, `image`). Three engines —
  *   `avatar_iii`, `avatar_iv` (the default), `avatar_v` — which are what this
  *   provider catalogs, because HeyGen has no `model` field and the three are
- *   three products with three pages and a four-fold price spread.
+ *   three products with three pages and a twelve-fold price spread.
  * - `lipsync` — `POST /v3/lipsyncs`. A performance PRESERVED: a clip and a new
  *   track, with `mode: "speed" | "precision"` deciding quality and price.
  *   unmodel catalogs those two as `lipsync-speed` and `lipsync-precision`,
@@ -23,7 +23,7 @@
  * **HeyGen serves two OpenAPI documents and both answer 200.**
  * `developers.heygen.com/openapi.yaml` is a v4.0.8 document with 52 v1/v2 paths
  * and NO `/v3/videos`; `developers.heygen.com/openapi/external-api.json` is the
- * current one, 98 paths and 300 schemas. Everything here comes from the second.
+ * current one, 136 paths and 517 schemas. Everything here comes from the second.
  *
  * **`docs.heygen.com` is gone and its slugs did not survive.** It 301s to
  * `developers.heygen.com`, where the old `/reference/create-an-avatar-video-v2`
@@ -61,8 +61,9 @@
  *
  * **There is no `model` field on either route.** `engine` on the video route,
  * `mode` on the lipsync route — both optional, both with a server-side default
- * that is also a price. unmodel writes both out explicitly on every unified
- * call for exactly that reason.
+ * that is also a price. `unmodel/lipsync` writes `mode` out on every call for
+ * exactly that reason; `unmodel/avatar` compiles the `image` arm, which
+ * declares no `engine` and runs on Avatar IV, the one id it serves.
  *
  * **`type` decides which visual source is required.** `"avatar"` needs
  * `avatar_id` and refuses `image`; `"image"` needs `image` and refuses
@@ -103,6 +104,7 @@ export {
   HEYGEN_BASE_URL,
   HEYGEN_CAPTION_FILE_FORMATS,
   HEYGEN_CAPTION_STYLES,
+  HEYGEN_CARTESIA_MODELS,
   HEYGEN_DEFAULT_ENGINE,
   HEYGEN_ELEVENLABS_MODELS,
   HEYGEN_ENGINES,
@@ -128,6 +130,7 @@ export {
   HEYGEN_V1_V2_SUNSET,
   HEYGEN_VIDEO_STATUSES,
   HEYGEN_VOICE_ENGINES,
+  HEYGEN_VOICE_SIMILARITIES,
   HEYGEN_WATERMARK_POSITIONS,
   LIPSYNCS_URL,
   USERS_ME_URL,
@@ -146,6 +149,7 @@ export type {
   HeygenBackground,
   HeygenBackgroundType,
   HeygenCaption,
+  HeygenCartesiaEngineSettings,
   HeygenCreateLipsyncResponse,
   HeygenCreateVideoResponse,
   HeygenElevenLabsEngineSettings,
@@ -157,18 +161,23 @@ export type {
   HeygenFishEngineSettings,
   HeygenFit,
   HeygenFpsMode,
+  HeygenHeyGenVoiceEngineSettings,
   HeygenLipsyncDetail,
   HeygenLipsyncMode,
   HeygenLipsyncModelId,
   HeygenLipsyncStatus,
   HeygenMediaRef,
+  HeygenMockingbirdEngineSettings,
   HeygenOutputFormat,
+  HeygenOutputUpload,
   HeygenResolution,
   HeygenStarfishEngineSettings,
+  HeygenUploadTarget,
   HeygenVideoDetail,
   HeygenVideoStatus,
   HeygenVoiceEngine,
   HeygenVoiceSettings,
+  HeygenVoiceSimilarity,
   HeygenWatermark,
   HeygenWatermarkPlacement,
   HeygenWatermarkPosition,

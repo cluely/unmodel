@@ -7,7 +7,8 @@
  * not an arm of the video route.
  *
  * Wire notes (verified against https://developers.heygen.com/openapi/external-api.json
- * and https://developers.heygen.com/reference/create-lipsync on 2026-08-25):
+ * and https://developers.heygen.com/reference/create-lipsync on 2026-08-25,
+ * re-verified 2026-11-12):
  *
  * - **`video` and `audio` are OBJECTS, not URLs.** Each is a discriminated
  *   union on `type`: `{ type: "url", url }` or `{ type: "asset_id", asset_id }`.
@@ -15,7 +16,7 @@
  *   bytes have to be uploaded (`POST /v3/assets`) or hosted first.
  * - **There is no `model` field; there is `mode`.** `"speed"` (default) or
  *   `"precision"` — "higher quality, uses avatar inference" — and they are two
- *   products with two pages and a 2× price difference ($0.0333 vs $0.0667 per
+ *   products with two pages and a 2× price difference ($0.014 vs $0.029 per
  *   second). unmodel catalogs them as two ids, `lipsync-speed` and
  *   `lipsync-precision`, after HeyGen's own doc slugs, and `finalize` writes
  *   the wire value back.
@@ -28,6 +29,10 @@
  * - `start_time` / `end_time` cut a partial-lipsync window;
  *   {@link checkLipsyncWindow} checks it runs forwards, which nothing in the
  *   schema does.
+ * - `title`, `callback_url`, `callback_id`, `keep_the_same_format`,
+ *   `start_time`, `end_time`, `fps_mode` and `folder_id` are nullable — the
+ *   schema types each `anyOf: [T, {"type": "null"}]` with `"default": null` —
+ *   and `null` reads as absent. The other optionals are not.
  * - Async: `{ data: { lipsync_id } }`, then `GET /v3/lipsyncs/{lipsync_id}`
  *   over `pending → running → completed | failed` — **`running`, not
  *   `processing`**; the video route's enum is a different one. `callback_url`
@@ -92,11 +97,11 @@ export interface HeygenLipsyncParams {
    */
   mode?: HeygenLipsyncMode;
   /** Title for the job in the dashboard. */
-  title?: string;
+  title?: string | null;
   /** HeyGen POSTs the finished job here. */
-  callback_url?: string;
+  callback_url?: string | null;
   /** Echoed back in the webhook payload. */
-  callback_id?: string;
+  callback_id?: string | null;
   /**
    * @deprecated Ignored. Captions are always generated; whether to display them
    * is a download-side choice, and the finished job carries `caption_url`
@@ -104,7 +109,7 @@ export interface HeygenLipsyncParams {
    */
   enable_caption?: boolean;
   /** Preserve the source's encoding specs (resolution, bitrate). */
-  keep_the_same_format?: boolean;
+  keep_the_same_format?: boolean | null;
   /** Default `true`. HeyGen's spelling of the duration-mismatch question. */
   enable_dynamic_duration?: boolean;
   /** Remove background music from the output. Default `false`. */
@@ -114,36 +119,36 @@ export interface HeygenLipsyncParams {
   /** Add a watermark. Default `false`. */
   enable_watermark?: boolean;
   /** Seconds. The start of a partial-lipsync window. */
-  start_time?: number;
+  start_time?: number | null;
   /** Seconds. The end of it — must be greater than `start_time`. */
-  end_time?: number;
+  end_time?: number | null;
   /**
    * `"vfr" | "cfr" | "passthrough"`, per the field's description — the SCHEMA
    * types it as a plain string, so the tail is open and an unrecognised value
    * is a warning rather than a refusal.
    */
-  fps_mode?: HeygenFpsMode | (string & {});
-  /** Destination folder in the workspace. */
-  folder_id?: string;
+  fps_mode?: HeygenFpsMode | (string & {}) | null;
+  /** Destination folder. Omit, `null` or `""` puts the job at the workspace root. */
+  folder_id?: string | null;
 }
 
 const lipsyncSchema = z.looseObject({
   video: mediaRefSchema,
   audio: mediaRefSchema,
   mode: z.enum(HEYGEN_LIPSYNC_MODES).optional(),
-  title: z.string().optional(),
-  callback_url: z.string().optional(),
-  callback_id: z.string().optional(),
+  title: z.string().nullable().optional(),
+  callback_url: z.string().nullable().optional(),
+  callback_id: z.string().nullable().optional(),
   enable_caption: z.boolean().optional(),
-  keep_the_same_format: z.boolean().optional(),
+  keep_the_same_format: z.boolean().nullable().optional(),
   enable_dynamic_duration: z.boolean().optional(),
   disable_music_track: z.boolean().optional(),
   enable_speech_enhancement: z.boolean().optional(),
   enable_watermark: z.boolean().optional(),
-  start_time: z.number().optional(),
-  end_time: z.number().optional(),
-  fps_mode: z.string().optional(),
-  folder_id: z.string().optional(),
+  start_time: z.number().nullable().optional(),
+  end_time: z.number().nullable().optional(),
+  fps_mode: z.string().nullable().optional(),
+  folder_id: z.string().nullable().optional(),
 });
 
 /**
@@ -172,8 +177,8 @@ function finalize(params: HeygenLipsyncParams): unknown {
 }
 
 /**
- * No `estimate`, and here the RATE is exact — $0.0333 per second at `"speed"`,
- * $0.0667 at `"precision"`, and `mode` is in the body.
+ * No `estimate`, and here the RATE is exact — $0.014 per second at `"speed"`,
+ * $0.029 at `"precision"`, and `mode` is in the body.
  *
  * What is missing is only the duration, and a lipsync's duration is the
  * source clip's (or the window's, when `start_time`/`end_time` cut one) —

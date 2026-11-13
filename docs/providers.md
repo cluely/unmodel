@@ -401,9 +401,9 @@ exercised against a live key.
 
 **HeyGen — `heygen.avatar` and `heygen.lipsync`, 5 models.** Tier: **native**.
 `https://api.heygen.com/v3`, JSON bodies, `x-api-key: <HEYGEN_API_KEY>`, two URLs with two
-response shapes and two status enums. Typed from a 1.16 MB OpenAPI 3.1.0 document with 98 paths
-and 300 schemas — the most complete spec in this wave — curated hard down to the generation
-surface.
+response shapes and two status enums. Typed from a 1.96 MB OpenAPI 3.1.0 document with 136 paths
+and 517 schemas (2026-11-12) — the most complete spec in this wave — curated hard down to the
+generation surface.
 
 **Two traps this provider exists to have already walked into.** HeyGen serves TWO OpenAPI
 documents and both answer 200: `developers.heygen.com/openapi.yaml` is a v4.0.8 document with 52
@@ -418,11 +418,12 @@ rather than by rewriting the hostname.
 **There is no `model` field on either route, and both defaults are prices.** `POST /v3/videos`
 has an `engine` discriminated union — `avatar_iii`, `avatar_iv` (applied when `engine` is
 omitted), `avatar_v` — and those three are what unmodel catalogs, because they are three
-products with three documentation pages and a four-fold price spread. `POST /v3/lipsyncs` has
+products with three documentation pages and a twelve-fold price spread. `POST /v3/lipsyncs` has
 `mode: "speed" | "precision"` (default `"speed"`), two products with two pages and a 2× price
 difference, catalogued as `lipsync-speed` and `lipsync-precision` after HeyGen's own doc slugs.
-Both unified adapters write the wire value out explicitly on every call: a ref that names a
-price should not depend on a server-side default to get it.
+The unified lipsync adapter writes `mode` out on every call: a ref that names a price should not
+depend on a server-side default to get it. The unified avatar adapter compiles the `image` arm,
+which declares no `engine` and runs on Avatar IV — its one ref — so its body carries none.
 
 `POST /v3/videos` is a `oneOf` on `type` with four arms and unmodel serves two: `"avatar"`
 requires `avatar_id` and declares no `image`, `"image"` requires `image` and declares no
@@ -436,11 +437,16 @@ and the audio fields are mutually exclusive; `voice_id` is required with a scrip
 uploaded (a warning, because it is a no-op rather than a refusal); and `output_format: "webm"`
 rejects any `background` value.
 
-Pricing is public USD with no login, and two of the five rows carry a band because HeyGen's
-table is keyed by engine × AVATAR TYPE and the avatar type lives on the look rather than in the
-request: Avatar III $0.0167/sec (digital twin, studio) to $0.0433 (photo), Avatar IV $0.05
-(photo) to $0.0667, Avatar V $0.0667 exactly (digital twins only), lipsync speed $0.0333 and
-precision $0.0667 exactly. The rows carry the top of each band — an upper bound, which is the
+Pricing is USD behind a sign-in: the public `/docs/pricing` page is a 404, and
+`platform.heygen.com/pricing` shows the table only to a signed-in session. The rates ship as data
+in that platform's own catalog module (`platform.heygen.com/assets/catalogText-<hash>.js`, the
+hash rotating per deploy and every rate byte-identical across the three builds read on
+2026-11-12), which is what `src/providers/heygen/models.ts` quotes. The engine table is keyed by
+engine × AVATAR TYPE and the avatar type lives on the look rather than in the request: Avatar III
+$0.01/sec (Custom Video Avatar) to $0.0165 (Studio, Photo), Avatar IV $0.0385 (Photo) to $0.0805,
+Avatar V $0.12 for a Custom Video Avatar and no published rate for its other two look types,
+lipsync speed $0.014 and precision $0.029 exactly; "Rates apply to 720p and 1080p output", so 4K
+is unpriced. The Avatar III and IV rows carry the top of each band — an upper bound, which is the
 right direction for one. Nothing estimates: every rate is per second of output and the output's
 length follows the audio's.
 

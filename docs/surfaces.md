@@ -349,7 +349,7 @@ HeyGen brings the third answer to inline bytes:
 
 ```ts
 avatar({ model: "heygen/avatar_iv", image: { data, mimeType: "image/png" }, audio: { url } });
-// → {"type":"image","engine":{"type":"avatar_iv"},
+// → {"type":"image",
 //    "image":{"type":"base64","media_type":"image/png","data":"…"},"audio_url":"…"}
 ```
 

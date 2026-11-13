@@ -4,14 +4,16 @@
  * https://developers.heygen.com/openapi/external-api.json and the reference
  * pages it backs — /reference/create-video, /reference/create-lipsync,
  * /avatar-iii, /avatar-iv, /avatar-v, /lipsync-speed, /lipsync-precision,
- * /docs/quick-start, /docs/pricing, /docs/usage-limits — verified 2026-08-25.
+ * /models, /docs/quick-start, /docs/usage-limits — verified 2026-08-25,
+ * re-verified 2026-11-12. The old `/docs/pricing` page is a 404; where the
+ * rates live now is recorded in `./models.ts`.
  *
  * ## Two traps before anything else: the wrong spec and the dead host
  *
  * **1. HeyGen serves TWO OpenAPI documents and both answer 200.**
  *
  * ```text
- * https://developers.heygen.com/openapi/external-api.json   3.1.0 · "HeyGen External API" 1.0.0 · 1.16 MB · 98 paths · CURRENT
+ * https://developers.heygen.com/openapi/external-api.json   3.1.0 · "HeyGen External API" 1.0.0 · 1.96 MB · 136 paths · CURRENT
  * https://developers.heygen.com/openapi.yaml                3.1.0 · "HeyGen API" 4.0.8     · 88 KB   · 52 paths · STALE
  * ```
  *
@@ -137,11 +139,10 @@ export const USERS_ME_URL = `${HEYGEN_BASE_URL}/v3/users/me`;
  * model field.
  *
  * `engine` is a discriminated union on `type` and it is optional; **omitting it
- * means `avatar_iv`**, which is the server-side default and is why unmodel
- * always writes the engine out rather than leaving the choice implicit. The
- * three differ in price by a factor of four (see `./models.ts`), so a request
- * that does not say which one it wants is a request that does not know what it
- * costs.
+ * means `avatar_iv`**, which is the server-side default. The three differ in
+ * price by a factor of twelve — $0.01 to $0.12 per second (see `./models.ts`)
+ * — so a request that does not say which one it wants is a request that does
+ * not know what it costs.
  *
  * These ids are HeyGen's own: `{"type": "avatar_iii"}` is the literal wire
  * value, and `developers.heygen.com/avatar-iii` is the page.
@@ -192,7 +193,7 @@ export const HEYGEN_MOTION_PROMPT_ENGINES = ["avatar_iv", "avatar_v"] as const;
  * `POST /v3/lipsyncs` has no model field either; it has `mode: "speed" |
  * "precision"` (default `"speed"`), and the two are separate products with
  * separate pages (`/lipsync-speed`, `/lipsync-precision`), separate rows in
- * HeyGen's own price table, and a 2× price difference — $0.0333 vs $0.0667 per
+ * HeyGen's own price table, and a 2× price difference — $0.014 vs $0.029 per
  * second. So they are two catalog ids, spelled the way HeyGen's own doc slugs
  * spell them, and the wire value is recovered from the id rather than the other
  * way round.
@@ -296,19 +297,66 @@ export type HeygenWatermarkPosition = (typeof HEYGEN_WATERMARK_POSITIONS)[number
 export const HEYGEN_FPS_MODES = ["vfr", "cfr", "passthrough"] as const;
 export type HeygenFpsMode = (typeof HEYGEN_FPS_MODES)[number];
 
-/** `voice_settings.engine_settings.engine_type` — which TTS backend to force. */
-export const HEYGEN_VOICE_ENGINES = ["elevenlabs", "fish", "starfish"] as const;
+/**
+ * `voice_settings.engine_settings.engine_type` — which TTS backend to force.
+ *
+ * Seven discriminator values over six schemas, mirroring `VoiceSettingsInput.
+ * engine_settings` in the OpenAPI document exactly (read 2026-11-12):
+ * `"mapping": {"cartesia": …CartesiaEngineSettings, "elevenlabs": …,
+ * "fish": …, "heygen_voice": …HeyGenVoiceEngineSettings, "mockingbird": …,
+ * "orca": …HeyGenVoiceEngineSettings, "starfish": …}`. `"orca"` is the same arm
+ * as `"heygen_voice"` under its other name — "'heygen_voice' selects HeyGen
+ * Voice; 'orca' is accepted as its legacy alias."
+ */
+export const HEYGEN_VOICE_ENGINES = [
+  "elevenlabs",
+  "fish",
+  "starfish",
+  "heygen_voice",
+  "orca",
+  "cartesia",
+  "mockingbird",
+] as const;
 export type HeygenVoiceEngine = (typeof HEYGEN_VOICE_ENGINES)[number];
 
-/** The ElevenLabs models a voice backed by ElevenLabs can be driven with. */
+/**
+ * The ElevenLabs models a voice backed by ElevenLabs can be driven with.
+ *
+ * `ElevenLabsEngineSettings.model` (read 2026-11-12): `"enum":
+ * ["eleven_multilingual_v2", "eleven_turbo_v2_5", "eleven_v3", "eleven_v4"]`.
+ */
 export const HEYGEN_ELEVENLABS_MODELS = [
   "eleven_multilingual_v2",
   "eleven_turbo_v2_5",
   "eleven_v3",
+  "eleven_v4",
 ] as const;
 
-/** The Fish Audio models. */
-export const HEYGEN_FISH_MODELS = ["s2-pro"] as const;
+/**
+ * The Fish Audio models. Default `"s2.1-pro"`.
+ *
+ * `FishEngineSettings.model` (read 2026-11-12): `"enum": ["s2.1-pro",
+ * "s2-pro"]`, "Fish Audio model version. Defaults to s2.1-pro when omitted."
+ */
+export const HEYGEN_FISH_MODELS = ["s2.1-pro", "s2-pro"] as const;
+
+/**
+ * The Cartesia Sonic models. Omitted, the engine's own default.
+ *
+ * `CartesiaEngineSettings.model` (read 2026-11-12): `"enum": ["sonic-3.6",
+ * "sonic-3.5"]`, "Cartesia Sonic model; omit for the engine default."
+ */
+export const HEYGEN_CARTESIA_MODELS = ["sonic-3.6", "sonic-3.5"] as const;
+
+/**
+ * `similarity` on the HeyGen Voice engine — instant voice clones only.
+ *
+ * `HeyGenVoiceEngineSettings.similarity` (read 2026-11-12): `"enum": ["medium",
+ * "high", "extra_high", "max"]`, "Similarity for instant voice clones. Ignored
+ * for professional voice clones."
+ */
+export const HEYGEN_VOICE_SIMILARITIES = ["medium", "high", "extra_high", "max"] as const;
+export type HeygenVoiceSimilarity = (typeof HEYGEN_VOICE_SIMILARITIES)[number];
 
 /** `status` on `GET /v3/videos/{id}`. `completed` and `failed` are terminal. */
 export const HEYGEN_VIDEO_STATUSES = ["pending", "processing", "completed", "failed"] as const;
@@ -446,7 +494,13 @@ export interface HeygenWatermark {
   placement?: HeygenWatermarkPlacement | null;
 }
 
-/** ElevenLabs-backed voice tuning. `eleven_v3` needs `stability` ∈ {0, 0.5, 1}. */
+/**
+ * ElevenLabs-backed voice tuning — `ElevenLabsEngineSettings`.
+ *
+ * "When using eleven_v3 or eleven_v4, stability may be any value in [0.0,
+ * 1.0]." — and "eleven_v3 and eleven_v4 use stability only; similarity_boost,
+ * style, and use_speaker_boost have no effect on them."
+ */
 export interface HeygenElevenLabsEngineSettings {
   engine_type: "elevenlabs";
   model?: (typeof HEYGEN_ELEVENLABS_MODELS)[number] | null;
@@ -462,6 +516,7 @@ export interface HeygenElevenLabsEngineSettings {
 /** Fish-Audio-backed voice tuning. */
 export interface HeygenFishEngineSettings {
   engine_type: "fish";
+  /** Default `"s2.1-pro"`. */
   model?: (typeof HEYGEN_FISH_MODELS)[number] | null;
   /** 0…1. */
   stability?: number | null;
@@ -474,10 +529,50 @@ export interface HeygenStarfishEngineSettings {
   engine_type: "starfish";
 }
 
+/**
+ * HeyGen Voice tuning — `HeyGenVoiceEngineSettings`, "HeyGen Voice controls for
+ * instant or professional voice clones."
+ *
+ * One arm under two discriminator spellings: "'heygen_voice' selects HeyGen
+ * Voice; 'orca' is accepted as its legacy alias."
+ */
+export interface HeygenHeyGenVoiceEngineSettings {
+  engine_type: "heygen_voice" | "orca";
+  /** Instant clones; defaults to `"heygen-voice-1"`. Ignored for professional clones. */
+  model?: "heygen-voice-1" | null;
+  /** Instant clones. Ignored for professional clones. */
+  similarity?: HeygenVoiceSimilarity | null;
+  /** 0…1. */
+  expressiveness?: number | null;
+  /** −4…4 semitones, in steps of 0.5. */
+  pitch?: number | null;
+  /** 0.5…2, a pitch-variation multiplier. */
+  inflection?: number | null;
+}
+
+/** Cartesia routing — `CartesiaEngineSettings`. Omit `model` for the engine default. */
+export interface HeygenCartesiaEngineSettings {
+  engine_type: "cartesia";
+  model?: (typeof HEYGEN_CARTESIA_MODELS)[number] | null;
+}
+
+/**
+ * Mockingbird routing — `MockingbirdEngineSettings`, no tunable settings.
+ *
+ * "Select Mockingbird. A regional voice_settings.locale is required." — set
+ * `voice_settings.locale` to a regional tag such as `"en-US"` beside it.
+ */
+export interface HeygenMockingbirdEngineSettings {
+  engine_type: "mockingbird";
+}
+
 export type HeygenEngineSettings =
   | HeygenElevenLabsEngineSettings
   | HeygenFishEngineSettings
-  | HeygenStarfishEngineSettings;
+  | HeygenStarfishEngineSettings
+  | HeygenHeyGenVoiceEngineSettings
+  | HeygenCartesiaEngineSettings
+  | HeygenMockingbirdEngineSettings;
 
 /**
  * `voice_settings` — applies ONLY when the speech is synthesized from `script`
@@ -507,7 +602,40 @@ export type HeygenEngineConfig =
        * video avatars self-reference and photo avatars pick from their group.
        */
       reference_look_id?: string | null;
+      /**
+       * Default `false`. `AvatarVEngineConfig.more_blinking` (read 2026-11-12):
+       * "Ask Avatar V for more natural blinking."
+       */
+      more_blinking?: boolean;
     };
+
+/** One destination for `output_upload` — `UploadTargetRequest`. */
+export interface HeygenUploadTarget {
+  /**
+   * A presigned PUT URL for Amazon S3, Google Cloud Storage or Azure Blob
+   * Storage, at most 4096 characters. "It must stay valid for at least one
+   * hour; 24 hours or more is recommended".
+   */
+  url: string;
+  /**
+   * "Headers the URL was signed with, sent exactly as given. Allowed:
+   * Content-Type, Content-MD5, Content-Disposition, Content-Encoding,
+   * Content-Language, Cache-Control, and x-amz-*, x-goog-* or x-ms-* headers."
+   */
+  headers?: Record<string, string>;
+}
+
+/**
+ * `output_upload` — `OutputUploadRequest`: HeyGen PUTs the finished files into
+ * your own storage, one presigned URL per file, and reports the outcome on the
+ * `video_delivery.success` / `video_delivery.fail` webhooks. "Available to
+ * enabled workspaces." Typed because it is in the schema, as `watermark` is.
+ */
+export interface HeygenOutputUpload {
+  video: HeygenUploadTarget;
+  captions?: HeygenUploadTarget | null;
+  thumbnail?: HeygenUploadTarget | null;
+}
 
 // ---------------------------------------------------------------------------
 // Response shapes
@@ -601,6 +729,7 @@ export const engineSchema = z.union([
   z.looseObject({
     type: z.literal("avatar_v"),
     reference_look_id: z.string().nullable().optional(),
+    more_blinking: z.boolean().optional(),
   }),
 ]);
 
@@ -626,9 +755,33 @@ export const voiceSettingsSchema = z.looseObject({
         similarity: z.number().min(0).max(1).nullable().optional(),
       }),
       z.looseObject({ engine_type: z.literal("starfish") }),
+      z.looseObject({
+        engine_type: z.enum(["heygen_voice", "orca"]),
+        model: z.literal("heygen-voice-1").nullable().optional(),
+        similarity: z.enum(HEYGEN_VOICE_SIMILARITIES).nullable().optional(),
+        expressiveness: z.number().min(0).max(1).nullable().optional(),
+        pitch: z.number().min(-4).max(4).multipleOf(0.5).nullable().optional(),
+        inflection: z.number().min(0.5).max(2).nullable().optional(),
+      }),
+      z.looseObject({
+        engine_type: z.literal("cartesia"),
+        model: z.enum(HEYGEN_CARTESIA_MODELS).nullable().optional(),
+      }),
+      z.looseObject({ engine_type: z.literal("mockingbird") }),
     ])
     .nullable()
     .optional(),
+});
+
+const uploadTargetSchema = z.looseObject({
+  url: z.string().max(4096),
+  headers: z.record(z.string(), z.string()).optional(),
+});
+
+export const outputUploadSchema = z.looseObject({
+  video: uploadTargetSchema,
+  captions: uploadTargetSchema.nullable().optional(),
+  thumbnail: uploadTargetSchema.nullable().optional(),
 });
 
 export const backgroundSchema = z.looseObject({
@@ -666,26 +819,28 @@ export const watermarkSchema = z.looseObject({
  *
  * Written out rather than `Record<string, unknown>` for `tripo3d`'s reason: an
  * interface has no implicit index signature, so a check typed against the
- * record would not be assignable to `createValidator`'s `checks`.
+ * record would not be assignable to `createValidator`'s `checks`. Every
+ * optional the spec types `anyOf: [T, null]` reads `null` as absent here,
+ * because that is what HeyGen's `"default": null` makes it.
  */
 interface VideoParams {
   type?: string;
   avatar_id?: string;
   image?: unknown;
-  script?: string;
-  voice_id?: string;
-  audio_url?: string;
-  audio_asset_id?: string;
+  script?: string | null;
+  voice_id?: string | null;
+  audio_url?: string | null;
+  audio_asset_id?: string | null;
   voice_settings?: unknown;
-  engine?: { type?: string };
+  engine?: { type?: string } | null;
   output_format?: string;
   background?: unknown;
-  motion_prompt?: string;
-  expressiveness?: string;
+  motion_prompt?: string | null;
+  expressiveness?: string | null;
 }
 
 /** The engine a request will actually run on, default included. */
-export function engineOf(params: { engine?: { type?: string } }): string {
+export function engineOf(params: { engine?: { type?: string } | null }): string {
   return params.engine?.type ?? HEYGEN_DEFAULT_ENGINE;
 }
 
@@ -805,7 +960,7 @@ export function checkEngineGatedFields(source: string) {
   return (params: VideoParams, _info: unknown, ctx: PipelineContext): void => {
     const engine = engineOf(params);
     for (const gate of ENGINE_GATED) {
-      if (params[gate.key] === undefined) continue;
+      if (params[gate.key] == null) continue;
       if (gate.engines.includes(engine)) continue;
       ctx.report({
         code: "unsupported_param",
@@ -839,9 +994,9 @@ export function checkEngineGatedFields(source: string) {
 export function checkSpeechSource(source: string) {
   return (params: VideoParams, _info: unknown, ctx: PipelineContext): void => {
     const engine = engineOf(params);
-    const hasScript = params.script !== undefined;
+    const hasScript = params.script != null;
     const tracks = (["audio_url", "audio_asset_id"] as const).filter(
-      (key) => params[key] !== undefined,
+      (key) => params[key] != null,
     );
 
     if (hasScript && tracks.length > 0) {
@@ -869,7 +1024,7 @@ export function checkSpeechSource(source: string) {
       });
     }
 
-    if (hasScript && params.voice_id === undefined && params.avatar_id === undefined) {
+    if (hasScript && params.voice_id == null && params.avatar_id === undefined) {
       ctx.report({
         code: "invalid_shape",
         path: ["voice_id"],
@@ -881,7 +1036,7 @@ export function checkSpeechSource(source: string) {
       });
     }
 
-    if (params.voice_settings !== undefined && !hasScript) {
+    if (params.voice_settings != null && !hasScript) {
       ctx.report({
         code: "unknown_param",
         path: ["voice_settings"],
@@ -909,7 +1064,7 @@ export function checkSpeechSource(source: string) {
 export function checkTransparentOutput(source: string) {
   return (params: VideoParams, _info: unknown, ctx: PipelineContext): void => {
     if (params.output_format !== "webm") return;
-    if (params.background === undefined) return;
+    if (params.background == null) return;
     ctx.report({
       code: "invalid_shape",
       path: ["background"],
@@ -931,9 +1086,9 @@ export function checkTransparentOutput(source: string) {
 /** The shape the lipsync checks read. See `VideoParams` for why it is written out. */
 interface LipsyncCheckParams {
   mode?: string;
-  fps_mode?: string;
-  start_time?: number;
-  end_time?: number;
+  fps_mode?: string | null;
+  start_time?: number | null;
+  end_time?: number | null;
   enable_caption?: boolean;
 }
 
@@ -978,7 +1133,7 @@ export function checkFpsMode(source: string) {
 export function checkLipsyncWindow(source: string) {
   return (params: LipsyncCheckParams, _info: unknown, ctx: PipelineContext): void => {
     const { start_time: start, end_time: end } = params;
-    if (start !== undefined && start < 0) {
+    if (start != null && start < 0) {
       ctx.report({
         code: "invalid_shape",
         path: ["start_time"],
@@ -986,7 +1141,7 @@ export function checkLipsyncWindow(source: string) {
         meta: { source },
       });
     }
-    if (start === undefined || end === undefined) return;
+    if (start == null || end == null) return;
     if (start < end) return;
     ctx.report({
       code: "invalid_shape",

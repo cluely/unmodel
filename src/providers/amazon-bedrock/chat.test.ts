@@ -381,6 +381,37 @@ describe("amazon-bedrock.chat 2026-11 models", () => {
     expect(sibling.ok).toBe(true);
   });
 
+  test("forced toolChoice on Fable 5.2 and 5.1 is refused, sourced to Bedrock's forced-tool-use section", () => {
+    for (const [modelId, toolChoice] of [
+      ["global.anthropic.claude-fable-5-2", { any: {} }],
+      ["us.anthropic.claude-fable-5-1", { tool: { name: "t" } }],
+    ] as const) {
+      const result = bedrock.chat.safe({ modelId, messages: HI, toolConfig: { tools: TOOLS, toolChoice } });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors[0]?.code).toBe("unsupported_param");
+        expect(result.errors[0]?.path).toEqual(["toolConfig", "toolChoice"]);
+        expect(result.errors[0]?.message).not.toContain("model card");
+        expect(result.errors[0]?.meta?.source).toContain("model-parameters-anthropic-claude-messages-tool-use");
+      }
+    }
+  });
+
+  test("automatic toolChoice on Fable 5.2, and forced choice on Fable 5, are accepted", () => {
+    const auto = bedrock.chat.safe({
+      modelId: "anthropic.claude-fable-5-2",
+      messages: HI,
+      toolConfig: { tools: TOOLS, toolChoice: { auto: {} } },
+    });
+    expect(auto.ok).toBe(true);
+    const sibling = bedrock.chat.safe({
+      modelId: "anthropic.claude-fable-5",
+      messages: HI,
+      toolConfig: { tools: TOOLS, toolChoice: { any: {} } },
+    });
+    expect(sibling.ok).toBe(true);
+  });
+
   test("Haiku 5.5's estimate is withheld above its 100,000-token prompt tier", () => {
     const long: BedrockMessage[] = [{ role: "user", content: [{ text: "word ".repeat(120_000) }] }];
     const haiku = bedrock.chat.safe({ modelId: "global.anthropic.claude-haiku-5-5", messages: long });
@@ -392,6 +423,186 @@ describe("amazon-bedrock.chat 2026-11 models", () => {
     // A flat-priced model with the same prompt still prices.
     const sonnet = bedrock.chat.safe({ modelId: "global.anthropic.claude-sonnet-5-5", messages: long });
     expect(sonnet.ok && sonnet.estimate.costUSD).toBeGreaterThan(0);
+  });
+
+  test("GPT-6 Sol's estimate is withheld above its 272,000-token prompt tier", () => {
+    const words = (n: number): BedrockMessage[] => [{ role: "user", content: [{ text: "word ".repeat(n) }] }];
+    const above = bedrock.chat.safe({ modelId: "global.openai.gpt-6-sol", messages: words(230_000) });
+    expect(above.ok).toBe(true);
+    if (above.ok) {
+      expect(above.estimate.inputTokens).toBeGreaterThan(272_000);
+      expect(above.estimate.costUSD).toBeUndefined();
+    }
+    const below = bedrock.chat.safe({ modelId: "global.openai.gpt-6-sol", messages: words(150_000) });
+    expect(below.ok).toBe(true);
+    if (below.ok) {
+      expect(below.estimate.inputTokens).toBeLessThan(272_000);
+      expect(below.estimate.costUSD).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("amazon-bedrock.chat Fable 5.2 / 5.1 fixed sampling (Bedrock model cards, 2026-11-12)", () => {
+  const FIXED = ["anthropic.claude-fable-5-2", "global.anthropic.claude-fable-5-2", "us.anthropic.claude-fable-5-1"];
+
+  test.each(FIXED)("%s accepts unset sampling, temperature 1 alone, and topP 0.99 alone", (modelId) => {
+    for (const inferenceConfig of [{}, { temperature: 1 }, { topP: 0.99 }]) {
+      const result = bedrock.chat.safe({ modelId, messages: HI, inferenceConfig });
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.warnings).toEqual([]);
+    }
+  });
+
+  test.each(FIXED)("%s refuses temperature 0.5 and topP 0.5, sourced to its model card", (modelId) => {
+    const card = modelId.endsWith("fable-5-1") ? "model-card-anthropic-claude-fable-5-1" : "model-card-anthropic-claude-fable-5-2";
+    for (const [field, inferenceConfig] of [
+      ["temperature", { temperature: 0.5 }],
+      ["topP", { topP: 0.5 }],
+    ] as const) {
+      const result = bedrock.chat.safe({ modelId, messages: HI, inferenceConfig });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.map((e) => [e.code, e.path])).toEqual([["unsupported_param", ["inferenceConfig", field]]]);
+        expect(result.errors[0]?.meta?.source).toContain(card);
+      }
+    }
+  });
+
+  test("topP above 0.99, and temperature with topP, warn but still validate", () => {
+    const high = bedrock.chat.safe({
+      modelId: "global.anthropic.claude-fable-5-2",
+      messages: HI,
+      inferenceConfig: { topP: 1 },
+    });
+    expect(high.ok).toBe(true);
+    if (high.ok) {
+      expect(high.warnings.map((w) => [w.code, w.path])).toEqual([["unsupported_param", ["inferenceConfig", "topP"]]]);
+      expect(high.warnings[0]?.meta?.source).toContain("model-card-anthropic-claude-fable-5-2");
+    }
+    const both = bedrock.chat.safe({
+      modelId: "us.anthropic.claude-fable-5-1",
+      messages: HI,
+      inferenceConfig: { temperature: 1, topP: 0.99 },
+    });
+    expect(both.ok).toBe(true);
+    if (both.ok) expect(both.warnings.map((w) => [w.code, w.path])).toEqual([["unsupported_param", ["inferenceConfig"]]]);
+  });
+
+  test("Opus 5.5, whose card carries no sampling line, still accepts temperature 0.5", () => {
+    const result = bedrock.chat.safe({
+      modelId: "us.anthropic.claude-opus-5-5",
+      messages: HI,
+      inferenceConfig: { temperature: 0.5 },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings).toEqual([]);
+  });
+});
+
+describe("amazon-bedrock.chat Grok 4.7 limits (Bedrock model card, 2026-11-12)", () => {
+  const words = (n: number): BedrockMessage[] => [{ role: "user", content: [{ text: "word ".repeat(n) }] }];
+
+  test.each(["us.xai.grok-4.7", "global.xai.grok-4.7"])(
+    "%s takes the card's 524,288-token window, not the catalog's 500,000",
+    (modelId) => {
+      // ~510k estimated tokens: past the catalog's 500,000, inside the card's window.
+      const fits = bedrock.chat.safe({ modelId, messages: words(408_000) });
+      expect(fits.ok).toBe(true);
+      if (fits.ok) expect(fits.estimate.inputTokens).toBeGreaterThan(500_000);
+
+      const over = bedrock.chat.safe({ modelId, messages: words(425_000) });
+      expect(over.ok).toBe(false);
+      if (!over.ok) {
+        expect(over.errors[0]?.code).toBe("over_context");
+        expect(over.errors[0]?.meta?.limit).toBe(524_288);
+      }
+
+      const maxOutput = bedrock.chat.safe({ modelId, messages: HI, inferenceConfig: { maxTokens: 524_288 } });
+      expect(maxOutput.ok).toBe(true);
+      const overOutput = bedrock.chat.safe({ modelId, messages: HI, inferenceConfig: { maxTokens: 524_289 } });
+      expect(overOutput.ok).toBe(false);
+      if (!overOutput.ok) {
+        expect(overOutput.errors[0]?.code).toBe("over_output_limit");
+        expect(overOutput.errors[0]?.meta).toEqual({ requested: 524_289, limit: 524_288 });
+      }
+    },
+  );
+
+  test("Grok 4.6, whose card says 500K, keeps the catalog's 500,000 output limit", () => {
+    const result = bedrock.chat.safe({
+      modelId: "us.xai.grok-4.6",
+      messages: HI,
+      inferenceConfig: { maxTokens: 500_001 },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors[0]?.meta).toEqual({ requested: 500_001, limit: 500_000 });
+  });
+});
+
+describe("amazon-bedrock.chat GPT-6 Converse content blocks (Bedrock model cards, 2026-11-12)", () => {
+  const PNG = { image: { format: "png" as const, source: { bytes: pngBase64(8, 8) } } };
+  const DOC = { document: { name: "report", format: "txt" as const, source: { text: "quarterly numbers" } } };
+
+  /** A tool round trip whose result carries `block`. */
+  function toolResultWith(block: object): BedrockMessage[] {
+    return [
+      { role: "user", content: [{ text: "run the tool" }] },
+      { role: "assistant", content: [{ toolUse: { toolUseId: "t1", name: "fetch", input: {} } }] },
+      { role: "user", content: [{ toolResult: { toolUseId: "t1", content: [block] } }] },
+    ] as BedrockMessage[];
+  }
+
+  test("a top-level document block is unsupported_capability", () => {
+    const result = bedrock.chat.safe({
+      modelId: "us.openai.gpt-6-sol",
+      messages: [{ role: "user", content: [DOC, { text: "summarize" }] }],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.map((e) => [e.code, e.path])).toEqual([
+        ["unsupported_capability", ["messages", 0, "content", 0, "document"]],
+      ]);
+      expect(result.errors[0]?.message).toContain("input_file");
+      expect(result.errors[0]?.meta).toEqual({
+        kind: "document",
+        source: expect.stringContaining("model-card-openai-gpt-6-sol"),
+      });
+    }
+  });
+
+  test("an image or a document inside a toolResult is unsupported_capability", () => {
+    for (const [modelId, block, kind] of [
+      ["global.openai.gpt-6.1-terra", PNG, "image"],
+      ["global.openai.gpt-6-luna", DOC, "document"],
+    ] as const) {
+      const result = bedrock.chat.safe({ modelId, messages: toolResultWith(block) });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.map((e) => [e.code, e.path])).toEqual([
+          ["unsupported_capability", ["messages", 2, "content", 0, "toolResult", "content", 0, kind]],
+        ]);
+        expect(result.errors[0]?.meta?.kind).toBe(kind);
+      }
+    }
+  });
+
+  test("a top-level image still validates on GPT-6 Sol", () => {
+    const result = bedrock.chat.safe({
+      modelId: "global.openai.gpt-6-sol",
+      messages: [{ role: "user", content: [PNG, { text: "describe" }] }],
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  test("the same documents and toolResult images still validate on Opus 5.5", () => {
+    for (const messages of [
+      [{ role: "user", content: [DOC, { text: "summarize" }] }] as BedrockMessage[],
+      toolResultWith(PNG),
+      toolResultWith(DOC),
+    ]) {
+      const result = bedrock.chat.safe({ modelId: "us.anthropic.claude-opus-5-5", messages });
+      expect(result.ok).toBe(true);
+    }
   });
 });
 

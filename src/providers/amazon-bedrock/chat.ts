@@ -5,7 +5,7 @@ import { toValidated, JSON_HEADERS } from "../../core/request";
 import type { ExactKeys, RequestMeta, Validated } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateEstimate, ValidateResult } from "../../core/result";
-import type { ModelInfo } from "../../core/catalog-types";
+import type { ModelInfo, ModelLimit } from "../../core/catalog-types";
 import type { EndpointConstraints, MediaRule } from "../../core/constraint-types";
 import { resolveModelInfo } from "../../core/catalog-lookup";
 import { computeCostUSD } from "../../core/cost";
@@ -80,10 +80,10 @@ const MESSAGE_DOCS =
 export function resolveBedrockModelInfo(modelId: string): ModelInfo | undefined {
   // ARNs end in ".../<model-or-profile-id>".
   const bare = modelId.includes("/") ? modelId.slice(modelId.lastIndexOf("/") + 1) : modelId;
-  const direct = resolveModelInfo(models, bare);
+  const direct = resolveModelInfo(catalog, bare);
   if (direct !== undefined) return direct;
   const versionless = bare.replace(/:\d+$/, "");
-  return versionless === bare ? undefined : resolveModelInfo(models, versionless);
+  return versionless === bare ? undefined : resolveModelInfo(catalog, versionless);
 }
 
 function canonicalModelId(modelId: string): string {
@@ -97,13 +97,24 @@ function canonicalModelId(modelId: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Foundation models whose Bedrock model card limits client-side tool calling
- * to automatic tool choice, each mapped to that card. Both cards, checked
- * 2026-11-12: "Client-side tool calling ( tool_choice types auto and none
- * only)". On Converse that is `toolChoice: { auto: {} }` or no `toolChoice`;
- * `any` and `tool` force a tool call.
+ * Foundation models that reject forced tool choice on Bedrock, each mapped to
+ * the page that says so. On Converse, `toolChoice: { auto: {} }` or no
+ * `toolChoice` is accepted; `any` and `tool` force a tool call and fail.
+ *
+ * - Opus 5.5 and Sonnet 5.5: their model cards, checked 2026-11-12, list
+ *   "Client-side tool calling ( tool_choice types auto and none only)".
+ * - Fable 5.2 and Fable 5.1: their cards carry no tool-calling line, but the
+ *   Bedrock forced-tool-use section, checked 2026-11-13, does: "Claude Fable
+ *   5.2, Claude Mythos 5.2, Claude Opus 5.5, Claude Fable 5.1, and Claude
+ *   Mythos 5.1 do not support forced tool use. … In the Converse API, the
+ *   equivalent `toolChoice` settings (`tool` and `any`) surface the same
+ *   error." No Mythos id is in the Bedrock catalog.
  */
 const AUTO_TOOL_CHOICE_ONLY = {
+  "anthropic.claude-fable-5-1":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages-tool-use.html#model-parameters-anthropic-claude-forced-tool-use (checked 2026-11-13)",
+  "anthropic.claude-fable-5-2":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages-tool-use.html#model-parameters-anthropic-claude-forced-tool-use (checked 2026-11-13)",
   "anthropic.claude-opus-5-5":
     "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-opus-5-5.html (checked 2026-11-12)",
   "anthropic.claude-sonnet-5-5":
@@ -111,40 +122,137 @@ const AUTO_TOOL_CHOICE_ONLY = {
 } as const satisfies Partial<Record<AmazonBedrockModelId, string>>;
 
 /**
- * Foundation models priced by prompt length. Their catalog rows carry the
- * rates for prompts up to {@link PROMPT_LENGTH_TIER_THRESHOLD} tokens; above
- * it every rate differs and `ModelCost` has no tier field, so estimates and
- * `checkChat` return no `costUSD` there rather than a number 5x too low. The
- * committed models.dev snapshot carries the tier on every Bedrock Haiku 5.5
- * row (`"tier": { "size": 100000, "type": "context" }`; input 0.5 and output
- * 2.5 on the global row), as Anthropic's pricing page does for the model
- * (platform.claude.com/docs/en/about-claude/pricing, checked 2026-11-12):
- * "Claude Haiku 5.5 is priced by prompt length: a request whose prompt is
- * over 100,000 tokens pays higher prices. A request's prompt length counts all
- * of its input tokens, including cache reads and cache writes."
+ * Foundation models whose Bedrock model card fixes the sampling parameters,
+ * each mapped to that card. Both cards, checked 2026-11-12: "Sampling
+ * parameters: temperature must be 1.0 or unset; top_p must be 0.99 or unset;
+ * temperature and top_p cannot be specified together; top_k is not
+ * supported".
+ *
+ * `temperature` other than 1 and `topP` below 0.99 are refused, as
+ * `anthropic.chat` refuses them. `topP` above 0.99, and the two sent
+ * together, only warn: the card rules both out, but the Anthropic SDK's
+ * 0.137.0 JSDoc documents `top_p` >= 0.99 as accepted, and until a live
+ * request settles which is right, a refusal could fail a request the API
+ * fulfils.
+ *
+ * Fable 5 is not listed: its card states a different rule ("top_p must be ≥
+ * 0.99 and < 1.0, or unset"). The Opus, Sonnet and Haiku 5.5 cards carry no
+ * sampling line.
  */
-const PROMPT_LENGTH_TIERED_MODEL_IDS = [
-  "anthropic.claude-haiku-5-5",
-] as const satisfies readonly AmazonBedrockModelId[];
+const FIXED_SAMPLING_MODEL_IDS = {
+  "anthropic.claude-fable-5-1":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-fable-5-1.html (checked 2026-11-12)",
+  "anthropic.claude-fable-5-2":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-fable-5-2.html (checked 2026-11-12)",
+} as const satisfies Partial<Record<AmazonBedrockModelId, string>>;
 
-/** Prompt tokens (input + cache reads + cache writes) above which the catalog rates no longer apply. */
-const PROMPT_LENGTH_TIER_THRESHOLD = 100_000;
+/** The only `temperature` a fixed-sampling model accepts. */
+const FIXED_TEMPERATURE = 1;
+/** The `topP` a fixed-sampling model's card names. */
+const FIXED_TOP_P = 0.99;
+
+/**
+ * Foundation models whose Bedrock model card limits Converse content to text
+ * and image blocks, each mapped to that card. Every card, checked 2026-11-12:
+ * "This model doesn't accept `document` content blocks, and it doesn't
+ * accept an `image` content block inside a `toolResult`. A request that
+ * includes either is rejected with a `ValidationException`. To send a
+ * document to this model, use the Responses API with an `input_file` content
+ * part instead." A per-model rule rather than a modality check: models.dev
+ * lists `pdf` input for GPT-6 Astra, and `document` blocks carry text formats
+ * too.
+ */
+const CONVERSE_TEXT_AND_IMAGE_ONLY = {
+  "openai.gpt-6-astra":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-astra.html (checked 2026-11-12)",
+  "openai.gpt-6-luna":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-luna.html (checked 2026-11-12)",
+  "openai.gpt-6-sol":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html (checked 2026-11-12)",
+  "openai.gpt-6.1-sol":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-1-sol.html (checked 2026-11-12)",
+  "openai.gpt-6.1-terra":
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-1-terra.html (checked 2026-11-12)",
+} as const satisfies Partial<Record<AmazonBedrockModelId, string>>;
+
+/**
+ * Catalog limits a Bedrock model card contradicts, applied over the generated
+ * rows (see {@link catalog}) so `over_context` and `over_output_limit` read
+ * the card's figure. Delete an entry once a models.dev refresh carries it.
+ *
+ * - `xai.grok-4.7`: models.dev carries 500,000 for both limits, but the card
+ *   (docs.aws.amazon.com/bedrock/latest/userguide/model-card-xai-grok-4-7.html,
+ *   checked 2026-11-12) says "Context window: 524,288 tokens, shared between
+ *   input and output" and "Max output tokens: 524,288 minus input tokens".
+ *   Bedrock serves it only through its `us.` and `global.` profiles, so no
+ *   bare row exists and the key is checked by a test, not by the type.
+ */
+const LIMIT_CORRECTIONS = {
+  "xai.grok-4.7": { context: 524_288, output: 524_288 },
+} as const satisfies Record<string, ModelLimit>;
+
+/**
+ * The generated catalog with {@link LIMIT_CORRECTIONS} applied: the rows the
+ * validator, its estimate and `checkChat` resolve against.
+ */
+const catalog: Record<string, ModelInfo> = withLimitCorrections(models);
+
+function withLimitCorrections(rows: Record<string, ModelInfo>): Record<string, ModelInfo> {
+  const corrected: Record<string, ModelInfo> = { ...rows };
+  for (const [id, info] of Object.entries(rows)) {
+    const limit = ruleFor(LIMIT_CORRECTIONS, id);
+    if (limit !== undefined) corrected[id] = { ...info, limit };
+  }
+  return corrected;
+}
+
+/**
+ * Foundation models priced by prompt length, each mapped to the prompt size
+ * (input + cache reads + cache writes, in tokens) above which a higher rate
+ * applies to the whole request. Their catalog rows carry only the lower
+ * rates and `ModelCost` has no tier field, so above the threshold estimates
+ * and `checkChat` return no `costUSD` rather than a number up to 5x too low.
+ *
+ * - Claude Haiku 5.5: the committed models.dev snapshot carries the tier on
+ *   every Bedrock row (`"tier": { "size": 100000, "type": "context" }`; input
+ *   0.5 and output 2.5 on the global row), as Anthropic's pricing page does
+ *   (platform.claude.com/docs/en/about-claude/pricing, checked 2026-11-12):
+ *   "Claude Haiku 5.5 is priced by prompt length: a request whose prompt is
+ *   over 100,000 tokens pays higher prices. A request's prompt length counts
+ *   all of its input tokens, including cache reads and cache writes."
+ * - GPT-6, GPT-6.1 and GPT-5.6: the snapshot carries
+ *   `"tier": { "size": 272000, "type": "context" }` on every openai.gpt-6-*,
+ *   gpt-6.1-* and gpt-5.6-* row (input 4 and output 15 on
+ *   global.openai.gpt-6-sol, against 2 and 10), as the GPT-6 Sol card does
+ *   (docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html,
+ *   checked 2026-11-13): "Long-context rates apply to the full request when
+ *   input exceeds 272,000 tokens."
+ */
+const PROMPT_LENGTH_TIERS = {
+  "anthropic.claude-haiku-5-5": 100_000,
+  "openai.gpt-6-astra": 272_000,
+  "openai.gpt-6-sol": 272_000,
+  "openai.gpt-6-luna": 272_000,
+  "openai.gpt-6.1-sol": 272_000,
+  "openai.gpt-6.1-terra": 272_000,
+  "openai.gpt-5.6-sol": 272_000,
+  "openai.gpt-5.6-terra": 272_000,
+  "openai.gpt-5.6-luna": 272_000,
+} as const satisfies Partial<Record<AmazonBedrockModelId, number>>;
 
 /**
  * True when `catalogId`'s catalog rates do not price a prompt of
- * `promptTokens` tokens (see {@link PROMPT_LENGTH_TIERED_MODEL_IDS}).
+ * `promptTokens` tokens (see {@link PROMPT_LENGTH_TIERS}).
  */
 export function isPastPromptLengthTier(catalogId: string, promptTokens: number): boolean {
-  return (
-    promptTokens > PROMPT_LENGTH_TIER_THRESHOLD &&
-    PROMPT_LENGTH_TIERED_MODEL_IDS.some((base) => isModelOrProfile(catalogId, base))
-  );
+  const threshold = ruleFor(PROMPT_LENGTH_TIERS, catalogId);
+  return threshold !== undefined && promptTokens > threshold;
 }
 
-/** The model card behind `catalogId`'s auto-only tool choice, if it has one. */
-function autoToolChoiceCard(catalogId: string): string | undefined {
-  for (const [base, card] of Object.entries(AUTO_TOOL_CHOICE_ONLY)) {
-    if (isModelOrProfile(catalogId, base)) return card;
+/** The entry of a per-model table that applies to `catalogId`, if any. */
+function ruleFor<T>(table: Readonly<Record<string, T>>, catalogId: string): T | undefined {
+  for (const [base, rule] of Object.entries(table)) {
+    if (isModelOrProfile(catalogId, base)) return rule;
   }
   return undefined;
 }
@@ -202,16 +310,19 @@ export function checkCapabilities(
 
   const choice = params.toolConfig?.toolChoice;
   const forced = choice?.any !== undefined ? "any" : choice?.tool !== undefined ? "tool" : undefined;
-  const card = forced === undefined ? undefined : autoToolChoiceCard(info.id);
-  if (forced !== undefined && card !== undefined) {
+  const toolChoiceSource = forced === undefined ? undefined : ruleFor(AUTO_TOOL_CHOICE_ONLY, info.id);
+  if (forced !== undefined && toolChoiceSource !== undefined) {
     ctx.report({
       code: "unsupported_param",
       path: ["toolConfig", "toolChoice"],
       model,
-      message: `toolChoice \`${forced}\` forces a tool call, which "${model}" does not support on Bedrock; its model card allows automatic tool choice only — send \`toolChoice: { auto: {} }\` or omit \`toolChoice\`.`,
-      meta: { toolChoice: forced, source: card },
+      message: `toolChoice \`${forced}\` forces a tool call, which "${model}" rejects on Bedrock (400); Bedrock documents automatic tool choice only for it — send \`toolChoice: { auto: {} }\` or omit \`toolChoice\`.`,
+      meta: { toolChoice: forced, source: toolChoiceSource },
     });
   }
+
+  const samplingCard = ruleFor(FIXED_SAMPLING_MODEL_IDS, info.id);
+  if (samplingCard !== undefined) checkFixedSampling(params, samplingCard, ctx);
 
   const maxTokens = params.inferenceConfig?.maxTokens;
   const outputLimit = info.limit.output ?? 0;
@@ -236,6 +347,80 @@ export function checkCapabilities(
         message: `"${model}" does not accept ${kind} input; its input modalities are ${info.modalities.input.join(", ")}.`,
         meta: { kind, inputModalities: [...info.modalities.input] },
       });
+    });
+  }
+
+  const contentCard = ruleFor(CONVERSE_TEXT_AND_IMAGE_ONLY, info.id);
+  if (contentCard !== undefined) {
+    eachContentBlock(params, (block, path) => {
+      if (block["document"] !== undefined) {
+        ctx.report({
+          code: "unsupported_capability",
+          path: [...path, "document"],
+          model,
+          message: `"${model}" does not accept \`document\` content blocks on Converse (a ValidationException); send the document through the Responses API as an \`input_file\` content part instead.`,
+          meta: { kind: "document", source: contentCard },
+        });
+      }
+      if (block["image"] !== undefined && path.includes("toolResult")) {
+        ctx.report({
+          code: "unsupported_capability",
+          path: [...path, "image"],
+          model,
+          message: `"${model}" does not accept an \`image\` block inside a \`toolResult\` on Converse (a ValidationException); it takes images only as blocks of a user message's own content.`,
+          meta: { kind: "image", source: contentCard },
+        });
+      }
+    });
+  }
+}
+
+/**
+ * The fixed-sampling rule (see {@link FIXED_SAMPLING_MODEL_IDS}): values the
+ * card and `anthropic.chat` agree are refused are errors; the two cases only
+ * the card rules out are warnings.
+ */
+function checkFixedSampling(params: ConverseParams, card: string, ctx: PipelineContext): void {
+  const model = params.modelId;
+  const temperature = params.inferenceConfig?.temperature;
+  const topP = params.inferenceConfig?.topP;
+
+  if (temperature !== undefined && temperature !== FIXED_TEMPERATURE) {
+    ctx.report({
+      code: "unsupported_param",
+      path: ["inferenceConfig", "temperature"],
+      model,
+      message: `inferenceConfig.temperature ${temperature} is refused by "${model}" on Bedrock (400); its sampling is fixed, so send ${FIXED_TEMPERATURE} or omit it.`,
+      meta: { source: card },
+    });
+  }
+  if (topP !== undefined && topP < FIXED_TOP_P) {
+    ctx.report({
+      code: "unsupported_param",
+      path: ["inferenceConfig", "topP"],
+      model,
+      message: `inferenceConfig.topP ${topP} is refused by "${model}" on Bedrock (400); its sampling is fixed, so send ${FIXED_TOP_P} or omit it.`,
+      meta: { source: card },
+    });
+  }
+  if (topP !== undefined && topP > FIXED_TOP_P) {
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["inferenceConfig", "topP"],
+      model,
+      message: `inferenceConfig.topP ${topP} may be refused by "${model}": its Bedrock model card says top_p "must be 0.99 or unset". Send ${FIXED_TOP_P} or omit it.`,
+      meta: { source: card },
+    });
+  }
+  if (temperature !== undefined && topP !== undefined) {
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["inferenceConfig"],
+      model,
+      message: `inferenceConfig sets both temperature and topP, which "${model}" may refuse: its Bedrock model card says "temperature and top_p cannot be specified together". Omit one of them.`,
+      meta: { source: card },
     });
   }
 }
@@ -445,8 +630,9 @@ function estimateConverse(
     inputTokens += estimateToolDefinitionTokens(tokenizer, tool);
   }
 
-  // A prompt-length-tiered model above its threshold is priced at rates the
-  // catalog row does not carry, so the estimate is withheld there.
+  // A prompt-length-tiered model (Haiku 5.5 above 100,000 tokens; GPT-6,
+  // GPT-6.1 and GPT-5.6 above 272,000) is priced there at rates the catalog
+  // row does not carry, so the estimate's cost is withheld.
   if (info !== undefined && isPastPromptLengthTier(info.id, inputTokens)) return { inputTokens };
 
   // Worst case: the model fills the requested (or maximum) output budget.
@@ -527,7 +713,7 @@ export function createAmazonBedrock(config: AmazonBedrockConfig): AmazonBedrockP
     // Regional-prefix/version-suffix/ARN forms resolve to the canonical
     // catalog id so model-dependent checks still apply.
     modelId: (params) => canonicalModelId(params.modelId),
-    catalog: models,
+    catalog,
     checks: [checkCapabilities, checkMessageContent, checkPromptResourceParams],
     estimate: estimateConverse,
     promptPath: ["messages"],

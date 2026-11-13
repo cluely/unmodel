@@ -114,6 +114,13 @@ describe("amazon-bedrock.checkChat", () => {
     expect(above.usage.inputTokens).toBe(95_000);
   });
 
+  test("GPT-6 Sol prices up to 272,000 prompt tokens and withholds costUSD above", () => {
+    const model = "global.openai.gpt-6-sol";
+    // 272k * $2/M
+    expect(checkChat({ usage: { inputTokens: 272_000, outputTokens: 0 } }, model).costUSD).toBeCloseTo(0.544, 10);
+    expect(checkChat({ usage: { inputTokens: 272_001, outputTokens: 0 } }, model).costUSD).toBeUndefined();
+  });
+
   test("no modelId → usage but no costUSD; never throws on junk", () => {
     const report = checkChat({ usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 } });
     expect(report.costUSD).toBeUndefined();

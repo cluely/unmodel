@@ -55,8 +55,9 @@ export type ConverseStopReason =
  * The Converse response carries no model id, so pass the `modelId` you
  * requested to get `costUSD`; without it only warnings and usage are
  * reported. `costUSD` is also omitted for a model priced by prompt length
- * (Claude Haiku 5.5) once the prompt — input + cache reads + cache writes —
- * passes 100,000 tokens, where the catalog's rates no longer apply.
+ * once the prompt — input + cache reads + cache writes — passes its
+ * threshold, where the catalog's rates no longer apply: 100,000 tokens for
+ * Claude Haiku 5.5, and 272,000 for GPT-6, GPT-6.1 and GPT-5.6.
  */
 export function checkChat(
   response: ConverseResponseLike,

@@ -112,7 +112,10 @@ const SIGNATURE = /^t=(\d+),v1=([0-9a-f]{64})$/;
 
 /**
  * Verifies one `fal_webhook` delivery and returns it typed. Never throws on a
- * bad delivery — every outcome is a {@link WebhookVerification}.
+ * bad delivery — every outcome is a {@link WebhookVerification}. The one throw
+ * is a `TypeError` for an empty `secret`, which is a fault in the caller's
+ * configuration and not a fact about the delivery: answered as a forgery it
+ * would refuse every genuine one, quietly.
  *
  * ```ts
  * // POST https://your-app.example/revana
@@ -126,6 +129,12 @@ const SIGNATURE = /^t=(\d+),v1=([0-9a-f]{64})$/;
  * 20, Bun and Workers share and which compares in constant time.
  */
 export async function verifyWebhook(input: VerifyWebhookInput): Promise<WebhookVerification> {
+  if (input.secret === "") {
+    throw new TypeError(
+      "verifyWebhook: `secret` is empty. Pass the account's signing secret — `secret` on " +
+        "`GET https://api.revana.si/v1/webhooks/secret` — which is not the API key.",
+    );
+  }
   const header = readHeader(input.headers, REVANA_SIGNATURE_HEADER);
   if (header === undefined) {
     return forged("missing_signature", `The request has no \`${REVANA_SIGNATURE_HEADER}\` header.`);
@@ -137,9 +146,12 @@ export async function verifyWebhook(input: VerifyWebhookInput): Promise<WebhookV
       `\`${REVANA_SIGNATURE_HEADER}\` must be \`t=<unix seconds>,v1=<64 hex digits>\`; got ${JSON.stringify(header)}.`,
     );
   }
-  const timestamp = Number(parts[1]);
+  const signedAt = parts[1] ?? "";
+  const hmac = parts[2] ?? "";
+  const timestamp = Number(signedAt);
   const now = input.now ?? Math.floor(Date.now() / 1000);
-  if (Math.abs(now - timestamp) > REVANA_WEBHOOK_TOLERANCE_SECONDS) {
+  // Written as "not within", so a `now` that is not a number refuses rather than passes.
+  if (!(Math.abs(now - timestamp) <= REVANA_WEBHOOK_TOLERANCE_SECONDS)) {
     return forged(
       "stale_timestamp",
       `The delivery was signed at t=${timestamp}, ${Math.abs(now - timestamp)} seconds from now (${now}); ` +
@@ -149,7 +161,7 @@ export async function verifyWebhook(input: VerifyWebhookInput): Promise<WebhookV
 
   const encoder = new TextEncoder();
   const body = typeof input.body === "string" ? encoder.encode(input.body) : input.body;
-  const prefix = encoder.encode(`${parts[1]}.`);
+  const prefix = encoder.encode(`${signedAt}.`);
   const signed = new Uint8Array(prefix.length + body.length);
   signed.set(prefix);
   signed.set(body, prefix.length);
@@ -160,7 +172,7 @@ export async function verifyWebhook(input: VerifyWebhookInput): Promise<WebhookV
     false,
     ["verify"],
   );
-  if (!(await crypto.subtle.verify("HMAC", key, fromHex(parts[2] as string), signed))) {
+  if (!(await crypto.subtle.verify("HMAC", key, fromHex(hmac), signed))) {
     return forged(
       "signature_mismatch",
       "The signature is not the one this secret makes over this body. Check that `body` is the raw request body, " +
@@ -217,20 +229,40 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Holds the parsed body to what {@link QueueWebhookDelivery} claims of it. */
+/**
+ * Holds the parsed body to what {@link QueueWebhookDelivery} claims of it —
+ * all of it that a caller narrows on: one result document and not two, every
+ * file with its `url`, and no `error` on a success.
+ */
 function isDelivery(json: unknown): json is QueueWebhookDelivery {
   if (!isRecord(json) || typeof json["request_id"] !== "string" || typeof json["gateway_request_id"] !== "string") {
     return false;
   }
   const payload = json["payload"];
   if (!isRecord(payload)) return false;
-  if (json["status"] === "OK") {
-    return Array.isArray(payload["images"]) || isRecord(payload["video"]) || isRecord(payload["audio"]);
-  }
+  if (json["status"] === "OK") return json["error"] === undefined && isResult(payload);
   return (
     json["status"] === "ERROR" &&
     typeof json["error"] === "string" &&
     typeof payload["detail"] === "string" &&
     typeof payload["error_type"] === "string"
   );
+}
+
+/** Exactly one of the three result documents: `images`, `video`, or `audio` with its `audios`. */
+function isResult(payload: Record<string, unknown>): boolean {
+  const { images, video, audio, audios } = payload;
+  if (images !== undefined) {
+    return video === undefined && audio === undefined && audios === undefined && isFiles(images);
+  }
+  if (video !== undefined) return audio === undefined && audios === undefined && isFile(video);
+  return isFile(audio) && (audios === undefined || isFiles(audios));
+}
+
+function isFiles(value: unknown): boolean {
+  return Array.isArray(value) && value.every(isFile);
+}
+
+function isFile(value: unknown): boolean {
+  return isRecord(value) && typeof value["url"] === "string";
 }

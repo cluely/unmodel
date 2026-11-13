@@ -171,6 +171,9 @@ describe("the views", () => {
 
   test("`revana.upscale` serves the upscalers, and needs the thing to enlarge", () => {
     expect(loose(upscale)({ model: "recraft-crisp-upscale", input: { image_url: IMG } }).ok).toBe(true);
+    // The API takes the picture as `image_urls` too, under either of its names.
+    expect(loose(upscale)({ model: "recraft-crisp-upscale", input: { image_urls: [IMG] } }).ok).toBe(true);
+    expect(loose(upscale)({ model: "recraft-crisp-upscale", input: { reference_images: [IMG] } }).ok).toBe(true);
     expect(codes(loose(upscale)({ model: "recraft-crisp-upscale", input: {} }))).toContain("invalid_shape@input.image_url");
     expect(codes(loose(upscale)({ model: "nano-banana-pro", input: { prompt: "a", image_url: IMG } }))).toEqual([
       "unsupported_capability@model",

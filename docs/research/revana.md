@@ -415,8 +415,11 @@ only repeats the frames, and a model that takes references but lists no
 `max_input_images` takes one. A third was a severity: a key of another Revana
 schema (`video_urls` on a `ModelInput` model) was a warning, and since all
 three schemas are closed it is an error. Ninety rows asking those questions and
-the alias ones joined the generation fixture (804 rows, thirty-four models)
-and ninety-one the queue's (176 bodies, twenty-four models).
+the alias ones joined the generation fixture and ninety-one the queue's (176
+bodies, twenty-four models). The frame-beside-references rule was then put to
+every `ModelInput` video model that takes both fields, and to the four avatar
+models: thirty-one more rows, thirty-one refusals in the same words (835 rows,
+sixty-one models).
 
 The harness is not committed: it needs a key, and it spends nothing but should
 not run in CI against someone's account. Re-running it is the right first step

@@ -114,6 +114,10 @@ describe("what makes a delivery not Revana's", () => {
     expect(await verify(body, sign(body, NOW + 301))).toMatchObject({ authentic: false, reason: "stale_timestamp" });
   });
 
+  test("a `now` that is not a number refuses, where a plain comparison would let every age through", async () => {
+    expect(await verify(body, sign(body, NOW), Number.NaN)).toMatchObject({ authentic: false, reason: "stale_timestamp" });
+  });
+
   test("a body that is not, byte for byte, the one that was signed", async () => {
     const signature = sign(body, NOW);
     const reserialised = JSON.stringify(JSON.parse(body), null, 1);
@@ -155,6 +159,12 @@ describe("what it takes as a request", () => {
     expect((await verify(accented, sign(accented, NOW))).ok).toBe(true);
   });
 
+  test("an empty secret is the caller's fault, said in words, and not a verdict on the delivery", async () => {
+    const attempt = verifyWebhook({ body, headers: { "revana-signature": signature }, secret: "", now: NOW });
+    await expect(attempt).rejects.toThrow(TypeError);
+    await expect(attempt).rejects.toThrow("GET https://api.revana.si/v1/webhooks/secret");
+  });
+
   test("the clock, when `now` is left out", async () => {
     const t = Math.floor(Date.now() / 1000);
     const verdict = await verifyWebhook({ body, headers: { "revana-signature": sign(body, t) }, secret: SECRET });
@@ -171,6 +181,12 @@ describe("authentic, and not a delivery unmodel knows", () => {
       { request_id: "gen_1", gateway_request_id: "gen_1", status: "OK", payload: { text: "hi" } },
       { request_id: "gen_1", gateway_request_id: "gen_1", status: "ERROR", payload: { detail: "no" } },
       { status: "OK", payload: { images: [] } },
+      // What the result type rules out is not let through as one: two documents at once,
+      // a file with no `url`, an `error` on a success.
+      { request_id: "gen_1", gateway_request_id: "gen_1", status: "OK", payload: { images: [], video: { url: "https://x/v" } } },
+      { request_id: "gen_1", gateway_request_id: "gen_1", status: "OK", payload: { images: [{ file_name: "a.png" }] } },
+      { request_id: "gen_1", gateway_request_id: "gen_1", status: "OK", payload: { audio: { url: "https://x/a" }, audios: [{}] } },
+      { request_id: "gen_1", gateway_request_id: "gen_1", status: "OK", error: "no", payload: { video: { url: "https://x/v" } } },
       [],
     ]) {
       const body = JSON.stringify(json);

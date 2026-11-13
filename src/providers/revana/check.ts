@@ -153,15 +153,15 @@ export function checkQueueStatus(res: QueueEnvelopeLike): ResponseReport<QueueOu
   const refused = errorResponse(res.status, typeof res.error === "string" ? undefined : res.error);
   if (refused !== undefined) warnings.push(refused);
 
-  const failed = res.status === "COMPLETED" && typeof res.error === "string";
-  if (failed) {
+  const failure = res.status === "COMPLETED" && typeof res.error === "string" ? res.error : undefined;
+  if (failure !== undefined) {
     const code = res.error_type ?? undefined;
     warnings.push({
       severity: "warning",
       code: "invalid_shape",
       path: ["error"],
       message:
-        `The request is \`COMPLETED\` and it failed${code === undefined ? "" : ` (${code})`}: ${res.error as string} ` +
+        `The request is \`COMPLETED\` and it failed${code === undefined ? "" : ` (${code})`}: ${failure} ` +
         "Its `response_url` answers 422, not a result.",
       meta: { kind: "generation_failed", ...(code !== undefined && { code }) },
     });
@@ -169,7 +169,7 @@ export function checkQueueStatus(res: QueueEnvelopeLike): ResponseReport<QueueOu
 
   return {
     warnings,
-    ...(res.status !== undefined && { finishReason: failed ? "ERROR" : res.status }),
+    ...(res.status !== undefined && { finishReason: failure === undefined ? res.status : "ERROR" }),
     usage: {},
   };
 }

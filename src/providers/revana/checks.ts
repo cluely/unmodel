@@ -525,9 +525,10 @@ function referenceLimit(shape: RevanaModelShape): number | undefined {
  * frame) or input.image_urls (references), not both." What it lets through is
  * a list that only repeats the frames — every entry the `image_url` or the
  * `end_image_url` — and it refuses the pair whatever else the request carries,
- * a `video_url` included (2026-11-12: `veo-3.1`, `gemini-omni-1.2-flash`,
- * `kling-3.0-motion-control` and four more in the oracle). A picture model
- * takes both.
+ * a `video_url` included. It is the gateway's rule and not a model's: every
+ * `ModelInput` video model that takes both fields answered that sentence on
+ * 2026-11-13, the avatar models among them (where `image_url` is a face), and
+ * so did five that do not take both. A picture model takes both.
  */
 function checkFrameBesideReferences(scope: Scope, input: Input, shape: RevanaModelShape): void {
   const references = input["image_urls"];

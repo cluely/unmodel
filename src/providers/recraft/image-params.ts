@@ -74,20 +74,19 @@ export const MODELS = [
   "recraftv4_styles_pro_raster",
   "recraftv3_raster",
   "recraftv2_raster",
-  "recraft20b",
 ] as const satisfies readonly RecraftModelId[];
 
 /**
- * The per-model surface, and the widest table in the library — thirty-three
+ * The per-model surface, and the widest table in the library — thirty-two
  * ids across four size groups, two style vocabularies and the family deny
  * rules that cut across both.
  *
  * **Sizes.** Every raster id gets the appendix's own `WxH` table, closed:
  * `checkSize` rejects a `WxH` a model's table does not list, so a template
- * tail would promise something the endpoint refuses. The vector line and
- * `recraft20b` get no `sizes` row at all — the appendix documents them with
- * aspect ratios alone — so `size` types as `never` there and an editor offers
- * the fourteen shapes, which is the whole size vocabulary those models have.
+ * tail would promise something the endpoint refuses. The vector line gets no
+ * `sizes` row at all — the appendix documents it with aspect ratios alone —
+ * so `size` types as `never` there and an editor offers the fourteen shapes,
+ * which is the whole size vocabulary those models have.
  * (`checkSize` is permissive for them at run time, having no table to check
  * against; the type is the narrower of the two on purpose.) A `_raster`
  * alias takes its base model's row.
@@ -98,8 +97,8 @@ export const MODELS = [
  * **Styles.** `style` is denied on the whole V4/V4.1 line and typed from
  * `STYLE_NAMES_BY_MODEL`'s own lists everywhere it is allowed, so
  * `style: "Watercolor"` compiles on `recraftv3` and not on `recraftv3_vector`
- * — whose list is the vector one. `text_layout` is V3-and-`recraft20b`-only,
- * per the same family rules. The custom-style inputs (`style_id`,
+ * — whose list is the vector one. `text_layout` is V3-only, per the same
+ * family rules. The custom-style inputs (`style_id`,
  * `style_reference_urls`, `style_match`) follow the "Parameter support by
  * model family" matrix of https://www.recraft.ai/docs/api-reference/agents:
  * none of them on V4.1 Flash, `style_match` `regular` on V2/V3 and
@@ -257,20 +256,6 @@ export const RECRAFT_IMAGE_MODEL_PARAMS = {
     extras: {
       style: EXTRA as (typeof RECRAFT_V2_VECTOR_STYLES)[number] | (string & {}) | null,
       ...V2_V3_STYLE_EXTRAS,
-    },
-  },
-  recraft20b: {
-    ratios: ASPECT_RATIOS,
-    tiers: [],
-    extras: {
-      // No curated list is published for this id, and no family rule denies
-      // it — so the honest type is the open one the wire already has.
-      style: EXTRA as string | null,
-      style_id: STYLE_ID,
-      style_reference_urls: STYLE_REFERENCE_URLS,
-      style_match: EXTRA as RecraftStyleMatch | null,
-      text_layout: TEXT_LAYOUT,
-      ...RECRAFT_SHARED_EXTRAS,
     },
   },
 } as const satisfies ModelParamTable;

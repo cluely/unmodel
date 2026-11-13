@@ -1844,7 +1844,7 @@ image({ prompt: "x", model: m, style: "¦" });`);
     // silently drops `model` from every cataloged id to 1.
     const models = completionsAt(`import { image } from "./src/providers/recraft";
 image({ prompt: "x", model: "¦" });`);
-    expect(models.length).toBe(33);
+    expect(models.length).toBe(32);
     expect(models).toContain("recraftv3");
 
     const sizes = completionsAt(`import { image } from "./src/providers/recraft";

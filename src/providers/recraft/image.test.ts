@@ -656,25 +656,10 @@ describe("recraft.image cost estimation", () => {
     }
   });
 
-  test("recraft20b is a documented API id with no published price", () => {
-    const r = image.safe({ prompt: "x", model: "recraft20b" });
-    expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.warnings.map((w) => w.code)).not.toContain("unknown_model");
-      expect(r.estimate.costUSD).toBeUndefined();
-    }
-  });
-
-  test("catalog pricing sanity: every priced model has a per-image rate", () => {
+  test("catalog pricing sanity: every model has a per-image rate and a prompt cap", () => {
     for (const info of Object.values(models) as ModelInfo[]) {
-      // recraft20b is a documented API id with no published price and no
-      // published prompt cap, so cost/limit.characters are legitimately absent.
-      if (info.id !== "recraft20b") {
-        expect(info.cost?.perImage).toBeGreaterThan(0);
-        expect(info.limit.characters).toBeGreaterThan(0);
-      } else {
-        expect(info.cost).toBeUndefined();
-      }
+      expect(info.cost?.perImage, info.id).toBeGreaterThan(0);
+      expect(info.limit.characters, info.id).toBeGreaterThan(0);
       expect(info.limit.context).toBe(0);
     }
   });

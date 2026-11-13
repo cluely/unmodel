@@ -18,8 +18,8 @@ import { RECRAFT_V3_STYLES, RECRAFT_V3_VECTOR_STYLES } from "./styles";
 /**
  * Every model `imageToImage` documents — the V3 **and** V4 lines, which is one
  * more line than the four V3-only editing routes accept and the reason this
- * list is not just `MODELS` from the generation adapter (recraftv2 and
- * recraft20b are generation-only).
+ * list is not just `MODELS` from the generation adapter (recraftv2, V4.1
+ * Flash and the V4 Styles line are generation-only).
  *
  * Spread from `IMAGE_TO_IMAGE_MODELS` rather than retyped: that array is what
  * the endpoint's own `makeModelCheck` allows, so the refs that autocomplete and

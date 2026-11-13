@@ -1413,6 +1413,8 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // boundary — the graph swapped image chunks for tts ones, no deepgram in reach.
   //
   // 535.3 measured, 2026-11-12 (from 519.0): the elevenlabs model wave re-chunked that provider's declarations, so its model-id types now ride in a chunk shared with tts/voice-design.
+  //
+  // 526.5 measured on macOS, 448.7 on linux/amd64, 2026-11-12: chunk reassignment only — dropping one Recraft catalog row moved the tts / voice-design declaration chunks into this graph on macOS; no module joined.
   sfx: 590,
   // `unmodel/sts`: 349.0 measured on macOS — the cheapest declaration in the
   // table by a wide margin, below `sfx`'s 442.4. Five canonical words, one

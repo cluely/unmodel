@@ -39,7 +39,7 @@
  * | `recraftv4_1`, `recraftv4_1_utility`, `recraftv4_1_flash`, `recraftv4`, `recraftv4_styles` | 1.03–1.18 MP around 1024² | `1k` |
  * | `recraftv4_1_pro`, `recraftv4_1_utility_pro`, `recraftv4_pro`, `recraftv4_styles_pro` | 4.13–4.72 MP around 2048² | `2k` |
  * | `recraftv2`, `recraftv3` | 1.05–2.10 MP around 1024² | `1k` |
- * | the vector line, `recraft20b` | none — ratios only | *none* |
+ * | the vector line | none — ratios only | *none* |
  *
  * Each `_raster` alias renders at its base model's tier.
  *
@@ -49,8 +49,8 @@
  * request genuinely is 1k. A tier that does not match is an error naming the
  * Pro refs (or the standard ones) that do render at it, because silently
  * serving 1 MP for a `2k` request is the exact failure this surface exists to
- * prevent. On the vector models and `recraft20b` there is no pixel vocabulary
- * at all to check a tier against, so a tier there is `unsupported_param`.
+ * prevent. On the vector models there is no pixel vocabulary at all to check
+ * a tier against, so a tier there is `unsupported_param`.
  *
  * The V2/V3 row is the one worth squinting at: its table reaches 2.10 MP at
  * `2048x1024`, which sits exactly halfway between 1024² and 2048² in log
@@ -127,9 +127,9 @@ const APPENDIX_DOCS = "https://www.recraft.ai/docs/api-reference/appendix";
  * ids `SIZES_BY_MODEL` keys, because a model with a pixel table is exactly a
  * model whose pixel budget is documented.
  *
- * Absent ids — the whole vector line and `recraft20b` — have no pixel
- * vocabulary at all, which is a different fact from "renders at another tier"
- * and gets a different message.
+ * Absent ids — the whole vector line — have no pixel vocabulary at all,
+ * which is a different fact from "renders at another tier" and gets a
+ * different message.
  */
 const KNOWN_MODELS: ReadonlySet<string> = new Set<string>(MODELS);
 
@@ -286,7 +286,7 @@ export const image = {
           message:
             `\`resolution\` has no equivalent on "${ctx.model}": Recraft has no pixel-budget ` +
             `field, and the appendix attributes explicit sizes only to the raster models — the ` +
-            `vector line and "recraft20b" are documented with aspect ratios alone, so there is ` +
+            `vector line is documented with aspect ratios alone, so there is ` +
             `nothing to check a tier against. Drop \`resolution\`, or name the pixels with ` +
             `\`dimensions\` on a raster model.`,
           meta: { value: input.resolution, source: APPENDIX_DOCS },

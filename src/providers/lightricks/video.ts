@@ -1,6 +1,5 @@
 /**
- * LTX Text to Video — POST https://api.ltx.io/v2/text-to-video (async)
- * and POST https://api.ltx.io/v1/text-to-video (sync).
+ * LTX Text to Video — POST https://api.ltx.io/v2/text-to-video (async).
  *
  * Wire notes (verified against https://docs.ltx.io/openapi.json and
  * https://docs.ltx.io/models.md on 2026-08-13):
@@ -11,9 +10,8 @@
  * - Which resolution / fps / duration combinations a model accepts is not in
  *   the schema (all three are bare string/integer types); it comes from the
  *   published support matrices and is enforced by `checkSupportMatrix`.
- * - `api_version` is NOT a wire field: it is stripped from the body and only
- *   picks the `/v1` (sync) or `/v2` (async job) path. v2 responds `{ id }`;
- *   polling `GET /v2/text-to-video/{id}` is out of unmodel's scope.
+ * - The route responds `{ id }`; polling `GET /v2/text-to-video/{id}` is out
+ *   of unmodel's scope.
  * - Auth is `Authorization: Bearer <LTX_API_KEY>` — unmodel never touches
  *   keys; add the header yourself when fetching.
  */
@@ -27,13 +25,10 @@ import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type LightricksModelId } from "./models";
 import {
-  DEFAULT_API_VERSION,
-  LTX_API_VERSIONS,
   LTX_CAMERA_MOTIONS,
   LTX_HEADERS,
   checkSupportMatrix,
   ltxUrl,
-  type LtxApiVersion,
   type LtxCameraMotion,
   type LtxDuration,
   type LtxFps,
@@ -45,8 +40,6 @@ export const TEXT_TO_VIDEO_ENDPOINT = "text-to-video";
 
 /** `POST https://api.ltx.io/v2/text-to-video` — the async job route. */
 export const TEXT_TO_VIDEO_URL = ltxUrl(TEXT_TO_VIDEO_ENDPOINT);
-/** `POST https://api.ltx.io/v1/text-to-video` — the synchronous route. */
-export const TEXT_TO_VIDEO_V1_URL = ltxUrl(TEXT_TO_VIDEO_ENDPOINT, "v1");
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror the raw JSON body exactly.
@@ -68,12 +61,6 @@ export interface TextToVideoParams {
   /** Generate matching audio. Defaults to true. */
   generate_audio?: boolean;
   camera_motion?: LtxCameraMotion;
-  /**
-   * NOT a wire field. Selects the `/v1` (sync) or `/v2` (async job) path;
-   * defaults to "v2". Stripped from the body and reflected in
-   * `.request.url`.
-   */
-  api_version?: LtxApiVersion;
 }
 
 const videoSchema = z.looseObject({
@@ -84,7 +71,6 @@ const videoSchema = z.looseObject({
   fps: z.number().int().optional(),
   generate_audio: z.boolean().optional(),
   camera_motion: z.enum(LTX_CAMERA_MOTIONS).optional(),
-  api_version: z.enum(LTX_API_VERSIONS).optional(),
 });
 
 function estimate(params: TextToVideoParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
@@ -106,9 +92,9 @@ function estimate(params: TextToVideoParams, info: ModelInfo | undefined, _ctx: 
 export type LightricksSdkTargets<B> = { lightricks: () => B };
 
 function finalize(params: TextToVideoParams): unknown {
-  const { api_version, ...body } = params;
+  const body = { ...params };
   return toValidated(body, {
-    url: ltxUrl(TEXT_TO_VIDEO_ENDPOINT, api_version ?? DEFAULT_API_VERSION),
+    url: TEXT_TO_VIDEO_URL,
     method: "POST",
     headers: LTX_HEADERS,
   }, {
@@ -127,11 +113,10 @@ const validator = createValidator<TextToVideoParams, unknown>({
 });
 
 /**
- * Validates raw wire params for LTX `POST /v2/text-to-video` (or `/v1` via
- * `api_version: "v1"`).
+ * Validates raw wire params for LTX `POST /v2/text-to-video`.
  *
- * The returned object's enumerable props are the exact fetch JSON body
- * (`api_version` is stripped). `.toSdk("lightricks")` returns the body unchanged — LTX
+ * The returned object's enumerable props are the exact fetch JSON body.
+ * `.toSdk("lightricks")` returns the body unchanged — LTX
  * ships no first-party SDK, so the wire body is the only shape. Auth is your
  * job: add `authorization: Bearer <LTX_API_KEY>` when fetching.
  *
@@ -153,10 +138,10 @@ export const video = validator as unknown as {
   <T extends TextToVideoParams>(
     params: T & ExactKeys<T, TextToVideoParams>,
     options?: ValidateOptions<T>,
-  ): Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>;
+  ): Validated<T, LightricksSdkTargets<T>>;
   safe<T extends TextToVideoParams>(
     params: T & ExactKeys<T, TextToVideoParams>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>>;
+  ): ValidateResult<Validated<T, LightricksSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

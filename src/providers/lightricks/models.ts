@@ -3,7 +3,9 @@
 //   https://docs.ltx.io/models/ltx-2-5.md      (LTX-2.5 support matrix)
 //   https://docs.ltx.io/models/ltx-2-3.md      (LTX-2.3 support matrix)
 //   https://docs.ltx.io/pricing.md             (USD per second, by model × resolution)
-//   https://docs.ltx.io/ltx-2-deprecation.md   (LTX-2 retirement)
+//   https://docs.ltx.io/api-changelog/llms.txt (dated API changes, including
+//     model and route retirements)
+//   https://docs.ltx.io/migrate-v1-to-v2.md    (the retired /v1 generation routes)
 //   https://docs.ltx.io/openapi.json           (OpenAPI 3.1, the wire contract
 //     these endpoints are transcribed from; server https://api.ltx.io)
 // Verified 2026-08-13.
@@ -16,9 +18,10 @@
 // carries no `cost` and the full tier tables live in ./pricing.ts, which the
 // endpoints use for a per-request `costUSD` estimate.
 //
-// Model coverage vs. the artificialanalysis census: ltx-2-3-fast, ltx-2-3-pro,
-// ltx-2-fast and ltx-2-pro are all documented API ids and all appear below.
-// "LTX Video v0.9.7 13B" is an open-weights checkpoint with no id in the LTX
+// Model coverage: the OpenAPI model enum is exactly these four ids —
+// "TextToVideoRequestModel":{"type":"string","enum":["ltx-2-3-fast",
+// "ltx-2-3-pro","ltx-2-5-fast","ltx-2-5-pro"] (https://docs.ltx.io/openapi.json,
+// 2026-11-12) — and all four appear below. "LTX Video v0.9.7 13B" is an open-weights checkpoint with no id in the LTX
 // API's model enums (https://docs.ltx.io/openapi.json) — it is served only by
 // third-party hosts, so it is deliberately absent.
 
@@ -91,34 +94,6 @@ export const models = {
     modalities: { input: ["text", "image", "audio", "video"], output: ["video"] },
     limit: { context: 0 },
     // $0.04/s (720p) → $0.32/s (4K) — see ./pricing.ts.
-  },
-  "ltx-2-fast": {
-    id: "ltx-2-fast",
-    name: "LTX-2 Fast",
-    family: "ltx-2",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: true,
-    modalities: { input: ["text", "image"], output: ["video"] },
-    limit: { context: 0 },
-    // "LTX-2 (ltx-2-fast, ltx-2-pro) has been deprecated and will be removed
-    // on August 15, 2026" — https://docs.ltx.io/ltx-2-deprecation.md. It
-    // "stays billed at its original LTX-2 rates", which the pricing page no
-    // longer prints, so no rate is recorded here or in ./pricing.ts.
-    status: "deprecated",
-  },
-  "ltx-2-pro": {
-    id: "ltx-2-pro",
-    name: "LTX-2 Pro",
-    family: "ltx-2",
-    attachment: false,
-    reasoning: false,
-    toolCall: false,
-    openWeights: true,
-    modalities: { input: ["text", "image", "audio", "video"], output: ["video"] },
-    limit: { context: 0 },
-    status: "deprecated",
   },
 } as const satisfies Record<string, ModelInfo>;
 

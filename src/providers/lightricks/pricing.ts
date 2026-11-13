@@ -14,9 +14,7 @@
  * unmodel can only estimate the endpoints whose billed seconds are in the
  * request: text-to-video and image-to-video (`duration`) and audio-to-video
  * (which has no duration field at all — the audio sets it — so it produces no
- * estimate). The deprecated LTX-2 models "stay billed at [their] original
- * LTX-2 rates" but those rates are no longer published, so they have no entry
- * and produce no estimate.
+ * estimate).
  */
 
 /** The resolution strings the API accepts, grouped by tier. */

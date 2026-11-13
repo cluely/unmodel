@@ -1,9 +1,8 @@
 /**
  * Shared wire pieces for the LTX API, transcribed from
  * https://docs.ltx.io/openapi.json (OpenAPI 3.1, server https://api.ltx.io)
- * plus the published support matrices on https://docs.ltx.io/models/ltx-2-5.md,
- * https://docs.ltx.io/models/ltx-2-3.md and, for the deprecated LTX-2 pair,
- * https://docs.ltx.io/ltx-2-deprecation.md — verified 2026-08-13.
+ * plus the published support matrices on https://docs.ltx.io/models/ltx-2-5.md
+ * and https://docs.ltx.io/models/ltx-2-3.md — verified 2026-08-13.
  */
 
 import { z } from "zod";
@@ -26,19 +25,15 @@ export const MODELS_SOURCE = "https://docs.ltx.io/models";
 export const OPENAPI_SOURCE = "https://docs.ltx.io/openapi.json";
 
 /**
- * The two API generations. `v2` is the async job API (`POST /v2/<endpoint>`
- * returns `{ id }`; poll `GET /v2/<endpoint>/{id}`); `v1` is the synchronous
- * one. The request bodies are identical — only the path prefix differs — so
- * `api_version` is not a wire field: it is stripped from the body and only
- * selects `.request.url`.
+ * The generation route for an endpoint: the async job API (`POST
+ * /v2/<endpoint>` returns `{ id }`; poll `GET /v2/<endpoint>/{id}`). It is the
+ * only generation API LTX serves — "The V1 video generation endpoints listed
+ * below were retired on October 26, 2026 and return an error. Use the V2
+ * endpoints instead." (https://docs.ltx.io/migrate-v1-to-v2.md, 2026-11-12).
+ * Only the media upload route stays on `/v1/upload`.
  */
-export const LTX_API_VERSIONS = ["v1", "v2"] as const;
-export type LtxApiVersion = (typeof LTX_API_VERSIONS)[number];
-
-export const DEFAULT_API_VERSION: LtxApiVersion = "v2";
-
-export function ltxUrl(endpoint: string, apiVersion: LtxApiVersion = DEFAULT_API_VERSION): string {
-  return `${LTX_BASE_URL}/${apiVersion}/${endpoint}`;
+export function ltxUrl(endpoint: string): string {
+  return `${LTX_BASE_URL}/v2/${endpoint}`;
 }
 
 /** Models with a text-to-video and an image-to-video arm (models.md). */
@@ -47,17 +42,10 @@ export const GENERATION_MODELS = [
   "ltx-2-5-pro",
   "ltx-2-3-fast",
   "ltx-2-3-pro",
-  "ltx-2-fast",
-  "ltx-2-pro",
 ] as const;
 
 /** Models with an audio-to-video arm — `ltx-2-3-fast` has none. */
-export const AUDIO_TO_VIDEO_MODELS = [
-  "ltx-2-5-fast",
-  "ltx-2-5-pro",
-  "ltx-2-3-pro",
-  "ltx-2-pro",
-] as const;
+export const AUDIO_TO_VIDEO_MODELS = ["ltx-2-5-fast", "ltx-2-5-pro", "ltx-2-3-pro"] as const;
 
 /** `camera_motion` enum, shared by text-to-video and image-to-video. */
 export const LTX_CAMERA_MOTIONS = [
@@ -141,35 +129,10 @@ const PRO_2_3_MATRIX: readonly MatrixRow[] = [
 ];
 
 /**
- * The deprecated LTX-2 pair. Its matrix is no longer on the models page but IS
- * published on https://docs.ltx.io/ltx-2-deprecation.md ("LTX-2 support
- * matrix … supported by LTX-2 until it is removed"), verified 2026-08-13:
- *
- *   ltx-2-fast  1080p@25 → 6,8,10,12,14,16,18,20 · 1080p@50 → 6,8,10
- *               1440p@25,50 → 6,8,10 · 4K@25,50 → 6,8,10
- *   ltx-2-pro   1080p/1440p/4K @25,50 → 6,8,10
- *   "Aspect ratio: 16:9 (landscape) only."
- *
- * That table is NARROWER than what the API accepts today: the same page states
- * LTX-2 "has been deprecated … Requests that specify an LTX-2 model are now
- * automatically served by LTX-2.3", so 720p and the 24/48fps rates its
- * replacement offers go through as well. Enforcing the LTX-2 table literally
- * would therefore reject requests the API fulfils — most obviously any request
- * that omits `fps` (OpenAPI `default: 24`, absent from the LTX-2 table). So we
- * enforce the UNION, which is exactly the replacement model's matrix
- * (`ltx-2-fast` → `ltx-2-3-fast`, `ltx-2-pro` → `ltx-2-3-pro`, per the
- * migration table on the same page). `duration` is bounded either way, which
- * is the point: before this, a required field on these ids took any number.
- */
-const LTX_2_FAST_MATRIX = FAST_MATRIX;
-const LTX_2_PRO_MATRIX = PRO_2_3_MATRIX;
-
-/**
- * Per-model support matrices — https://docs.ltx.io/models/ltx-2-5.md,
- * https://docs.ltx.io/models/ltx-2-3.md and, for the deprecated LTX-2 pair,
- * https://docs.ltx.io/ltx-2-deprecation.md. Every documented model id is
- * keyed here; a model absent from the table (an id newer than this file) is
- * not matrix-checked.
+ * Per-model support matrices — https://docs.ltx.io/models/ltx-2-5.md and
+ * https://docs.ltx.io/models/ltx-2-3.md. Every documented model id is keyed
+ * here; a model absent from the table (an id newer than this file) is not
+ * matrix-checked.
  */
 export const SUPPORT_MATRIX: Readonly<Record<string, readonly MatrixRow[]>> = {
   "ltx-2-5-fast": FAST_MATRIX,
@@ -178,12 +141,7 @@ export const SUPPORT_MATRIX: Readonly<Record<string, readonly MatrixRow[]>> = {
   // does not offer 48fps (its table lists 24, 25, 50).
   "ltx-2-5-pro": [{ tiers: ["720p", "1080p"], fps: [24, 25, 50], durations: SHORT_DURATIONS }],
   "ltx-2-3-pro": PRO_2_3_MATRIX,
-  "ltx-2-fast": LTX_2_FAST_MATRIX,
-  "ltx-2-pro": LTX_2_PRO_MATRIX,
 };
-
-/** Deprecation notice carrying the LTX-2 support matrix. */
-export const LTX_2_DEPRECATION_SOURCE = "https://docs.ltx.io/ltx-2-deprecation";
 
 /** Models whose `duration` may be `null` ("automatic duration"). */
 export const AUTOMATIC_DURATION_MODELS = ["ltx-2-5-fast", "ltx-2-5-pro"] as const;
@@ -199,11 +157,6 @@ function unique(values: readonly number[]): number[] {
   return [...new Set(values)].sort((a, b) => a - b);
 }
 
-/** Page publishing the matrix a model is checked against. */
-function matrixSource(model: string): string {
-  return model === "ltx-2-fast" || model === "ltx-2-pro" ? LTX_2_DEPRECATION_SOURCE : MODELS_SOURCE;
-}
-
 /**
  * Enforces the published resolution × fps × duration matrix for a model.
  * Unknown models and models with no published matrix are skipped.
@@ -217,7 +170,7 @@ export function checkSupportMatrix<P extends MatrixParams>(
   const rows = SUPPORT_MATRIX[params.model];
   if (rows === undefined) return;
   const model = params.model;
-  const source = matrixSource(model);
+  const source = MODELS_SOURCE;
 
   const { resolution } = params;
   if (resolution === undefined) return;

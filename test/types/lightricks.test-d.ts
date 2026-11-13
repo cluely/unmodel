@@ -27,10 +27,10 @@ function videoTypeTests(): void {
   // orientations.
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 6 });
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "2160x3840", duration: 6 });
-  // Undocumented sizes stay legal — models absent from SUPPORT_MATRIX (the
-  // deprecated ltx-2-fast / ltx-2-pro) are not matrix-checked, so the union
-  // keeps a `${number}x${number}` tail rather than over-narrowing them.
-  video({ model: "ltx-2-pro", prompt: "hi", resolution: "1920x816", duration: 6 });
+  // Undocumented sizes stay legal — models absent from SUPPORT_MATRIX (an id
+  // newer than this build) are not matrix-checked, so the union keeps a
+  // `${number}x${number}` tail rather than over-narrowing them.
+  video({ model: "ltx-3", prompt: "hi", resolution: "1920x816", duration: 6 });
   // @ts-expect-error the empty string is not a "WIDTHxHEIGHT" (was a bare `string`)
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "", duration: 6 });
   // @ts-expect-error tier names are not the wire shape — resolutions are "WIDTHxHEIGHT"
@@ -42,16 +42,16 @@ function videoTypeTests(): void {
   // `null` is LTX-2.5's automatic duration (checked at runtime, not compile time).
   video({ model: "ltx-2-5-fast", prompt: "hi", resolution: "1280x720", duration: null });
   // No `@ts-expect-error` case for duration: the union keeps a `(number & {})`
-  // tail so the un-matrixed deprecated models stay callable, which means an
-  // off-matrix number still compiles and is caught at runtime by
-  // checkSupportMatrix instead.
-  video({ model: "ltx-2-pro", prompt: "hi", resolution: "1280x720", duration: 7 });
+  // tail so un-matrixed model ids stay callable, which means an off-matrix
+  // number still compiles and is caught at runtime by checkSupportMatrix
+  // instead.
+  video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 7 });
 
   // fps presets: the four values the matrices publish.
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 6, fps: 48 });
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 6, fps: 50 });
   // Same `(number & {})` reasoning as duration — no `@ts-expect-error` case.
-  video({ model: "ltx-2-pro", prompt: "hi", resolution: "1280x720", duration: 6, fps: 30 });
+  video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 6, fps: 30 });
 
   // @ts-expect-error ExactKeys rejects typo'd keys
   video({ model: "ltx-2-3-pro", prompt: "hi", resolution: "1280x720", duration: 6, fsp: 24 });

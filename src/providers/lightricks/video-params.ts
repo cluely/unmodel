@@ -13,15 +13,8 @@ import { EXTRA } from "../../core/unified/derive";
 import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 import type { LtxCameraMotion } from "./shared";
 
-/** The six ids with a text-to-video and an image-to-video arm. */
-export const MODELS = [
-  "ltx-2-5-fast",
-  "ltx-2-5-pro",
-  "ltx-2-3-fast",
-  "ltx-2-3-pro",
-  "ltx-2-fast",
-  "ltx-2-pro",
-] as const;
+/** The four ids with a text-to-video and an image-to-video arm. */
+export const MODELS = ["ltx-2-5-fast", "ltx-2-5-pro", "ltx-2-3-fast", "ltx-2-3-pro"] as const;
 
 /** The two shapes {@link SIZES} is keyed by — LTX publishes 16:9 and nothing else. */
 export const RATIOS = ["16:9", "9:16"] as const;
@@ -83,6 +76,4 @@ export const LIGHTRICKS_VIDEO_MODEL_PARAMS = {
   },
   "ltx-2-3-fast": FAST_ROW,
   "ltx-2-3-pro": PRO_ROW,
-  "ltx-2-fast": FAST_ROW,
-  "ltx-2-pro": PRO_ROW,
 } as const satisfies VideoModelParamTable;

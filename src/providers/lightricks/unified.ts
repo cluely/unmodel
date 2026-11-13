@@ -1,6 +1,6 @@
 /**
  * `unmodel/video` → `lightricks.video` (POST /v2/text-to-video) and
- * `lightricks.videoFromImage` (POST /v2/image-to-video) — the LTX-2 family.
+ * `lightricks.videoFromImage` (POST /v2/image-to-video) — LTX-2.5 and LTX-2.3.
  *
  * # `resolution` is a pixel pair, and it carries the shape too
  *
@@ -31,7 +31,7 @@
  * field is required either way. So an omitted canonical `duration` compiles to
  * `null` with an `approximated_param`: the request works, the model picks the
  * length, and the caller is told that is what happened. On a model without
- * automatic duration (`ltx-2-3-*`, `ltx-2-*`) the endpoint's own check then
+ * automatic duration (`ltx-2-3-*`) the endpoint's own check then
  * reports it — remapped onto `duration`, naming the two models that do have
  * it.
  *
@@ -191,7 +191,7 @@ export const video = {
         message:
           "`duration` is required by the LTX generation schema, so `null` — its documented " +
           '"automatic duration" — was sent and the model picks the length. Set `duration` to ' +
-          "choose (LTX-2.3 and LTX-2 need an explicit one).",
+          "choose (LTX-2.3 needs an explicit one).",
         meta: { achieved: null, source: MODELS_SOURCE },
       });
     } else {

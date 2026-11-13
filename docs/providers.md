@@ -200,7 +200,7 @@ replacement, `gemini-omni-1.2-flash`, is an Interactions API model unmodel does 
 bytedance (`video`, Seedance / Dreamina Seedance), kling (`video` /
 `videoFromImage` on `POST /v1/videos/*`, plus the EXPERIMENTAL path-addressed
 `videoV3` / `videoV3FromImage` / `videoOmni` — the only family serving Kling 4.0 /
-4.0 Flash), lightricks (LTX-2: `video` /
+4.0 Flash), lightricks (LTX-2.5 / LTX-2.3: `video` /
 `videoFromImage` / `videoFromAudio`), minimax (`video` Hailuo + `videoV2`
 MiniMax-H3 / -Highspeed / -Lite / -Max), pixverse (`video` + `videoFromImage`), runway (`video` +
 `videoFromImage` + `videoFromVideo`), luma (Ray, `video`, plus post-production

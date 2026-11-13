@@ -419,16 +419,7 @@ describe("lightricks.video → fal", () => {
     expect(out.warnings).toEqual([]);
   });
 
-  test("refused: the synchronous route, and a model fal serves under a misleading name", () => {
-    const sync = lightricksVideo({
-      model: "ltx-2-5-pro",
-      prompt: "x",
-      resolution: "1280x720",
-      duration: 6,
-      api_version: "v1",
-    }).toApiSafe("fal");
-    expect(sync.ok).toBe(false);
-
+  test("refused: a model fal serves under a misleading name", () => {
     const fast = toApiSafeUntyped(
       lightricksVideo({ model: "ltx-2-5-fast", prompt: "x", resolution: "1280x720", duration: 6 }),
     );

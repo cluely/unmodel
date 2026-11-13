@@ -52,14 +52,7 @@ export type { ImageToVideoParams } from "./video-from-image";
 
 export type { AudioToVideoParams } from "./video-from-audio";
 
-export type {
-  LtxApiVersion,
-  LtxCameraMotion,
-  LtxDuration,
-  LtxFps,
-  LtxResolution,
-  MatrixRow,
-} from "./shared";
+export type { LtxCameraMotion, LtxDuration, LtxFps, LtxResolution, MatrixRow } from "./shared";
 
 export type { LtxResolutionTier } from "./pricing";
 

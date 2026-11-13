@@ -1,6 +1,5 @@
 /**
- * LTX Audio to Video — POST https://api.ltx.io/v2/audio-to-video (async)
- * and POST https://api.ltx.io/v1/audio-to-video (sync).
+ * LTX Audio to Video — POST https://api.ltx.io/v2/audio-to-video (async).
  *
  * Wire notes (verified against https://docs.ltx.io/openapi.json on
  * 2026-08-13):
@@ -27,20 +26,16 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type LightricksModelId } from "./models";
 import {
   AUDIO_TO_VIDEO_MODELS,
-  DEFAULT_API_VERSION,
-  LTX_API_VERSIONS,
   LTX_HEADERS,
   OPENAPI_SOURCE,
   checkRouteSupport,
   ltxUrl,
   uriSchema,
-  type LtxApiVersion,
 } from "./shared";
 
 export const AUDIO_TO_VIDEO_ENDPOINT = "audio-to-video";
 
 export const AUDIO_TO_VIDEO_URL = ltxUrl(AUDIO_TO_VIDEO_ENDPOINT);
-export const AUDIO_TO_VIDEO_V1_URL = ltxUrl(AUDIO_TO_VIDEO_ENDPOINT, "v1");
 
 /** Server-side default when `model` is omitted (OpenAPI `default`). */
 export const DEFAULT_AUDIO_TO_VIDEO_MODEL = "ltx-2-3-pro";
@@ -61,8 +56,6 @@ export interface AudioToVideoParams {
   guidance_scale?: number;
   /** Defaults to "ltx-2-3-pro". `ltx-2-3-fast` has no arm here. */
   model?: LightricksModelId | (string & {});
-  /** NOT a wire field — picks `/v1` (sync) or `/v2` (async). Default "v2". */
-  api_version?: LtxApiVersion;
 }
 
 const videoFromAudioSchema = z.looseObject({
@@ -72,7 +65,6 @@ const videoFromAudioSchema = z.looseObject({
   resolution: z.enum(AUDIO_TO_VIDEO_RESOLUTIONS).optional(),
   guidance_scale: z.number().optional(),
   model: z.string().optional(),
-  api_version: z.enum(LTX_API_VERSIONS).optional(),
 });
 
 function checkPromptOrImage(
@@ -99,9 +91,9 @@ function checkPromptOrImage(
 type LightricksSdkTargets<B> = { lightricks: () => B };
 
 function finalize(params: AudioToVideoParams): unknown {
-  const { api_version, ...body } = params;
+  const body = { ...params };
   return toValidated(body, {
-    url: ltxUrl(AUDIO_TO_VIDEO_ENDPOINT, api_version ?? DEFAULT_API_VERSION),
+    url: AUDIO_TO_VIDEO_URL,
     method: "POST",
     headers: LTX_HEADERS,
   }, {
@@ -128,8 +120,7 @@ const validator = createValidator<AudioToVideoParams, unknown>({
 });
 
 /**
- * Validates raw wire params for LTX `POST /v2/audio-to-video` (or `/v1` via
- * `api_version: "v1"`).
+ * Validates raw wire params for LTX `POST /v2/audio-to-video`.
  *
  * ```ts
  * const params = lightricks.videoFromAudio({
@@ -143,10 +134,10 @@ export const videoFromAudio = validator as unknown as {
   <T extends AudioToVideoParams>(
     params: T & ExactKeys<T, AudioToVideoParams>,
     options?: ValidateOptions<T>,
-  ): Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>;
+  ): Validated<T, LightricksSdkTargets<T>>;
   safe<T extends AudioToVideoParams>(
     params: T & ExactKeys<T, AudioToVideoParams>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<Omit<T, "api_version">, LightricksSdkTargets<Omit<T, "api_version">>>>;
+  ): ValidateResult<Validated<T, LightricksSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 };

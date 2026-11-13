@@ -46,23 +46,6 @@ describe("lightricks.videoFromImage", () => {
     }
   });
 
-  test("last_frame_uri is rejected on the deprecated LTX-2 models", () => {
-    const r = videoFromImage.safe({
-      model: "ltx-2-pro",
-      image_uri: "https://example.com/a.png",
-      last_frame_uri: "https://example.com/b.png",
-      prompt: "hi",
-      resolution: "1280x720",
-      duration: 6,
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors.find((e) => e.code === "unsupported_param")?.path).toEqual([
-        "last_frame_uri",
-      ]);
-    }
-  });
-
   test("last_frame_uri cannot ride with automatic duration", () => {
     const r = videoFromImage.safe({
       model: "ltx-2-5-fast",
@@ -200,34 +183,5 @@ describe("lightricks.videoFromAudio", () => {
     const r = videoFromAudio.safe({ audio_uri: "https://example.com/vo.mp3", prompt: "hi" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
-  });
-});
-
-describe("lightricks.videoFromImage deprecated LTX-2 support matrix", () => {
-  // Same gap as text-to-video: both arms share `checkSupportMatrix`, so the
-  // deprecation-notice matrix has to bound `duration` on this route too.
-  test.each(["ltx-2-fast", "ltx-2-pro"])("%s rejects an absurd duration", (model) => {
-    const r = videoFromImage.safe({
-      model,
-      image_uri: "https://example.com/a.png",
-      prompt: "x",
-      duration: 10_000_000_000,
-      resolution: "1920x1080",
-    });
-    expect(r.ok).toBe(false);
-    if (r.ok) return;
-    expect(r.errors.find((e) => e.code === "invalid_enum_value")?.path).toEqual(["duration"]);
-  });
-
-  test.each(["ltx-2-fast", "ltx-2-pro"])("%s accepts a documented duration", (model) => {
-    const r = videoFromImage.safe({
-      model,
-      image_uri: "https://example.com/a.png",
-      prompt: "x",
-      duration: 8,
-      resolution: "1920x1080",
-    });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.warnings.map((w) => w.code)).toContain("deprecated_model");
   });
 });

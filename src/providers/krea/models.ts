@@ -31,10 +31,12 @@
 // validator can price the request it actually sees. Trained styles (`styles`,
 // the LoRA array) have no published surcharge — they bill at the base rate.
 //
-// NOT modeled here: Krea also proxies ~50 third-party image/video/3D models
-// (`/generate/image/{vendor}/{model}`, e.g. bfl/flux-1.1-pro, google/imagen-4).
-// Those belong to their own providers' catalogs, and their Krea routes have
-// their own per-vendor request schemas.
+// NOT modeled here: Krea also proxies third-party models — 106 of the 113
+// `/generate/` routes in the served spec on 2026-11-12 (31 image, 43 video,
+// 16 enhance, 11 3d, 5 audio; `/generate/{category}/{vendor}/{model}`, e.g.
+// image/bfl/flux-1.1-pro, image/google/nano-banana-pro). Those belong to their
+// own providers' catalogs, and their Krea routes have their own per-vendor
+// request schemas.
 //
 // Krea 1 (artificialanalysis lists it as a Krea model) has no route in
 // https://api.krea.ai/openapi.json and therefore no catalog row.

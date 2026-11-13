@@ -23,9 +23,10 @@ import { KREA_ASPECT_RATIOS } from "./constraints";
  * The three Krea 2 variants — the whole of `./models.ts`. They share one
  * request schema byte-for-byte; only the price differs.
  *
- * Krea also proxies ~50 third-party models on sibling routes
- * (`/generate/image/{vendor}/{model}`), each with its own per-vendor request
- * schema. Those belong to their own providers, so a ref naming one warns as
+ * Krea also proxies third-party image models on sibling routes (31
+ * `/generate/image/{vendor}/{model}` routes on 2026-11-12, 106 third-party
+ * `/generate/` routes in all), each with its own per-vendor request schema.
+ * Those belong to their own providers, so a ref naming one warns as
  * `unknown_model` here.
  */
 export const MODELS = ["krea-2/medium", "krea-2/large", "krea-2/medium-turbo"] as const;

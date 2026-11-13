@@ -75,9 +75,10 @@ export type FalPixverseV6 = FalVideoBodyById["fal-ai/pixverse/v6/text-to-video"]
  *   webhook field, and dropping it would leave a callback-driven caller
  *   waiting for a notification that never comes.
  *
- * `sound_effect_*` and `lip_sync_tts_*` never arrive: `checkModelGatedFields`
- * already refuses them on `v6` (they are "v5 and below"), so a mapping arm for
- * them would be dead code dressed as a guarantee.
+ * `sound_effect_*` and `lip_sync_tts_*` reach `v6` only as a `false` switch:
+ * `checkModelGatedFields` refuses every other value on `v6` (they are "v5 and
+ * below"), and `false` is the documented default, so this mapping drops it
+ * losslessly — an arm for them would be dead code dressed as a guarantee.
  *
  * The one check that is not a rename: fal documents a **2048-byte** cap on
  * `prompt` and `negative_prompt` while PixVerse's own cap is 5000 *characters*,

@@ -13,10 +13,12 @@
  * - `prompt` is capped at 2048 characters here, against 5000 on text-to-video.
  * - There is no `aspect_ratio` here — the input image sets it, and the schema
  *   has no such property.
- * - The same version gates as text-to-video apply: `generate_audio_switch` is
- *   v5.5+, `generate_multi_clip_switch` is v5.5/v6, `template_id` is refused on
- *   v6-max, and the sound-effect / lip-sync fields are "v5 and below" (or
- *   with a `template_id`).
+ * - The version gates are text-to-video's: `generate_audio_switch` is v5.5+,
+ *   `generate_multi_clip_switch` is v5.5/v6, `template_id` is refused on
+ *   v6-max, and the sound-effect / lip-sync fields are "v5 and below". Two
+ *   template rules sit on top: a `template_id` lifts the sound-effect /
+ *   lip-sync gate (the template decides), and a `true` multi-clip switch is
+ *   refused beside one.
  * - `motion_mode`, `camera_movement`, `negative_prompt` and
  *   `lip_sync_tts_switch` are not in the schema and stay typed; the
  *   error-details page's `MOTION_MODE_MODEL_UNSUPPORTED` and
@@ -37,6 +39,7 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { models, type PixverseModelId } from "./models";
 import {
   DOCS_BASE,
+  MULTI_CLIP_MODELS,
   PIXVERSE_BASE_URL,
   PIXVERSE_HEADERS,
   PIXVERSE_MOTION_MODES,
@@ -74,17 +77,19 @@ interface ImageToVideoFields {
   img_ids?: number[];
   /** Inline audio. v5.5 / v5.6 / v6 / c1 / v6-max only; defaults to false. */
   generate_audio_switch?: boolean;
-  /** Inline multi-clip output. v5.5 / v6 only; defaults to false. */
+  /** Inline multi-clip output. v5.5 / v6 only, and not with a `template_id`; defaults to false. */
   generate_multi_clip_switch?: boolean;
   /** v5 and below, or with a `template_id`. */
   sound_effect_switch?: boolean;
+  /** v5 and below, or with a `template_id`. */
   sound_effect_content?: string;
-  /** The lip-sync switch, as this schema spells it. v5 and below. */
+  /** The lip-sync switch, as this schema spells it. v5 and below, or with a `template_id`. */
   lip_sync_switch?: boolean;
-  /** The lip-sync switch, as text-to-video spells it. v5 and below. */
+  /** The lip-sync switch, as text-to-video spells it. v5 and below, or with a `template_id`. */
   lip_sync_tts_switch?: boolean;
-  /** Roughly 140 UTF-8 characters. */
+  /** v5 and below, or with a `template_id`; roughly 140 UTF-8 characters. */
   lip_sync_tts_content?: string;
+  /** v5 and below, or with a `template_id`. */
   lip_sync_tts_speaker_id?: string;
   /**
    * Motion preset. Not in the schema; a model that lacks the mode answers
@@ -187,6 +192,31 @@ function checkMultiImage(
   });
 }
 
+/**
+ * The second arm of the schema's request-body `allOf`: a `true` multi-clip
+ * switch needs `model` v5.5 / v6 *and* no `template_id` ("Enable multi-clip
+ * generation with V5.5 or V6. Not supported with other models or
+ * template_id."). The model half is `checkModelGatedFields`'s, so this reports
+ * only the template half, and never a second issue on the same field.
+ */
+function checkMultiClipTemplate(
+  params: ImageToVideoParams,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (info === undefined) return;
+  if (params.generate_multi_clip_switch !== true || params.template_id == null) return;
+  if (!(MULTI_CLIP_MODELS as readonly string[]).includes(params.model)) return;
+  ctx.report({
+    code: "unsupported_param",
+    path: ["generate_multi_clip_switch"],
+    model: params.model,
+    message:
+      "`generate_multi_clip_switch` is not supported with `template_id` — PixVerse documents multi-clip as \"Not supported with other models or template_id\"; drop the switch or the template.",
+    meta: { source: SOURCE },
+  });
+}
+
 function estimate(params: ImageToVideoParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
   if (info === undefined) return {};
   const costUSD = videoCostUSD({
@@ -225,7 +255,13 @@ const validator = createValidator<ImageToVideoParams, unknown>({
   schema: videoFromImageSchema,
   modelId: (params) => params.model,
   catalog: models,
-  checks: [checkDuration(SOURCE), checkModelGatedFields(SOURCE), checkImageId, checkMultiImage],
+  checks: [
+    checkDuration(SOURCE),
+    checkModelGatedFields(SOURCE, { templateLiftsLegacyAudio: true }),
+    checkMultiClipTemplate,
+    checkImageId,
+    checkMultiImage,
+  ],
   estimate,
   finalize,
 });

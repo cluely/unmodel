@@ -145,6 +145,19 @@ describe("pixverse.video model rules", () => {
     }
   });
 
+  test("a switch sent as its default `false` passes on any model", () => {
+    const r = video.safe({
+      model: "v5.6",
+      prompt: "hi",
+      aspect_ratio: "16:9",
+      quality: "720p",
+      duration: 5,
+      generate_multi_clip_switch: false,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
   test("seed is bounded and quality is closed", () => {
     const seed = safeUnchecked({
       model: "v6",
@@ -408,6 +421,104 @@ describe("pixverse.videoFromImage", () => {
       const issue = modern.errors.find((e) => e.code === "unsupported_param");
       expect(issue?.path).toEqual(["lip_sync_switch"]);
       expect(issue?.meta?.supported).toEqual(["v5", "v4.5", "v4", "v3.5"]);
+    }
+  });
+
+  test("a switch sent as its default `false` passes on any model", () => {
+    const base = { img_id: 1, prompt: "hi", quality: "720p", duration: 5 } as const;
+    for (const model of ["c1", "v6-max"] as const) {
+      const r = videoFromImage.safe({ ...base, model, generate_multi_clip_switch: false });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
+    expect(videoFromImage.safe({ ...base, model: "v5", generate_audio_switch: false }).ok).toBe(true);
+    expect(videoFromImage.safe({ ...base, model: "v6", lip_sync_switch: false }).ok).toBe(true);
+    // `true` stays gated.
+    expect(videoFromImage.safe({ ...base, model: "c1", generate_multi_clip_switch: true }).ok).toBe(
+      false,
+    );
+  });
+
+  test("a template task refuses a `true` multi-clip switch", () => {
+    const template = {
+      img_id: 1,
+      template_id: 302325299692608,
+      prompt: "hi",
+      quality: "720p",
+      duration: 5,
+    } as const;
+    for (const model of ["v6", "v5.5"] as const) {
+      const r = videoFromImage.safe({ ...template, model, generate_multi_clip_switch: true });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors.map((e) => e.path)).toEqual([["generate_multi_clip_switch"]]);
+        expect(r.errors[0]?.message).toContain("`template_id`");
+      }
+    }
+    // A model outside the gate gets the model refusal alone, not a second issue.
+    const v56 = videoFromImage.safe({ ...template, model: "v5.6", generate_multi_clip_switch: true });
+    expect(v56.ok).toBe(false);
+    if (!v56.ok) {
+      expect(v56.errors).toHaveLength(1);
+      expect(v56.errors[0]?.meta?.supported).toEqual(["v5.5", "v6"]);
+    }
+
+    expect(
+      videoFromImage.safe({ ...template, model: "v6", generate_multi_clip_switch: false }).ok,
+    ).toBe(true);
+    const ordinary = videoFromImage.safe({
+      model: "v6",
+      img_id: 1,
+      prompt: "hi",
+      quality: "720p",
+      duration: 5,
+      generate_multi_clip_switch: true,
+    });
+    expect(ordinary.ok).toBe(true);
+  });
+
+  test("a template_id lifts the sound-effect / lip-sync gate, on this route only", () => {
+    const base = { img_id: 1, prompt: "hi", quality: "720p", duration: 5 } as const;
+    const template = videoFromImage.safe({
+      ...base,
+      model: "v6",
+      template_id: 302325299692608,
+      sound_effect_switch: true,
+    });
+    expect(template.ok).toBe(true);
+    if (template.ok) expect(template.warnings).toEqual([]);
+
+    const ordinary = videoFromImage.safe({ ...base, model: "v6", sound_effect_switch: true });
+    expect(ordinary.ok).toBe(false);
+    if (!ordinary.ok) {
+      const issue = ordinary.errors.find((e) => e.code === "unsupported_param");
+      expect(issue?.path).toEqual(["sound_effect_switch"]);
+      expect(issue?.message).toContain("or with a `template_id`");
+    }
+
+    // The lift cannot reopen v6-max, which refuses the template itself.
+    const max = videoFromImage.safe({
+      ...base,
+      model: "v6-max",
+      template_id: 302325299692608,
+      sound_effect_switch: true,
+    });
+    expect(max.ok).toBe(false);
+    if (!max.ok) expect(max.errors.map((e) => e.path)).toEqual([["template_id"]]);
+
+    // Text-to-video documents only "Supported in v5 models and below".
+    const text = video.safe({
+      model: "v6",
+      prompt: "hi",
+      aspect_ratio: "16:9",
+      quality: "720p",
+      duration: 5,
+      template_id: 302325299692608,
+      lip_sync_tts_switch: true,
+    });
+    expect(text.ok).toBe(false);
+    if (!text.ok) {
+      expect(text.errors.map((e) => e.path)).toEqual([["lip_sync_tts_switch"]]);
     }
   });
 

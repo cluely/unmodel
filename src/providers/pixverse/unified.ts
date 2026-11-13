@@ -82,7 +82,7 @@ export const video = {
   modelParams: PIXVERSE_VIDEO_MODEL_PARAMS,
   unsupported: {
     image:
-      "POST /openapi/v2/video/image/generate takes `img_id`, an integer minted by " +
+      "POST /openapi/v2/video/img/generate takes `img_id`, an integer minted by " +
       "POST /openapi/v2/image/upload (a multipart request unmodel does not make) — a URL or " +
       "inline bytes cannot become one without that upload. Upload first, then call " +
       "`pixverse.videoFromImage` with the id you get back.",

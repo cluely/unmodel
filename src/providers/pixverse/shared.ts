@@ -139,6 +139,16 @@ const TEMPLATE_MODELS = ["c1", "v6", "v5.6", "v5"] as const;
  * archive read "Set to true if you want to enable this feature. Default is
  * false. (v3.5/v4/v4.5/v5)"
  * (https://web.archive.org/web/20260514194912/https://docs.platform.pixverse.ai/image-to-video-generation-13016633e0).
+ *
+ * On image-to-video a `template_id` lifts this gate, because the template, not
+ * the model, decides what it accepts: the live schema reads "Legacy
+ * sound-effect option; use only with a supporting model/template" and "Template
+ * metadata determines supported model, duration, and quality; do not assume
+ * every template accepts the same combination" (2026-11-12), and the same
+ * 2026-05-14 archive read "only in v5 above or with template_id" for
+ * `sound_effect_switch`. Text-to-video keeps the plain model gate: its
+ * 2026-09-20 archive gives each field only "Supported in v5 models and below"
+ * (https://web.archive.org/web/20260920044218/https://docs.platform.pixverse.ai/text-to-video-generation-13016634e0).
  */
 export const LEGACY_AUDIO_MODELS = ["v5", "v4.5", "v4", "v3.5"] as const;
 
@@ -163,11 +173,16 @@ export const DURATIONS: Readonly<Record<string, readonly number[]>> = {
 export const PER_SECOND_DURATION = { min: 1, max: 15 } as const;
 
 /**
- * Quality × duration combinations the docs call out as unavailable. The
- * image-to-video schema's `anyOf` carries a `not` arm for `duration: 10` at
- * `quality: 1080p` and another for `duration: 8` at 1080p, and the pricing page
- * marks the V5.6 and V5.5 "10 seconds" rows "Not supported" at 1080p (both
- * 2026-11-12).
+ * Quality × duration combinations the docs call out as unavailable. The live
+ * image-to-video schema's `anyOf` carries `not` arms for `duration: 10` and
+ * `duration: 8` at `quality: 1080p`, but neither names a model (2026-11-12), so
+ * the model scoping comes from elsewhere. v5.5/v5.6: the pricing page marks
+ * their "10 seconds" rows "Not supported" at 1080p (2026-11-12). v3.5: the
+ * archived duration description reads "v.3.5/v4/v4.5 : 5/8 (v3.5 1080p cannot
+ * use 8)"
+ * (https://web.archive.org/web/20260514194912/https://docs.platform.pixverse.ai/image-to-video-generation-13016633e0;
+ * the same text is in
+ * https://web.archive.org/web/20260920044218/https://docs.platform.pixverse.ai/text-to-video-generation-13016634e0).
  */
 const QUALITY_DURATION_EXCLUSIONS: ReadonlyArray<{
   models: readonly string[];
@@ -239,11 +254,21 @@ export function checkDuration<P extends DurationParams>(
   };
 }
 
-/** Enforces which models accept each version-gated switch. */
+/**
+ * Enforces which models accept each version-gated switch.
+ * `templateLiftsLegacyAudio` exempts a template task from the
+ * {@link LEGACY_AUDIO_MODELS} gate — image-to-video's rule, sourced there.
+ */
 export function checkModelGatedFields<P extends { model: string }>(
   source: string,
+  { templateLiftsLegacyAudio = false }: { templateLiftsLegacyAudio?: boolean } = {},
 ): (params: P, info: ModelInfo | undefined, ctx: PipelineContext) => void {
-  const gates: ReadonlyArray<{ fields: readonly string[]; models: readonly string[]; label: string }> = [
+  const gates: ReadonlyArray<{
+    fields: readonly string[];
+    models: readonly string[];
+    label: string;
+    liftedByTemplate?: boolean;
+  }> = [
     {
       fields: ["generate_audio_switch"],
       models: AUDIO_SWITCH_MODELS,
@@ -265,6 +290,7 @@ export function checkModelGatedFields<P extends { model: string }>(
       ],
       models: LEGACY_AUDIO_MODELS,
       label: "the v5-and-below sound-effect / lip-sync fields",
+      liftedByTemplate: templateLiftsLegacyAudio,
     },
   ];
   return (params, info, ctx) => {
@@ -272,13 +298,23 @@ export function checkModelGatedFields<P extends { model: string }>(
     const record = params as Record<string, unknown>;
     for (const gate of gates) {
       if (gate.models.includes(params.model)) continue;
+      if (gate.liftedByTemplate === true && record.template_id != null) continue;
+      const available = gate.liftedByTemplate === true
+        ? `${gate.models.join(", ")}, or with a \`template_id\``
+        : gate.models.join(", ");
       for (const field of gate.fields) {
-        if (record[field] == null) continue;
+        // A switch sent as `false` is its documented default, so every model
+        // takes it: the image-to-video `allOf` admits
+        // `generate_multi_clip_switch: enum: [false]` with no model condition,
+        // text-to-video declares both switches `default: false` (2026-11-12),
+        // and the archives cited on LEGACY_AUDIO_MODELS read "Default is false"
+        // for the legacy switches.
+        if (record[field] == null || record[field] === false) continue;
         ctx.report({
           code: "unsupported_param",
           path: [field],
           model: params.model,
-          message: `\`${field}\` is not supported by "${params.model}" — ${gate.label} is available on ${gate.models.join(", ")}.`,
+          message: `\`${field}\` is not supported by "${params.model}" — ${gate.label} is available on ${available}.`,
           meta: { source, supported: [...gate.models] },
         });
       }

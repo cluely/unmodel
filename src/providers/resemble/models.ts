@@ -75,8 +75,10 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 /**
- * "Text or SSML to synthesize (≤ 2,000 characters)" — the cap on `/stream`,
- * and the figure every page of both routes accepts (see LIMITS above).
+ * "Text or SSML to synthesize (max 2000 characters)" — the `/stream` API
+ * reference (its guide: "≤ 2,000 characters; partial SSML support"), and the
+ * figure every page of both routes accepts: the `/synthesize` guide says
+ * "≤ 2,000 characters" (see LIMITS above).
  */
 export const RESEMBLE_MAX_CHARACTERS = 2000;
 

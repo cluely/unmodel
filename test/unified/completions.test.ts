@@ -1841,10 +1841,10 @@ image({ prompt: "x", model: m, style: "¦" });`);
   test("narrowing `style` did not disturb `model` or `size`", () => {
     // `M`'s constraint has to carry the model literals, and the callable must
     // not re-state `model` as an extra intersection arm — either mistake
-    // silently drops `model` from 17 completions to 1.
+    // silently drops `model` from every cataloged id to 1.
     const models = completionsAt(`import { image } from "./src/providers/recraft";
 image({ prompt: "x", model: "¦" });`);
-    expect(models.length).toBe(17);
+    expect(models.length).toBe(33);
     expect(models).toContain("recraftv3");
 
     const sizes = completionsAt(`import { image } from "./src/providers/recraft";

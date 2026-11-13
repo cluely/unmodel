@@ -1,7 +1,41 @@
-import type { FamilyRule } from "../../core/constraint-types";
+import type { DenyRule, FamilyRule } from "../../core/constraint-types";
 
 const STYLES_DOCS_URL = "https://www.recraft.ai/docs/api-reference/styles";
 const ENDPOINTS_DOCS_URL = "https://www.recraft.ai/docs/api-reference/endpoints";
+const V4_1_FLASH_DOCS_URL = "https://www.recraft.ai/docs/api-reference/models/recraft-v4-1-flash";
+const V4_STYLES_DOCS_URL = "https://www.recraft.ai/docs/api-reference/models/recraft-v4-styles";
+
+/** Recraft V4.1 Flash and its `_raster` alias — the one line that takes no style at all. */
+export function isV41FlashModel(modelId: string): boolean {
+  return modelId === "recraftv4_1_flash" || modelId === "recraftv4_1_flash_raster";
+}
+
+/**
+ * The dedicated V4 Styles line — `recraftv4_styles`, `_vector`, `_pro`,
+ * `_pro_vector` and the two `_raster` aliases — which "**always requires a
+ * style**" (https://www.recraft.ai/docs/api-reference/styles, 2026-11-12).
+ */
+export function isV4StylesModel(modelId: string): boolean {
+  return modelId.startsWith("recraftv4_styles");
+}
+
+/**
+ * `style_match` per model family, from the "Parameter support by model family"
+ * matrix of https://www.recraft.ai/docs/api-reference/agents (2026-11-12):
+ * "| `style_match` | no | `flexible`, `precise` | `flexible`, `precise` |
+ * `regular` | `regular` |" (columns V4.1 Flash, V4.1/V4, V4 Styles, V3, V2).
+ * The endpoints doc adds "A value not supported by the resolved model is
+ * rejected." Flash's "no" is a deny on its own family rule.
+ */
+const V4_STYLE_MATCHES = ["flexible", "precise"] as const;
+const V2_V3_STYLE_MATCHES = ["regular"] as const;
+
+/** One reason for every param V4.1 Flash refuses — the page lists them as one sentence. */
+const FLASH_DENY: DenyRule = {
+  reason:
+    "V4.1 Flash takes no style input and no `negative_prompt` / `text_layout` — use `recraftv4_1` for custom styles, or `recraftv3` for curated styles and text layout",
+  source: V4_1_FLASH_DOCS_URL,
+};
 
 /**
  * Family rules for POST /v1/images/generations. Every rule carries a reason +
@@ -10,11 +44,17 @@ const ENDPOINTS_DOCS_URL = "https://www.recraft.ai/docs/api-reference/endpoints"
  * "V2 / V3 models", and `text_layout` as "V3 models only"; the styles doc
  * states "Styles are not yet supported for V4 models" (which covers the whole
  * V4/V4.1 line, per its model-by-model list).
+ *
+ * V4.1 Flash and the V4 Styles line are split out of the `recraftv4` prefix
+ * because their pages document different lists: Flash takes no style input of
+ * any kind, and V4 Styles requires one (`checkV4StylesStyle` in image.ts).
  */
 export const imageFamilyRules: readonly FamilyRule[] = [
   {
     family: "Recraft V4 / V4.1 models",
-    match: (modelId) => modelId.startsWith("recraftv4"),
+    match: (modelId) =>
+      modelId.startsWith("recraftv4") && !isV41FlashModel(modelId) && !isV4StylesModel(modelId),
+    enums: { style_match: V4_STYLE_MATCHES },
     deny: {
       style: {
         reason:
@@ -37,14 +77,62 @@ export const imageFamilyRules: readonly FamilyRule[] = [
     },
   },
   {
+    // V4 Styles page (2026-11-12): "> Not supported: `negative_prompt`, `style`
+    // (curated styles), `text_layout`." — and `style_id` is one of its two
+    // ways to supply the style it requires.
+    family: "Recraft V4 Styles models",
+    match: isV4StylesModel,
+    enums: { style_match: V4_STYLE_MATCHES },
+    deny: {
+      style: {
+        reason:
+          "the V4 Styles line takes a custom style (`style_id` or `style_reference_urls`), not a curated `style` name — use a Recraft V2/V3 model for curated styles",
+        source: V4_STYLES_DOCS_URL,
+      },
+      negative_prompt: {
+        reason: "`negative_prompt` is supported by V2 / V3 models only",
+        source: V4_STYLES_DOCS_URL,
+      },
+      text_layout: {
+        reason: "`text_layout` is supported by Recraft V3 and Recraft V3 Vector models only",
+        source: V4_STYLES_DOCS_URL,
+      },
+    },
+  },
+  {
+    // V4.1 Flash page (2026-11-12): "Not supported by Flash: `style`,
+    // `style_id`, `style_match`, style references, `negative_prompt`, and
+    // `text_layout`." The endpoints doc names the multipart spelling too:
+    // "`style`, `style_id`, `style_match`, and style references are not
+    // supported with it".
+    family: "Recraft V4.1 Flash",
+    match: isV41FlashModel,
+    deny: {
+      style: FLASH_DENY,
+      style_id: FLASH_DENY,
+      style_match: FLASH_DENY,
+      style_reference_urls: FLASH_DENY,
+      style_references: FLASH_DENY,
+      negative_prompt: FLASH_DENY,
+      text_layout: FLASH_DENY,
+    },
+  },
+  {
     family: "Recraft V2 models",
-    match: (modelId) => modelId === "recraftv2" || modelId === "recraftv2_vector",
+    match: (modelId) =>
+      modelId === "recraftv2" || modelId === "recraftv2_raster" || modelId === "recraftv2_vector",
     deny: {
       text_layout: {
         reason: "`text_layout` is supported by Recraft V3 and Recraft V3 Vector models only",
         source: ENDPOINTS_DOCS_URL,
       },
     },
+  },
+  {
+    // Styles doc (2026-11-12): "For V2 / V3 models `regular` is the only valid value."
+    family: "Recraft V2 / V3 models",
+    match: (modelId) => modelId.startsWith("recraftv2") || modelId.startsWith("recraftv3"),
+    enums: { style_match: V2_V3_STYLE_MATCHES },
   },
 ];
 
@@ -72,7 +160,11 @@ export const ASPECT_RATIOS = [
   "9:16",
 ] as const;
 
-/** Explicit sizes for Recraft V4.1 / V4.1 Utility / V4 (standard raster). */
+/**
+ * Explicit sizes for the 1K raster models — appendix (2026-11-12): "**1K
+ * models:** `recraftv4_1`, `recraftv4_1_utility`, `recraftv4_1_flash`,
+ * `recraftv4`, `recraftv4_styles`." — and their `_raster` aliases.
+ */
 export const V4_STANDARD_SIZES = [
   "1024x1024",
   "1536x768",
@@ -90,7 +182,11 @@ export const V4_STANDARD_SIZES = [
   "768x1344",
 ] as const;
 
-/** Explicit sizes for Recraft V4.1 Pro / V4.1 Utility Pro / V4 Pro. */
+/**
+ * Explicit sizes for the 2K raster models — appendix (2026-11-12): "**2K
+ * models:** `recraftv4_1_pro`, `recraftv4_1_utility_pro`, `recraftv4_pro`,
+ * `recraftv4_styles_pro`." — and their `_raster` aliases.
+ */
 export const V4_PRO_SIZES = [
   "2048x2048",
   "3072x1536",

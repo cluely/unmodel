@@ -287,6 +287,19 @@ function extrasNarrowingTests(): void {
   // A typo is still a typo, per model.
   // @ts-expect-error
   image({ model: "openai/gpt-image-2", prompt: "hi", bakcground: "opaque" });
+
+  // Recraft's custom-style inputs follow its per-family matrix: V4 Styles takes
+  // a `style_id`, V4.1 Flash takes no style input at all, and `style_match`
+  // splits V2/V3 (`regular`) from the V4 line (`flexible` / `precise`).
+  image({ model: "recraft/recraftv4_styles", prompt: "hi", style_id: "abc", style_match: "precise" });
+  image({ model: "recraft/recraftv4_styles_raster", prompt: "hi", style_reference_urls: ["https://x/a.png"] });
+  // @ts-expect-error — V4.1 Flash refuses style references.
+  image({ model: "recraft/recraftv4_1_flash", prompt: "hi", style_reference_urls: ["https://x/a.png"] });
+  // @ts-expect-error — `regular` is the V2/V3 value; the V4 line refuses it.
+  image({ model: "recraft/recraftv4_styles", prompt: "hi", style_id: "abc", style_match: "regular" });
+  image({ model: "recraft/recraftv3_raster", prompt: "hi", style: "Photorealism", style_match: "regular" });
+  // @ts-expect-error — and `precise` is a V4-line value, not a V2/V3 one.
+  image({ model: "recraft/recraftv3_raster", prompt: "hi", style_match: "precise" });
 }
 
 function degradedRefTests(): void {

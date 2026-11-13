@@ -96,6 +96,42 @@ describe("recraft.imageEdit", () => {
     ).toBe(true);
   });
 
+  test("the raster aliases validate and price like their base models", () => {
+    const r = imageEdit.safe({
+      image: png(),
+      prompt: "w",
+      strength: 0.2,
+      model: "recraftv4_1_pro_raster",
+      n: 2,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(0.42, 10);
+    }
+    const v3 = imageEdit.safe({
+      image: png(),
+      prompt: "w",
+      strength: 0.2,
+      model: "recraftv3_raster",
+      style: "Photorealism",
+    });
+    expect(v3.ok).toBe(true);
+  });
+
+  test("V4.1 Flash and the V4 Styles line are not image-to-image models", () => {
+    for (const model of ["recraftv4_1_flash", "recraftv4_1_flash_raster", "recraftv4_styles"]) {
+      const r = (imageEdit.safe as unknown as Unchecked)({
+        image: png(),
+        prompt: "w",
+        strength: 0.2,
+        model,
+      });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.path).toEqual(["model"]);
+    }
+  });
+
   test("costs the model's per-image rate × n", () => {
     const r = imageEdit.safe({
       image: png(),
@@ -191,6 +227,24 @@ describe("recraft.imageEditInpaint / imageEditGenerateBackground", () => {
 
     expect(imageEditInpaint.safe({ image: png(), mask: png(), prompt: "w", model: "recraftv3_vector" }).ok)
       .toBe(true);
+  });
+
+  test("recraftv3_raster is accepted on every V3-only route and prices at the V3 rate", () => {
+    const inpaint = imageEditInpaint.safe({ image: png(), mask: png(), prompt: "w", model: "recraftv3_raster" });
+    expect(inpaint.ok).toBe(true);
+    if (inpaint.ok) {
+      expect(inpaint.warnings).toEqual([]);
+      expect(inpaint.estimate.costUSD).toBeCloseTo(0.04, 10);
+    }
+    expect(
+      imageEditGenerateBackground.safe({ image: png(), mask: png(), prompt: "w", model: "recraftv3_raster" }).ok,
+    ).toBe(true);
+    expect(
+      imageEditOutpaint.safe({ image: png(), prompt: "w", zoom_out_percentage: 20, model: "recraftv3_raster" }).ok,
+    ).toBe(true);
+    expect(imageEditReplaceBackground.safe({ image: png(), prompt: "w", model: "recraftv3_raster" }).ok).toBe(
+      true,
+    );
   });
 
   test("defaults to recraftv3, so the V3 prompt cap (1000) applies", () => {

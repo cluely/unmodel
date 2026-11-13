@@ -2,6 +2,8 @@ export {
   image,
   IMAGES_GENERATIONS_URL,
   DEFAULT_MODEL_ID,
+  DEFAULT_STYLE_REFERENCES_MODEL_ID,
+  STYLE_CREATION_USD,
   ASPECT_RATIOS,
   V4_STANDARD_SIZES,
   V4_PRO_SIZES,
@@ -11,6 +13,7 @@ export {
   IMAGE_FORMATS,
   UPSCALE_MODES,
   CREATIVITY_LEVELS,
+  STYLE_MATCHES,
 } from "./image";
 export type {
   GenerationsParams,
@@ -22,6 +25,7 @@ export type {
   RecraftImageFormat,
   RecraftUpscaleMode,
   RecraftCreativity,
+  RecraftStyleMatch,
 } from "./image";
 
 export {

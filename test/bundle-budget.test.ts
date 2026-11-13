@@ -629,8 +629,14 @@ const TTS_PACK_BUDGET_KIB = 940;
  * `createImage([…])` matters more than it did — a caller who wants two
  * providers should not pay for a queue in front of a thousand models. Pinned
  * at 1050, the usual ~10% over the measurement.
+ *
+ * **Bumped 1160 → 1280 at the 2026-11-12 model wave**: 1163.9 KiB measured
+ * when recraft's sixteen rows landed on the wave's other image rows (OpenAI
+ * GPT-Image-2.5/2.6, the FLUX.2 [klein] `-finetuned` routes, Seedream 5.5 /
+ * 5.0 flash, Leonardo's Elements models). Catalog rows and their per-model
+ * gates; no module joined the pack.
  */
-const IMAGE_PACK_BUDGET_KIB = 1160;
+const IMAGE_PACK_BUDGET_KIB = 1280;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -1057,6 +1063,9 @@ const TTS_PACK_PROVIDERS: string[] = [
  * Then the black-forest-labs FLUX.2 [klein] `-finetuned` catalog rows and deny
  * entries, reached through the shared BFL models/image chunk: 551.5 measured
  * with both, still under the 600 pin.
+ *
+ * Recraft's 16 new catalog rows (V4.1 Flash, V4 Styles, the `_raster`
+ * aliases) and 7 alias edit rows add to it, still under the 600 pin.
  */
 const IMAGE_EDIT_PACK_BUDGET_KIB = 600;
 

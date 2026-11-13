@@ -14,6 +14,7 @@ import type { ModelParamTable } from "../../core/unified/vocabulary/image";
 import type {
   RecraftControls,
   RecraftCreativity,
+  RecraftStyleMatch,
   RecraftSubstyle,
   RecraftTextLayoutElement,
   RecraftUpscaleMode,
@@ -49,30 +50,47 @@ export const MODELS = [
   "recraftv4_1_utility_vector",
   "recraftv4_1_utility_pro",
   "recraftv4_1_utility_pro_vector",
+  "recraftv4_1_flash",
   "recraftv4",
   "recraftv4_vector",
   "recraftv4_pro",
   "recraftv4_pro_vector",
+  "recraftv4_styles",
+  "recraftv4_styles_vector",
+  "recraftv4_styles_pro",
+  "recraftv4_styles_pro_vector",
   "recraftv3",
   "recraftv3_vector",
   "recraftv2",
   "recraftv2_vector",
+  "recraftv4_1_raster",
+  "recraftv4_1_pro_raster",
+  "recraftv4_1_utility_raster",
+  "recraftv4_1_utility_pro_raster",
+  "recraftv4_1_flash_raster",
+  "recraftv4_raster",
+  "recraftv4_pro_raster",
+  "recraftv4_styles_raster",
+  "recraftv4_styles_pro_raster",
+  "recraftv3_raster",
+  "recraftv2_raster",
   "recraft20b",
 ] as const satisfies readonly RecraftModelId[];
 
 /**
- * The per-model surface, and the widest table in the library — seventeen ids
- * across four size groups, two style vocabularies and one deny rule that cuts
- * across both.
+ * The per-model surface, and the widest table in the library — thirty-three
+ * ids across four size groups, two style vocabularies and the family deny
+ * rules that cut across both.
  *
- * **Sizes.** The eight raster ids get the appendix's own `WxH` table, closed:
+ * **Sizes.** Every raster id gets the appendix's own `WxH` table, closed:
  * `checkSize` rejects a `WxH` a model's table does not list, so a template
  * tail would promise something the endpoint refuses. The vector line and
  * `recraft20b` get no `sizes` row at all — the appendix documents them with
  * aspect ratios alone — so `size` types as `never` there and an editor offers
  * the fourteen shapes, which is the whole size vocabulary those models have.
  * (`checkSize` is permissive for them at run time, having no table to check
- * against; the type is the narrower of the two on purpose.)
+ * against; the type is the narrower of the two on purpose.) A `_raster`
+ * alias takes its base model's row.
  *
  * **Ratios.** `ASPECT_RATIOS`, all fourteen, on every row: one field, two
  * vocabularies, and the ratio half is model-independent.
@@ -81,7 +99,12 @@ export const MODELS = [
  * `STYLE_NAMES_BY_MODEL`'s own lists everywhere it is allowed, so
  * `style: "Watercolor"` compiles on `recraftv3` and not on `recraftv3_vector`
  * — whose list is the vector one. `text_layout` is V3-and-`recraft20b`-only,
- * per the same family rules.
+ * per the same family rules. The custom-style inputs (`style_id`,
+ * `style_reference_urls`, `style_match`) follow the "Parameter support by
+ * model family" matrix of https://www.recraft.ai/docs/api-reference/agents:
+ * none of them on V4.1 Flash, `style_match` `regular` on V2/V3 and
+ * `flexible` / `precise` on the V4 line, and `style_id` on V2/V3 and the
+ * V4 Styles line, which requires it or `style_reference_urls`.
  */
 export const RECRAFT_SHARED_EXTRAS = {
   // Closed, matching the wire body: `checkSpecEnums` refuses an off-list
@@ -100,76 +123,140 @@ export const TEXT_LAYOUT = EXTRA as RecraftTextLayoutElement[] | null;
 
 export const STYLE_ID = EXTRA as string | null;
 
+export const STYLE_REFERENCE_URLS = EXTRA as string[] | null;
+
+/** The V4 line's custom-style inputs, V4.1 Flash excepted. */
+export const V4_STYLE_EXTRAS = {
+  style_reference_urls: STYLE_REFERENCE_URLS,
+  style_match: EXTRA as Exclude<RecraftStyleMatch, "regular"> | null,
+  ...RECRAFT_SHARED_EXTRAS,
+} as const;
+
+/** V2 / V3: `regular` is "the only valid value" of `style_match` (styles doc). */
+export const V2_V3_STYLE_EXTRAS = {
+  style_id: STYLE_ID,
+  style_reference_urls: STYLE_REFERENCE_URLS,
+  style_match: EXTRA as Extract<RecraftStyleMatch, "regular"> | null,
+  ...RECRAFT_SHARED_EXTRAS,
+} as const;
+
 /** V4 / V4.1: no `style`, no `style_id`, no `text_layout`. */
 export const V4_STANDARD_ROW = {
   sizes: V4_STANDARD_SIZES,
   ratios: ASPECT_RATIOS,
   tiers: ["1k"],
-  extras: RECRAFT_SHARED_EXTRAS,
+  extras: V4_STYLE_EXTRAS,
 } as const;
 
 export const V4_PRO_ROW = {
   sizes: V4_PRO_SIZES,
   ratios: ASPECT_RATIOS,
   tiers: ["2k"],
+  extras: V4_STYLE_EXTRAS,
+} as const;
+
+export const V4_VECTOR_ROW = { ratios: ASPECT_RATIOS, tiers: [], extras: V4_STYLE_EXTRAS } as const;
+
+/** V4.1 Flash: "Not supported by Flash: `style`, `style_id`, `style_match`, style references, …". */
+export const V4_1_FLASH_ROW = {
+  sizes: V4_STANDARD_SIZES,
+  ratios: ASPECT_RATIOS,
+  tiers: ["1k"],
   extras: RECRAFT_SHARED_EXTRAS,
 } as const;
 
-export const V4_VECTOR_ROW = { ratios: ASPECT_RATIOS, tiers: [], extras: RECRAFT_SHARED_EXTRAS } as const;
+/** The V4 Styles line: `style_id` or `style_reference_urls` is required. */
+const V4_STYLES_EXTRAS = { style_id: STYLE_ID, ...V4_STYLE_EXTRAS } as const;
+
+export const V4_STYLES_ROW = {
+  sizes: V4_STANDARD_SIZES,
+  ratios: ASPECT_RATIOS,
+  tiers: ["1k"],
+  extras: V4_STYLES_EXTRAS,
+} as const;
+
+export const V4_STYLES_PRO_ROW = {
+  sizes: V4_PRO_SIZES,
+  ratios: ASPECT_RATIOS,
+  tiers: ["2k"],
+  extras: V4_STYLES_EXTRAS,
+} as const;
+
+export const V4_STYLES_VECTOR_ROW = {
+  ratios: ASPECT_RATIOS,
+  tiers: [],
+  extras: V4_STYLES_EXTRAS,
+} as const;
 
 export const V2_V3_RASTER_SIZES = [...V2_V3_SIZES, ...UNATTRIBUTED_SIZE_VALUES] as const;
 
+const RECRAFT_V3_ROW = {
+  sizes: V2_V3_RASTER_SIZES,
+  ratios: ASPECT_RATIOS,
+  tiers: ["1k"],
+  extras: {
+    style: EXTRA as (typeof RECRAFT_V3_STYLES)[number] | (string & {}) | null,
+    text_layout: TEXT_LAYOUT,
+    ...V2_V3_STYLE_EXTRAS,
+  },
+} as const;
+
+const RECRAFT_V2_ROW = {
+  sizes: V2_V3_RASTER_SIZES,
+  ratios: ASPECT_RATIOS,
+  tiers: ["1k"],
+  extras: {
+    style: EXTRA as (typeof RECRAFT_V2_STYLES)[number] | (string & {}) | null,
+    ...V2_V3_STYLE_EXTRAS,
+  },
+} as const;
+
 export const RECRAFT_IMAGE_MODEL_PARAMS = {
   recraftv4_1: V4_STANDARD_ROW,
+  recraftv4_1_raster: V4_STANDARD_ROW,
   recraftv4_1_utility: V4_STANDARD_ROW,
+  recraftv4_1_utility_raster: V4_STANDARD_ROW,
   recraftv4: V4_STANDARD_ROW,
+  recraftv4_raster: V4_STANDARD_ROW,
   recraftv4_1_pro: V4_PRO_ROW,
+  recraftv4_1_pro_raster: V4_PRO_ROW,
   recraftv4_1_utility_pro: V4_PRO_ROW,
+  recraftv4_1_utility_pro_raster: V4_PRO_ROW,
   recraftv4_pro: V4_PRO_ROW,
+  recraftv4_pro_raster: V4_PRO_ROW,
   recraftv4_1_vector: V4_VECTOR_ROW,
   recraftv4_1_pro_vector: V4_VECTOR_ROW,
   recraftv4_1_utility_vector: V4_VECTOR_ROW,
   recraftv4_1_utility_pro_vector: V4_VECTOR_ROW,
   recraftv4_vector: V4_VECTOR_ROW,
   recraftv4_pro_vector: V4_VECTOR_ROW,
-  recraftv3: {
-    sizes: V2_V3_RASTER_SIZES,
-    ratios: ASPECT_RATIOS,
-    tiers: ["1k"],
-    extras: {
-      style: EXTRA as (typeof RECRAFT_V3_STYLES)[number] | (string & {}) | null,
-      style_id: STYLE_ID,
-      text_layout: TEXT_LAYOUT,
-      ...RECRAFT_SHARED_EXTRAS,
-    },
-  },
+  recraftv4_1_flash: V4_1_FLASH_ROW,
+  recraftv4_1_flash_raster: V4_1_FLASH_ROW,
+  recraftv4_styles: V4_STYLES_ROW,
+  recraftv4_styles_raster: V4_STYLES_ROW,
+  recraftv4_styles_pro: V4_STYLES_PRO_ROW,
+  recraftv4_styles_pro_raster: V4_STYLES_PRO_ROW,
+  recraftv4_styles_vector: V4_STYLES_VECTOR_ROW,
+  recraftv4_styles_pro_vector: V4_STYLES_VECTOR_ROW,
+  recraftv3: RECRAFT_V3_ROW,
+  recraftv3_raster: RECRAFT_V3_ROW,
   recraftv3_vector: {
     ratios: ASPECT_RATIOS,
     tiers: [],
     extras: {
       style: EXTRA as (typeof RECRAFT_V3_VECTOR_STYLES)[number] | (string & {}) | null,
-      style_id: STYLE_ID,
       text_layout: TEXT_LAYOUT,
-      ...RECRAFT_SHARED_EXTRAS,
+      ...V2_V3_STYLE_EXTRAS,
     },
   },
-  recraftv2: {
-    sizes: V2_V3_RASTER_SIZES,
-    ratios: ASPECT_RATIOS,
-    tiers: ["1k"],
-    extras: {
-      style: EXTRA as (typeof RECRAFT_V2_STYLES)[number] | (string & {}) | null,
-      style_id: STYLE_ID,
-      ...RECRAFT_SHARED_EXTRAS,
-    },
-  },
+  recraftv2: RECRAFT_V2_ROW,
+  recraftv2_raster: RECRAFT_V2_ROW,
   recraftv2_vector: {
     ratios: ASPECT_RATIOS,
     tiers: [],
     extras: {
       style: EXTRA as (typeof RECRAFT_V2_VECTOR_STYLES)[number] | (string & {}) | null,
-      style_id: STYLE_ID,
-      ...RECRAFT_SHARED_EXTRAS,
+      ...V2_V3_STYLE_EXTRAS,
     },
   },
   recraft20b: {
@@ -180,6 +267,8 @@ export const RECRAFT_IMAGE_MODEL_PARAMS = {
       // it — so the honest type is the open one the wire already has.
       style: EXTRA as string | null,
       style_id: STYLE_ID,
+      style_reference_urls: STYLE_REFERENCE_URLS,
+      style_match: EXTRA as RecraftStyleMatch | null,
       text_layout: TEXT_LAYOUT,
       ...RECRAFT_SHARED_EXTRAS,
     },

@@ -192,8 +192,12 @@ export type RecraftStyleName =
  */
 export const STYLE_NAMES_BY_MODEL = {
   recraftv3: RECRAFT_V3_STYLES,
+  // The `_raster` aliases "behave exactly like the base names"
+  // (https://www.recraft.ai/docs/api-reference/models/overview, 2026-11-12).
+  recraftv3_raster: RECRAFT_V3_STYLES,
   recraftv3_vector: RECRAFT_V3_VECTOR_STYLES,
   recraftv2: RECRAFT_V2_STYLES,
+  recraftv2_raster: RECRAFT_V2_STYLES,
   recraftv2_vector: RECRAFT_V2_VECTOR_STYLES,
 } as const satisfies Readonly<Record<string, readonly string[]>>;
 

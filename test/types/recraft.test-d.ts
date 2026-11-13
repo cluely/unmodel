@@ -105,6 +105,21 @@ function generationsStyleTypeTests(): void {
   image({ prompt: "hi", model: "recraftv9-unreleased", style: "Kawaii" });
   image({ prompt: "hi", model: runtimeModel, style: "3D render" });
 
+  // A `_raster` alias carries its base model's curated list.
+  image({ prompt: "hi", model: "recraftv3_raster", style: "Photorealism" });
+  image({ prompt: "hi", model: "recraftv2_raster", style: "3D render" });
+  // @ts-expect-error — "3D render" is V2-only; recraftv3_raster is V3.
+  image({ prompt: "hi", model: "recraftv3_raster", style: "3D render" });
+
+  // Custom styles: `style_reference_urls` is a string array and `style_match`
+  // is the closed "regular" | "precise" | "flexible" enum.
+  image({ prompt: "hi", model: "recraftv4_styles", style_reference_urls: ["https://x/a.png"] });
+  image({ prompt: "hi", model: "recraftv4_styles", style_id: "abc", style_match: "precise" });
+  // @ts-expect-error — not a `style_match` value.
+  image({ prompt: "hi", model: "recraftv4_styles", style_id: "abc", style_match: "strict" });
+  // @ts-expect-error — references are URLs, not one string.
+  image({ prompt: "hi", model: "recraftv4_styles", style_reference_urls: "https://x/a.png" });
+
   // `substyle` stays globally open — no published style ↔ substyle pairing.
   image({ prompt: "hi", model: "recraftv3", substyle: "line_circuit" });
 

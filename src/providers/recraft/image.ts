@@ -18,14 +18,21 @@
  *   through, and are flagged as such on the rules that use them.
  * - OpenAI-images-flavored JSON body. Auth is `Authorization: Bearer <token>`
  *   — unmodel never touches keys; add the header yourself when fetching.
- * - `model` defaults to `recraftv4_1` server-side; model-dependent checks run
+ * - `model` defaults to `recraftv4_1` server-side, or to `recraftv4_styles`
+ *   when `style_reference_urls` are attached; model-dependent checks run
  *   against that default when `model` is omitted.
  * - The current API takes curated style NAMES in `style` (e.g. "Photorealism",
  *   "Vector art") — the old `style`/`substyle` enum pairs are gone from the
  *   docs. Styles are V2/V3-only; the per-model name lists live in styles.ts
  *   and the style ↔ model cross-check reports invalid_enum_value.
  * - `style` and `style_id` cannot be used together (docs: "Specify one or the
- *   other, not both").
+ *   other, not both"), and neither can `style_id` and style references.
+ * - Style references: `style_reference_urls` (JSON, 1–10 URLs or data URLs)
+ *   creates a style for the request, at $0.005 on top of the images. The
+ *   multipart counterpart, `style_references`, takes "multipart file parts,
+ *   any field name" — this validator emits a JSON body, so it does not model
+ *   that form. The V4 Styles line requires `style_id` or references; V4.1
+ *   Flash refuses both (constraints.ts).
  * - `size` is "WxH" or "w:h". The appendix publishes explicit WxH sets per
  *   raster model group and the same 14 aspect ratios for every model; vector
  *   models are listed with aspect ratios only, so explicit WxH values on
@@ -56,6 +63,7 @@ import {
   V4_PRO_SIZES,
   V4_STANDARD_SIZES,
   imageFamilyRules,
+  isV4StylesModel,
 } from "./constraints";
 import { STYLE_NAMES_BY_MODEL, type StyleFor } from "./styles";
 
@@ -79,9 +87,25 @@ export const IMAGES_GENERATIONS_URL = "https://external.api.recraft.ai/v1/images
  */
 export const DEFAULT_MODEL_ID = "recraftv4_1";
 
+/**
+ * Server-side default when `model` is omitted and `style_reference_urls` are
+ * attached — https://www.recraft.ai/docs/api-reference/models/overview
+ * (2026-11-12): "a request with attached style references and no `model`
+ * defaults to `recraftv4_styles`."
+ */
+export const DEFAULT_STYLE_REFERENCES_MODEL_ID = "recraftv4_styles";
+
+/**
+ * The style-creation charge a request with style references adds — pricing
+ * page (2026-11-12): "Generating with style references also creates a style,
+ * which adds $0.005 per request." Once per request, not per image.
+ */
+export const STYLE_CREATION_USD = 0.005;
+
 const ENDPOINTS_DOCS_URL = "https://www.recraft.ai/docs/api-reference/endpoints";
 const STYLES_DOCS_URL = "https://www.recraft.ai/docs/api-reference/styles";
 const APPENDIX_DOCS_URL = "https://www.recraft.ai/docs/api-reference/appendix";
+const V4_STYLES_DOCS_URL = "https://www.recraft.ai/docs/api-reference/models/recraft-v4-styles";
 
 const UNATTRIBUTED_SIZES = new Set<string>(UNATTRIBUTED_SIZE_VALUES);
 
@@ -110,16 +134,33 @@ export type RecraftSize =
   | (`${number}x${number}` & {})
   | (`${number}:${number}` & {});
 
-/** Explicit WxH sets per raster model; vector models take aspect ratios only. */
+/**
+ * Explicit WxH sets per raster model; vector models take aspect ratios only.
+ * Each `_raster` alias takes its base model's table.
+ */
 const SIZES_BY_MODEL: Readonly<Record<string, readonly string[]>> = {
   recraftv4_1: V4_STANDARD_SIZES,
+  recraftv4_1_raster: V4_STANDARD_SIZES,
   recraftv4_1_utility: V4_STANDARD_SIZES,
+  recraftv4_1_utility_raster: V4_STANDARD_SIZES,
+  recraftv4_1_flash: V4_STANDARD_SIZES,
+  recraftv4_1_flash_raster: V4_STANDARD_SIZES,
   recraftv4: V4_STANDARD_SIZES,
+  recraftv4_raster: V4_STANDARD_SIZES,
+  recraftv4_styles: V4_STANDARD_SIZES,
+  recraftv4_styles_raster: V4_STANDARD_SIZES,
   recraftv4_1_pro: V4_PRO_SIZES,
+  recraftv4_1_pro_raster: V4_PRO_SIZES,
   recraftv4_1_utility_pro: V4_PRO_SIZES,
+  recraftv4_1_utility_pro_raster: V4_PRO_SIZES,
   recraftv4_pro: V4_PRO_SIZES,
+  recraftv4_pro_raster: V4_PRO_SIZES,
+  recraftv4_styles_pro: V4_PRO_SIZES,
+  recraftv4_styles_pro_raster: V4_PRO_SIZES,
   recraftv2: V2_V3_SIZES,
+  recraftv2_raster: V2_V3_SIZES,
   recraftv3: V2_V3_SIZES,
+  recraftv3_raster: V2_V3_SIZES,
 };
 
 // ---------------------------------------------------------------------------
@@ -185,6 +226,16 @@ export type RecraftSubstyle = (typeof SUBSTYLES)[number];
 export const IMAGE_FORMATS = ["webp", "png"] as const;
 export type RecraftImageFormat = (typeof IMAGE_FORMATS)[number];
 
+/**
+ * `style_match` values — endpoints doc (2026-11-12): "Must be one of
+ * `regular`, `precise`, `flexible`." (the OpenAPI `StyleMatch` enum). Which
+ * of them a model takes is per family — `regular` on V2/V3, `flexible` /
+ * `precise` on the V4 line, none on V4.1 Flash — and lives on the family
+ * rules in constraints.ts.
+ */
+export const STYLE_MATCHES = ["regular", "precise", "flexible"] as const;
+export type RecraftStyleMatch = (typeof STYLE_MATCHES)[number];
+
 /** `upscale` values — the `UpscaleMode` enum of Recraft's Swagger document. */
 export const UPSCALE_MODES = ["upscale4mp", "upscale16mp"] as const;
 export type RecraftUpscaleMode = (typeof UPSCALE_MODES)[number];
@@ -215,13 +266,13 @@ type RecraftModelInput = RecraftModelId | (string & {});
  * `M` is bound by `model` alone: `model?: M | null` is the inference site, and
  * the callable must NOT re-state it as an extra `& { model?: M }` intersection
  * arm — that intersection is normalized before completion and leaves `model`
- * itself completing nothing (measured: 17 ids → 1).
+ * itself completing nothing (measured: every id → 1).
  *
  * `M` defaults to the whole `RecraftModelInput` union, so the plain
- * `GenerationsParams` type is byte-for-byte what it was: `model` completes all
- * 17 ids and `style` the pooled 111 with its open tail. That default is also
- * the degraded arm — `model` omitted, `null`, runtime-built, or an id with no
- * style table — which keeps JS-shaped and future ids callable.
+ * `GenerationsParams` type is byte-for-byte what it was: `model` completes
+ * every cataloged id and `style` the pooled 111 with its open tail. That
+ * default is also the degraded arm — `model` omitted, `null`, runtime-built,
+ * or an id with no style table — which keeps JS-shaped and future ids callable.
  */
 export interface GenerationsParams<M extends RecraftModelInput = RecraftModelInput> {
   /** Text description of the desired image(s). Max length is per-model (see models.ts). */
@@ -242,8 +293,24 @@ export interface GenerationsParams<M extends RecraftModelInput = RecraftModelInp
    * one. The same reasoning closes `creativity`, `image_format` and `upscale`.
    */
   substyle?: RecraftSubstyle | null;
-  /** Style UUID used as a visual reference (V2/V3 models only). Cannot be combined with style. */
+  /**
+   * Style UUID used as a visual reference (V2/V3 models and the V4 Styles
+   * line, which requires it unless `style_reference_urls` are attached).
+   * Cannot be combined with `style` or with `style_reference_urls`.
+   */
   style_id?: string | null;
+  /**
+   * 1–10 URLs or data URLs of style reference images (PNG, JPG, WEBP; 64 MB
+   * in total). The server creates a style from them for this request —
+   * $0.005 on top of the images — and returns its `style_id`. Every model
+   * except V4.1 Flash; cannot be combined with `style_id`.
+   */
+  style_reference_urls?: string[] | null;
+  /**
+   * How closely the images match the style: `regular` on V2/V3, `flexible`
+   * (default) or `precise` on the V4 line; refused on V4.1 Flash.
+   */
+  style_match?: RecraftStyleMatch | null;
   /**
    * "WxH" or "w:h"; auto-selected from the prompt when omitted. The presets
    * are the appendix's per-model WxH tables plus the 14 shared aspect ratios —
@@ -299,6 +366,13 @@ const generationsSchema = z.looseObject({
   style: z.string().nullable().optional(),
   substyle: z.string().nullable().optional(),
   style_id: z.string().nullable().optional(),
+  style_reference_urls: z
+    .array(z.string())
+    .min(1, "style_reference_urls must hold 1 to 10 image URLs or data URLs")
+    .max(10, "style_reference_urls must hold 1 to 10 image URLs or data URLs")
+    .nullable()
+    .optional(),
+  style_match: z.string().nullable().optional(),
   size: z.string().nullable().optional(),
   creativity: z.string().nullable().optional(),
   image_format: z.string().nullable().optional(),
@@ -345,7 +419,8 @@ const RESPONSE_FORMATS = ["url", "b64_json"] as const;
 const ASPECT_RATIO_SET = new Set<string>(ASPECT_RATIOS);
 
 function resolvedModelId(params: GenerationsParams): string {
-  return params.model ?? DEFAULT_MODEL_ID;
+  if (params.model != null) return params.model;
+  return params.style_reference_urls != null ? DEFAULT_STYLE_REFERENCES_MODEL_ID : DEFAULT_MODEL_ID;
 }
 
 function checkResponseFormat(
@@ -410,7 +485,12 @@ function checkSpecEnums(
   }
 }
 
-/** `style` and `style_id` cannot be used together — styles doc. */
+/**
+ * `style` and `style_id` cannot be used together, and neither can `style_id`
+ * and style references — styles doc (2026-11-12): "The two are mutually
+ * exclusive: a request with both a `style_id` and style references is
+ * rejected."
+ */
 function checkStyleExclusivity(
   params: GenerationsParams,
   _info: ModelInfo | undefined,
@@ -424,6 +504,40 @@ function checkStyleExclusivity(
       meta: { source: STYLES_DOCS_URL },
     });
   }
+  if (params.style_id != null && params.style_reference_urls != null) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["style_reference_urls"],
+      message:
+        "`style_id` and `style_reference_urls` cannot be used together; pass the saved style or the reference images, not both.",
+      meta: { source: STYLES_DOCS_URL },
+    });
+  }
+}
+
+/**
+ * The V4 Styles line needs a style — model page (2026-11-12): "V4 Styles
+ * models **always** require a style: pass `style_reference_urls` (or uploaded
+ * `style_references`) or a `style_id`. A request with neither is rejected."
+ * The multipart `style_references` form is not one this JSON validator emits,
+ * so the two spellings it can carry are the ones the message names.
+ */
+function checkV4StylesStyle(
+  params: GenerationsParams,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (info === undefined) return;
+  const model = resolvedModelId(params);
+  if (!isV4StylesModel(model)) return;
+  if (params.style_id != null || params.style_reference_urls != null) return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["style_id"],
+    model,
+    message: `"${model}" always requires a style: pass \`style_id\` (a style from an earlier response or from POST /v1/styles) or \`style_reference_urls\` (1 to 10 reference image URLs or data URLs).`,
+    meta: { source: V4_STYLES_DOCS_URL },
+  });
 }
 
 /**
@@ -541,7 +655,7 @@ function checkPromptLength(
   });
 }
 
-const V3_MODELS = new Set<string>(["recraftv3", "recraftv3_vector"]);
+const V3_MODELS = new Set<string>(["recraftv3", "recraftv3_raster", "recraftv3_vector"]);
 
 /**
  * `controls` sub-fields: `artistic_level` and `no_text` are V3-only (nested,
@@ -585,13 +699,15 @@ function checkControls(
 }
 
 // ---------------------------------------------------------------------------
-// Estimation — billed per generated image (catalog cost.perImage × n).
+// Estimation — billed per generated image (catalog cost.perImage × n), plus
+// STYLE_CREATION_USD once when style references create a style.
 // ---------------------------------------------------------------------------
 
 function estimate(params: GenerationsParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
   const perImage = info?.cost?.perImage;
   if (perImage === undefined) return {};
-  return { costUSD: perImage * (params.n ?? 1) };
+  const styleCreation = params.style_reference_urls != null ? STYLE_CREATION_USD : 0;
+  return { costUSD: perImage * (params.n ?? 1) + styleCreation };
 }
 
 // ---------------------------------------------------------------------------
@@ -634,6 +750,7 @@ const validator = createValidator<GenerationsParams, unknown>({
     checkResponseFormat,
     checkSpecEnums,
     checkStyleExclusivity,
+    checkV4StylesStyle,
     checkStyleForModel,
     checkSize,
     checkPromptLength,

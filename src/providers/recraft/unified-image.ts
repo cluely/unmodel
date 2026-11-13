@@ -36,10 +36,12 @@
  *
  * | models | documented sizes | tier |
  * |---|---|---|
- * | `recraftv4_1`, `recraftv4_1_utility`, `recraftv4` | 1.03–1.18 MP around 1024² | `1k` |
- * | `recraftv4_1_pro`, `recraftv4_1_utility_pro`, `recraftv4_pro` | 4.13–4.72 MP around 2048² | `2k` |
+ * | `recraftv4_1`, `recraftv4_1_utility`, `recraftv4_1_flash`, `recraftv4`, `recraftv4_styles` | 1.03–1.18 MP around 1024² | `1k` |
+ * | `recraftv4_1_pro`, `recraftv4_1_utility_pro`, `recraftv4_pro`, `recraftv4_styles_pro` | 4.13–4.72 MP around 2048² | `2k` |
  * | `recraftv2`, `recraftv3` | 1.05–2.10 MP around 1024² | `1k` |
  * | the vector line, `recraft20b` | none — ratios only | *none* |
+ *
+ * Each `_raster` alias renders at its base model's tier.
  *
  * So `resolution` is expressed **by choosing the model**, and the adapter's
  * job is to check that the model you chose actually delivers what you asked
@@ -109,6 +111,7 @@ import {
   type RecraftCreativity,
   type RecraftImageFormat,
   type RecraftSize,
+  type RecraftStyleMatch,
   type RecraftSubstyle,
   type RecraftTextLayoutElement,
   type RecraftUpscaleMode,
@@ -121,8 +124,8 @@ const APPENDIX_DOCS = "https://www.recraft.ai/docs/api-reference/appendix";
 /**
  * The tier each raster model renders at, read off the appendix tables in
  * `image.ts` (`V4_STANDARD_SIZES`, `V4_PRO_SIZES`, `V2_V3_SIZES`) — the same
- * eight ids `SIZES_BY_MODEL` keys, because a model with a pixel table is
- * exactly a model whose pixel budget is documented.
+ * ids `SIZES_BY_MODEL` keys, because a model with a pixel table is exactly a
+ * model whose pixel budget is documented.
  *
  * Absent ids — the whole vector line and `recraft20b` — have no pixel
  * vocabulary at all, which is a different fact from "renders at another tier"
@@ -132,13 +135,27 @@ const KNOWN_MODELS: ReadonlySet<string> = new Set<string>(MODELS);
 
 const RENDERED_TIER: Readonly<Record<string, ResolutionTier>> = {
   recraftv4_1: "1k",
+  recraftv4_1_raster: "1k",
   recraftv4_1_utility: "1k",
+  recraftv4_1_utility_raster: "1k",
+  recraftv4_1_flash: "1k",
+  recraftv4_1_flash_raster: "1k",
   recraftv4: "1k",
+  recraftv4_raster: "1k",
+  recraftv4_styles: "1k",
+  recraftv4_styles_raster: "1k",
   recraftv4_1_pro: "2k",
+  recraftv4_1_pro_raster: "2k",
   recraftv4_1_utility_pro: "2k",
+  recraftv4_1_utility_pro_raster: "2k",
   recraftv4_pro: "2k",
+  recraftv4_pro_raster: "2k",
+  recraftv4_styles_pro: "2k",
+  recraftv4_styles_pro_raster: "2k",
   recraftv2: "1k",
+  recraftv2_raster: "1k",
   recraftv3: "1k",
+  recraftv3_raster: "1k",
 };
 
 /**
@@ -147,8 +164,10 @@ const RENDERED_TIER: Readonly<Record<string, ResolutionTier>> = {
  * message says so rather than listing nothing.
  */
 const REFS_BY_TIER: Readonly<Partial<Record<ResolutionTier, string>>> = {
-  "1k": '"recraftv4_1", "recraftv4_1_utility", "recraftv4", "recraftv3", "recraftv2"',
-  "2k": '"recraftv4_1_pro", "recraftv4_1_utility_pro", "recraftv4_pro"',
+  "1k":
+    '"recraftv4_1", "recraftv4_1_utility", "recraftv4_1_flash", "recraftv4", ' +
+    '"recraftv4_styles", "recraftv3", "recraftv2"',
+  "2k": '"recraftv4_1_pro", "recraftv4_1_utility_pro", "recraftv4_pro", "recraftv4_styles_pro"',
 };
 
 /**
@@ -158,8 +177,9 @@ const REFS_BY_TIER: Readonly<Partial<Record<ResolutionTier, string>>> = {
  * No `[key: string]: unknown` tail: `GenerationsParams` has no index
  * signature, so an open tail would make `ExactKeys` demand `never` for every
  * extra key and `recraft.image.safe` would stop being assignable. The rest of
- * the surface — `style`, `style_id`, `substyle`, `controls`, `text_layout`,
- * `upscale` and the three booleans — is declared per model on
+ * the surface — `style`, `style_id`, `style_reference_urls`, `style_match`,
+ * `substyle`, `controls`, `text_layout`, `upscale` and the three booleans — is
+ * declared per model on
  * {@link RECRAFT_IMAGE_MODEL_PARAMS} and named explicitly below.
  */
 export interface RecraftImageWire {
@@ -178,6 +198,8 @@ export interface RecraftImageWire {
   // `RECRAFT_IMAGE_MODEL_PARAMS`'s answer, not this type's.
   style?: string | null;
   style_id?: string | null;
+  style_reference_urls?: string[] | null;
+  style_match?: RecraftStyleMatch | null;
   substyle?: RecraftSubstyle | null;
   text_layout?: RecraftTextLayoutElement[] | null;
   controls?: RecraftControls | null;

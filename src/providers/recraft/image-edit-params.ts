@@ -28,7 +28,7 @@ import { RECRAFT_V3_STYLES, RECRAFT_V3_VECTOR_STYLES } from "./styles";
 export const MODELS = [...IMAGE_TO_IMAGE_MODELS] as const satisfies readonly RecraftModelId[];
 
 /**
- * Fourteen rows, and **no sizing on any of them**: `imageToImage` publishes no
+ * Twenty-one rows, and **no sizing on any of them**: `imageToImage` publishes no
  * `size` and no aspect field, so `sizes` and `ratios` are both absent and
  * `aspectRatio` / `dimensions` are declared gaps below. `size` types as
  * `never` for the same reason, which is the answer this route actually gives.
@@ -46,15 +46,19 @@ export const RECRAFT_EDIT_SHARED_EXTRAS = {
 
 export const V4_EDIT_ROW = { extras: RECRAFT_EDIT_SHARED_EXTRAS } as const;
 
-export const RECRAFT_IMAGE_EDIT_MODEL_PARAMS = {
-  recraftv3: {
-    extras: {
-      style: EXTRA as (typeof RECRAFT_V3_STYLES)[number] | (string & {}) | null,
-      negative_prompt: EXTRA as string | null,
-      text_layout: EXTRA as RecraftTextLayoutElement[] | null,
-      ...RECRAFT_EDIT_SHARED_EXTRAS,
-    },
+const RECRAFT_V3_EDIT_ROW = {
+  extras: {
+    style: EXTRA as (typeof RECRAFT_V3_STYLES)[number] | (string & {}) | null,
+    negative_prompt: EXTRA as string | null,
+    text_layout: EXTRA as RecraftTextLayoutElement[] | null,
+    ...RECRAFT_EDIT_SHARED_EXTRAS,
   },
+} as const;
+
+/** A `_raster` alias takes its base model's row — "The aliases behave exactly like the base names". */
+export const RECRAFT_IMAGE_EDIT_MODEL_PARAMS = {
+  recraftv3: RECRAFT_V3_EDIT_ROW,
+  recraftv3_raster: RECRAFT_V3_EDIT_ROW,
   recraftv3_vector: {
     extras: {
       style: EXTRA as (typeof RECRAFT_V3_VECTOR_STYLES)[number] | (string & {}) | null,
@@ -64,15 +68,21 @@ export const RECRAFT_IMAGE_EDIT_MODEL_PARAMS = {
     },
   },
   recraftv4: V4_EDIT_ROW,
+  recraftv4_raster: V4_EDIT_ROW,
   recraftv4_vector: V4_EDIT_ROW,
   recraftv4_pro: V4_EDIT_ROW,
+  recraftv4_pro_raster: V4_EDIT_ROW,
   recraftv4_pro_vector: V4_EDIT_ROW,
   recraftv4_1: V4_EDIT_ROW,
+  recraftv4_1_raster: V4_EDIT_ROW,
   recraftv4_1_vector: V4_EDIT_ROW,
   recraftv4_1_pro: V4_EDIT_ROW,
+  recraftv4_1_pro_raster: V4_EDIT_ROW,
   recraftv4_1_pro_vector: V4_EDIT_ROW,
   recraftv4_1_utility: V4_EDIT_ROW,
+  recraftv4_1_utility_raster: V4_EDIT_ROW,
   recraftv4_1_utility_vector: V4_EDIT_ROW,
   recraftv4_1_utility_pro: V4_EDIT_ROW,
+  recraftv4_1_utility_pro_raster: V4_EDIT_ROW,
   recraftv4_1_utility_pro_vector: V4_EDIT_ROW,
 } as const satisfies ModelParamTable;

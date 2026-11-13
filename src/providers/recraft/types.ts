@@ -64,6 +64,7 @@ export type {
   RecraftImageFormat,
   RecraftUpscaleMode,
   RecraftCreativity,
+  RecraftStyleMatch,
 } from "./image";
 
 export type {

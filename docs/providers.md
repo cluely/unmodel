@@ -1240,9 +1240,10 @@ here rather than in the code:
 
 - **Recraft is refused as a family.** fal's Recraft rows drop `num_images`, `seed` and
   `negative_prompt` entirely and speak the *legacy* `realistic_image/b_and_w` style vocabulary
-  that Recraft retired in favour of curated names, so 13 of 17 native ids have no endpoint and
-  the four that do would need an invented style-name translation table plus silently dropped
-  colour weights. Quality over count.
+  that Recraft retired in favour of curated names, so most native ids — the whole V4.1,
+  V4.1 Flash, V4 Styles and V2 lines — have no endpoint and the V3 / V4 ones that do would
+  need an invented style-name translation table plus silently dropped colour weights. Quality
+  over count.
 - **Ideogram is not shipped in this wave.** Its v3 shape maps well, but its `aspect_ratio`
   (a closed `WxH` ratio enum) has no field on fal's `fal-ai/ideogram/v3`, and synthesizing a
   pixel pair from a ratio is a guess about which pixels Ideogram would have chosen. The v4 arm

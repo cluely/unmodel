@@ -1274,7 +1274,7 @@ export function requireInlineBytes(
   if (!("url" in ref)) {
     // A `data:` URI the caller happened to have: unwrap it, because the field
     // wants the payload and not the envelope.
-    const match = /^data:([^;,]*)(?:;[^,]*)*,(.*)$/s.exec(ref.data);
+    const match = /^data:([^;,]*)(?:;[^;,]*)*,(.*)$/s.exec(ref.data);
     if (match !== null) {
       const mimeType = match[1] === undefined || match[1] === "" ? ref.mimeType : match[1];
       return ok({ data: match[2] ?? "", ...(mimeType !== undefined && { mimeType }) });
@@ -1319,7 +1319,7 @@ const AUDIO_SPELLING: Readonly<Record<AudioInputKind, string>> = Object.freeze({
 const AUDIO_KINDS = Object.keys(AUDIO_SPELLING) as readonly AudioInputKind[];
 
 /** `data:<type>[;param…],<payload>` — the envelope a `{ data }` may arrive in. */
-const DATA_URI = /^data:([^;,]*)(?:;[^,]*)*,(.*)$/s;
+const DATA_URI = /^data:([^;,]*)(?:;[^;,]*)*,(.*)$/s;
 
 /** ``["url", "fileId"]`` → ``"`url` or `fileId`"`` — the keys, as prose. */
 function audioKeyList(kinds: readonly AudioInputKind[]): string {
@@ -1818,7 +1818,7 @@ export function resolveImageEditInput(
  * question for the `{ url } | { data }` pair and carries a media type along.
  */
 export function base64Payload(data: string): string {
-  const match = /^data:[^;,]*(?:;[^,]*)*,(.*)$/s.exec(data);
+  const match = /^data:[^;,]*(?:;[^;,]*)*,(.*)$/s.exec(data);
   return match === null ? data : (match[1] ?? "");
 }
 

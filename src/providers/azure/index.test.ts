@@ -15,6 +15,16 @@ describe("azure URL construction", () => {
   test("trailing slashes on the endpoint are stripped", () => {
     const a = createAzure({ endpoint: "https://my-resource.openai.azure.com/" });
     expect(a.chatUrl).toBe("https://my-resource.openai.azure.com/openai/v1/chat/completions");
+    expect(azureChatCompletionsUrl("https://x.openai.azure.com///")).toBe(
+      "https://x.openai.azure.com/openai/v1/chat/completions",
+    );
+  });
+
+  test("a long run of slashes inside the endpoint is trimmed in linear time", () => {
+    const hostile = `https://x${"/".repeat(100_000)}y`;
+    const started = performance.now();
+    expect(azureChatCompletionsUrl(hostile)).toBe(`${hostile}/openai/v1/chat/completions`);
+    expect(performance.now() - started).toBeLessThan(250);
   });
 
   test("apiVersion is appended (URL-encoded) as a query param", () => {

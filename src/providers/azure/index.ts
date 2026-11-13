@@ -50,6 +50,7 @@ import { createOpenAICompatible, type OpenAICompatibleProvider } from "../openai
 import { models, provider } from "../../catalog/azure.gen";
 import type { AzureTextModelId } from "../../catalog/azure.gen";
 import { chatModels } from "./chat-models";
+import { trimTrailingSlashes } from "../../core/request";
 import { createDeploymentCatalog } from "./deployment-catalog";
 import { azureMaiImagesGenerationsUrl, createMaiImage, type AzureMaiImage } from "./image";
 import { azureMaiImagesEditsUrl, createMaiImageEdit, type AzureMaiImageEdit } from "./image-edit";
@@ -99,7 +100,7 @@ export interface AzureProvider extends OpenAICompatibleProvider<AzureTextModelId
  * `{endpoint}/openai/v1/chat/completions[?api-version=...]`.
  */
 export function azureChatCompletionsUrl(endpoint: string, apiVersion?: string): string {
-  const url = `${endpoint.replace(/\/+$/, "")}/openai/v1/chat/completions`;
+  const url = `${trimTrailingSlashes(endpoint)}/openai/v1/chat/completions`;
   return apiVersion === undefined ? url : `${url}?api-version=${encodeURIComponent(apiVersion)}`;
 }
 

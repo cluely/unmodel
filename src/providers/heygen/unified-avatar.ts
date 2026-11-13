@@ -77,7 +77,7 @@ export type HeygenAvatarResult = ReturnType<typeof validator>;
 type HeygenAvatarValidate = CompiledCall<HeygenAvatarWire, HeygenAvatarResult>["validate"];
 
 /** `data:image/png;base64,AAAA` → `["image/png", "AAAA"]`. */
-const DATA_URI = /^data:([^;,]*)(?:;[^,]*)*,(.*)$/s;
+const DATA_URI = /^data:([^;,]*)(?:;[^;,]*)*,(.*)$/s;
 
 export const avatar = {
   category: "avatar",

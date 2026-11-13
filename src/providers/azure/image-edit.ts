@@ -45,7 +45,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type ValidatedForm, type ExactKeys } from "../../core/request";
+import { toValidated, trimTrailingSlashes, type ValidatedForm, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -64,7 +64,7 @@ import {
  * `api-version` query parameter, so none is taken.
  */
 export function azureMaiImagesEditsUrl(endpoint: string): string {
-  return `${endpoint.replace(/\/+$/, "")}/mai/v1/images/edits`;
+  return `${trimTrailingSlashes(endpoint)}/mai/v1/images/edits`;
 }
 
 /** "Must be in JPEG or PNG format." — the edits `image` field. */

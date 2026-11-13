@@ -40,7 +40,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../../core/request";
+import { toValidated, JSON_HEADERS, trimTrailingSlashes, type Validated, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -60,7 +60,7 @@ import {
  * `api-version` query parameter, so none is taken.
  */
 export function azureMaiImagesGenerationsUrl(endpoint: string): string {
-  return `${endpoint.replace(/\/+$/, "")}/mai/v1/images/generations`;
+  return `${trimTrailingSlashes(endpoint)}/mai/v1/images/generations`;
 }
 
 /**

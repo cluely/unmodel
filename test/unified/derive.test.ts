@@ -1457,6 +1457,17 @@ describe("base64Payload", () => {
     // header, and everything after it is the payload.
     expect(base64Payload("data:image/png;base64,QU,JD")).toBe("QU,JD");
   });
+
+  test("a parameter run with no comma is rejected in linear time", () => {
+    // `data:;;;;…` with no payload separator once backtracked exponentially:
+    // a parameter segment could absorb the next `;`. Segments exclude `;` now,
+    // so the scan is one pass and the string comes back unchanged.
+    const hostile = `data:${";".repeat(100_000)}x`;
+    const started = performance.now();
+    expect(base64Payload(hostile)).toBe(hostile);
+    expect(performance.now() - started).toBeLessThan(250);
+    expect(base64Payload("data:text/plain;charset=utf-8;base64,QUJD")).toBe("QUJD");
+  });
 });
 
 describe("toStrength", () => {

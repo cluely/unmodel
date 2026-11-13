@@ -232,16 +232,35 @@ describe("bytedance.image per-model param enforcement", () => {
   });
 
   test("layer_decomposition_options is Seedream 5.5 only and bounded to [2, 100]", () => {
-    const flash = safeUnchecked({
-      model: "dola-seedream-5-0-flash-260915",
-      image: "https://example.com/room.png",
-      layer_decomposition: true,
-      layer_decomposition_options: { max_images: 12 },
-    });
-    expect(flash.ok).toBe(false);
-    if (!flash.ok) {
-      expect(flash.errors[0]?.code).toBe("unsupported_param");
-      expect(flash.errors[0]?.message).toContain("Seedream 5.5 only");
+    for (const model of ["dola-seedream-5-0-pro-260628", "dola-seedream-5-0-flash-260915"]) {
+      const r = safeUnchecked({
+        model,
+        image: "https://example.com/room.png",
+        layer_decomposition: true,
+        layer_decomposition_options: { max_images: 12 },
+      });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.code, model).toBe("unsupported_param");
+        expect(r.errors[0]?.message, model).toContain("Seedream 5.5 only");
+      }
+    }
+    for (const model of [
+      "seedream-5-0-260128",
+      "seedream-5-0-lite-260128",
+      "seedream-4-5-251128",
+      "seedream-4-0-250828",
+    ]) {
+      const r = safeUnchecked({
+        model,
+        prompt: "hi",
+        layer_decomposition_options: { max_images: 12 },
+      });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.path, model).toEqual(["layer_decomposition_options"]);
+        expect(r.errors[0]?.message, model).toContain("Seedream 5.5 only");
+      }
     }
     for (const maxImages of [1, 101]) {
       const r = safeUnchecked({
@@ -489,9 +508,10 @@ describe("bytedance.image content rules", () => {
     if (!jpeg.ok) expect(jpeg.errors[0]?.message).toContain("PNG-only");
   });
 
-  test("background cannot ride with layer decomposition on Seedream 5.5 and 5.0 flash", () => {
+  test("background cannot ride with layer decomposition on Seedream 5.5 / 5.0 pro / 5.0 flash", () => {
     for (const [model, background] of [
       ["dola-seedream-5-5-261028", "auto"],
+      ["dola-seedream-5-0-pro-260628", "transparent"],
       ["dola-seedream-5-0-flash-260915", "opaque"],
     ] as const) {
       const r = safeUnchecked({

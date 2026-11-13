@@ -2,8 +2,10 @@
  * Request-aware pricing for the BytePlus ModelArk generation routes.
  *
  * Source of truth: https://docs.byteplus.com/en/docs/ModelArk/1544106
- * ("Pricing"), verified 2026-08-13. Both routes bill only for successfully
- * generated output.
+ * ("Pricing"), verified 2026-08-13. The Seedream 5.5, Seedream 5.0 pro and
+ * Dreamina Seedance 2.5 figures were re-read on 2026-11-12 through its
+ * curl-readable copy, https://docs.byteplus.com/docs/en/modelark/model-pricing.md.
+ * Both routes bill only for successfully generated output.
  *
  * IMAGES bill per generated image, so the estimate is
  * `rate × number of images`, worst-cased where the request leaves the count

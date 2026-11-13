@@ -5,7 +5,12 @@
  * Wire notes (verified against
  * https://docs.byteplus.com/en/docs/ModelArk/1541523 and the per-model
  * capability matrix at
- * https://docs.byteplus.com/en/docs/ModelArk/1824121#9278b81b on 2026-08-13):
+ * https://docs.byteplus.com/en/docs/ModelArk/1824121#9278b81b on 2026-08-13;
+ * the Seedream 5.5 / 5.0 flash arms, `layer_decomposition_options`,
+ * `safety_identifier` and `background: "auto"` against
+ * https://docs.byteplus.com/docs/en/modelark/image-generation-api.md and
+ * https://docs.byteplus.com/docs/en/modelark/image-generation-tutorial.md on
+ * 2026-11-12):
  * - OpenAI-images-flavoured but NOT OpenAI-shaped: the body carries `model`,
  *   `prompt`, `image`, `size`, `response_format`, `watermark` plus ModelArk's
  *   own `sequential_image_generation*`, `stream`, `output_format`,

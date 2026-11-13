@@ -5,7 +5,11 @@
  * Wire notes (verified against
  * https://docs.byteplus.com/en/docs/ModelArk/1520757 and the per-model
  * capability matrix at
- * https://docs.byteplus.com/en/docs/ModelArk/2298881#e7b4c498 on 2026-08-13):
+ * https://docs.byteplus.com/en/docs/ModelArk/2298881#e7b4c498 on 2026-08-13;
+ * Dreamina Seedance 2.5's 1080p and draft mode (`draft`, `draft_task`)
+ * against https://docs.byteplus.com/docs/en/modelark/create-video-generation-task-api.md
+ * and https://docs.byteplus.com/docs/en/modelark/seedance-2-5.md on
+ * 2026-11-12):
  * - This is an ASYNC-JOB API: the POST returns `{ id }`. Poll
  *   `GET /api/v3/contents/generations/tasks/{id}` (transport, out of
  *   unmodel's scope — `contentGenerationTaskUrl(id)` builds it) or supply a

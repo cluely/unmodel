@@ -11,6 +11,10 @@
  *   https://docs.byteplus.com/en/docs/ModelArk/1824121  image capability matrix
  *   https://docs.byteplus.com/en/docs/ModelArk/1520757  video task API
  *   https://docs.byteplus.com/en/docs/ModelArk/2298881  video capability matrix
+ * Re-read 2026-11-12 through the curl-readable copies those links redirect to
+ * (https://docs.byteplus.com/docs/en/modelark/image-generation-api.md,
+ * image-generation-tutorial.md, create-video-generation-task-api.md and
+ * video-generation-tutorial.md); the 2026-11-12 citations below quote them.
  */
 
 import type { DenyRule, EndpointConstraints } from "../../core/constraint-types";
@@ -140,6 +144,10 @@ export interface ImageShapeRule {
    * "Layer decomposition automatically generates transparent PNG layers. Do
    * not pass `background` in this scenario; doing so returns an error." —
    * https://docs.byteplus.com/docs/en/modelark/image-generation-tutorial.md, 2026-11-12.
+   * The API reference states it for the parameter, not per model ("This
+   * parameter is not supported for layer decomposition. Passing it causes an
+   * error." — https://docs.byteplus.com/docs/en/modelark/image-generation-api.md,
+   * 2026-11-12), so every layer-decomposition model carries it.
    */
   readonly backgroundRefusedInLayerDecomposition?: boolean;
 }
@@ -183,6 +191,7 @@ export const imageShapeRules: Readonly<Partial<Record<string, ImageShapeRule>>> 
     // "Seedream 5.0 pro / flash support only one transparent PNG reference
     // image." — https://docs.byteplus.com/docs/en/modelark/image-generation-tutorial.md, 2026-11-12.
     transparentNeedsOneImage: true,
+    backgroundRefusedInLayerDecomposition: true,
   },
   "dola-seedream-5-0-flash-260915": {
     // The Seedream 5.0 pro size surface: the image API reference distinguishes
@@ -272,7 +281,10 @@ export const imageConstraints: Readonly<Partial<Record<string, EndpointConstrain
     },
   },
   "dola-seedream-5-0-pro-260628": {
-    deny: denyTable(SEQUENTIAL_ONLY, IMAGE_API_SOURCE),
+    deny: {
+      ...denyTable(SEQUENTIAL_ONLY, IMAGE_API_SOURCE),
+      ...denyTable(LAYER_OPTIONS_ONLY, IMAGE_API_SOURCE),
+    },
     enums: {
       response_format: IMAGE_RESPONSE_FORMATS,
       output_format: IMAGE_OUTPUT_FORMATS,
@@ -291,7 +303,10 @@ export const imageConstraints: Readonly<Partial<Record<string, EndpointConstrain
     },
   },
   "seedream-5-0-260128": {
-    deny: denyTable(LAYERS_AND_ALPHA_ONLY, IMAGE_MODELS_SOURCE),
+    deny: {
+      ...denyTable(LAYERS_AND_ALPHA_ONLY, IMAGE_MODELS_SOURCE),
+      ...denyTable(LAYER_OPTIONS_ONLY, IMAGE_API_SOURCE),
+    },
     enums: {
       response_format: IMAGE_RESPONSE_FORMATS,
       output_format: IMAGE_OUTPUT_FORMATS,
@@ -299,7 +314,10 @@ export const imageConstraints: Readonly<Partial<Record<string, EndpointConstrain
     },
   },
   "seedream-5-0-lite-260128": {
-    deny: denyTable(LAYERS_AND_ALPHA_ONLY, IMAGE_MODELS_SOURCE),
+    deny: {
+      ...denyTable(LAYERS_AND_ALPHA_ONLY, IMAGE_MODELS_SOURCE),
+      ...denyTable(LAYER_OPTIONS_ONLY, IMAGE_API_SOURCE),
+    },
     enums: {
       response_format: IMAGE_RESPONSE_FORMATS,
       output_format: IMAGE_OUTPUT_FORMATS,
@@ -309,6 +327,7 @@ export const imageConstraints: Readonly<Partial<Record<string, EndpointConstrain
   "seedream-4-5-251128": {
     deny: {
       ...denyTable(LAYERS_AND_ALPHA_ONLY, IMAGE_MODELS_SOURCE),
+      ...denyTable(LAYER_OPTIONS_ONLY, IMAGE_API_SOURCE),
       ...denyTable(OUTPUT_FORMAT_ONLY, IMAGE_API_SOURCE),
     },
     enums: {
@@ -319,6 +338,7 @@ export const imageConstraints: Readonly<Partial<Record<string, EndpointConstrain
   "seedream-4-0-250828": {
     deny: {
       ...denyTable(LAYERS_AND_ALPHA_ONLY, IMAGE_MODELS_SOURCE),
+      ...denyTable(LAYER_OPTIONS_ONLY, IMAGE_API_SOURCE),
       ...denyTable(OUTPUT_FORMAT_ONLY, IMAGE_API_SOURCE),
     },
     enums: {

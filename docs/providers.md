@@ -13,7 +13,7 @@ provider — not their quality ranking.
   emitted by a codegen from the provider's own published OpenAPI or catalog, over a committed
   snapshot. Behaviour (checks, messages, estimates, docs) is still hand-written beside it. Two
   providers: **fal** — see [the fal.ai wave](#falai-wave--one-aggregator-ten-verbs) — and
-  **revana** — see [the Revana wave](#revana-wave--one-router-nine-addresses).
+  **revana** — see [the Revana wave](#revana-wave--one-router-thirteen-addresses).
 - **catalog-only** — model metadata available via `unmodel/catalog`; no request validator yet.
 - **excluded** — no public developer API today (noted; revisit when one ships).
 
@@ -871,7 +871,7 @@ start a fine-tune rather than an inference request), `vision` (34 doing image-in
 `unmodel/chat` already owns), `3d` (53 — a 3D vocabulary on a single witness is a guess), and
 the ffmpeg / workflow-utils / subtitles plumbing.
 
-## Revana wave — one router, nine addresses
+## Revana wave — one router, thirteen addresses
 
 Revana (https://revana.si) is a router: one key and one prepaid balance over image, video,
 speech, music and language models from two dozen makers, each served by the cheapest of several
@@ -889,6 +889,10 @@ Research: [`docs/research/revana.md`](./research/revana.md).
 | `revana.upscale` | 〃 | the upscalers — a view |
 | `revana.tts` | 〃 | the speech models |
 | `revana.music` | 〃 | the music models |
+| `revana.videoQueue` | `POST /v1/queue/revana/{model_id}` | every `kind: "video"` model |
+| `revana.imageQueue` | 〃 | every `kind: "image"` model |
+| `revana.ttsQueue` | 〃 | the speech models |
+| `revana.musicQueue` | 〃 | the music models |
 | `revana.chat` | `POST /v1/chat/completions` | every `kind: "text"` model |
 
 **Neither the route nor the model is the task.** fal puts the endpoint id in the URL; Atlas puts
@@ -898,6 +902,19 @@ eight media ids are category verbs over ONE route (decisions.md §2), four of th
 of them narrower *views* that share the wide address's check battery and refuse nothing it
 accepts except what is not theirs (§4). There is no `revana.videoFromImage`: it would name
 neither a second path nor a second model.
+
+**The queue route is a second path, so it does get qualified siblings.**
+`POST /v1/queue/revana/{model_id}` runs the same jobs through fal's HTTP convention: the model
+is the URL path, the body is the input with no `{ model, input }` wrapper, the answer is fal's
+`IN_QUEUE | IN_PROGRESS | COMPLETED` envelope, and `fal_webhook` has Revana POST the outcome
+instead of being polled for it — the one thing the generation route cannot do. Each wide verb
+has a `*Queue` sibling, named for the route family that serves it (§2); the four views do not,
+because they exist for the unified packs and the packs compile to the generation route.
+`model` and `fal_webhook` are params the validator moves into `.request.url` — neither is a
+body field, and the API refuses a body that carries one. Admission is shared: the queue answers
+the generation route's own sentences, so it is one battery over the same tables, plus the two
+fields the queue reads its own way (`num_images` only as 1; `duration` also as `"8"` / `"8s"`)
+and the webhook's URL rules, all of them established against the live route.
 
 **Generated from the catalog, not the OpenAPI document.** Revana's OpenAPI declares one
 `ModelInput` for 135 models with `resolution`, `quality` and `aspect_ratio` as bare strings —
@@ -998,10 +1015,15 @@ seen to want one.
   models.dev, which does not carry Revana. It is reachable by name, wire-exact.
 - Revana publishes no per-model capability flags for language models, so the generated chat rows
   state the endpoint's envelope (text and image in, function tools) rather than a per-model claim.
-- `POST /v1/queue/revana/{model_id}` — a fal-shaped second spelling of the same jobs — and the
-  undocumented `/v1/videos` are declined by name in `data/revana/curation.json`.
+- The three fal alias paths on the queue route (`/v1/queue/fal-ai/nano-banana-2` and two
+  more — a migration aid over models the canonical paths already serve) and the undocumented
+  `/v1/videos` are declined by name in `data/revana/curation.json`.
+- The queue addresses are not unified refs. `revana/<model>` in a pack compiles to
+  `POST /v1/generations`; a caller who wants the webhook reaches `revana.*Queue` by name.
 - No response checker for generations: the POST answers a queued job, and the finished
-  `Generation` carries its own verdict and its own exact charge.
+  `Generation` carries its own verdict and its own exact charge. Nor for the queue route, whose
+  result states no charge at all — its `request_id` is a generation id, and
+  `generationUrl(request_id)` is where the charge is read.
 
 Revana resells weights unmodel already reaches natively — `veo-3.1` is also `google.video`,
 `seedance-2.5` also `bytedance.video`, `elevenlabs-v3` also `elevenlabs.tts` — through a

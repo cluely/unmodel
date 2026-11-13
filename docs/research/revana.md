@@ -94,12 +94,18 @@ The published `ModelInput` has seventeen properties and
   input.seed. It takes text, voice, dialogue, stability and language_code.`
   Bounds, from its own 422s: `stability` and `similarity_boost` 0–1, `speed`
   0.7–1.2, `dialogue` ≥ 1 item of strict `{ text, voice? }`.
-- **Documented aliases** — `n` for `num_images`, `input.task` for `task`.
+- **Documented aliases** — `n` for `num_images`, `input.task` for `task`, and
+  `generate_audio` for `audio`. The last is in no schema; the queue page states
+  it once ("`generate_audio` maps to `audio`"), for three fal aliases, and both
+  routes take it on every model that takes `audio`: priced as `audio`
+  (`veo-3.1`, 720p, 8 s: $1.60 without, $3.20 with either spelling), refused
+  with `audio`'s own sentence where the model has none, and a 422 beside
+  `audio` even when the two agree. unmodel types it and checks it as `audio`.
 - **Undocumented aliases**, recognised but described nowhere:
   `start_image_url`, `first_frame_url`, `last_image_url`, `last_frame_url`,
   `tail_image_url`, `reference_images`, `reference_image_urls`,
-  `reference_videos`, `generate_audio`. unmodel does not type them: a caller
-  who sends one gets an `unknown_param` warning and the request goes through.
+  `reference_videos`. unmodel does not type them: a caller who sends one gets
+  an `unknown_param` warning and the request goes through.
 
 ## Per-model rules, and where each comes from
 
@@ -113,7 +119,7 @@ catalog row alone.
 | `duration` | `options.durations` | a list or a `{min,max}` range; absent → `<id> sets its own length; leave input.duration out.`; on a picture model → `makes pictures; input.duration does not apply.` |
 | `audio` | `options.audio` | `true` only where the option is `true` → else `does not make sound; leave input.audio out.` (`false` passes validation everywhere) |
 | `quality` | `options.qualities` | a list is an enum; absent → accepted, any value |
-| `num_images` / `n` | `options.max_images` | picture models only, 1–max; both at once is refused; an upscaler takes neither |
+| `num_images` / `n` | `options.max_images` | a count of ONE is taken by every `ModelInput` model (video, upscaler, speech and music included); above one, picture models only, up to the max, and not an upscaler; both at once is refused |
 | `image_urls` | `options.max_input_images` | `<id> takes at most N pictures in input.image_urls.` |
 | `voice` | `options.voices` | must be a listed id |
 | `language_code` | `options.languages` | list → enum; `[]` → `picks the language from the text; leave input.language_code out.`; absent → any code |
@@ -251,10 +257,60 @@ per-model claim, and `limit.context` is `0` where none is listed.
 Where a page and the API disagree, unmodel follows the API and says so in the
 code beside the rule.
 
+## The queue route
+
+`POST /v1/queue/revana/{model_id}` (https://revana.si/queue.md) runs the same
+jobs through fal's HTTP convention. It was first read as a second spelling of
+`/v1/generations` and declined; it is a second route, with one capability the
+first lacks, and is addressed as `revana.videoQueue`, `imageQueue`, `ttsQueue`
+and `musicQueue`.
+
+| | `/v1/generations` | `/v1/queue/revana/{model_id}` |
+|---|---|---|
+| Model | `model` in the body | the URL path; `model` in the body is `Unrecognized key` |
+| Body | `{ model, input, … }` | the input fields, "without a `{model, input}` wrapper", with `max_cost_usd` / `max_wait_s` beside them |
+| Answer | a `Generation` (`queued` …) | fal's envelope: `IN_QUEUE` / `IN_PROGRESS` / `COMPLETED`, `status_url`, `response_url` |
+| Result | `output.urls`, `cost_usd` | `{ images }` / `{ video }` / `{ audio, audios }`, and no cost |
+| Completion | poll | poll, or `?fal_webhook=<url>` |
+| Auth | `Bearer` | `Key` or `Bearer` |
+
+What the probes established, 2026-11-12:
+
+- **Admission is the generation route's.** The queue answers that route's own
+  sentences, `input.` prefix included (`input.resolution must be one of 720p,
+  1080p, 4K for veo-3.1.`) — so one check battery serves both, and unmodel
+  drops the prefix when it reports about a flat body.
+- **It validates before it prices.** A body it accepts, sent with a
+  `max_cost_usd` nothing can meet, answers `422 max_cost_exceeded` and creates
+  nothing. That is the queue's free oracle, the way the quote endpoint is the
+  generation route's.
+- **Two fields are read differently.** `num_images` is taken only as the number
+  1 ("Only num_images: 1 is supported; submit separate requests for more
+  images") on every model, and is then dropped — so it rides beside an `n`,
+  and on `seedance-2.5` and `nemesis`, whose schemas have no such key.
+  `duration` also takes a string of digits with an optional lowercase `s`
+  (`"8"`, `"8s"`, `"08"`; not `"8.0s"`, `"8S"`, `"8 s"`), read as seconds
+  and then held to the model's list.
+- **`fal_webhook` is checked at submit, before the body.** "Webhook must be a
+  reachable public HTTPS URL on port 443 without credentials or fragments."
+  Refused: `http:`, userinfo, a fragment, port 8443, an IPv6 literal,
+  `10.0.0.1`, `localhost`, a host that does not resolve, an empty value.
+  Taken: an explicit `:443`, a query string, a public IPv4 literal. In the
+  body it is an unrecognised key.
+- **A queue `request_id` is a generation id.** `GET /v1/generations/{id}`
+  answers the same job, with the `cost_usd` the queue's documents never state.
+- **Cancelling is a `405`**, an `Idempotency-Key` replay a `200` with the same
+  request, the result before completion a `409 not_ready`, and every queue
+  error carries fal's `detail` beside Revana's `error`.
+
+The three fal alias paths (`/v1/queue/fal-ai/nano-banana-2`,
+`…/nano-banana-pro`, `…/veo3.1/fast`) are not addressed: they are a
+migration aid for fal clients over the same three models, whose canonical
+paths take the full input. Declined in `data/revana/curation.json`.
+
 ## Not addressed
 
-- `POST /v1/queue/revana/{model_id}` — a fal-shaped second spelling of the same
-  jobs. Declined; recorded in `data/revana/curation.json`.
+- `POST /v1/queue/fal-ai/{alias}` — see above.
 - `POST /v1/videos` — no published shape.
 - Polling, downloads, uploads, balance — transport. The URLs are exported.
 
@@ -279,6 +335,15 @@ The differential run, 2026-11-12, against `POST /v1/generations/quote`:
 A 658-row sample of that run — twenty-two models, the API's verbatim answer
 per body — is committed as `test/fixtures/revana/quote-oracle.json` and
 replayed offline by `src/providers/revana/oracle.test.ts`.
+
+**What that run missed.** Probing the queue route turned up two things the
+generation route accepts that the battery did not, because the run never asked:
+a count of one on a model that makes one thing (`num_images: 1` on a video,
+upscale, speech or music model — it had only tried 2), and `generate_audio`.
+Both are fixed, and 56 rows asking exactly those questions joined the fixture
+(714 rows, twenty-five models). The queue route has its own:
+`test/fixtures/revana/queue-oracle.json`, 85 bodies over nine models, none
+refused by unmodel and accepted by the API.
 
 The harness is not committed: it needs a key, and it spends nothing but should
 not run in CI against someone's account. Re-running it is the right first step

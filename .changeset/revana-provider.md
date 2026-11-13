@@ -4,10 +4,11 @@
 
 New provider: **Revana** (`unmodel/revana`, `unmodel/revana/types`, `unmodel/revana/unified`, `unmodel/revana/values`) — a router that serves image, video, speech, music and language models from two dozen makers behind one key.
 
-Nine addresses over two routes:
+Thirteen addresses over three routes:
 
 - `revana.video`, `revana.image`, `revana.tts`, `revana.music` — every media model, on `POST /v1/generations`. One `{ model, input }` body for all of them; `input` is typed per model from Revana's own catalog (`resolution`, `aspect_ratio`, `duration`, `quality`, `voice`, `language_code`, which media fields the model takes).
 - `revana.imageEdit`, `revana.upscale`, `revana.lipsync`, `revana.avatar` — narrower views of the same route, for the models and inputs that make a request an edit, an upscale, a lip-sync or an avatar.
+- `revana.videoQueue`, `revana.imageQueue`, `revana.ttsQueue`, `revana.musicQueue` — the same media models on `POST /v1/queue/revana/{model_id}`, Revana's fal-convention route and the one with completion webhooks. The params are the input fields with no `input` wrapper; `model` and `fal_webhook` are moved into `.request.url`, where that route reads them, and `fal_webhook` is checked against the URL rules the API enforces at submit (public `https:`, port 443, no credentials, no fragment, no IPv6). The per-model rules are the generation route's, plus the two fields the queue reads its own way: `num_images` only as `1`, and `duration` also as fal's `"8"` / `"8s"`.
 - `revana.chat` — the OpenAI-compatible `POST /v1/chat/completions`, with the params the endpoint refuses (`web_search_options`, `prediction`, `audio`, non-text `modalities`, non-function tools) caught before sending. `revana.checkChat` reports the charge the response itself states (`usage.cost_usd`).
 
 The per-model surface is generated from Revana's keyless model catalog (`bun run codegen:revana`) and refreshed weekly. Every rule is one the API states about the model; refusals that depend on which route is up that day are not turned into errors, and the one that is reported (`negative_prompt`) is a warning.
@@ -30,4 +31,17 @@ Things to know before reaching for one:
 - `unmodel/music` needs the `style` or `lyrics` extra at Revana: a prompt alone is not a request its API takes.
 - No Revana model takes `outputFormat`; `unmodel/upscale` takes a still and no `factor`; a speech `dialogue` is `revana.tts`'s, not `unmodel/tts`'s.
 
-Also exported: `generationUrl(id)` / `generationContentUrl(id, n)` for polling and download, the `Generation` / `Quote` response types, the shape and price tables, and `REVANA_VOICES`.
+```ts
+import { videoQueue } from "unmodel/revana";
+
+const body = videoQueue({
+  model: "veo-3.1",
+  prompt: "A fox walks through snow",
+  duration: 8,
+  fal_webhook: "https://your-app.example/revana",
+});
+body.request.url; // "https://api.revana.si/v1/queue/revana/veo-3.1?fal_webhook=https%3A%2F%2Fyour-app.example%2Frevana"
+JSON.stringify(body); // {"prompt":"A fox walks through snow","duration":8}
+```
+
+Also exported: `generationUrl(id)` / `generationContentUrl(id, n)` for polling and download; `queueUrl`, `queueStatusUrl`, `queueResultUrl` and `WEBHOOKS_SECRET_URL` for the queue route, with its `QueueEnvelope`, `QueueResult` and `QueueWebhookDelivery` types and the two signature header names; the `Generation` / `Quote` response types; the shape and price tables; and `REVANA_VOICES`.

@@ -6,6 +6,7 @@ import { videoFromImage, IMAGE2VIDEO_MODELS, IMAGE2VIDEO_URL } from "./video-fro
 // at the end of this file is what asserts that stays true — for those and for
 // the path-addressed rows beside them.
 import { video as unifiedVideo } from "./unified-video";
+import { video as videoPack } from "../../unified/video";
 import { V1_MODE_TIERS, V1_MODEL_RULES, type V1ModelRules } from "./v1-routes";
 import { MODE_RESOLUTION } from "./pricing";
 import { KLING_VIDEO_FAL_OVERLAP, KLING_VIDEO_FAL_REFUSALS } from "./fal-target";
@@ -431,5 +432,20 @@ describe("kling video: the path-addressed rows match their route rules", () => {
     expect(Object.hasOwn(extras, "audio"), `${id} audio`).toBe(rules.audio !== undefined);
     expect(Object.hasOwn(extras, "multi_shot"), `${id} multi_shot`).toBe(rules.multiShot === true);
     expect(Object.hasOwn(extras, "watermark_info"), `${id} watermark_info`).toBe(true);
+  });
+
+  // The test above reads one rule row per model — omni's, for the ids that
+  // also have text and image arms — so it cannot see an extra the row declares
+  // landing on an arm without it. This compiles each one where routing sends it.
+  test.each(pathIds)("%s: every extra the row declares compiles on a prompt-only request", (id) => {
+    const samples: Record<string, unknown> = {
+      audio: pathRules[id]!.audio?.[0],
+      multi_shot: true,
+      watermark_info: { enabled: false },
+    };
+    for (const key of Object.keys(ROWS[id]?.extras ?? {})) {
+      const r = videoPack.safe({ model: `kling/${id}`, prompt: "hi", [key]: samples[key] } as never);
+      expect(r.ok ? [] : r.errors, `${id} ${key}`).toEqual([]);
+    }
   });
 });

@@ -509,8 +509,10 @@ describe("Kling 4.0 / 4.0 Flash", () => {
   });
 
   test("omni audio is native or original — there is no off; t2v and i2v have no switch", () => {
+    const clip = frame("base_video", "https://example.com/clip.mp4");
     expect(
-      videoOmni.safe({ model: "kling-4.0", contents: [prompt], settings: { audio: "original" } }).ok,
+      videoOmni.safe({ model: "kling-4.0", contents: [prompt, clip], settings: { audio: "original" } })
+        .ok,
     ).toBe(true);
     const off = videoOmni.safe({ model: "kling-4.0", contents: [prompt], settings: { audio: "off" } });
     expect(off.ok).toBe(false);
@@ -519,6 +521,44 @@ describe("Kling 4.0 / 4.0 Flash", () => {
     const t2v = videoV3.safe({ model: "kling-4.0", prompt: "hi", settings: { audio: "native" } });
     expect(t2v.ok).toBe(false);
     if (!t2v.ok) expect(t2v.errors[0]?.code).toBe("unsupported_param");
+  });
+
+  test('omni audio "original" needs a base or feature video, and takes no voice', () => {
+    const original = { audio: "original" } as const;
+    const base = frame("base_video", "https://example.com/clip.mp4");
+    const feature = frame("feature_video", "https://example.com/clip.mp4");
+    for (const model of ["kling-4.0", "kling-4.0-flash"] as const) {
+      expect(videoOmni.safe({ model, contents: [prompt, base], settings: original }).ok, model).toBe(
+        true,
+      );
+      expect(
+        videoOmni.safe({ model, contents: [prompt, feature], settings: original }).ok,
+        model,
+      ).toBe(true);
+      const bare = videoOmni.safe({ model, contents: [prompt], settings: original });
+      expect(bare.ok, model).toBe(false);
+      if (!bare.ok) {
+        expect(bare.errors).toHaveLength(1);
+        expect(bare.errors[0]).toMatchObject({ code: "invalid_shape", path: ["settings", "audio"] });
+      }
+      // "native" asks for nothing from the inputs.
+      expect(
+        videoOmni.safe({ model, contents: [prompt], settings: { audio: "native" } }).ok,
+        model,
+      ).toBe(true);
+    }
+
+    const voice = { type: "voice", voice_id: "v-1", id: "voice_1" };
+    const voiced = videoOmni.safe({
+      model: "kling-4.0",
+      contents: [prompt, base, voice],
+      settings: original,
+    });
+    expect(voiced.ok).toBe(false);
+    if (!voiced.ok) {
+      expect(voiced.errors).toHaveLength(1);
+      expect(voiced.errors[0]).toMatchObject({ code: "invalid_shape", path: ["contents", 2] });
+    }
   });
 
   test("4.0's image route takes middle frames and needs no first frame; Flash needs one", () => {

@@ -202,9 +202,10 @@ export type { ImageMode, ImageCostInputs, VideoCostInputs } from "./pricing";
 // try-on, video extension, `POST /v1/videos/omni-video`,
 // `POST /v1/images/multi-image2image` and the account/asset endpoints are
 // documented but not yet validated here.
-// `models` is the provider-wide view; four ids name both a video and an image
-// model, so it carries a merged dual-kind row for those. Reach for
-// `videoModels` / `imageModels` whenever one kind's rate is what you mean.
+// `models` is the provider-wide view; one catalogued id (`kling-v3`) names
+// both a video and an image model, so it carries a merged dual-kind row.
+// Reach for `videoModels` / `imageModels` whenever one kind's rate is what
+// you mean.
 export {
   models,
   videoModels,

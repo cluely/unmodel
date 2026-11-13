@@ -37,8 +37,12 @@
  *   (https://kling.ai/document-api/api/usage-guide/kling-4-0, 2026-11-12).
  * - There is NO `settings.aspect_ratio` on this route — the input image sets
  *   the frame.
- * - Images: .jpg/.jpeg/.png, ≤50MB, ≥300px per side, aspect ratio within
- *   1:2.5–2.5:1. Up to 3 Elements per task.
+ * - Images: .jpg/.jpeg/.png, ≥300px per side, aspect ratio within
+ *   1:2.5–2.5:1. Size cap per model: ≤50MB on kling-3.0 / 3.0-turbo / 2.6 /
+ *   2.5-turbo; ≤30MB on kling-4.0 / 4.0-flash, which take at most 10 images
+ *   ("Maximum number of images: 10.",
+ *   https://kling.ai/document-api/api/video/4-0/image-to-video, 2026-11-12).
+ *   Elements: kling-3.0 only, up to 3 per task.
  * - Async: responds with a task object. Auth is `Authorization: Bearer <key>`.
  */
 

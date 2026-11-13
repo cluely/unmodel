@@ -154,6 +154,35 @@ describe("route derivation", () => {
     );
   });
 
+  test("kling-4.0's omni-only settings send it to omni: `audio`, and a shape beside frames", () => {
+    const compile = (model: string, extra: Record<string, unknown> = {}) =>
+      video({ model, prompt: "a fox", ...extra } as never) as unknown as {
+        contents?: unknown[];
+        settings?: unknown;
+        request: { url: string };
+      };
+    const host = "https://api-singapore.klingai.com";
+    const frame = { image: { url: "https://example.com/a.png" } };
+    // Text-to-video and image-to-video have no audio switch on either id.
+    for (const model of ["kling-4.0", "kling-4.0-flash"]) {
+      const audio = compile(`kling/${model}`, { audio: "native" });
+      expect(audio.request.url).toBe(`${host}/omni-video/${model}`);
+      expect(audio.contents).toEqual([{ type: "prompt", text: "a fox" }]);
+      expect(audio.settings).toEqual({ audio: "native" });
+    }
+    // Image-to-video has no `settings.aspect_ratio`; omni's overrides the frame.
+    const shaped = compile("kling/kling-4.0", { ...frame, aspectRatio: "16:9" });
+    expect(shaped.request.url).toBe(`${host}/omni-video/kling-4.0`);
+    expect(shaped.contents).toEqual([
+      { type: "prompt", text: "a fox" },
+      { type: "first_frame", url: "https://example.com/a.png" },
+    ]);
+    expect(shaped.settings).toEqual({ aspect_ratio: "16:9" });
+    // Without either, text and frames stay on their own routes.
+    expect(compile("kling/kling-4.0").request.url).toBe(`${host}/text-to-video/kling-4.0`);
+    expect(compile("kling/kling-4.0", frame).request.url).toBe(`${host}/image-to-video/kling-4.0`);
+  });
+
   test("kling-4.0 compiles its own shapes and durations", () => {
     const params = video({
       model: "kling/kling-4.0",

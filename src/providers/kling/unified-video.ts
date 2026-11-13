@@ -14,7 +14,7 @@
  * | `kling-v3`, `kling-v2-6`, `kling-v2-5-turbo` | `/v1/videos/*` | `duration: "5"` — **a string** | `mode`: std / pro / 4k | `image`, `image_tail` |
  * | `kling-3.0`, `-turbo`, `kling-2.6`, `kling-2.5-turbo` | `/text-to-video/{model}` | `settings.duration: 5` — a number | `settings.resolution` | `contents[]` |
  * | `kling-3.0-omni`, `kling-o1` | `/omni-video/{model}` | `settings.duration: 5` | `settings.resolution` | `contents[]`, incl. video |
- * | `kling-4.0`, `kling-4.0-flash` | all three path routes — text and frames go to `/text-to-video` / `/image-to-video`, references and clips to `/omni-video` | `settings.duration: 5` | `settings.resolution` | `contents[]` |
+ * | `kling-4.0`, `kling-4.0-flash` | all three path routes — text and frames go to `/text-to-video` / `/image-to-video`; references, clips, `audio` and a shape beside frames to `/omni-video` | `settings.duration: 5` | `settings.resolution` | `contents[]` |
  *
  * The two duration encodings in one provider are why the canonical `duration`
  * is a plain number: `"5"` and `5` are the same request at two Kling routes,
@@ -42,7 +42,7 @@
  * - **A source clip** likewise: `base_video` is omni-only.
  * - **`aspect_ratio`** is absent from both image-driven routes — the frame
  *   sets the shape — so a shape passed with a first frame is refused rather
- *   than ignored.
+ *   than ignored, except on Kling 4.0 / 4.0 Flash, whose omni route takes it.
  * - **`negative_prompt`** is a `/v1/videos/*` field only; the V3 and omni
  *   `settings` objects have no equivalent, and this adapter says so per model
  *   rather than declaring a gap that is only true for the path-addressed ids.
@@ -139,13 +139,19 @@ type KlingValidate = CompiledCall<KlingVideoWire, KlingVideoResult>["validate"];
 /** Which family a request lands in — the first of the two dispatch decisions. */
 type Family = "v1" | "v3" | "omni";
 
-function familyOf(model: string, route: VideoRoute): Family {
+function familyOf(model: string, input: VideoParams): Family {
   if (OMNI_VIDEO_RULES[model] !== undefined) {
     // Kling 4.0 / 4.0 Flash are on the omni route AND the text and image ones:
-    // what those two can carry goes there, and only references and clips — the
-    // inputs nothing but omni takes — go to omni.
-    const onV3 = TEXT_TO_VIDEO_V3_RULES[model] !== undefined;
-    return onV3 && (route === "text" || route === "image") ? "v3" : "omni";
+    // what those two can carry goes there, and only what nothing but omni takes
+    // goes to omni — references, clips, an `audio` the text or image row has
+    // no switch for, and a shape beside frames (image-to-video has no
+    // `settings.aspect_ratio`; omni's takes precedence over the first frame).
+    if (TEXT_TO_VIDEO_V3_RULES[model] === undefined) return "omni";
+    const route = videoRoute(input);
+    if (route !== "text" && route !== "image") return "omni";
+    const v3 = (route === "text" ? TEXT_TO_VIDEO_V3_RULES : IMAGE_TO_VIDEO_V3_RULES)[model];
+    if ("audio" in input && input.audio !== undefined && v3?.audio === undefined) return "omni";
+    return route === "image" && input.aspectRatio !== undefined ? "omni" : "v3";
   }
   // `kling-v*` is the body-addressed family; `kling-3.0` and friends are the
   // path-addressed one. An id this snapshot has not seen has already drawn
@@ -184,7 +190,7 @@ export const video = {
     input: VideoParams,
     ctx: CompileContext<VideoParams>,
   ): CompiledCall<KlingVideoWire, KlingVideoResult> {
-    const family = familyOf(ctx.model, videoRoute(input));
+    const family = familyOf(ctx.model, input);
     const source = family === "omni" ? OMNI_SOURCE : family === "v3" ? V3_SOURCE : V1_SOURCE;
     const derived = ctx.take(
       resolveVideoRoute(

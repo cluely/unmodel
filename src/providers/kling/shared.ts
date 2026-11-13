@@ -193,7 +193,13 @@ export const contentSchema = z.looseObject({
   id: z.string().optional(),
 });
 
-/** Image inputs: .jpg/.jpeg/.png, ≤50MB, ≥300px per side, ratio 1:2.5–2.5:1. */
+/**
+ * Image inputs on the pre-4.0 path-addressed routes (3.0 / 3.0-turbo / 2.6 /
+ * 2.5-turbo image-to-video, 3.0-omni / O1 omni): .jpg/.jpeg/.png, ≤50MB,
+ * ≥300px per side, ratio 1:2.5–2.5:1. Kling 4.0 / 4.0 Flash cap images at
+ * 30MB ("The size of the image file cannot exceed 30MB.", kling-4-params,
+ * 2026-11-12). Not enforced.
+ */
 export const IMAGE_MAX_BYTES = 50 * 1024 * 1024;
 export const IMAGE_MIN_DIMENSION = 300;
 export const IMAGE_FORMATS = ["jpg", "jpeg", "png"] as const;
@@ -275,6 +281,11 @@ export interface RouteModelRules {
   readonly durations: readonly number[];
   /** Allowed `settings.audio` values; omitted when the model has no audio switch. */
   readonly audio?: readonly string[];
+  /**
+   * Whether `settings.audio: "original"` needs a `base_video` / `feature_video`
+   * entry and rules out `voice` entries (the omni rows that state it).
+   */
+  readonly originalAudioNeedsVideo?: boolean;
   /** Whether `settings.multi_shot` exists for this model. */
   readonly multiShot?: boolean;
   /** Allowed `contents[].type` values; omitted on text-to-video. */

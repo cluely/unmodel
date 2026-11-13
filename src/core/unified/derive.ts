@@ -2743,7 +2743,7 @@ export interface ExtrasOptions {
    * routes put `audio` under `settings` and `watermark_info` under `options`,
    * while its `/v1/videos/*` routes put `watermark_info` at the body root. One
    * `applyExtras` call has to serve all of them, because the refusal check
-   * ("`cfg_scale` is not a parameter kling-3.0 accepts") reads the *whole*
+   * ("`sound` is not a parameter kling-3.0 accepts") reads the *whole*
    * table — splitting the table by prefix would split that check too, and an
    * extra that belongs to the other half would then be silently dropped
    * instead of refused.

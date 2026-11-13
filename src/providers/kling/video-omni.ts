@@ -85,6 +85,7 @@ import {
 import { videoCostUSD } from "./pricing";
 
 const SOURCE = `${DOCS_BASE}/api/video/3-0-omni/video-omni`;
+const KLING_4_SOURCE = `${DOCS_BASE}/api/video/4-0/video-omni`;
 
 /** EXPERIMENTAL. `POST /omni-video/{model}` for a given model. */
 export function omniVideoUrl(model: string, baseUrl: string = KLING_BASE_URL): string {
@@ -132,12 +133,17 @@ export const OMNI_VIDEO_RULES: RouteRules = {
   // `i({resolutions:["720p","1080p"],defaultResolution:"1080p",maxDuration:30,
   // includeOmniAudio:!0,aspectRatio:{enum:["21:9","16:9","9:16","1:1","adaptive"]`;
   // audio `enum:["native","original"]`; "Input type. Supports: prompt, images,
-  // videos, Element and voice".
+  // videos, Element and voice". The audio notes (chunk kling-4-params-BRbK4H8J.js,
+  // 2026-11-12): "`original`: Preserves the original audio from an input video,
+  // subject to the following rules: - Voice references cannot be included in
+  // the same request. - At least one `base_video` or `feature_video` must be
+  // provided."
   "kling-4.0": {
     resolutions: ["720p", "1080p"],
     aspectRatios: KLING_4_OMNI_ASPECT_RATIOS,
     durations: DURATIONS_3_30,
     audio: ["native", "original"],
+    originalAudioNeedsVideo: true,
     contentTypes: [
       "prompt",
       "first_frame",
@@ -156,12 +162,14 @@ export const OMNI_VIDEO_RULES: RouteRules = {
   // `i({resolutions:["720p"],defaultResolution:"720p",maxDuration:20,
   // includeOmniAudio:!0,aspectRatio:{enum:["21:9","16:9","9:16","1:1","adaptive"]`;
   // "Input type. Supports: prompt, reference images, reference videos, Element"
-  // with images `r(["first_frame","refer_image"]`.
+  // with images `r(["first_frame","refer_image"]`. Its audio param is the same
+  // kling-4-params entry as 4.0's, notes on `original` included.
   "kling-4.0-flash": {
     resolutions: ["720p"],
     aspectRatios: KLING_4_OMNI_ASPECT_RATIOS,
     durations: DURATIONS_3_20,
     audio: ["native", "original"],
+    originalAudioNeedsVideo: true,
     contentTypes: ["prompt", "first_frame", "refer_image", "feature_video", "base_video", "element"],
     maxElements: KLING_4_MAX_ELEMENTS,
     prompt: KLING_4_PROMPT_BUDGET,
@@ -232,6 +240,43 @@ function hasVideoInput(contents: readonly KlingContent[] | undefined): boolean {
   );
 }
 
+/**
+ * `settings.audio: "original"` keeps an input video's audio, so on the rows
+ * flagged `originalAudioNeedsVideo` it needs that video and takes no voice.
+ */
+function checkOriginalAudio(
+  params: OmniVideoParams,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (info === undefined || params.settings?.audio !== "original") return;
+  if (OMNI_VIDEO_RULES[params.model]?.originalAudioNeedsVideo !== true) return;
+  if (!hasVideoInput(params.contents)) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["settings", "audio"],
+      model: params.model,
+      message:
+        `\`settings.audio: "original"\` keeps an input video's audio, so "${params.model}" ` +
+        'needs a `base_video` or `feature_video` entry in `contents`. Add one, or use ' +
+        '`audio: "native"`.',
+      meta: { source: KLING_4_SOURCE },
+    });
+  }
+  params.contents.forEach((item, index) => {
+    if (typeof item !== "object" || item === null || item.type !== "voice") return;
+    ctx.report({
+      code: "invalid_shape",
+      path: ["contents", index],
+      model: params.model,
+      message:
+        `"${params.model}" takes no \`voice\` entry beside \`settings.audio: "original"\` — the ` +
+        'input video\'s audio is what plays. Drop the voice, or use `audio: "native"`.',
+      meta: { source: KLING_4_SOURCE },
+    });
+  });
+}
+
 function estimate(params: OmniVideoParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
   if (info === undefined) return {};
   const settings = params.settings ?? {};
@@ -273,6 +318,7 @@ const validator = createValidator<OmniVideoParams, unknown>({
     checkSettings("omni-video", OMNI_VIDEO_RULES, SOURCE),
     checkContents("omni-video", OMNI_VIDEO_RULES, SOURCE),
     checkPrompt("omni-video", OMNI_VIDEO_RULES, SOURCE),
+    checkOriginalAudio,
   ],
   estimate,
   finalize,

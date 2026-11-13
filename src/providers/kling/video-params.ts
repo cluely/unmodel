@@ -219,7 +219,8 @@ export const KLING_VIDEO_MODEL_PARAMS = {
   // Kling 4.0 / 4.0 Flash take every integer from 3 to 30 / 3 to 20 seconds —
   // a range, so no `durations` list (see `VideoModelParams.durations`); the
   // route rule tables carry it and answer at `duration`. `ratios` omits omni's
-  // `adaptive`, which is not a shape. `audio` exists on the omni route only.
+  // `adaptive`, which is not a shape. `audio` exists on the omni route only, so
+  // a request that sets it compiles there — as does a shape beside frames.
   "kling-4.0": {
     resolutions: ["720p", "1080p"],
     ratios: KLING_4_ASPECT_RATIOS,

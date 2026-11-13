@@ -219,7 +219,9 @@ export interface ChatCompletionsBodyBase<ModelId extends string = string> {
 // on unknown top-level keys by introspecting the shape).
 // ---------------------------------------------------------------------------
 
-const textPartSchema = z.looseObject({ type: z.literal("text"), text: z.string() });
+// The text, audio and file arms are exported for overlays that compose their
+// own user-content union around them (see `createMessagesSchema`).
+export const textPartSchema = z.looseObject({ type: z.literal("text"), text: z.string() });
 const imagePartSchema = z.looseObject({
   type: z.literal("image_url"),
   image_url: z.looseObject({
@@ -227,11 +229,11 @@ const imagePartSchema = z.looseObject({
     detail: z.enum(["auto", "low", "high"]).optional(),
   }),
 });
-const audioPartSchema = z.looseObject({
+export const audioPartSchema = z.looseObject({
   type: z.literal("input_audio"),
   input_audio: z.looseObject({ data: z.string(), format: z.enum(["wav", "mp3"]) }),
 });
-const filePartSchema = z.looseObject({
+export const filePartSchema = z.looseObject({
   type: z.literal("file"),
   file: z.looseObject({
     file_data: z.string().optional(),
@@ -289,16 +291,31 @@ export const messageRoleSchemas = {
   function: z.looseObject({ role: z.literal("function"), name: z.string(), content: z.string().nullable() }),
 };
 
-const messageSchema = z.discriminatedUnion("role", [
-  messageRoleSchemas.system,
-  messageRoleSchemas.developer,
-  messageRoleSchemas.user,
-  messageRoleSchemas.assistant,
-  messageRoleSchemas.tool,
-  messageRoleSchemas.function,
-]);
+/**
+ * The `messages` array schema around one user-content schema; every other role
+ * arm and the structural rules stay the dialect's. An overlay whose user turns
+ * take more parts (minimax's `video_url`) passes its own union rather than
+ * widening the shared one, which would hide the other oai-base members' real
+ * 400s. An overlay that differs on other roles too builds its own union from
+ * {@link messageRoleSchemas} instead (deepseek).
+ */
+export function createMessagesSchema(userContent: z.ZodType) {
+  return z
+    .array(
+      z.discriminatedUnion("role", [
+        messageRoleSchemas.system,
+        messageRoleSchemas.developer,
+        z.looseObject({ role: z.literal("user"), content: userContent, name: z.string().optional() }),
+        messageRoleSchemas.assistant,
+        messageRoleSchemas.tool,
+        messageRoleSchemas.function,
+      ]),
+    )
+    .superRefine(refineMessageSequence);
+}
 
-export const messagesSchema = z.array(messageSchema).superRefine(refineMessageSequence);
+/** The shared dialect's `messages` schema. */
+export const messagesSchema = createMessagesSchema(userContentSchema);
 
 /** The fields {@link refineMessageSequence} reads, for any dialect's message union. */
 type SequencedMessage =

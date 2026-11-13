@@ -162,9 +162,14 @@ export function checkToolSupport(
   }
 }
 
-/** Input modality each non-text user content part kind requires. */
+/**
+ * Input modality each non-text user content part kind requires. `video_url`
+ * is not a shared-dialect part: only an overlay whose own schema admits it
+ * (minimax) ever reaches this check with one, and there the catalog decides.
+ */
 const PART_INPUT_MODALITY = {
   image_url: "image",
+  video_url: "video",
   input_audio: "audio",
   file: "pdf",
 } as const satisfies Record<string, Modality>;

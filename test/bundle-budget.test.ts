@@ -369,9 +369,17 @@ const MEDIA_RETARGET_MODULES = [
  * identically on macOS and on a linux/amd64 build, so this row is not one of
  * the platform-sensitive chunk pins (see the lipsync note below).
  *
+ * **Bumped 2040 → 2250 at the 2026-11-12 model wave**: 2043.4 KiB measured once
+ * the review fixes landed on the wave's catalogs — the per-model chat rules
+ * (GPT-6, Claude 5.5 / Fable 5.2, Gemini 4, Kimi K3/K3.1, GLM 5.3, Mistral
+ * Large 4, MiniMax M3.1, Muse), deepseek's and minimax's own wire leaves, and
+ * the per-target effort ladders `encodeChat` now reads. The catalogs and
+ * availability tables carry the rest. The chat graph's module enumeration
+ * names every module that joined.
+ *
  * Applications that need a narrow graph use `unmodel/chat/factory` below.
  */
-const CHAT_BUDGET_KIB = 2040;
+const CHAT_BUDGET_KIB = 2250;
 
 /**
  * Provider-free compiler/factory entry; 150.2 KiB measured, pinned at 158.
@@ -1786,6 +1794,10 @@ describe("unmodel/chat", () => {
    * types and validates DeepSeek's own content parts and top-level params, so
    * `deepseek.chat` stops refusing documented image shapes. It imports zod and
    * the dialect's wire leaf only; no catalog came with it.
+   * **+1 (→ 62) with `minimax/wire.ts`** (2026-11-12): `minimax.chat`'s wire
+   * leaf — the `video_url` user part and `image_url.detail: "default"` the
+   * shared dialect refuses, as the schema `minimax/chat.ts` validates
+   * against. Chat's own, imported by the chat leaf, not barrel leakage.
    */
   test("its provider graph is exactly the enumerated 62 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
@@ -1831,6 +1843,7 @@ describe("unmodel/chat", () => {
       // dialect + its two generated catalogs, permanently.
       "src/providers/minimax/chat.ts",
       "src/providers/minimax/constraints.ts",
+      "src/providers/minimax/wire.ts",
       // Barrel leakage, measured: mistral's index re-exports its transcribe
       // endpoint. Deleting these three lines requires giving mistral a
       // `chat.ts` leaf, not loosening the assertion.

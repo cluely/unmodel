@@ -30,12 +30,13 @@ CHAT (`minimax.chat`, `unmodel/chat` as `minimax/…`)
 - New rules on `MiniMax-M3.1-Flash`: `reasoning_effort` must be `low`, `medium`,
   `high`, `xhigh` or `max` (`none` returns HTTP 400 — "MiniMax-M3.1-Flash always
   thinks"), so `unmodel/chat`'s `reasoning: false` is now a typed refusal on this
-  model instead of a 400; `n` must be 1; the deprecated `function_call` is
-  refused in favour of `tools`; `presence_penalty`, `frequency_penalty` and
-  `logit_bias` are reported as ignored (a warning, never a refusal).
-- On both `MiniMax-M3` and `MiniMax-M3.1-Flash`: `temperature` and `top_p` are
-  reported as ignored ("any value passed has no effect"; the models always use
-  1 and 0.95), and `top_p` outside (0, 1] is refused.
+  model instead of a 400.
+- On both `MiniMax-M3` and `MiniMax-M3.1-Flash`: `n` must be 1; the deprecated
+  `function_call` is refused in favour of `tools`; `presence_penalty`,
+  `frequency_penalty` and `logit_bias` are reported as ignored (a warning, never
+  a refusal); `temperature` and `top_p` are reported as ignored ("any value
+  passed has no effect"; the models always use 1 and 0.95), and `top_p` outside
+  (0, 1] is refused.
 
 VIDEO (`minimax.videoV2`, `unmodel/video` as `minimax/…`)
 

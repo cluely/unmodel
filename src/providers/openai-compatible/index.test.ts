@@ -183,6 +183,22 @@ describe("createOpenAICompatible catalog wiring", () => {
     }
   });
 
+  test("the shared dialect keeps refusing the parts only minimax's own schema admits", () => {
+    // minimax.chat widens its user parts through `config.schema`; an overlay
+    // on the shared dialect must not inherit that.
+    for (const part of [
+      { type: "video_url", video_url: { url: "https://x.example/a.mp4" } },
+      { type: "image_url", image_url: { url: "https://x.example/a.png", detail: "default" } },
+    ]) {
+      const r = acme.chat.safe({
+        model: "tiny-chat",
+        messages: [{ role: "user", content: [part] }],
+      } as never);
+      expect(r.ok, part.type).toBe(false);
+      if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
+    }
+  });
+
   test("json_schema response_format without structured outputs errors", () => {
     const r = acme.chat.safe({
       model: "tiny-notools",

@@ -11,7 +11,9 @@
  * `minimax.chat` to apply them.
  *
  * What stays behind in `./chat`: the `top_p` range, which is a bound rather
- * than a list, so neither a deny nor an enum table can express it.
+ * than a list, and MiniMax-M3.1-Flash's refusal of `thinking.type:
+ * "disabled"`, which is a nested field — neither a deny nor an enum table can
+ * express either.
  */
 import type { FamilyRule } from "../../core/constraint-types";
 
@@ -39,6 +41,16 @@ export const chatFamilyRules: readonly FamilyRule[] = [
     // `MiniMax-M3.1-Flash` and `MiniMax-M3` always use 1. |" and "| `top_p` |
     // Not supported yet; any value passed has no effect. `MiniMax-M3.1-Flash`
     // and `MiniMax-M3` always use 0.95. …" (text-openai-api, 2026-11-12).
+    //
+    // The page's "Important Notes" name no model, and its Supported Models
+    // table lists exactly these two ids, so the notes bind the whole M3
+    // generation (text-openai-api, 2026-11-12): "1. Some OpenAI parameters
+    // (such as `temperature`, `top_p`, `presence_penalty`,
+    // `frequency_penalty`, `logit_bias`, etc.) will be ignored", "3. The `n`
+    // parameter only supports value 1", "4. The deprecated `function_call` is
+    // not supported, please use the `tools` parameter". The deprecated M2.x
+    // ids the catalog still carries are not on that table, so the notes are
+    // not extended to them.
     family: "MiniMax-M3 generation",
     match: (modelId) => MINIMAX_M3_GENERATION.has(modelId),
     deny: {
@@ -52,17 +64,6 @@ export const chatFamilyRules: readonly FamilyRule[] = [
         source: MINIMAX_OPENAI_COMPAT_DOC,
         ignored: true,
       },
-    },
-  },
-  {
-    // The page's "Important Notes" (text-openai-api, 2026-11-12): "1. Some
-    // OpenAI parameters (such as `temperature`, `top_p`, `presence_penalty`,
-    // `frequency_penalty`, `logit_bias`, etc.) will be ignored", "3. The `n`
-    // parameter only supports value 1", "4. The deprecated `function_call` is
-    // not supported, please use the `tools` parameter".
-    family: "MiniMax-M3.1-Flash",
-    match: (modelId) => modelId === "MiniMax-M3.1-Flash",
-    deny: {
       presence_penalty: {
         reason: "MiniMax's OpenAI-compatible endpoint ignores `presence_penalty`",
         source: MINIMAX_OPENAI_COMPAT_DOC,
@@ -83,6 +84,44 @@ export const chatFamilyRules: readonly FamilyRule[] = [
         source: MINIMAX_OPENAI_COMPAT_DOC,
       },
     },
-    enums: { reasoning_effort: MINIMAX_FLASH_REASONING_EFFORTS, n: [1] },
+    enums: { n: [1] },
+  },
+  {
+    // "| `service_tier` | Request admission tier. Supported values are
+    // `standard` and `priority`; … `MiniMax-M3.1-Flash` does not support this
+    // field. |" (text-openai-api, 2026-11-12; the same sentence in
+    // openapi-chat-openai.json). Whether Flash ignores the field or refuses
+    // it is not stated, so it warns, never refuses.
+    family: "MiniMax-M3.1-Flash",
+    match: (modelId) => modelId === "MiniMax-M3.1-Flash",
+    deny: {
+      service_tier: {
+        reason:
+          "MiniMax documents that MiniMax-M3.1-Flash does not support `service_tier` (whether it is ignored or refused is not stated)",
+        source: MINIMAX_OPENAI_COMPAT_DOC,
+        ignored: true,
+      },
+    },
+    enums: { reasoning_effort: MINIMAX_FLASH_REASONING_EFFORTS },
+  },
+  {
+    // "| `reasoning_effort` | Thinking depth, effective for
+    // `MiniMax-M3.1-Flash` only. …" (text-openai-api, 2026-11-12), which
+    // openapi-chat-openai.json ChatCompletionReq spells out: "Only
+    // `MiniMax-M3.1-Flash` supports real thinking-depth tuning; other models
+    // ignore this field." The same schema's `service_tier`: "Supported values
+    // are `standard` and `priority`." The 400 on `reasoning_effort: "none"` is
+    // stated for Flash alone, so on M3 every value only warns.
+    family: "MiniMax-M3",
+    match: (modelId) => modelId === "MiniMax-M3",
+    deny: {
+      reasoning_effort: {
+        reason:
+          'thinking depth is tunable on MiniMax-M3.1-Flash only; MiniMax-M3 ignores `reasoning_effort` (disable thinking with `thinking: { type: "disabled" }`)',
+        source: MINIMAX_OPENAI_COMPAT_DOC,
+        ignored: true,
+      },
+    },
+    enums: { service_tier: ["standard", "priority"] },
   },
 ];

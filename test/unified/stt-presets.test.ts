@@ -331,15 +331,16 @@ describe("every declared transcribe preset is a value the provider accepts", () 
     expect(nova2.errors[0]).toMatchObject({ code: "unsupported_param", path: ["keyterm"] });
     expect(nova2.errors[0]!.message).toContain("nova-3");
 
-    // AssemblyAI's two gated blocks point in opposite directions.
+    // AssemblyAI's gated block is Universal-3.5 Pro's.
     const slam = stt.safe({
       model: "assemblyai/slam-1",
       audio: { url: "https://example.com/a.wav" },
-      summarization: true,
+      temperature: 0.2,
     } as never);
     expect(slam.ok).toBe(false);
     if (slam.ok) return;
-    expect(slam.errors[0]!.message).toContain("universal-2");
+    expect(slam.errors[0]).toMatchObject({ code: "unsupported_param", path: ["temperature"] });
+    expect(slam.errors[0]!.message).toContain("universal-3-5-pro");
   });
 
   test("nested extras land under their own wire prefix, beside the compiled params", () => {

@@ -345,14 +345,15 @@ function extrasNarrowingTests(): void {
   stt({ model: "deepgram/nova-2", audio: { url }, language: "multi", language_hint: "es" });
   stt({ model: "deepgram/nova-2", audio: { url }, redact_usage: true });
 
-  // AssemblyAI's two gated blocks point in opposite directions.
+  // AssemblyAI's one gated block, and the retired legacy summary params.
   stt({ model: "assemblyai/universal-3-5-pro", audio: { url }, temperature: 0.2 });
   // @ts-expect-error — "Supported: Universal-3.5 Pro only".
   stt({ model: "assemblyai/universal-2", audio: { url }, temperature: 0.2 });
+  // @ts-expect-error — "the top-level `summarization` and `auto_chapters` options return errors since October 20, 2026".
   stt({ model: "assemblyai/universal-2", audio: { url }, summarization: true });
-  // @ts-expect-error — "Supported: Universal-2 only".
+  // @ts-expect-error — on every model.
   stt({ model: "assemblyai/universal-3-5-pro", audio: { url }, summarization: true });
-  // @ts-expect-error — and `slam-1` is gated away from both.
+  // @ts-expect-error — Auto Chapters with it.
   stt({ model: "assemblyai/slam-1", audio: { url }, auto_chapters: true });
   stt({ model: "assemblyai/universal-3-6-pro-preview", audio: { url }, disfluencies: true });
   // @ts-expect-error — the preview too: temperature "only takes effect on the Universal-3.5 Pro model".

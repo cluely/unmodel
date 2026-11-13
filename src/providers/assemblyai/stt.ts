@@ -96,7 +96,8 @@ export interface TranscriptBody {
    * (2026-11-12): "Passing a current model name ( universal-2 ,
    * universal-3-5-pro ) to the async speech_model field now returns a 400.
    * Passing a legacy name ( best , nano , universal ) returns 200 but always
-   * routes to the default model." Pin a model with `speech_models`.
+   * routes to the default model." Pin a model with `speech_models`; those two
+   * current names are refused here.
    */
   speech_model?: AssemblyaiSpeechModel | null;
   /** Cannot be combined with `language_detection: true`. */
@@ -173,18 +174,23 @@ export interface TranscriptBody {
   /** Reject audio whose speech fraction is below this (0.0–1.0); nullable. */
   speech_threshold?: number | null;
   /**
-   * Legacy Summarization — Universal-2 only; requires `punctuate` and
-   * `format_text`, and conflicts with `auto_chapters`. AssemblyAI's changelog
-   * (2026-11-12): "Starting October 20, 2026, requests using them will return
-   * errors." Its replacement is `speech_understanding.request`.
+   * Legacy Summarization — `true` is refused on every model. AssemblyAI's
+   * changelog (2026-10-06 entry, checked 2026-11-12): "Starting October 20,
+   * 2026, requests using them will return errors." Its replacement is
+   * `speech_understanding.request.summarization`. `false` still validates.
    */
   summarization?: boolean;
+  /** Legacy Summarization's model — refused when non-null, like `summarization`. */
   summary_model?: "informative" | "catchy" | "conversational" | null;
+  /**
+   * Legacy Summarization's output shape — "The type of summary generated, if
+   * Summarization is enabled." (SUBMIT_DOCS); not refused on its own.
+   */
   summary_type?: "gist" | "headline" | "paragraph" | "bullets" | "bullets_verbose" | null;
   /**
-   * Legacy Auto Chapters — Universal-2 only; requires punctuation. Errors from
-   * October 20, 2026 like `summarization`; its replacement is
-   * `speech_understanding.request`.
+   * Legacy Auto Chapters — `true` is refused on every model, like
+   * `summarization`; `speech_understanding.request.summarization` with
+   * `summary_type: "paragraph"` gives chapter-style sections.
    */
   auto_chapters?: boolean;
   /** "medical-v1" (Medical Mode) or "veterinary-v1" (Veterinary Mode, beta). */
@@ -316,13 +322,11 @@ const schema = z
     }
 
     // Features that require automatic punctuation; punctuate defaults to
-    // true, so only an explicit false is a conflict (SUBMIT_DOCS).
-    for (const feature of [
-      "sentiment_analysis",
-      "auto_chapters",
-      "speaker_labels",
-      "summarization",
-    ] as const) {
+    // true, so only an explicit false is a conflict (SUBMIT_DOCS). The retired
+    // `summarization` / `auto_chapters` pairings are not checked here: those
+    // params are refused outright (checkRetiredSummaryParams), and a shape
+    // issue would hide that refusal behind advice that cannot make them work.
+    for (const feature of ["sentiment_analysis", "speaker_labels"] as const) {
       if (params[feature] === true && params.punctuate === false) {
         ctx.addIssue({
           code: "custom",
@@ -332,15 +336,13 @@ const schema = z
       }
     }
 
-    // Features that require text formatting (also default-true).
-    for (const feature of ["redact_pii", "summarization"] as const) {
-      if (params[feature] === true && params.format_text === false) {
-        ctx.addIssue({
-          code: "custom",
-          path: [feature],
-          message: `\`${feature}\` requires text formatting; remove \`format_text: false\`.`,
-        });
-      }
+    // Requires text formatting (also default-true).
+    if (params.redact_pii === true && params.format_text === false) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["redact_pii"],
+        message: "`redact_pii` requires text formatting; remove `format_text: false`.",
+      });
     }
 
     // Redaction sub-options only mean anything with redact_pii enabled.
@@ -366,15 +368,6 @@ const schema = z
       });
     }
 
-    // "Requires punctuate to be true; cannot use with summarization."
-    if (params.auto_chapters === true && params.summarization === true) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["auto_chapters"],
-        message: "`auto_chapters` cannot be combined with `summarization`; enable one or the other.",
-      });
-    }
-
     // "Cannot be used together with language_detection."
     if (params.language_code != null && params.language_detection === true) {
       ctx.addIssue({
@@ -382,6 +375,24 @@ const schema = z
         path: ["language_code"],
         message:
           "`language_code` cannot be combined with `language_detection: true`; drop one — omitting `language_code` is what turns detection on.",
+      });
+    }
+
+    // SUBMIT_DOCS (2026-11-12): "`fallback` requires `fallback_language` to be
+    // set to a specific language code; `auto` returns a `400`." Unspecified
+    // means "auto" (https://www.assemblyai.com/docs/pre-recorded-audio/language-detection,
+    // 2026-11-12: "When `fallback_language` is unspecified, it is set to
+    // `"auto"` by default.").
+    const detection = params.language_detection_options;
+    if (
+      detection?.on_no_speech_detected === "fallback" &&
+      (detection.fallback_language == null || detection.fallback_language === "auto")
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["language_detection_options", "fallback_language"],
+        message:
+          '`on_no_speech_detected: "fallback"` needs `fallback_language` set to a specific language code (e.g. "en"); "auto", the default, returns a 400.',
       });
     }
 
@@ -469,20 +480,42 @@ function effectiveModels(
 }
 
 /**
+ * Current model names in the deprecated singular `speech_model` are a 400:
+ * "Passing a current model name ( universal-2 , universal-3-5-pro ) to the
+ * async speech_model field now returns a 400. Passing a legacy name ( best ,
+ * nano , universal ) returns 200 but always routes to the default model."
+ * (https://www.assemblyai.com/changelog, 2026-07-10 entry, checked
+ * 2026-11-12), and ERRORS_DOCS: "`400` when a current model name is sent in
+ * `speech_model` | The singular `speech_model` is deprecated. | Use
+ * `speech_models`." Only the two named ids are refused: `slam-1` is a legacy
+ * value in SDK 4.43.0's `speech_model` type, and `universal-3-6-pro-preview`
+ * is named by neither source.
+ */
+const SPEECH_MODEL_CURRENT_NAMES = new Set<string>(["universal-3-5-pro", "universal-2"]);
+const ERRORS_DOCS = "https://www.assemblyai.com/docs/errors";
+
+function checkSpeechModel(
+  params: TranscriptBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const model = params.speech_model;
+  if (model == null || !SPEECH_MODEL_CURRENT_NAMES.has(model)) return;
+  ctx.report({
+    code: "invalid_enum_value",
+    path: ["speech_model"],
+    message: `\`speech_model\` is deprecated and returns 400 for current model names; send speech_models: [${JSON.stringify(model)}].`,
+    meta: { value: model, source: ERRORS_DOCS },
+  });
+}
+
+/**
  * `prompt` and `remove_audio_tags` are "only supported for the Universal-3.5
  * Pro model", and `temperature` "only takes effect on the Universal-3.5 Pro
  * model" (SUBMIT_DOCS, 2026-11-12) — so a routing without universal-3-5-pro,
  * `universal-3-6-pro-preview` included, cannot carry them.
  */
 const PRO_ONLY_PARAMS = ["prompt", "temperature", "remove_audio_tags"] as const;
-
-/**
- * `summarization` and `auto_chapters` are documented as
- * "Supported: Universal-2 only" (SUBMIT_DOCS) — note that a request with no
- * model fields routes to universal-3-5-pro FIRST, so the default routing does
- * include universal-2 as a fallback and is left alone.
- */
-const UNIVERSAL_2_ONLY_PARAMS = ["summarization", "auto_chapters"] as const;
 
 function checkProOnlyParams(
   params: TranscriptBody,
@@ -504,24 +537,40 @@ function checkProOnlyParams(
   }
 }
 
-/** The Universal-2-only mirror of {@link checkProOnlyParams}. */
-function checkUniversal2OnlyParams(
+/**
+ * The legacy Summarization and Auto Chapters models are retired on every
+ * routing. The changelog's 2026-10-06 entry (https://www.assemblyai.com/changelog,
+ * checked 2026-11-12): "The legacy Summarization model (the top-level
+ * `summarization` boolean and `summary_model` parameter) and the legacy Auto
+ * Chapters model are deprecated. Starting October 20, 2026, requests using them
+ * will return errors." The model reference (RETIRED_SUMMARY_SOURCE, last
+ * updated 2026-11-10) states it in the present tense — "the top-level
+ * `summarization` and `auto_chapters` options return errors since October 20,
+ * 2026" — and names the replacement: "set
+ * `speech_understanding.request.summarization` … `summary_type: "paragraph"`
+ * gives chapter-style sections." `summary_type` is named by neither source,
+ * and `false` / `null` (what the submit reference's own TranscriptParams
+ * example sends) is not a use, so neither is refused.
+ */
+const RETIRED_SUMMARY_PARAMS = ["summarization", "auto_chapters", "summary_model"] as const;
+const RETIRED_SUMMARY_SOURCE = "https://www.assemblyai.com/llms/models.md";
+
+function checkRetiredSummaryParams(
   params: TranscriptBody,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
-  const routing = effectiveModels(params);
-  if (routing.includes("universal-2")) return;
-  for (const param of UNIVERSAL_2_ONLY_PARAMS) {
-    if (params[param] === true) {
-      ctx.report({
-        code: "unsupported_param",
-        path: [param],
-        ...(routing[0] !== undefined && { model: routing[0] }),
-        message: `\`${param}\` is only supported by "universal-2"; this request routes to ${routing.map((m) => `"${m}"`).join(", ")}. AssemblyAI deprecated it in favour of \`speech_understanding.request\`.`,
-        meta: { source: SUBMIT_DOCS },
-      });
-    }
+  for (const param of RETIRED_SUMMARY_PARAMS) {
+    const value = params[param];
+    if (value == null || value === false) continue;
+    const chapters =
+      param === "auto_chapters" ? ' (`summary_type: "paragraph"` gives chapter-style sections)' : "";
+    ctx.report({
+      code: "unsupported_param",
+      path: [param],
+      message: `The top-level \`${param}\` returns an error on every model since October 20, 2026, when AssemblyAI retired its legacy Summarization and Auto Chapters models; use \`speech_understanding.request.summarization\` instead${chapters}.`,
+      meta: { source: RETIRED_SUMMARY_SOURCE },
+    });
   }
 }
 
@@ -689,8 +738,9 @@ const validator = createValidator<TranscriptBody, unknown>({
   modelId: primaryModelId,
   catalog: models,
   checks: [
+    checkSpeechModel,
     checkProOnlyParams,
-    checkUniversal2OnlyParams,
+    checkRetiredSummaryParams,
     checkKeytermsPrompt,
     checkDomain,
     checkStaticEntities,

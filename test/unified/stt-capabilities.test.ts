@@ -304,7 +304,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
 const IMPLIED_CELLS = ["assemblyai", "revai", "soniox", "speechmatics"];
 
 const PROBE_LANGUAGE = "pt-BR";
-/** Includes `"en"`, which AssemblyAI's `language_codes` requires. */
+/** Includes `"en"`: the assemblyai cell pins `universal-2`, the one routing whose `language_codes` must include English. */
 const PROBE_LANGUAGES = ["en", "pt-BR"];
 const PROBE_PROMPT = "Acme Corp, quarterly results";
 const AUDIO_KINDS: readonly AudioInputKind[] = ["file", "url", "fileId", "data"];

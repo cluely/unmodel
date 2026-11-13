@@ -37,6 +37,8 @@ CHAT RULES (`alibaba.chat`)
   Completions reference lists no mapped values for it); `parallel_tool_calls`
   draws an `unsupported_param` warning, never an error ("kimi-k3 does not
   support using this parameter to control whether tool calls are parallel").
+  `top_p` accepts its documented default 0.95 (and 1); other values are
+  refused. `temperature` stays at 1 only, per its catalog row.
 - `kimi-k3.1-pro` (no catalog row yet): `temperature` 1, `top_p` 0.95 and
   `presence_penalty` 0 only ("Passing a non-default value for any of these
   parameters returns an error"), and `reasoning_effort` `max` / `high` /
@@ -57,7 +59,9 @@ VIDEO (`alibaba.video`, `unmodel/video`)
   480P / 720P / 1080P.
 - `wan2.7-r2v` and `wan2.7-r2v-2026-06-12` (reference-to-video): 1–5 reference
   images and videos combined plus an optional `first_frame`, an optional
-  `reference_voice` audio URL on a media entry, `resolution` 720P/1080P,
+  `reference_voice` audio URL on a `reference_image` or `reference_video`
+  entry (refused on any other entry, and on every other model, since no
+  other route documents it), `resolution` 720P/1080P,
   `ratio`, and `duration` 2–15 seconds (2–10 when a reference video is sent);
   $0.10 / $0.15 per second at 720P / 1080P. Through `unmodel/video`, reference
   images and `video` compile to `reference_image` / `reference_video` media.

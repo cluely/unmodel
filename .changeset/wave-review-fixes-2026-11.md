@@ -37,12 +37,12 @@
 
 `alibaba.chat`
 
-- `kimi-k3` pins `top_p` at `0.95`. Alibaba documents it as the model's default
-  ("| kimi-k3 | … | 1.0 | 0.95 | 0.0 |"), and Moonshot fixes the K3 series at
-  it ("`top_p` | Fixed at `0.95`", "passing any other value returns an
-  error"). `top_p: 0.95` used to be refused and is now accepted. `top_p: 1` is
-  now refused with `invalid_enum_value`. `temperature` (1 only) and
-  `presence_penalty` (unpinned) are unchanged.
+- `kimi-k3` accepts `top_p: 0.95`, the value Alibaba documents as the model's
+  default ("| kimi-k3 | … | 1.0 | 0.95 | 0.0 |"); it used to be refused. `1`
+  stays accepted: Alibaba calls sampling "fixed" only for `kimi-k3.1-pro`, and
+  Moonshot's "`top_p` | Fixed at `0.95`" is a rule for its own host. Any other
+  value is `invalid_enum_value`. `temperature` (1 only) and `presence_penalty`
+  (unpinned) are unchanged.
 
 `google.chat`, `google.stt`, `google-vertex.chat`
 

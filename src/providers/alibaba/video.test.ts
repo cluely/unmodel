@@ -295,6 +295,48 @@ describe("alibaba.video input rules", () => {
     if (!lastFrame.ok) expect(lastFrame.errors[0]?.path).toEqual(["input", "media", 1, "type"]);
   });
 
+  test("reference_voice rides a wan2.7-r2v reference_image / reference_video entry only", () => {
+    const VOICE = "https://cdn.example/v.mp3";
+    expect(
+      video.safe({
+        model: "wan2.7-r2v",
+        input: {
+          prompt: "Video 1 sings",
+          media: [{ type: "reference_video", url: CLIP, reference_voice: VOICE }],
+        },
+      }).ok,
+    ).toBe(true);
+    const onFrame = video.safe({
+      model: "wan2.7-r2v",
+      input: {
+        prompt: "hi",
+        media: [
+          { type: "reference_image", url: IMAGE },
+          { type: "first_frame", url: IMAGE, reference_voice: VOICE },
+        ],
+      },
+    });
+    expect(onFrame.ok).toBe(false);
+    if (!onFrame.ok) {
+      expect(onFrame.errors[0]?.code).toBe("unsupported_param");
+      expect(onFrame.errors[0]?.path).toEqual(["input", "media", 1, "reference_voice"]);
+    }
+    for (const model of ["wan3.0-video", "happyhorse-1.0-r2v"] as const) {
+      const r = video.safe({
+        model,
+        input: {
+          prompt: "hi",
+          media: [{ type: "reference_image", url: IMAGE, reference_voice: VOICE }],
+        },
+      });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.code, model).toBe("unsupported_param");
+        expect(r.errors[0]?.path, model).toEqual(["input", "media", 0, "reference_voice"]);
+      }
+    }
+  });
+
   test("wan2.7-r2v caps reference images + reference videos at 5 combined", () => {
     const media = [
       ...Array.from({ length: 3 }, () => ({ type: "reference_image" as const, url: IMAGE })),

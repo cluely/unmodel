@@ -669,6 +669,24 @@ function checkInput(
           meta: { allowed: Object.keys(rule.media), value: type, source: rule.docs },
         });
       }
+      // R2V_DOCS (checked 2026-11-12): reference_voice "specifying the voice
+      // for the main character in the reference asset (image or video). Use
+      // this parameter with reference_image or reference_video." and "Only
+      // wan2.7 supports voice reference." No other route's page mentions it.
+      const voiceOk =
+        model.startsWith("wan2.7-r2v") &&
+        (type === "reference_image" || type === "reference_video");
+      if (entry?.reference_voice !== undefined && !voiceOk) {
+        ctx.report({
+          code: "unsupported_param",
+          path: ["input", "media", index, "reference_voice"],
+          model,
+          message: model.startsWith("wan2.7-r2v")
+            ? "`reference_voice` goes on a `reference_image` or `reference_video` entry only (it voices that reference's main character)."
+            : `\`reference_voice\` is a wan2.7-r2v media field; "${model}" does not document it.`,
+          meta: { source: R2V_DOCS },
+        });
+      }
     }
     for (const [type, max] of Object.entries(rule.media)) {
       const count = counts.get(type) ?? 0;

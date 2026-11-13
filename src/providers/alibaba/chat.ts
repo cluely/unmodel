@@ -77,19 +77,20 @@ const chatConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = 
     // under "Setting values other than the above valid values and mapped
     // values will cause an error."
     //
-    // `top_p`: https://www.alibabacloud.com/help/en/model-studio/kimi-api
-    // (checked 2026-11-12), "Default parameters": "| kimi-k3 | true (can be
-    // disabled; keeping it enabled is recommended) | 1.0 | 0.95 | 0.0 | - |
-    // - |" (columns: enable_thinking, temperature, top_p, presence_penalty).
-    // The generated row's `temperature: false` makes this a fixed-sampling
-    // model, so only the documented default passes — here 0.95, not the
-    // generic 1. Corroborated by
-    // https://platform.kimi.ai/docs/api/models-overview (checked 2026-11-12):
-    // "The K3 series column applies to `kimi-k3`, …", "`top_p` | Fixed at
-    // `0.95`" and "passing any other value returns an error". `temperature`
-    // stays with the catalog check (1 passes); `presence_penalty` is
-    // documented here only as a default, so it is not pinned.
-    enums: { top_p: [0.95], reasoning_effort: ["max", "high", "low"] },
+    // top_p: https://www.alibabacloud.com/help/en/model-studio/kimi-api
+    // (checked 2026-11-12), the Default parameters row "| kimi-k3 | true
+    // (can be disabled; keeping it enabled is recommended) | 1.0 | 0.95 |
+    // 0.0 | - | - |". The pin exists because the catalog's
+    // `temperature: false` would otherwise let the dialect's fixed-sampling
+    // check accept top_p 1 only, refusing the documented default 0.95.
+    // 1 stays accepted: Alibaba calls sampling "fixed" only for
+    // kimi-k3.1-pro, and refusing 1 would rest only on Moonshot's rule for
+    // its own host ("Fixed at `0.95`" … "passing any other value returns an
+    // error", https://platform.kimi.ai/docs/api/models-overview.md). If that
+    // rule is accepted as binding on Alibaba-hosted kimi-k3, narrow this to
+    // [0.95] and record the decision. temperature stays with the catalog
+    // check (1 only); nothing on Alibaba's pages refuses presence_penalty.
+    enums: { reasoning_effort: ["max", "high", "low"], top_p: [0.95, 1] },
     deny: {
       parallel_tool_calls: {
         ignored: true,

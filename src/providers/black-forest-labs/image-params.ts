@@ -204,7 +204,6 @@ export const BFL_IMAGE_MODEL_PARAMS = {
     extras: {
       finetune_id: EXTRA as string,
       finetune_strength: EXTRA as number,
-      raw: EXTRA as boolean,
       prompt_upsampling: PROMPT_UPSAMPLING,
       safety_tolerance: SAFETY_TOLERANCE,
     },

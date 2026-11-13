@@ -15,7 +15,8 @@
  *     FluxDevInputs    (flux-dev)          width/height + steps + guidance 1.5–5
  *     FluxUltraInput   (flux-pro-1.1-ultra) aspect_ratio + raw +
  *                                          image_prompt_strength, NO width/height
- *     FinetuneFluxUltraInput (…-finetuned) FluxUltraInput + finetune_id/strength
+ *     FinetuneFluxUltraInput (…-finetuned) FluxUltraInput minus raw,
+ *                                          plus finetune_id/strength
  * - `width`/`height` on the two width/height routes are documented as
  *   "multiple of 32", 256–1440 — enforced at runtime (the multiple-of rule is
  *   not expressible in the wire type).
@@ -141,6 +142,8 @@ export interface FluxUltraFinetunedBody extends FluxUltraFields {
   finetune_id: string;
   /** LoRA influence, 0–2. Default 1.2. */
   finetune_strength?: number;
+  /** Only flux-pro-1.1-ultra takes raw mode (FinetuneFluxUltraInput declares no `raw`). */
+  raw?: never;
 }
 
 /** Escape hatch for routes unmodel doesn't know yet (unknown_model warning). */

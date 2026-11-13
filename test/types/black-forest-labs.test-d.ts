@@ -9,6 +9,8 @@ import {
   image,
   imageEdit,
   imageEditFill,
+  imageEditOutpainting,
+  imageEditErase,
   type Flux1Body,
   type Flux2Body,
   type FluxFillParams,
@@ -136,6 +138,9 @@ function flux1TypeTests(): void {
   imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", aspect_ratio: "banana" });
   // @ts-expect-error the width/height routes do not take aspect_ratio at all
   imageFlux1({ model: "flux-dev", prompt: "hi", aspect_ratio: "16:9" });
+  imageFlux1({ model: "flux-pro-1.1-ultra", prompt: "hi", raw: true });
+  // @ts-expect-error raw mode is ultra-only — FinetuneFluxUltraInput declares no `raw`
+  imageFlux1({ model: "flux-pro-1.1-ultra-finetuned", prompt: "hi", finetune_id: "x", raw: true });
 
   // @ts-expect-error — aliasing cannot route flux-dev through the loose arm
   const aliasedInvalid: Flux1Body = {
@@ -167,4 +172,19 @@ function fluxFillBodyAliasTypeTests(): void {
   imageEditFill(future);
 }
 
-export { flux2TypeTests, kontextTypeTests, flux1TypeTests, fluxFillBodyAliasTypeTests };
+function fluxToolsTypeTests(): void {
+  imageEditOutpainting({ input_image: "x", width: 1024, height: 1024, user: "end-user-42" });
+  imageEditErase({ image: "a", mask: "b", seed: 1, webhook_url: "https://example.com/hook" });
+  // @ts-expect-error FluxOutpaintingInputs is closed and declares no seed
+  imageEditOutpainting({ input_image: "x", width: 1024, height: 1024, seed: 1 });
+  // @ts-expect-error no webhook delivery on outpainting — poll `polling_url`
+  imageEditOutpainting({ input_image: "x", width: 1024, height: 1024, webhook_url: "https://example.com/hook" });
+}
+
+export {
+  flux2TypeTests,
+  kontextTypeTests,
+  flux1TypeTests,
+  fluxFillBodyAliasTypeTests,
+  fluxToolsTypeTests,
+};

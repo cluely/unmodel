@@ -107,6 +107,21 @@ describe("black-forest-labs.imageFlux1 per-route param surfaces", () => {
     });
     expect(ok.ok).toBe(true);
   });
+
+  test("the finetuned ultra route rejects raw (FinetuneFluxUltraInput declares none)", () => {
+    const r = safeUnchecked({
+      model: "flux-pro-1.1-ultra-finetuned",
+      prompt: "hi",
+      finetune_id: "my-lora",
+      raw: true,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors[0]?.code).toBe("unsupported_param");
+      expect(r.errors[0]?.path).toEqual(["raw"]);
+      expect(r.errors[0]?.meta?.source).toContain("FinetuneFluxUltraInput");
+    }
+  });
 });
 
 describe("black-forest-labs.imageFlux1 dimension rules", () => {

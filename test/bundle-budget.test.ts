@@ -332,7 +332,7 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    */
   pixverse: 71, // 64.4 measured, 2026-11-12: v6-max, webhook_id and the image-to-video template arm; ~10% headroom.
   lightricks: 68,
-  "black-forest-labs": 100,
+  "black-forest-labs": 111, // 100.9 measured, 2026-11-13 (97.4 before): the barrel's own growth, no new chunk — outpainting's 4 MP check and seed/webhook deny table, the ultra-finetuned `raw` deny, and their provenance JSDoc; ~10% headroom. macOS figure, flagged for CI confirmation.
   kling: 135,
   elevenlabs: 222,
   minimax: 250,

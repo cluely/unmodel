@@ -30,6 +30,13 @@
  *   take Flux2KleinInputs plus a REQUIRED `finetune_id` and an optional
  *   `finetune_strength` ("Defaults to `1.0`", no documented bounds — none are
  *   enforced). The other FLUX.2 routes declare neither field.
+ * - Omitted: `flux-2-klein-base-4b-finetuned` and
+ *   `flux-2-klein-base-9b-finetuned`. The same page lists them (2026-11-12),
+ *   but https://api.bfl.ai/openapi.json has no hosted klein Base route, so
+ *   "the underlying base endpoint" schema they match is unverifiable — the
+ *   undistilled Base may take steps/guidance, which the klein arm and deny
+ *   table would refuse. They validate on the loose path (`unknown_model`
+ *   warning; `checkFinetuneId` still requires `finetune_id`).
  * - `width`/`height` carry ONE documented bound: `minimum: 64` (default 0 =
  *   automatic sizing). The FLUX.2 pages advertise "up to 4MP output" in prose
  *   but publish no maximum, no multiple-of rule and no aspect bound for these

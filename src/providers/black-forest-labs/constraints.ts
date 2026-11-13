@@ -18,7 +18,7 @@ const OPENAPI_URL = "https://api.bfl.ai/openapi.json";
  * Flux2Inputs, Flux2FlexInputs and Flux2KleinInputs carry neither.
  */
 const FLUX2_LORA_ONLY =
-  "LoRA params only exist on the FLUX.2 [klein] `-finetuned` routes (flux-2-klein-4b-finetuned, flux-2-klein-9b-finetuned, flux-2-klein-9b-kv-finetuned, flux-2-klein-9b-kv-bf16-finetuned)";
+  "LoRA params only exist on the FLUX.2 [klein] `-finetuned` routes (flux-2-klein-4b-finetuned, flux-2-klein-9b-finetuned, flux-2-klein-9b-kv-finetuned, flux-2-klein-9b-kv-bf16-finetuned, plus the uncatalogued flux-2-klein-base-{4b,9b}-finetuned)";
 
 const FLUX2_FINETUNE_ONLY = {
   finetune_id: FLUX2_LORA_ONLY,
@@ -128,7 +128,7 @@ export const imageConstraints: Readonly<Partial<Record<string, EndpointConstrain
 /** Params only the ultra routes (FluxUltraInput) declare. */
 const ULTRA_ONLY = {
   aspect_ratio: "only the flux-pro-1.1-ultra routes size by aspect ratio (FluxUltraInput); the width/height routes take pixel dimensions",
-  raw: "`raw` (candid-photography mode) only exists on the flux-pro-1.1-ultra routes (FluxUltraInput)",
+  raw: "`raw` (candid-photography mode) only exists on the flux-pro-1.1-ultra route (FluxUltraInput)",
   image_prompt_strength:
     "`image_prompt_strength` only exists on the flux-pro-1.1-ultra routes (FluxUltraInput)",
 } as const;
@@ -194,12 +194,21 @@ const fluxUltraDeny: Record<string, DenyRule> = {
   },
 };
 
-/** The finetuned ultra route is FluxUltraInput + finetune_id/strength. */
+/**
+ * The finetuned ultra route is FluxUltraInput minus `raw`, plus
+ * finetune_id/strength (FinetuneFluxUltraInput, verified 2026-11-12). Its
+ * schema is open, so an undeclared `raw` would be silently dropped.
+ */
 const fluxUltraFinetunedDeny: Record<string, DenyRule> = {
   width: fluxUltraDeny.width as DenyRule,
   height: fluxUltraDeny.height as DenyRule,
   steps: fluxUltraDeny.steps as DenyRule,
   guidance: fluxUltraDeny.guidance as DenyRule,
+  raw: {
+    reason:
+      "the finetuned ultra route (FinetuneFluxUltraInput) declares no `raw`; candid-photography mode only exists on flux-pro-1.1-ultra (FluxUltraInput)",
+    source: `${OPENAPI_URL}#/components/schemas/FinetuneFluxUltraInput`,
+  },
 };
 
 export const imageFlux1Constraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {

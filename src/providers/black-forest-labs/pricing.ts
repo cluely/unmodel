@@ -20,7 +20,9 @@
  *
  * Outpainting's output is the `width × height` canvas the request names, and
  * its reference image is free ("Ref img Free"), so {@link outpaintingCostUSD}
- * is exact and `imageEditOutpainting` estimates with it.
+ * is exact for every canvas the route accepts (≤ 4 MP,
+ * `FLUX_OUTPAINTING_MAX_PIXELS`; larger ones are refused) and
+ * `imageEditOutpainting` estimates with it.
  *
  * Erase and deblur return an image the size of their input, which a URL or a
  * base64 string does not reveal. The page also does not say whether that one

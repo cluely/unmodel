@@ -157,6 +157,9 @@ const flux2Models = {
   // endpoints are in public beta. Pricing, parameters, and endpoint names may
   // change before general availability." The base checkpoints are FLUX.2
   // [klein], whose weights are published (see flux-2-klein-9b).
+  // Omitted: flux-2-klein-base-{4b,9b}-finetuned — listed on that page
+  // (2026-11-12), but the OpenAPI has no klein Base route to verify their
+  // schema against (reason in the image.ts header).
   "flux-2-klein-4b-finetuned": {
     id: "flux-2-klein-4b-finetuned",
     name: "FLUX.2 [klein] 4B (finetuned)",

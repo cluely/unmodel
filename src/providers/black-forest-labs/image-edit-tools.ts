@@ -15,9 +15,12 @@
  *   outpainting/erase/deblur but "jpeg" on VTO. Every tool also takes the
  *   optional `user` every BFL schema carries.
  * - Outpainting differs from FLUX.1 Expand: instead of per-side margins it
- *   takes a target canvas (`width`/`height`, both REQUIRED, ≥ 64) plus an
- *   optional reference offset; `mode` trades quality for speed and
- *   `auto_crop` decides whether an over-hanging input errors or is cropped.
+ *   takes a target canvas (`width`/`height`, both REQUIRED, ≥ 64, product
+ *   ≤ 4 MP) plus an optional reference offset; `mode` trades quality for
+ *   speed and `auto_crop` decides whether an over-hanging input errors or is
+ *   cropped. Its schema is closed (`additionalProperties: false`) and, unlike
+ *   the other three tools, declares no `seed`, `webhook_url` or
+ *   `webhook_secret`, so those are denied on it (verified 2026-11-12).
  * - Erase requires a black/white `mask` the same size as the image
  *   (white = remove); `dilate_pixels` grows it by 0–25 px.
  * - Pricing is per megapixel (./pricing.ts). Outpainting is estimated
@@ -34,12 +37,14 @@ import { toValidated, JSON_HEADERS, type Validated, type ExactKeys } from "../..
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
-import type { EndpointConstraints } from "../../core/constraint-types";
+import type { DenyRule, EndpointConstraints } from "../../core/constraint-types";
 import { models } from "./models";
 import { bflModelUrl, bflUserField, BFL_OUTPUT_FORMATS, type BflOutputFormat } from "./image";
 import { outpaintingCostUSD } from "./pricing";
 
 const OPENAPI_URL = "https://api.bfl.ai/openapi.json";
+const OUTPAINTING_SCHEMA_URL = `${OPENAPI_URL}#/components/schemas/FluxOutpaintingInputs`;
+const OUTPAINTING_DOCS_URL = "https://docs.bfl.ml/flux_tools/flux_outpainting";
 
 export const FLUX_OUTPAINTING_MODEL_ID = "flux-tools/outpainting-v1";
 export const FLUX_ERASE_MODEL_ID = "flux-tools/erase-v1";
@@ -60,13 +65,21 @@ export const FLUX_ERASE_MAX_DILATE_PIXELS = 25;
 /** Smallest documented output side on the outpainting canvas. */
 export const FLUX_TOOLS_MIN_DIMENSION = 64;
 
+/**
+ * Largest outpainting canvas, `width × height` in pixels: "The target canvas
+ * area (`width × height`) cannot exceed 4 megapixels (4,194,304 pixels). …
+ * Requests above this limit return `422`." (https://docs.bfl.ml/flux_tools/flux_outpainting,
+ * verified 2026-11-12; the OpenAPI schema states only `minimum: 64` per side).
+ */
+export const FLUX_OUTPAINTING_MAX_PIXELS = 4_194_304;
+
 // ---------------------------------------------------------------------------
-// Shared tail: every tool schema ends with the same async/webhook fields.
+// Shared tail: every tool schema carries moderation, output format and `user`;
+// erase, deblur and VTO also take a seed and the webhook pair, which
+// FluxOutpaintingInputs does not declare.
 // ---------------------------------------------------------------------------
 
 interface FluxToolCommonFields {
-  /** Optional seed for reproducibility. */
-  seed?: number | null;
   /**
    * Moderation strictness 0 (strictest) – 7 (least strict). Default 2. Your
    * organization's approved ceiling may be lower (a 422 lists it).
@@ -74,21 +87,30 @@ interface FluxToolCommonFields {
   safety_tolerance?: number;
   /** Output image format. */
   output_format?: BflOutputFormat | null;
-  /** URL (1–2083 chars) to receive the async result instead of polling. */
-  webhook_url?: string | null;
-  /** Secret for webhook signature verification. */
-  webhook_secret?: string | null;
   /** Opaque end-user identifier from the calling platform: 1–256 chars, no NUL. */
   user?: string | null;
 }
 
+/** Flux2EraseInputs, Flux2DeblurInputs and Flux2KleinTryonInputs only. */
+interface FluxToolSeedWebhookFields {
+  /** Optional seed for reproducibility. */
+  seed?: number | null;
+  /** URL (1–2083 chars) to receive the async result instead of polling. */
+  webhook_url?: string | null;
+  /** Secret for webhook signature verification. */
+  webhook_secret?: string | null;
+}
+
 const commonShape = {
-  seed: z.number().int().nullable().optional(),
   safety_tolerance: z.number().int().min(0).max(7).optional(),
   output_format: z.enum(BFL_OUTPUT_FORMATS).nullable().optional(),
+  user: bflUserField,
+};
+
+const seedWebhookShape = {
+  seed: z.number().int().nullable().optional(),
   webhook_url: z.string().min(1).max(2083).nullable().optional(),
   webhook_secret: z.string().nullable().optional(),
-  user: bflUserField,
 };
 
 // ---------------------------------------------------------------------------
@@ -98,9 +120,9 @@ const commonShape = {
 export interface FluxOutpaintingParams extends FluxToolCommonFields {
   /** Base64-encoded reference image or HTTP(S) image URL. REQUIRED. */
   input_image: string;
-  /** Target output width, ≥ 64. REQUIRED. */
+  /** Target output width, ≥ 64; `width × height` ≤ 4 MP. REQUIRED. */
   width: number;
-  /** Target output height, ≥ 64. REQUIRED. */
+  /** Target output height, ≥ 64; `width × height` ≤ 4 MP. REQUIRED. */
   height: number;
   /** Crop the input to the canvas instead of erroring when it overhangs. Default false. */
   auto_crop?: boolean;
@@ -114,6 +136,12 @@ export interface FluxOutpaintingParams extends FluxToolCommonFields {
   mode?: FluxOutpaintingMode;
   /** Skip the image-aware prompt upsampler for lower latency. Default false. */
   disable_pup?: boolean;
+  /** FluxOutpaintingInputs declares no seed (closed schema: a 422). */
+  seed?: never;
+  /** No webhook delivery on outpainting: poll the returned `polling_url`. */
+  webhook_url?: never;
+  /** No webhook delivery on outpainting: poll the returned `polling_url`. */
+  webhook_secret?: never;
 }
 
 const outpaintingSchema = z.looseObject({
@@ -139,7 +167,7 @@ const outpaintingSchema = z.looseObject({
 // Erase (Flux2EraseInputs)
 // ---------------------------------------------------------------------------
 
-export interface FluxEraseParams extends FluxToolCommonFields {
+export interface FluxEraseParams extends FluxToolCommonFields, FluxToolSeedWebhookFields {
   /** Base64-encoded input image or HTTP(S) image URL. REQUIRED. */
   image: string;
   /**
@@ -153,6 +181,7 @@ export interface FluxEraseParams extends FluxToolCommonFields {
 
 const eraseSchema = z.looseObject({
   ...commonShape,
+  ...seedWebhookShape,
   image: z.string().min(1, "image is required"),
   mask: z.string().min(1, "mask is required"),
   dilate_pixels: z
@@ -170,13 +199,14 @@ const eraseSchema = z.looseObject({
 // Deblur (Flux2DeblurInputs)
 // ---------------------------------------------------------------------------
 
-export interface FluxDeblurParams extends FluxToolCommonFields {
+export interface FluxDeblurParams extends FluxToolCommonFields, FluxToolSeedWebhookFields {
   /** Base64-encoded input image or HTTP(S) image URL. REQUIRED. No prompt needed. */
   image: string;
 }
 
 const deblurSchema = z.looseObject({
   ...commonShape,
+  ...seedWebhookShape,
   image: z.string().min(1, "image is required"),
 });
 
@@ -184,7 +214,7 @@ const deblurSchema = z.looseObject({
 // Virtual try-on (Flux2KleinTryonInputs, shared by vto-v1 and vto-v2)
 // ---------------------------------------------------------------------------
 
-export interface FluxVtoParams extends FluxToolCommonFields {
+export interface FluxVtoParams extends FluxToolCommonFields, FluxToolSeedWebhookFields {
   /**
    * Route selector — stripped from the wire body. Defaults to
    * `flux-tools/vto-v2` (identical request shape, up to 4MP output).
@@ -200,6 +230,7 @@ export interface FluxVtoParams extends FluxToolCommonFields {
 
 const vtoSchema = z.looseObject({
   ...commonShape,
+  ...seedWebhookShape,
   model: z.string().optional(),
   prompt: z.string(),
   person: z.string().min(1, "person is required"),
@@ -207,8 +238,55 @@ const vtoSchema = z.looseObject({
 });
 
 // ---------------------------------------------------------------------------
+// Constraints — outpainting's closed schema (see the module header).
+// ---------------------------------------------------------------------------
+
+const OUTPAINTING_CLOSED = `FluxOutpaintingInputs is closed (\`additionalProperties: false\`) and declares no \`seed\`, \`webhook_url\` or \`webhook_secret\` (${OUTPAINTING_DOCS_URL}: "The endpoint rejects unknown fields")`;
+
+const OUTPAINTING_NO_WEBHOOK: DenyRule = {
+  reason: `${OUTPAINTING_CLOSED}; the route delivers results only by polling the \`polling_url\` the POST returns`,
+  source: OUTPAINTING_SCHEMA_URL,
+};
+
+const outpaintingConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+  [FLUX_OUTPAINTING_MODEL_ID]: {
+    deny: {
+      seed: {
+        reason: `${OUTPAINTING_CLOSED}; the route offers no seed`,
+        source: OUTPAINTING_SCHEMA_URL,
+      },
+      webhook_url: OUTPAINTING_NO_WEBHOOK,
+      webhook_secret: OUTPAINTING_NO_WEBHOOK,
+    },
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Checks
 // ---------------------------------------------------------------------------
+
+/**
+ * "The target canvas area (`width × height`) cannot exceed 4 megapixels
+ * (4,194,304 pixels)", and "Requests above this limit return `422`"
+ * ({@link FLUX_OUTPAINTING_MAX_PIXELS}). Exactly 4 MP passes — the page allows
+ * "at or below 4 MP". Fast mode's note that a canvas "right at the 4 MP limit
+ * may be rejected because of the added padding" is hedged, so it is not
+ * enforced.
+ */
+function checkOutpaintingCanvas(
+  params: FluxOutpaintingParams,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const pixels = params.width * params.height;
+  if (pixels <= FLUX_OUTPAINTING_MAX_PIXELS) return;
+  ctx.report({
+    code: "invalid_shape",
+    path: ["width"],
+    message: `\`width × height\` (${params.width}×${params.height} = ${pixels} px) exceeds the 4 MP outpainting canvas: "The target canvas area (\`width × height\`) cannot exceed 4 megapixels (4,194,304 pixels)." Any aspect ratio within 4,194,304 px is accepted.`,
+    meta: { value: pixels, source: OUTPAINTING_DOCS_URL },
+  });
+}
 
 /**
  * `auto_crop: false` (the default) makes an overhanging reference image an
@@ -253,8 +331,10 @@ function estimate(_params: unknown, info: ModelInfo | undefined) {
 }
 
 /**
- * Exact: the `width × height` canvas is the billed output (see ./pricing.ts).
- * Runs only on params the schema accepted, so both sides and `mode` are valid.
+ * Exact: the `width × height` canvas is the billed output (see ./pricing.ts),
+ * for every canvas the route accepts (≤ 4 MP — `checkOutpaintingCanvas`
+ * refuses the rest). Runs only on params the schema accepted, so both sides
+ * and `mode` are valid.
  */
 function estimateOutpainting(params: FluxOutpaintingParams) {
   return { costUSD: outpaintingCostUSD(params) };
@@ -286,7 +366,8 @@ const outpaintingValidator = createValidator<FluxOutpaintingParams, unknown>({
   schema: outpaintingSchema,
   modelId: () => FLUX_OUTPAINTING_MODEL_ID,
   catalog: models,
-  checks: [checkOutpaintingOffsets],
+  constraints: outpaintingConstraints,
+  checks: [checkOutpaintingCanvas, checkOutpaintingOffsets],
   estimate: estimateOutpainting,
   finalize: finalizeTo(FLUX_OUTPAINTING_MODEL_ID),
 });

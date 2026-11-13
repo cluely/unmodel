@@ -7,6 +7,8 @@ import {
   FLUX_ERASE_URL,
   FLUX_DEBLUR_URL,
   FLUX_OUTPAINTING_URL,
+  FLUX_OUTPAINTING_MAX_PIXELS,
+  FLUX_OUTPAINTING_MODEL_ID,
 } from "./image-edit-tools";
 import { BFL_API_BASE_URL } from "./image";
 import { FLUX_DEBLUR_RATE, FLUX_ERASE_RATE, outpaintingCostUSD } from "./pricing";
@@ -47,6 +49,56 @@ describe("black-forest-labs FLUX tools routes", () => {
     expect(safeOutpaint({ input_image: "x", width: 512, height: 512, mode: "turbo" }).ok).toBe(
       false,
     );
+  });
+
+  test("the outpainting canvas is capped at 4 MP (docs: 422 above it)", () => {
+    expect(FLUX_OUTPAINTING_MAX_PIXELS).toBe(4 * 1024 * 1024);
+    // Exactly 4 MP, and the docs' own non-square example, pass.
+    const atLimit = imageEditOutpainting.safe({ input_image: "x", width: 2048, height: 2048 });
+    expect(atLimit.ok).toBe(true);
+    if (atLimit.ok) expect(atLimit.estimate.costUSD).toBeCloseTo(0.4, 10);
+    expect(imageEditOutpainting.safe({ input_image: "x", width: 1024, height: 4096 }).ok).toBe(true);
+
+    for (const [width, height] of [[2048, 2049], [3000, 3000]] as const) {
+      const r = imageEditOutpainting.safe({ input_image: "x", width, height });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]?.code).toBe("invalid_shape");
+        expect(r.errors[0]?.path).toEqual(["width"]);
+        expect(r.errors[0]?.meta?.value).toBe(width * height);
+        expect(r.errors[0]?.meta?.source).toBe("https://docs.bfl.ml/flux_tools/flux_outpainting");
+      }
+    }
+  });
+
+  test("outpainting refuses seed and the webhook pair (closed schema declares none)", () => {
+    for (const [param, value] of [
+      ["seed", 7],
+      ["webhook_url", "https://example.com/hook"],
+      ["webhook_secret", "s3cret"],
+    ] as const) {
+      const r = safeOutpaint({ input_image: "x", width: 1024, height: 1024, [param]: value });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.errors.map((e) => [e.code, e.path])).toEqual([["unsupported_param", [param]]]);
+        expect(r.errors[0]?.meta?.source).toContain("FluxOutpaintingInputs");
+      }
+    }
+    const deny = imageEditOutpainting.constraintsFor(FLUX_OUTPAINTING_MODEL_ID)[0]?.deny;
+    expect(Object.keys(deny ?? {})).toEqual(["seed", "webhook_url", "webhook_secret"]);
+    expect(deny?.webhook_url?.reason).toContain("polling_url");
+  });
+
+  test("erase, deblur and VTO keep seed and the webhook pair", () => {
+    const extras = { seed: 7, webhook_url: "https://example.com/hook", webhook_secret: "s3cret" };
+    for (const r of [
+      imageEditErase.safe({ image: "a", mask: "b", ...extras }),
+      imageEditDeblur.safe({ image: "x", ...extras }),
+      imageEditVto.safe({ prompt: "p", person: "p", garment: "g", ...extras }),
+    ]) {
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
   });
 
   test("a reference offset past the canvas is rejected", () => {

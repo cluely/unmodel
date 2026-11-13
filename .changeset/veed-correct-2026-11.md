@@ -10,6 +10,10 @@ veed: the published enums, response types and provenance now match VEED's 2026-1
   `insufficient_credits`, `model_access_required` and `oauth_token_invalid`
   (`ErrorDetail.reason`, nine members), and `VeedErrorResponse`'s detail
   entries gain the spec's untyped `value`.
+- `VeedErrorResponse` and `VeedJobResponse` gain the optional top-level
+  `$schema` the spec declares on `ErrorResponse` and every `Resource*Job`
+  envelope, and that VEED sends on the wire (e.g.
+  `"$schema":"https://api.veed.io/schemas/ErrorResponse.json"` on a 401).
 - `VEED_JOB_ERROR_CODES` gains `insufficient_credits` — "The balance ran out
   before the job could be paid for" — identical across all five
   `JobError*ErrorCode` schemas, so `VeedJobErrorCode` is eight members.

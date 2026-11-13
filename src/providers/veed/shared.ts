@@ -47,13 +47,13 @@
  * answers 401, and the two 401s differ:
  *
  * ```text
- * no header   401 {"error":{"code":"unauthenticated","message":"missing or malformed Authorization header","request_id":"…"}}
- * bad key     401 {"error":{"code":"unauthenticated","message":"Invalid API key.","request_id":"…","details":[{"type":"api_key","reason":"api_key_invalid"}]}}
+ * no header   401 {"$schema":"https://api.veed.io/schemas/ErrorResponse.json","error":{"code":"unauthenticated","message":"missing or malformed Authorization header","request_id":"…"}}
+ * bad key     401 {"$schema":"https://api.veed.io/schemas/ErrorResponse.json","error":{"code":"unauthenticated","message":"Invalid API key.","request_id":"…","details":[{"type":"api_key","reason":"api_key_invalid"}]}}
  * ```
  *
  * One code, two messages, and only the second carries `details`. Branch on
  * `error.details[].reason` ({@link VEED_ERROR_REASONS}) rather than on the
- * message text. (Both probed live on 2026-08-25.)
+ * message text. (Both probed live on 2026-11-13.)
  *
  * ## Every generation is a job, and there are TWO ways to fail
  *
@@ -369,8 +369,17 @@ export interface VeedJob {
   credits_charged?: number;
 }
 
-/** Every 2xx body is `{ data }`, and every error body is `{ error }`. */
+/**
+ * Every 2xx body is `{ data }`, and every error body is `{ error }` — both
+ * beside an optional top-level `$schema`.
+ */
 export interface VeedJobResponse {
+  /**
+   * Read-only echo: "A URL to the JSON Schema for this object." (`format:
+   * uri`, not in `required`), e.g.
+   * `https://api.veed.io/schemas/ResourceFabricJob.json`.
+   */
+  $schema?: string;
   data: VeedJob;
 }
 
@@ -379,6 +388,12 @@ export interface VeedJobResponse {
  * 401, 404 (an unknown `job_id`), 422, 429 and 500 on a poll.
  */
 export interface VeedErrorResponse {
+  /**
+   * Read-only echo: "A URL to the JSON Schema for this object." (`format:
+   * uri`, not in `required`), e.g.
+   * `https://api.veed.io/schemas/ErrorResponse.json`.
+   */
+  $schema?: string;
   error: {
     code: VeedErrorCode;
     message: string;

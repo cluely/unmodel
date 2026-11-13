@@ -13,6 +13,9 @@
  *   has no `first_frame`.
  * - Target sizes follow the chosen aspect ratio — see LUMA_IMAGE_DIMENSIONS in
  *   ./pricing.ts for the documented map.
+ * - Input limit: photon-1 and photon-flash-1 both accept a source image up to
+ *   10 mb. unmodel cannot read a remote URL, so it rides the constraint table
+ *   as published metadata rather than an enforced check.
  * - Async job API: poll GET /generations/{id} or use `callback_url`.
  * - No cost estimate: Luma publishes no current USD rate for photon-1 /
  *   photon-flash-1 (see ./models.ts).
@@ -38,6 +41,19 @@ import {
 } from "./shared";
 
 export const REFRAME_IMAGE_URL = `${DREAM_MACHINE_BASE_URL}/generations/image/reframe`;
+
+/**
+ * Per-model input ceiling from
+ * https://docs.lumalabs.ai/docs/reframe-video-image (verified 2026-11-12):
+ * "| photon-1 | n/a | 10 mb |", "| photon-flash-1 | n/a | 10 mb |" (the n/a
+ * is the duration column). "10 mb" is read as 10 MB decimal — the guide does
+ * not disambiguate MB from MiB. Published metadata, not an enforced check:
+ * the request carries only a URL, which unmodel never fetches.
+ */
+export const imageEditReframeConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
+  "photon-1": { media: { image: { maxBytes: 10_000_000 } } },
+  "photon-flash-1": { media: { image: { maxBytes: 10_000_000 } } },
+};
 
 export interface ReframeImageParams extends LumaReframeGeometry {
   model: LumaImageModelId | (string & {});
@@ -90,6 +106,7 @@ const validator = createValidator<ReframeImageParams, unknown>({
   schema: reframeImageSchema,
   modelId: (params) => params.model,
   catalog: imageModels,
+  constraints: imageEditReframeConstraints,
   finalize,
 });
 

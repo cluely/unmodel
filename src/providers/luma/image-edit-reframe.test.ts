@@ -75,6 +75,25 @@ describe("luma.videoReframe", () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
   });
+
+  test("constraintsFor exposes the published reframe input ceilings", () => {
+    // docs/reframe-video-image: "| ray-2 | 10s | 100 mb |", "| ray-flash-2 | 30s | 100 mb |"
+    expect(videoReframe.constraintsFor("ray-2")[0]?.media?.video).toEqual({
+      maxDurationSeconds: 10,
+      maxBytes: 100_000_000,
+    });
+    expect(videoReframe.constraintsFor("ray-flash-2")[0]?.media?.video).toEqual({
+      maxDurationSeconds: 30,
+      maxBytes: 100_000_000,
+    });
+    expect(videoReframe.constraintsFor("photon-1")).toEqual([]);
+  });
+
+  test("the ceilings are metadata: a URL-only request still validates", () => {
+    const r = videoReframe.safe({ model: "ray-flash-2", media: VIDEO, aspect_ratio: "16:9" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["deprecated_model"]);
+  });
 });
 
 describe("luma.imageEditReframe", () => {
@@ -104,6 +123,22 @@ describe("luma.imageEditReframe", () => {
     const r = imageEditReframe.safe({ model: "ray-2", media: IMAGE, aspect_ratio: "16:9" });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.warnings.map((w) => w.code)).toEqual(["unknown_model"]);
+  });
+
+  test("constraintsFor exposes the published 10 mb source ceiling", () => {
+    // docs/reframe-video-image: "| photon-1 | n/a | 10 mb |", "| photon-flash-1 | n/a | 10 mb |"
+    for (const model of ["photon-1", "photon-flash-1"]) {
+      expect(imageEditReframe.constraintsFor(model)[0]?.media?.image).toEqual({
+        maxBytes: 10_000_000,
+      });
+    }
+    expect(imageEditReframe.constraintsFor("ray-2")).toEqual([]);
+  });
+
+  test("the ceiling is metadata: a URL-only request validates warning-free", () => {
+    const r = imageEditReframe.safe({ model: "photon-flash-1", media: IMAGE, aspect_ratio: "1:1" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
   });
 
   test("the image route has no first_frame", () => {

@@ -17,7 +17,12 @@ import type { LumaConcept } from "./video";
 /** The two Ray ids this route serves — the `luma/…` ref union. */
 export const MODELS = ["ray-2", "ray-flash-2"] as const;
 
-/** "Duration can be 5s or 9s" — the two documented values, as seconds. */
+/**
+ * The two documented durations, as seconds — the OpenAPI embedded in
+ * https://docs.lumalabs.ai/reference/creategeneration (verified 2026-11-12):
+ * `"VideoModelOutputDuration": {"anyOf": [{"type": "string", "enum": ["5s",
+ * "9s"]}, {"type": "string"}]}`.
+ */
 export const DURATIONS = [5, 9] as const;
 
 /**

@@ -2,11 +2,14 @@
  * Luma Dream Machine pricing.
  *
  * Luma publishes almost nothing in USD for the Dream Machine models:
- * https://lumalabs.ai/api/pricing has moved on to the Luma Agents API models
- * (ray-3.2 / uni-1.1) and lists no rate for ray-2, ray-flash-2, photon-1 or
- * photon-flash-1. The one exception is the Modify Video guide, which prints a
- * per-million-pixel rate for both ray models plus two worked examples:
- * https://docs.lumalabs.ai/docs/modify-video (verified 2026-08-13)
+ * https://lumalabs.ai/api/pricing answers HTTP 308 to https://lumalabs.ai/api,
+ * which prices the Luma Agents API models (marketed as Ray3.2, Uni-1.1 and
+ * Uni-1.1 Max; wire ids ray-3.2, uni-1, uni-1-max) in credits — "Prices are in
+ * credits" — and lists no rate for ray-2, ray-flash-2, photon-1 or
+ * photon-flash-1 (verified 2026-11-12). The one exception is the Modify Video
+ * guide, which prints a per-million-pixel rate for both ray models plus two
+ * worked examples: https://docs.lumalabs.ai/docs/modify-video (verified
+ * 2026-11-12)
  *
  *   | ray-2       | $0.01582 / million pixels |
  *   | ray-flash-2 | $0.00544 / million pixels |

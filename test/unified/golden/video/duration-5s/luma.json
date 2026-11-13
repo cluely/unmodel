@@ -7,5 +7,13 @@
     "resolution": "720p",
     "aspect_ratio": "9:16"
   },
-  "url": "https://api.lumalabs.ai/dream-machine/v1/generations"
+  "url": "https://api.lumalabs.ai/dream-machine/v1/generations",
+  "issues": [
+    {
+      "code": "deprecated_model",
+      "path": [
+        "model"
+      ]
+    }
+  ]
 }

@@ -53,9 +53,10 @@
  *
  * ## What is deliberately NOT here
  *
- * **The rest of the Image API.** `/denoise`, `/sharpen`, `/sharpen-gen`,
- * `/restore-gen` (dust and scratches), `/lighting` (relight, white balance,
- * colorize) and `/matting` (object matting, background removal) are separate
+ * **The rest of the Image API.** `/denoise`, `/denoise-gen` (Denoise Max),
+ * `/sharpen`, `/sharpen-gen`, `/restore-gen` (dust and scratches, Face Recovery
+ * V3), `/lighting` (relight, white balance, colorize, ImageHDR) and `/matting`
+ * (object matting, background removal) are separate
  * routes with their own model enums, and none of them upscales — they clean,
  * sharpen, relight or cut out a picture at the size it arrived. An `upscale`
  * verb that reached them would be an address that no longer names what the

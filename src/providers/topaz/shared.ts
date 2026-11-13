@@ -34,16 +34,19 @@
  * ## Two casings, and the docs disagree with themselves
  *
  * The envelope is snake_case (`output_width`, `crop_to_fill`,
- * `output_format`); the settings are camelCase (`faceEnhancement`,
- * `subjectDetection`, `fixCompression`) on fourteen of the fifteen model pages.
- * The fifteenth — Text & Shapes — lists the same endpoint-level settings
- * snake_cased (`face_enhancement`, `subject_detection`, `fix_compression`).
- * unmodel types the camelCase spelling everywhere, because it is what the other
- * fourteen pages say and because those pages are the ones a caller is reading
- * when they set the field; the snake_case listing looks like a stale copy.
- * If Topaz turns out to want the other spelling on that one model, `sharpen`
- * and `denoise` are spelled identically either way and the rest reaches the
- * wire through `providerOptions`.
+ * `output_format`); the settings are camelCase, and the request parameters
+ * page says so for every model: “Model-specific settings are sent as additional
+ * form fields in the same request, in camelCase, for example
+ * `-F "sharpenStrength=0.5"`.”
+ * (https://developer.topazlabs.com/getting-started/request-parameters/image.md).
+ * One model page disagrees. Standard 2 lists its three strength dials
+ * snake_cased and its own sample sends them that way — “-F "denoise_strength=0.5"”
+ * (https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/standard-2.md)
+ * — where High Fidelity 2, Low Resolution 2 and Text & Shapes spell the same
+ * three `deblurStrength`, `decompressionStrength` and `denoiseStrength` (all
+ * verified 2026-11-12). Which spelling `Standard V2`
+ * reads is not knowable from the docs, so both are typed and both are in its
+ * settings row; neither is preferred.
  *
  * ## Everything is form-encoded, even a URL-only request
  *
@@ -174,12 +177,21 @@ export type TopazEnhanceModel = (typeof TOPAZ_ENHANCE_MODELS)[number];
  * (https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/detail-faces.md,
  * verified 2026-11-12).
  *
- * `"Recovery V2"` is the one value that goes the other way: it is in the spec
- * and on no page, has no published credit table, and reads like the earlier
- * name of what is now `"Recover 3"` (whose page adds "or `\"Natural Enhance\"`"
- * as a second accepted string). unmodel does not type it, for the reason it
- * does not type sync.'s undocumented models: a string with no reference page is
- * a string nobody can look up.
+ * `"Recovery V2"` is the one value that goes the other way, and it is Recover
+ * 2: its page names `"Recovery V2"`, bills it at 4 MP per credit and says
+ * “**Recover 2 is deprecated** and will be retired no sooner than January 1,
+ * 2027. Use Recover 3 instead.”
+ * (https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/recover-2.md,
+ * verified 2026-11-12). The page and the spec agree on that string where the Model
+ * Deprecations table prints `Recover 2`; the page-and-spec pair is the wire.
+ *
+ * It is not rostered because it was already deprecated when first read, and
+ * neither is the deprecated first generation: `"Standard"`, `"Low Resolution"`
+ * and `"High Fidelity"` on `/enhance/async` and `"Recover"` here, each with its
+ * own page and each listed “Deprecated” with retirement “Not sooner than
+ * January 1, 2027” on https://developer.topazlabs.com/resources/model-deprecations.md
+ * (verified 2026-11-12). The `model` field's open `string` still sends any of
+ * them, with an `unknown_model` warning and no estimate.
  */
 export const TOPAZ_ENHANCE_GEN_MODELS = [
   "Redefine",
@@ -205,7 +217,7 @@ export type TopazModelId = (typeof TOPAZ_MODELS)[number];
 export const TOPAZ_SUBJECT_DETECTION = ["foreground", "background", "all"] as const;
 export type TopazSubjectDetection = (typeof TOPAZ_SUBJECT_DETECTION)[number];
 
-/** `enhancementStrength` — Wonder 3 and Wonder 3.5. */
+/** `enhancementStrength` as a word — Wonder 3 and Wonder 3.5. `Recover 3` takes a number. */
 export const TOPAZ_ENHANCEMENT_STRENGTHS = ["high", "medium", "low"] as const;
 export type TopazEnhancementStrength = (typeof TOPAZ_ENHANCEMENT_STRENGTHS)[number];
 
@@ -218,20 +230,20 @@ export type TopazGrainModel = (typeof TOPAZ_GRAIN_MODELS)[number];
 // ---------------------------------------------------------------------------
 
 /**
- * The dials both routes share, documented on every model page's
- * "Endpoint-Specific Parameters" block.
+ * The dials both routes share, as every model page's "Endpoint-Specific
+ * Parameters" block documented them on 2026-08-25.
  *
  * They are ENDPOINT-specific by their own heading, so they belong to the route
- * rather than to the model — which is what settles the two newest pages
+ * rather than to the model — which is what settled two of those pages
  * (`Wonder 3.5` and `Bloom 2`) omitting the block entirely: an omission on a
  * terser page is not a statement that the endpoint stopped taking them.
  */
 export interface TopazFaceSettings {
   /** Run the face-recovery model over detected faces. */
   faceEnhancement?: boolean;
-  /** 0–1. **Required when `faceEnhancement` is true.** */
+  /** 0–1. Optional even with `faceEnhancement` on — `Wonder 2` defaults it to 0.8. */
   faceEnhancementStrength?: number;
-  /** 0–1. **Required when `faceEnhancement` is true.** Realistic ↔ creative. */
+  /** 0–1. Realistic ↔ creative. */
   faceEnhancementCreativity?: number;
   /** Where enhancements are applied. */
   subjectDetection?: TopazSubjectDetection;
@@ -260,7 +272,7 @@ export interface TopazEnhanceGenSettings extends TopazFaceSettings {
   prompt?: string;
   /** Generate the prompt automatically. Ignores whatever `prompt` said. */
   autoprompt?: boolean;
-  /** Integer 1–9 (1–4 on `Bloom Realism`), default 3. How far it may stray. */
+  /** Integer 1–9 (1–4 on `Bloom Realism`, default 2 there), default 3. How far it may stray. */
   creativity?: number;
   /** Integer 1–5. 1 at low creativity, 3 at high, per Topaz's recommendation. */
   texture?: number;
@@ -270,24 +282,39 @@ export interface TopazEnhanceGenSettings extends TopazFaceSettings {
   denoise?: number;
   /** Add detail after rendering. Default false. */
   detail?: boolean;
-  /** 0–10. **Required when `detail` is true.** */
+  /** 0–10. `Detail`'s one setting, which it reads with no `detail` switch. */
   detailStrength?: number;
 }
 
 /** Everything any rostered model takes that the envelope does not declare. */
 export interface TopazModelSettings extends TopazEnhanceSettings, TopazEnhanceGenSettings {
-  /** `Upscale High Fidelity V3`, `Text Refine`. 0–1, default 1.0. */
+  /** Every classic model. 0–1, default 1.0. Blends toward a standard upscale. */
   opacity?: number;
-  /** `Upscale High Fidelity V3`. 0–1, default 1.0. */
+  /** `Upscale High Fidelity V3`. 0–1, default 0.333. */
   recoveryStrength?: number;
-  /** `CGI`, `Text Refine`. 0–1, default 0.5. */
+  /** `Standard V2`, `High Fidelity V2`, `Low Resolution V2`, `CGI`, `Text Refine`. 0–1, default 0.5. */
   deblurStrength?: number;
-  /** `Text Refine`. 0–1, default 0.5. */
+  /** `Standard V2`, `High Fidelity V2`, `Low Resolution V2`, `CGI`, `Text Refine`. 0–1, default 0.5. */
   denoiseStrength?: number;
-  /** `Text Refine`. 0–1, default 0.5. */
+  /** `Standard V2`, `High Fidelity V2`, `Low Resolution V2`, `Text Refine`. 0–1, default 0.5. */
   decompressionStrength?: number;
-  /** `Wonder 3`, `Wonder 3.5`. */
-  enhancementStrength?: TopazEnhancementStrength;
+  /** `Standard V2`, as its page and sample spell it — see the casing note. 0–1, default 0.5. */
+  deblur_strength?: number;
+  /** `Standard V2`, as its page spells it — see the casing note. 0–1, default 0.5. */
+  decompression_strength?: number;
+  /** `Standard V2`, as its page and sample spell it — see the casing note. 0–1, default 0.5. */
+  denoise_strength?: number;
+  /**
+   * `Wonder 3`, `Wonder 3.5`: a word, default `"high"`. `Recover 3`: a decimal
+   * 0–10, default 5.0.
+   */
+  enhancementStrength?: TopazEnhancementStrength | number;
+  /** `Wonder 2`. Colour correction after processing. Default true. */
+  colorCorrection?: boolean;
+  /** `Wonder 2`. Integer 1–4, default 1. Downscales the input before processing. */
+  preDownscale?: number;
+  /** `Redefine`. Integer 1–5, default 1. Amount of fine detail added. */
+  detailLevel?: number;
   /** `Wonder 3.5`, `Bloom 2`. Film-grain simulation. */
   grain?: boolean;
   grainDensity?: number;
@@ -307,11 +334,11 @@ export interface TopazModelSettings extends TopazEnhanceSettings, TopazEnhanceGe
   outputHeight?: number;
   /** `Bloom 2`, `Bloom`. Keep the source's colours while new detail is introduced. */
   colorPreservation?: boolean;
-  /** `Bloom`. Increases the effect of `creativity`. Default false. */
+  /** `Redefine` (default true), `Bloom` (default false). Increases the effect of `creativity`. */
   creativityBoost?: boolean;
   /** `Bloom`. Keeps faces close to the source. Default true. */
   facePreservation?: boolean;
-  /** `Bloom 2` (default 2), `Bloom Realism` (1–2000, default 1), `Bloom` (default 1). */
+  /** `Redefine` (default 1), `Bloom 2` (default 2), `Bloom Realism` (default 1), `Bloom` (default 1). */
   seed?: number;
 }
 
@@ -343,6 +370,12 @@ const ENHANCE_GEN_COMMON = [
   "detailStrength",
 ] as const;
 
+/** The strength dials four classic pages document, camelCased. */
+const STRENGTHS = ["deblurStrength", "decompressionStrength", "denoiseStrength"] as const;
+
+/** The same three as Standard 2's page spells them — see the casing note. */
+const STRENGTHS_SNAKE = ["deblur_strength", "decompression_strength", "denoise_strength"] as const;
+
 const GRAIN = ["grain", "grainDensity", "grainModel", "grainSize", "grainStrength"] as const;
 const DIMENSIONS = ["inputWidth", "inputHeight", "outputWidth", "outputHeight"] as const;
 
@@ -367,14 +400,30 @@ const DIMENSIONS = ["inputWidth", "inputHeight", "outputWidth", "outputHeight"] 
  * “Model-specific settings are sent as additional form fields in the same
  * request … They're listed on each model's page.”
  * (https://developer.topazlabs.com/getting-started/request-parameters/image.md).
+ *
+ * Every other row is its page's 2026-08-25 endpoint-wide block plus the dials
+ * its page documents on 2026-11-12, each quoted beside the row. A dial absent
+ * from a page is not evidence that the model ignores it.
  */
 export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>> = {
   // --- /enhance/async ------------------------------------------------------
-  "Standard V2": ENHANCE_COMMON,
-  "High Fidelity V2": ENHANCE_COMMON,
+  // Both spellings of the strength dials — see the casing note — plus
+  // `opacity`. Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/standard-2.md:
+  // “| `deblur_strength`        | `decimal` | <p>Optional<br>Default: <code>0.5</code></p> | `0.0` to `1.0`  |”
+  // and “| `opacity`                | `decimal` | <p>Optional<br>Default: <code>1.0</code></p> | `0.0` to `1.0`  |”.
+  "Standard V2": [...ENHANCE_COMMON, ...STRENGTHS, ...STRENGTHS_SNAKE, "opacity"],
+  // Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/high-fidelity-2.md:
+  // “| `decompressionStrength` | `decimal` | <p>Optional<br>Default: <code>0.5</code></p> | `0.0` to `1.0`       |”,
+  // beside the same rows for `deblurStrength`, `denoiseStrength` and `opacity`.
+  "High Fidelity V2": [...ENHANCE_COMMON, ...STRENGTHS, "opacity"],
   "Upscale High Fidelity V3": [...ENHANCE_COMMON, "recoveryStrength", "opacity"],
-  "Low Resolution V2": ENHANCE_COMMON,
-  CGI: [...ENHANCE_COMMON, "deblurStrength"],
+  // The same four rows, verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/low-resolution-2.md,
+  // whose own sample sends “-F "decompressionStrength=0.7"”.
+  "Low Resolution V2": [...ENHANCE_COMMON, ...STRENGTHS, "opacity"],
+  // Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/art-and-cgi.md:
+  // “| `denoiseStrength` | `decimal` | <p>Optional<br>Default: <code>0.5</code></p> | `0.0` to `1.0`  |”,
+  // beside `deblurStrength` and `opacity`.
+  CGI: [...ENHANCE_COMMON, "deblurStrength", "denoiseStrength", "opacity"],
   "Text Refine": [
     ...ENHANCE_COMMON,
     "denoiseStrength",
@@ -383,9 +432,16 @@ export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>
     "opacity",
   ],
   // --- /enhance-gen/async --------------------------------------------------
-  Redefine: ENHANCE_GEN_COMMON,
+  // Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/redefine.md:
+  // “| `creativityBoost` | `boolean` | <p>Optional<br>Default: <code>true</code></p> |”,
+  // “| `detailLevel`     | `integer` | <p>Optional<br>Default: <code>1</code></p>    | `1` to `5`      |”
+  // and “| `seed`            | `integer` | <p>Optional<br>Default: <code>1</code></p>    |”.
+  Redefine: [...ENHANCE_GEN_COMMON, "creativityBoost", "detailLevel", "seed"],
   Wonder: ENHANCE_GEN_COMMON,
-  "Wonder 2": ENHANCE_GEN_COMMON,
+  // Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-2.md:
+  // “| `colorCorrection`         | `boolean` | <p>Optional<br>Default: <code>true</code></p>  |”
+  // and “| `preDownscale`            | `integer` | <p>Optional<br>Default: <code>1</code></p>     | `1` to `4`      |”.
+  "Wonder 2": [...ENHANCE_GEN_COMMON, "colorCorrection", "preDownscale"],
   "Wonder 3": [...ENHANCE_GEN_COMMON, "enhancementStrength"],
   "Wonder 3.5": [...ENHANCE_GEN_COMMON, "enhancementStrength", ...GRAIN, ...DIMENSIONS],
   // No setting at all. Verified 2026-11-12: the parameter table on
@@ -396,7 +452,10 @@ export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>
   // strength. Wonder 4 gets there automatically.”
   "Wonder 4": [],
   "Standard MAX": ENHANCE_GEN_COMMON,
-  "Recover 3": ENHANCE_GEN_COMMON,
+  // A decimal here, where Wonder 3 and 3.5 take a word. Verified 2026-11-12 on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/recover-3.md:
+  // “| `enhancementStrength` | `decimal` | <p>Optional<br>Default: <code>5.0</code></p> | `0.0` to `10.0` |”.
+  "Recover 3": [...ENHANCE_GEN_COMMON, "enhancementStrength"],
   // One setting, with no `detail` switch beside it. Verified 2026-11-12 on
   // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/detail-faces.md:
   // “| `detailStrength` | `decimal` | Optional           | `0.0` to `10.0` | How
@@ -416,8 +475,9 @@ export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>
  * The published input and output ceilings, in megapixels, where a model page
  * states them.
  *
- * `Redefine` at 256 MP in and out, `Wonder` at 128, `Standard MAX` and
- * `Recover 3` at 24 in / 384 out, the classic upscalers at 512 in / 1024 out.
+ * `Redefine`, `Wonder`, `Wonder 4` and `Bloom` at 256 MP in and out,
+ * `Standard MAX` and `Recover 3` at 24 in / 384 out, the classic upscalers at
+ * 512 in / 1024 out.
  * A request states its OUTPUT size directly, so the output ceiling is checkable
  * — {@link checkOutputMegapixels} does it — while the input's is a property of
  * a file behind a URL and is not.
@@ -431,7 +491,9 @@ export const TOPAZ_MEGAPIXEL_LIMITS: Readonly<
   CGI: { input: 512, output: 1024 },
   "Text Refine": { input: 512, output: 1024 },
   Redefine: { input: 256, output: 256 },
-  Wonder: { input: 128, output: 128 },
+  // “This model accepts up to 256 MP input and output.” —
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-1.md, verified 2026-11-12.
+  Wonder: { input: 256, output: 256 },
   // “This model accepts up to 256 MP input and output.” —
   // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-4.md,
   // verified 2026-11-12.
@@ -518,11 +580,6 @@ interface EnhanceParams {
   source_url?: string;
   output_width?: number;
   output_height?: number;
-  faceEnhancement?: boolean;
-  faceEnhancementStrength?: number;
-  faceEnhancementCreativity?: number;
-  detail?: boolean;
-  detailStrength?: number;
 }
 
 /** The three ways to name the picture, of which a request needs exactly one. */
@@ -554,46 +611,6 @@ export function checkSource(source: string) {
             "earlier job.",
       meta: { source, given: [...given] },
     });
-  };
-}
-
-/**
- * Two dials that are mandatory only when a third is on.
- *
- * "`faceEnhancementStrength` — decimal between 0 and 1 *(required if
- * `faceEnhancement=true`)*" and the same sentence for
- * `faceEnhancementCreativity` and for `detailStrength`. A conditional
- * requirement is invisible in a type where all three fields are optional, and
- * it is not in the OpenAPI document at all — these live in the prose the
- * `additionalProperties` escape hatch hides.
- */
-export function checkConditionalStrengths(source: string) {
-  return (params: EnhanceParams, _info: unknown, ctx: PipelineContext): void => {
-    if (params.faceEnhancement === true) {
-      for (const key of ["faceEnhancementStrength", "faceEnhancementCreativity"] as const) {
-        if (params[key] !== undefined) continue;
-        ctx.report({
-          code: "invalid_shape",
-          path: [key],
-          ...(params.model === undefined ? {} : { model: params.model }),
-          message:
-            `\`faceEnhancement: true\` requires \`${key}\` — Topaz documents both strength dials as ` +
-            "required once face recovery is switched on, and neither has a server-side default.",
-          meta: { source },
-        });
-      }
-    }
-    if (params.detail === true && params.detailStrength === undefined) {
-      ctx.report({
-        code: "invalid_shape",
-        path: ["detailStrength"],
-        ...(params.model === undefined ? {} : { model: params.model }),
-        message:
-          "`detail: true` requires `detailStrength` (0–10) — the switch turns the pass on and the " +
-          "strength is what it does.",
-        meta: { source },
-      });
-    }
   };
 }
 
@@ -641,10 +658,10 @@ export function checkModelSettings(source: string, allSettings: readonly string[
  * The output ceiling, where the model page publishes one.
  *
  * Checkable in a way the INPUT ceiling is not: the request states the output's
- * dimensions, while the input is a file behind a URL. `Wonder` caps at 128 MP
- * and `Redefine` at 256, so a 8000×8000 request (64 MP) is fine at both and a
- * 20000×20000 one (400 MP) is not — and the difference between the models is
- * three-fold, which no single number in the envelope's `maximum: 32000` says.
+ * dimensions, while the input is a file behind a URL. `Wonder` and `Redefine`
+ * cap at 256 MP and `Standard MAX` at 384, so a 16000×16000 request (256 MP) is
+ * fine at all three and a 20000×20000 one (400 MP) is not — which no single
+ * number in the envelope's `maximum: 32000` says.
  */
 export function checkOutputMegapixels(source: string) {
   return (params: EnhanceParams, _info: unknown, ctx: PipelineContext): void => {
@@ -661,7 +678,7 @@ export function checkOutputMegapixels(source: string) {
       message:
         `${width}×${height} is ${megapixels.toFixed(1)} MP and "${model}" caps its output at ` +
         `${limit.output} MP. The ceilings differ sharply between models — the classic upscalers reach ` +
-        "1024 MP where the generative ones stop at 128 or 256 — so this is a model choice rather than " +
+        "1024 MP where the generative ones stop at 256 or 384 — so this is a model choice rather than " +
         "a size to round down.",
       meta: { source, megapixels, max: limit.output },
     });

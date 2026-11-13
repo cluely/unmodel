@@ -44,7 +44,6 @@ import {
   ENHANCE_URL,
   TOPAZ_ENHANCE_MODELS,
   TOPAZ_SUBJECT_DETECTION,
-  checkConditionalStrengths,
   checkModelSettings,
   checkOutputMegapixels,
   checkSource,
@@ -76,6 +75,9 @@ const ENHANCE_SETTINGS = [
   "deblurStrength",
   "denoiseStrength",
   "decompressionStrength",
+  "deblur_strength",
+  "denoise_strength",
+  "decompression_strength",
 ] as const;
 
 export interface TopazUpscaleParams extends TopazEnhanceSettings {
@@ -104,16 +106,27 @@ export interface TopazUpscaleParams extends TopazEnhanceSettings {
   output_format?: TopazOutputFormat;
   /** JSON callback on every status change. 5xx retried to a 15-minute cap. */
   webhook_url?: string;
-  /** `Upscale High Fidelity V3`. 0–1, default 1.0. */
+  /** `Upscale High Fidelity V3`. 0–1, default 0.333. */
   recoveryStrength?: number;
-  /** `Upscale High Fidelity V3`, `Text Refine`. 0–1, default 1.0. */
+  /** Every model on this route. 0–1, default 1.0. Blends toward a standard upscale. */
   opacity?: number;
-  /** `CGI`, `Text Refine`. 0–1, default 0.5. */
+  /** `Standard V2`, `High Fidelity V2`, `Low Resolution V2`, `CGI`, `Text Refine`. 0–1, default 0.5. */
   deblurStrength?: number;
-  /** `Text Refine`. 0–1, default 0.5. */
+  /** `Standard V2`, `High Fidelity V2`, `Low Resolution V2`, `CGI`, `Text Refine`. 0–1, default 0.5. */
   denoiseStrength?: number;
-  /** `Text Refine`. 0–1, default 0.5. */
+  /** `Standard V2`, `High Fidelity V2`, `Low Resolution V2`, `Text Refine`. 0–1, default 0.5. */
   decompressionStrength?: number;
+  /**
+   * `Standard V2`, spelled as its page and its own sample spell it. Topaz's
+   * request parameters page says every setting is camelCase, so the camelCased
+   * `deblurStrength` is typed too and neither is preferred — see `./shared.ts`.
+   * 0–1, default 0.5.
+   */
+  deblur_strength?: number;
+  /** `Standard V2`, as its page spells it. 0–1, default 0.5. */
+  decompression_strength?: number;
+  /** `Standard V2`, as its page and its own sample spell it. 0–1, default 0.5. */
+  denoise_strength?: number;
 }
 
 const unitInterval = z.number().min(0).max(1);
@@ -131,6 +144,9 @@ const upscaleSchema = z.looseObject({
   deblurStrength: unitInterval.optional(),
   denoiseStrength: unitInterval.optional(),
   decompressionStrength: unitInterval.optional(),
+  deblur_strength: unitInterval.optional(),
+  decompression_strength: unitInterval.optional(),
+  denoise_strength: unitInterval.optional(),
 });
 
 /**
@@ -197,7 +213,6 @@ const validator = createValidator<TopazUpscaleParams, unknown>({
   constraints: upscaleConstraints,
   checks: [
     checkSource(SOURCE),
-    checkConditionalStrengths(SOURCE),
     checkModelSettings(SOURCE, ENHANCE_SETTINGS),
     checkOutputMegapixels(SOURCE),
   ],

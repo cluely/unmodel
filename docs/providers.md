@@ -519,8 +519,8 @@ reads `"topaz/Standard V2"`.
 
 Pricing is credits, per output megapixel, `credits = ceil(outputMP / mpPerCredit)` at the rate
 each model's page states (`MP_PER_CREDIT`, per model) — 24 MP per credit for the classic six and
-`Detail`, 8 for `Wonder 4`, 4 for `Redefine`, `Standard MAX`, `Recover 3` and the earlier
-Wonders, 2 for the Bloom models — at $0.12 a credit pay-as-you-go
+`Detail`, 8 for `Wonder 3`, `Wonder 3.5` and `Wonder 4`, 4 for `Redefine`, `Wonder`, `Wonder 2`,
+`Standard MAX` and `Recover 3`, 2 for the Bloom models — at $0.12 a credit pay-as-you-go
 ($0.10 on Developer, $0.08 on Scale). Topaz bills the OUTPUT's pixel count and the request states
 it, which makes this one of the few media providers whose estimate is EXACT; the other half of
 the same fact is that `output_width` and `output_height` are both optional, so a request that
@@ -539,8 +539,9 @@ prose, and Topaz IGNORES a dial a model does not read rather than refusing it, s
 a silent no-op at the API and a warning here. That transcription is the whole argument for a
 native Topaz provider.
 
-Not served: the rest of the Image API — `/denoise`, `/sharpen`, `/sharpen-gen`, `/restore-gen`,
-`/lighting` and `/matting` clean, sharpen, relight or cut out a picture at the size it arrived,
+Not served: the rest of the Image API — `/denoise`, `/denoise-gen`, `/sharpen`, `/sharpen-gen`,
+`/restore-gen`, `/lighting` and `/matting` clean, sharpen, relight or cut out a picture at the size
+it arrived,
 and `/tool` ("Transparency Upscale") does enlarge but is a third route with a one-value enum,
 so it would be a third address rather than a model here. Nor the **Video API**, which is not a
 request but a five-step protocol (quote → accept → S3 multipart upload → complete-upload → poll)

@@ -22,6 +22,7 @@ import { upscale } from "../../src/unified/upscale";
 import { upscale as fal } from "../../src/providers/fal/unified-upscale";
 import { upscale as topaz } from "../../src/providers/topaz/unified";
 import { TOPAZ_SETTINGS_BY_MODEL } from "../../src/providers/topaz/shared";
+import { models as topazModels } from "../../src/providers/topaz/models";
 import { FAL_REQUIRED_PROBES } from "../../src/providers/fal/gen/endpoints.gen";
 
 const STILL = { url: "https://example.com/portrait.png" } as const;
@@ -92,6 +93,12 @@ describe.each(refs)("%s", (ref) => {
     Object.keys(options).length === 0 ? {} : { providerOptions: { [provider]: options } };
   const sourceWire = provider === "fal" ? (video ? "video_url" : "image_url") : "source_url";
 
+  // A row Topaz lists as Deprecated says so, once, as an issue warning — the
+  // one warning a clean request may carry.
+  const deprecated =
+    provider === "topaz" &&
+    (topazModels as Readonly<Record<string, { status?: string }>>)[id]?.status === "deprecated";
+
   test("compiles from a URL ref, with no warnings", () => {
     const result = upscale.safe({
       model: ref,
@@ -100,7 +107,7 @@ describe.each(refs)("%s", (ref) => {
     } as never);
     expect(result.ok, JSON.stringify(result.ok ? [] : result.errors)).toBe(true);
     if (!result.ok) return;
-    expect(result.warnings).toEqual([]);
+    expect(result.warnings.map((issue) => issue.code)).toEqual(deprecated ? ["deprecated_model"] : []);
     const params = result.params as unknown as { warnings: readonly unknown[] };
     expect(params.warnings).toEqual([]);
   });

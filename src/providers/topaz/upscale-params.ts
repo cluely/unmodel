@@ -102,9 +102,9 @@ const ENVELOPE_EXTRAS = {
 const SHARED_FACE = {
   /** Run the face-recovery model over detected faces. */
   faceEnhancement: EXTRA as boolean,
-  /** 0–1. Required once `faceEnhancement` is true. */
+  /** 0–1. Optional even with `faceEnhancement` on. */
   faceEnhancementStrength: EXTRA as number,
-  /** 0–1. Required once `faceEnhancement` is true. Realistic ↔ creative. */
+  /** 0–1. Realistic ↔ creative. */
   faceEnhancementCreativity: EXTRA as number,
   /** Where enhancements are applied. */
   subjectDetection: EXTRA as TopazSubjectDetection,
@@ -140,8 +140,20 @@ const ENHANCE_GEN_EXTRAS = {
   denoise: EXTRA as number,
   /** Add detail after rendering. Default false. */
   detail: EXTRA as boolean,
-  /** 0–10. Required once `detail` is true. */
+  /** 0–10. */
   detailStrength: EXTRA as number,
+} as const;
+
+/** The strength dials four classic pages document, camelCased, and `opacity`. */
+const STRENGTH_EXTRAS = {
+  /** 0–1, default 0.5. How strongly blur is reduced. */
+  deblurStrength: EXTRA as number,
+  /** 0–1, default 0.5. How strongly compression artefacts are removed. */
+  decompressionStrength: EXTRA as number,
+  /** 0–1, default 0.5. How strongly noise is removed. */
+  denoiseStrength: EXTRA as number,
+  /** 0–1, default 1.0. Blends the result with a standard upscale of the original. */
+  opacity: EXTRA as number,
 } as const;
 
 /** Film grain, on the two newest generative models. */
@@ -168,25 +180,47 @@ const DIMENSION_EXTRAS = {
   outputHeight: EXTRA as number,
 } as const;
 
-const ENHANCE_ROW = { sources: SOURCES, factors: FACTORS, extras: ENHANCE_EXTRAS } as const;
 const ENHANCE_GEN_ROW = { sources: SOURCES, factors: FACTORS, extras: ENHANCE_GEN_EXTRAS } as const;
 
 export const TOPAZ_UPSCALE_MODEL_PARAMS = {
   // --- POST /image/v1/enhance/async ----------------------------------------
-  "Standard V2": ENHANCE_ROW,
-  "High Fidelity V2": ENHANCE_ROW,
+  "Standard V2": {
+    sources: SOURCES,
+    factors: FACTORS,
+    extras: {
+      ...ENHANCE_EXTRAS,
+      ...STRENGTH_EXTRAS,
+      /**
+       * The same three dials as Standard 2's page and sample spell them. Topaz's
+       * request parameters page says every setting is camelCase; which one this
+       * model reads is not stated, so both are typed and neither is preferred.
+       */
+      deblur_strength: EXTRA as number,
+      decompression_strength: EXTRA as number,
+      denoise_strength: EXTRA as number,
+    },
+  },
+  "High Fidelity V2": {
+    sources: SOURCES,
+    factors: FACTORS,
+    extras: { ...ENHANCE_EXTRAS, ...STRENGTH_EXTRAS },
+  },
   "Upscale High Fidelity V3": {
     sources: SOURCES,
     factors: FACTORS,
     extras: {
       ...ENHANCE_EXTRAS,
-      /** 0–1, default 1.0. How much of the recovered detail to keep. */
+      /** 0–1, default 0.333. How strongly fine detail is recovered. */
       recoveryStrength: EXTRA as number,
       /** 0–1, default 1.0. Blend the result back toward the source. */
       opacity: EXTRA as number,
     },
   },
-  "Low Resolution V2": ENHANCE_ROW,
+  "Low Resolution V2": {
+    sources: SOURCES,
+    factors: FACTORS,
+    extras: { ...ENHANCE_EXTRAS, ...STRENGTH_EXTRAS },
+  },
   CGI: {
     sources: SOURCES,
     factors: FACTORS,
@@ -194,6 +228,10 @@ export const TOPAZ_UPSCALE_MODEL_PARAMS = {
       ...ENHANCE_EXTRAS,
       /** 0–1, default 0.5. */
       deblurStrength: EXTRA as number,
+      /** 0–1, default 0.5. */
+      denoiseStrength: EXTRA as number,
+      /** 0–1, default 1.0. */
+      opacity: EXTRA as number,
     },
   },
   "Text Refine": {
@@ -213,9 +251,31 @@ export const TOPAZ_UPSCALE_MODEL_PARAMS = {
   },
 
   // --- POST /image/v1/enhance-gen/async -------------------------------------
-  Redefine: ENHANCE_GEN_ROW,
+  Redefine: {
+    sources: SOURCES,
+    factors: FACTORS,
+    extras: {
+      ...ENHANCE_GEN_EXTRAS,
+      /** Increases the effect of `creativity`. Default true. */
+      creativityBoost: EXTRA as boolean,
+      /** Integer 1–5, default 1. Amount of fine detail added. */
+      detailLevel: EXTRA as number,
+      /** Default 1. */
+      seed: EXTRA as number,
+    },
+  },
   Wonder: ENHANCE_GEN_ROW,
-  "Wonder 2": ENHANCE_GEN_ROW,
+  "Wonder 2": {
+    sources: SOURCES,
+    factors: FACTORS,
+    extras: {
+      ...ENHANCE_GEN_EXTRAS,
+      /** Colour correction after processing. Default true. */
+      colorCorrection: EXTRA as boolean,
+      /** Integer 1–4, default 1. Downscales the input first; helps very small sources. */
+      preDownscale: EXTRA as number,
+    },
+  },
   "Wonder 3": {
     sources: SOURCES,
     factors: FACTORS,
@@ -238,7 +298,15 @@ export const TOPAZ_UPSCALE_MODEL_PARAMS = {
   // No setting on its page, so nothing beyond the envelope.
   "Wonder 4": { sources: SOURCES, factors: FACTORS, extras: ENVELOPE_EXTRAS },
   "Standard MAX": ENHANCE_GEN_ROW,
-  "Recover 3": ENHANCE_GEN_ROW,
+  "Recover 3": {
+    sources: SOURCES,
+    factors: FACTORS,
+    extras: {
+      ...ENHANCE_GEN_EXTRAS,
+      /** A decimal 0–10, default 5.0 — where Wonder 3 and 3.5 take a word. */
+      enhancementStrength: EXTRA as number,
+    },
+  },
   Detail: {
     sources: SOURCES,
     factors: FACTORS,
@@ -255,7 +323,7 @@ export const TOPAZ_UPSCALE_MODEL_PARAMS = {
       ...ENHANCE_GEN_EXTRAS,
       /** Keep the source's colours while new detail is introduced. */
       colorPreservation: EXTRA as boolean,
-      /** Default 2. The only reproducibility handle in this catalog. */
+      /** Default 2. */
       seed: EXTRA as number,
       ...GRAIN_EXTRAS,
       ...DIMENSION_EXTRAS,
@@ -266,7 +334,9 @@ export const TOPAZ_UPSCALE_MODEL_PARAMS = {
     factors: FACTORS,
     extras: {
       ...ENHANCE_GEN_EXTRAS,
-      /** 1–2000, default 1. */
+      /** Integer 1–4, default 2 — narrower than the route's 1–9. */
+      creativity: EXTRA as number,
+      /** Default 1. */
       seed: EXTRA as number,
     },
   },

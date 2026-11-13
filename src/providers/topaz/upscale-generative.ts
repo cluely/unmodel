@@ -29,8 +29,9 @@
  *   `prompt` said.
  * - `creativity` is an integer 1–9 (1–4 on `Bloom Realism`, which narrows a
  *   shared dial), `texture` 1–5.
- * - The MP ceilings here are much tighter than on the classic route — 128 MP at
- *   `Wonder`, 256 at `Redefine` — and `checkOutputMegapixels` knows them.
+ * - The MP ceilings here are tighter than on the classic route — 256 MP at
+ *   `Redefine` and `Wonder`, 384 out at `Standard MAX` and `Recover 3` — and
+ *   `checkOutputMegapixels` knows them.
  * - Headers: add `X-API-Key: <TOPAZ_API_KEY>` yourself.
  */
 
@@ -50,7 +51,6 @@ import {
   TOPAZ_ENHANCE_GEN_MODELS,
   TOPAZ_GRAIN_MODELS,
   TOPAZ_SUBJECT_DETECTION,
-  checkConditionalStrengths,
   checkModelSettings,
   checkOutputMegapixels,
   checkSource,
@@ -97,6 +97,9 @@ const ENHANCE_GEN_SETTINGS = [
   "creativityBoost",
   "facePreservation",
   "seed",
+  "colorCorrection",
+  "preDownscale",
+  "detailLevel",
 ] as const;
 
 export interface TopazUpscaleGenerativeParams extends TopazEnhanceGenSettings {
@@ -118,8 +121,12 @@ export interface TopazUpscaleGenerativeParams extends TopazEnhanceGenSettings {
   output_format?: TopazOutputFormat;
   /** JSON callback on every status change. */
   webhook_url?: string;
-  /** `Wonder 3`, `Wonder 3.5`. Coarser than `creativity`. */
-  enhancementStrength?: TopazEnhancementStrength;
+  /**
+   * `Wonder 3`, `Wonder 3.5`: a word, default `"high"` — coarser than
+   * `creativity`. `Recover 3`: a decimal 0–10, default 5.0 — “How much detail
+   * the model recovers.”
+   */
+  enhancementStrength?: TopazEnhancementStrength | number;
   /** `Wonder 3.5`, `Bloom 2`. Film-grain simulation. */
   grain?: boolean;
   grainDensity?: number;
@@ -140,12 +147,18 @@ export interface TopazUpscaleGenerativeParams extends TopazEnhanceGenSettings {
   outputHeight?: number;
   /** `Bloom 2`, `Bloom`. Keep the source's colours while new detail is added. */
   colorPreservation?: boolean;
-  /** `Bloom`. Increases the effect of `creativity`. Default false. */
+  /** `Redefine` (default true), `Bloom` (default false). Increases the effect of `creativity`. */
   creativityBoost?: boolean;
   /** `Bloom`. Keeps faces close to the source. Default true. */
   facePreservation?: boolean;
-  /** `Bloom 2` (default 2), `Bloom Realism` (1–2000, default 1), `Bloom` (default 1). */
+  /** `Redefine` (default 1), `Bloom 2` (default 2), `Bloom Realism` (default 1), `Bloom` (default 1). */
   seed?: number;
+  /** `Wonder 2`. Colour correction after processing. Default true. */
+  colorCorrection?: boolean;
+  /** `Wonder 2`. Integer 1–4, default 1. Downscales the input first; helps very small sources. */
+  preDownscale?: number;
+  /** `Redefine`. Integer 1–5, default 1. Amount of fine detail added. */
+  detailLevel?: number;
 }
 
 const unitInterval = z.number().min(0).max(1);
@@ -162,7 +175,11 @@ const upscaleGenSchema = z.looseObject({
   denoise: unitInterval.optional(),
   detail: z.boolean().optional(),
   detailStrength: z.number().min(0).max(10).optional(),
-  enhancementStrength: z.enum(TOPAZ_ENHANCEMENT_STRENGTHS).optional(),
+  // A word at Wonder 3 / 3.5, a 0–10 decimal at Recover 3; the per-model enum
+  // below keeps the Wonders to their words.
+  enhancementStrength: z
+    .union([z.enum(TOPAZ_ENHANCEMENT_STRENGTHS), z.number().min(0).max(10)])
+    .optional(),
   grain: z.boolean().optional(),
   grainDensity: z.number().optional(),
   grainModel: z.enum(TOPAZ_GRAIN_MODELS).optional(),
@@ -176,6 +193,9 @@ const upscaleGenSchema = z.looseObject({
   creativityBoost: z.boolean().optional(),
   facePreservation: z.boolean().optional(),
   seed: z.number().int().optional(),
+  colorCorrection: z.boolean().optional(),
+  preDownscale: z.number().int().min(1).max(4).optional(),
+  detailLevel: z.number().int().min(1).max(5).optional(),
 });
 
 const SUBJECT_ENUM = { subjectDetection: TOPAZ_SUBJECT_DETECTION } as Readonly<
@@ -244,7 +264,6 @@ const validator = createValidator<TopazUpscaleGenerativeParams, unknown>({
   constraints: upscaleGenerativeConstraints,
   checks: [
     checkSource(SOURCE),
-    checkConditionalStrengths(SOURCE),
     checkModelSettings(SOURCE, ENHANCE_GEN_SETTINGS),
     checkOutputMegapixels(SOURCE),
   ],

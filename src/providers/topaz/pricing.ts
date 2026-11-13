@@ -69,9 +69,9 @@ export const CREDIT_USD = 0.12;
  * states.
  *
  * Per model because the rate does not follow the route or the family: `Detail`
- * rides `/enhance-gen/async` at the classic route's 24, and `Wonder 4` bills at
- * 8 beside `Redefine`'s 4. Every page states its rate in one sentence, and each
- * row quotes it.
+ * rides `/enhance-gen/async` at the classic route's 24, and `Wonder 3`, `3.5`
+ * and `4` bill at 8 beside `Wonder` and `Wonder 2`'s 4. Every page states its
+ * rate in one sentence, and each row quotes it.
  *
  * Higher is cheaper: a model at 24 fits 24 megapixels into one credit where a
  * Bloom model fits two, which is a twelve-fold difference in price for the same
@@ -107,12 +107,12 @@ export const MP_PER_CREDIT = {
   // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-2.md — verified 2026-11-12.
   // “**Wonder 2** costs 1 credit per every 4 MP of generated output.”
   "Wonder 2": 4,
-  // https://developer.topazlabs.com/getting-started/model-pricing — verified 2026-08-25.
-  // “| Generative Upscale | `Wonder` | 4 |” (the family rate).
-  "Wonder 3": 4,
-  // https://developer.topazlabs.com/getting-started/model-pricing — verified 2026-08-25.
-  // “| Generative Upscale | `Wonder` | 4 |” (the family rate).
-  "Wonder 3.5": 4,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-3.md — verified 2026-11-12.
+  // “**Wonder 3** costs 1 credit per every 8 MP of generated output.”
+  "Wonder 3": 8,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-3.5.md — verified 2026-11-12.
+  // “**Wonder 3.5** costs 1 credit per every 8 MP of generated output.”
+  "Wonder 3.5": 8,
   // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-4.md — verified 2026-11-12.
   // “**Wonder 4** costs 1 credit per every 8 MP of generated output.”
   "Wonder 4": 8,

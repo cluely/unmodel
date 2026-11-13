@@ -41,7 +41,7 @@ expectAssignable<PackRefs>("topaz/Wonder 4");
 expectAssignable<PackRefs>("topaz/Detail");
 expectAssignable<PackRefs>("topaz/Bloom Realism");
 expectAssignable<PackRefs>("topaz/Bloom");
-// @ts-expect-error — in the published OpenAPI enum only: no page, no credit table.
+// @ts-expect-error — Recover 2: already deprecated when first read, so not rostered.
 expectAssignable<PackRefs>("topaz/Recovery V2");
 // @ts-expect-error — denoise is a separate route and does not upscale.
 expectAssignable<PackRefs>("topaz/Denoise Max");

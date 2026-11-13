@@ -5,6 +5,7 @@
 //   https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative (the generative upscalers)
 //   https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative   (the creative upscalers)
 //   https://developer.topazlabs.com/getting-started/model-pricing/image-models        (the formula; each model page states its own MP per credit)
+//   https://developer.topazlabs.com/resources/model-deprecations                      (lifecycle status per `model` string)
 //   https://developer.topazlabs.com/getting-started/api-key-setup                     (X-API-Key, self-serve)
 //   https://developer.topazlabs.com/resources/api-limits                              (500 MB request cap; rate limits are load-dependent)
 //   https://www.topazlabs.com/enhance-api                                             (USD per credit)
@@ -35,14 +36,17 @@
 // respectively — the spec is a dated snapshot (`image-yaml-feb-2026`) and the
 // model pages are the per-route reference, each naming its endpoint and its own
 // `model` string, so the pages win where they ADD. The one value that goes the
-// other way is `"Recovery V2"`: in the spec, on no page, with no credit table,
-// and looking very much like the earlier name of what is now `"Recover 3"`. It
-// is not typed, for the reason nothing undocumented is.
+// other way is `"Recovery V2"` — Recover 2, on its own page, deprecated — and
+// it is out for the same reason as the deprecated first generation
+// (`"Standard"`, `"Low Resolution"`, `"High Fidelity"`, `"Recover"`): each was
+// already deprecated when first read. See TOPAZ_ENHANCE_GEN_MODELS in
+// ./shared.ts for the quotes.
 //
 // DELIBERATELY NOT SERVED — the rest of the Image API.
-// `/denoise/async`, `/sharpen/async` and `/sharpen-gen/async`,
-// `/restore-gen/async` (dust and scratches), `/lighting/async` (relight, white
-// balance, colorize) and `/matting/async` (object matting, background removal)
+// `/denoise/async` and `/denoise-gen/async` (Denoise Max), `/sharpen/async` and
+// `/sharpen-gen/async`, `/restore-gen/async` (dust and scratches, Face Recovery
+// V3), `/lighting/async` (relight, white balance, colorize, ImageHDR) and
+// `/matting/async` (object matting, background removal)
 // are SEPARATE ROUTES with their own model enums, and none of them upscales:
 // they clean, sharpen, relight or cut out a picture at the size it arrived. An
 // `upscale` verb that reached them would be an address that no longer names
@@ -129,7 +133,8 @@ export const models = {
     limit: { context: 0 },
     // The default (the spec's own `default: Standard V2`) and the one to reach
     // for first: "the general-purpose image upscaling model recommended for
-    // most photos and graphics". 512 MP in, 1024 MP out.
+    // most photos and graphics". 512 MP in, 1024 MP out. The one page that
+    // spells its strength dials snake_case; see ./shared.ts on the casing.
   },
   "High Fidelity V2": {
     id: "High Fidelity V2",
@@ -143,6 +148,11 @@ export const models = {
     limit: { context: 0 },
     // For sources that are already high-resolution — professional photos where
     // the job is fidelity rather than recovery.
+    // Deprecated, still served. Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/high-fidelity-2.md:
+    // “**High Fidelity 2 is deprecated** and will be retired no sooner than
+    // January 1, 2027. Use High Fidelity 3 instead.”; “Deprecated” with
+    // retirement “Not sooner than January 1, 2027” on https://developer.topazlabs.com/resources/model-deprecations.md.
+    status: "deprecated",
   },
   "Upscale High Fidelity V3": {
     id: "Upscale High Fidelity V3",
@@ -155,8 +165,7 @@ export const models = {
     modalities: enhanceModality,
     limit: { context: 0 },
     // Documented on its own page and NOT in the published OpenAPI enum — see
-    // the header. It is the one model here with `recoveryStrength` and
-    // `opacity`, which is how you blend its result back toward the source.
+    // the header. It is the one model here with `recoveryStrength`.
   },
   "Low Resolution V2": {
     id: "Low Resolution V2",
@@ -194,8 +203,7 @@ export const models = {
     modalities: enhanceModality,
     limit: { context: 0 },
     // Graphics and typography — the case where a photo upscaler smears the
-    // letterforms. The one model page that lists the shared settings
-    // snake_cased; see ./shared.ts on the casing.
+    // letterforms.
   },
 
   // --- POST /image/v1/enhance-gen/async — the generative upscalers ----------
@@ -228,9 +236,11 @@ export const models = {
     openWeights: false,
     modalities: enhanceGenModality,
     limit: { context: 0 },
-    // One-click repair of low-to-medium resolution images. 128 MP ceiling —
-    // the tightest of the family, and the reason `checkOutputMegapixels`
-    // exists.
+    // One-click repair of low-to-medium resolution images. 256 MP in and out.
+    // Deprecated, still served. Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-1.md:
+    // “**Wonder 1 is deprecated** and will be retired no sooner than January 1,
+    // 2027. Use Wonder 3.5 instead.”; “Deprecated” on https://developer.topazlabs.com/resources/model-deprecations.md.
+    status: "deprecated",
   },
   "Wonder 2": {
     id: "Wonder 2",
@@ -242,6 +252,10 @@ export const models = {
     openWeights: false,
     modalities: enhanceGenModality,
     limit: { context: 0 },
+    // Deprecated, still served. Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-2.md:
+    // “**Wonder 2 is deprecated** and will be retired no sooner than January 1,
+    // 2027. Use Wonder 3.5 instead.”; “Deprecated” on https://developer.topazlabs.com/resources/model-deprecations.md.
+    status: "deprecated",
   },
   "Wonder 3": {
     id: "Wonder 3",
@@ -255,6 +269,10 @@ export const models = {
     limit: { context: 0 },
     // Adds `enhancementStrength` — high, medium or low — which is a coarser
     // dial than `creativity` and moves the whole result rather than the detail.
+    // Deprecated, still served. Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-3.md:
+    // “**Wonder 3 is deprecated** and will be retired no sooner than January 1,
+    // 2027. Use Wonder 3.5 instead.”; “Deprecated” on https://developer.topazlabs.com/resources/model-deprecations.md.
+    status: "deprecated",
   },
   "Wonder 3.5": {
     id: "Wonder 3.5",
@@ -316,10 +334,8 @@ export const models = {
     openWeights: false,
     modalities: enhanceGenModality,
     limit: { context: 0 },
-    // Its page names a SECOND accepted string, `"Natural Enhance"`. Only one id
-    // can be the row key and it is the one the page leads with; the alias is
-    // recorded here rather than typed, because two ids for one model would show
-    // up twice in every picker.
+    // Takes `enhancementStrength` as a 0–10 decimal, where Wonder 3 and 3.5
+    // take a word. 24 MP in, 384 MP out.
   },
   /**
    * Detail Faces: adds natural detail to faces in AI-generated images. Topaz

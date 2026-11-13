@@ -1,0 +1,11 @@
+{
+  "status": 409,
+  "body": {
+    "detail": "The request is still processing.",
+    "error": {
+      "code": "not_ready",
+      "message": "The request is still processing.",
+      "request_id": "req_68332338290c35f9f7b7"
+    }
+  }
+}

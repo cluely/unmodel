@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "body": {
+    "status": "IN_PROGRESS",
+    "request_id": "gen_2d6a38c88396424ca9dc",
+    "gateway_request_id": "gen_2d6a38c88396424ca9dc",
+    "response_url": "https://api.revana.si/v1/queue/revana/z-image/requests/gen_2d6a38c88396424ca9dc",
+    "status_url": "https://api.revana.si/v1/queue/revana/z-image/requests/gen_2d6a38c88396424ca9dc/status",
+    "cancel_url": "https://api.revana.si/v1/queue/revana/z-image/requests/gen_2d6a38c88396424ca9dc/cancel",
+    "logs": []
+  }
+}

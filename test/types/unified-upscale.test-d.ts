@@ -8,6 +8,7 @@
  */
 import { createUpscale, upscale } from "../../src/unified/upscale";
 import { upscale as falUpscale } from "../../src/providers/fal/unified-upscale";
+import { upscale as revanaUpscale } from "../../src/providers/revana/unified-upscale";
 import { upscale as topazUpscale } from "../../src/providers/topaz/unified";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import type { UpscaleParams } from "../../src/core/unified/vocabulary/upscale";
@@ -242,7 +243,37 @@ expectAssignable<"fal">(falUpscale.provider);
 expectAssignable<readonly string[]>(falUpscale.models);
 expectAssignable<UpscaleParams["model"]>("fal/fal-ai/clarity-upscaler");
 
+// ---------------------------------------------------------------------------
+// revana — a still, and a `factor` that is `never`
+// ---------------------------------------------------------------------------
+
+function revanaNarrowingTests(): void {
+  upscale({ model: "revana/recraft-crisp-upscale", source: STILL });
+  upscale({ model: "revana/recraft-crisp-upscale", source: STILL, prompt: "sharp" });
+  // @ts-expect-error — Revana's request has no multiplier: the row's `factors` is empty.
+  upscale({ model: "revana/recraft-crisp-upscale", source: STILL, factor: 2 });
+  upscale({
+    model: "revana/recraft-crisp-upscale",
+    // @ts-expect-error — the row's source is a still; a clip is `revana.upscale`'s by name.
+    source: { data: "AAAA", mimeType: "video/mp4" },
+  });
+
+  // @ts-expect-error — a picture model is not an upscale ref.
+  expectAssignable<UnifiedRef<typeof revanaUpscale>>("revana/nano-banana-pro");
+
+  const result = upscale({ model: "revana/recraft-crisp-upscale", source: STILL });
+  expectAssignable<{ image_url?: string }>(result.input);
+  result.toSdk("revana");
+
+  upscale({
+    model: "revana/recraft-crisp-upscale",
+    source: STILL,
+    providerOptions: { revana: { max_cost_usd: 0.05 } },
+  });
+}
+
 export {
+  revanaNarrowingTests,
   refUnionTests,
   sourceShapeTests,
   factorNarrowingTests,

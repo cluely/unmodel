@@ -1,6 +1,6 @@
 # Text-to-speech integrator's matrix
 
-Nineteen providers, one `tts()`. What follows is the per-provider wire detail that a
+Twenty providers, one `tts()`. What follows is the per-provider wire detail that a
 canonical vocabulary deliberately hides: where the request goes, which header the
 credential rides in, where the audio comes back, and which endpoint quirks are silent
 no-ops rather than errors.
@@ -35,7 +35,7 @@ the doc URLs the fact was verified against.
 The URL is not always constant, so each row names the request that produced it:
 ElevenLabs interpolates the voice into the path and Deepgram URL-encodes the whole
 option set into the query. Both use a placeholder `VOICE_ID` here. `content-type` is on
-every row because all nineteen are JSON endpoints.
+every row because all twenty are JSON endpoints.
 
 <!-- gen:tts-matrix — regenerate with `bun run gen:tts-matrix` -->
 
@@ -60,6 +60,7 @@ every row because all nineteen are JSON endpoints.
 | `alibaba` | POST | `https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation` | `content-type: application/json` |
 | `inworld` | POST | `https://api.inworld.ai/tts/v1/voice` | `content-type: application/json` |
 | `fal` | POST | `https://queue.fal.run/fal-ai/kokoro/american-english` | `content-type: application/json` |
+| `revana` | POST | `https://api.revana.si/v1/generations` | `content-type: application/json` |
 
 <!-- /gen:tts-matrix -->
 
@@ -69,7 +70,7 @@ Names only. unmodel never handles a credential, which is why none of these appea
 generated table above: `.request.headers` is the headers you cannot choose, and auth is
 the one you must.
 
-Nine shapes across nineteen providers, and the shape is a property of the *provider*,
+Nine shapes across twenty providers, and the shape is a property of the *provider*,
 not of the endpoint, so it does not vary by route:
 
 | Provider | Header | Scheme |
@@ -93,6 +94,7 @@ not of the endpoint, so it does not vary by route:
 | `alibaba` | `Authorization` | `Bearer <key>` |
 | `inworld` | `authorization` | `Basic <key>` |
 | `fal` | `Authorization` | `Key <key>` |
+| `revana` | `Authorization` | `Bearer <key>` |
 
 Chat has the same table as data rather than prose — `CHAT_AUTH` from `unmodel/chat`, an
 `EndpointAuth` per provider, checked against the retarget endpoint table by
@@ -131,6 +133,7 @@ Three shapes: flat (one answer), `byRequestField` (one request field decides), a
 | `alibaba` | `ALIBABA_TTS_DELIVERY` | by `stream` — a 24-hour WAV URL inside the JSON, or Base64-PCM SSE frames |
 | `inworld` | `INWORLD_TTS_DELIVERY` | flat: base64 inside the JSON |
 | `fal` | `FAL_TTS_DELIVERY` | flat: a URL inside the JSON — but of the QUEUE RESULT document, not of the submit response |
+| `revana` | `REVANA_TTS_DELIVERY` | flat: a URL inside the JSON — but of the `Generation` a POLL answers, not of the create response |
 
 `url` is its own kind rather than a flag on `base64` because it is the case where there
 are no bytes in hand yet: a caller who treats it as inline audio gets a string where
@@ -139,7 +142,7 @@ this library reads a response body off a `TtsDeliverySpec`.
 
 ## Response checkers
 
-Four of the nineteen ship one. A checker inspects a *decoded* response for quality and
+Four of the twenty ship one. A checker inspects a *decoded* response for quality and
 usage signals; where a route answers raw bytes there is nothing to inspect, and where it
 answers a JSON envelope carrying no signal beyond the audio itself there is nothing
 worth reporting.
@@ -151,7 +154,7 @@ worth reporting.
 | `resemble` | `checkTts` from `unmodel/resemble` | The synchronous `/synthesize` answers JSON with `success` and `issues` fields to surface. `success` is the outcome, so it rides on `finishReason` (`"success"` / `"failure"`) rather than being inferred from the warning count; the `issues` entries are the findings. The streaming `/stream` route answers a chunked WAV stream and has none. |
 | `minimax` | `checkTts` from `unmodel/minimax` | `/v1/t2a_v2` declares exactly one HTTP response — `200` — and reports failure IN BAND on `base_resp.status_code` (0 success, 1002 rate limit, 1004 auth failed, 1042 invalid-character ratio, …). That code IS `report.finishReason` — MiniMax's vocabulary is numeric, so branch on `!== 0`, never on truthiness. A non-zero code is also reported as `invalid_shape` with `meta.kind: "provider_error"`, quoting the documented `status_msg` and carrying `meta.retryable` where MiniMax's own message answers it (`1002` yes, `1004` no); a missing `data.audio` is `empty_audio`; and `extra_info.usage_characters` — the characters MiniMax itself billed — prices the call against the catalog rate. `MINIMAX_BASE_RESP_INFO` exports the whole code table. |
 
-The other fifteen have none, and the reason is per provider rather than a blanket policy:
+The other sixteen have none, and the reason is per provider rather than a blanket policy:
 
 | Provider | Why no checker |
 | --- | --- |
@@ -170,6 +173,7 @@ The other fifteen have none, and the reason is per provider rather than a blanke
 | `breezeblue` | Raw audio bytes; the async arm answers a job envelope whose audio is a second request away. |
 | `alibaba` | JSON with a 24-hour WAV URL and a token count — no quality signal to report. |
 | `fal` | The POST answers a queue ENVELOPE rather than audio at all, so the thing worth checking is two hops away. `unmodel/fal`'s `./urls.ts` documents the contract, including the fact that fal's queue declares no failure state. |
+| `revana` | The POST answers a QUEUED `Generation` — a created job, not audio. The document a poll eventually answers is typed (`Generation`) and carries its own verdict and its own exact charge (`status`, `error.retryable`, `cost_usd`), so there is nothing for a checker to compute that the wire does not already say. |
 
 ## Quirks
 

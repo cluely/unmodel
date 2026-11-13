@@ -273,6 +273,39 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * 89.0 × 1.1, the same multiple as every row above.
    */
   atlascloud: 98,
+  /**
+   * `unmodel/revana` — 312.5 KiB measured at landing (macOS; an entry's
+   * transitive bytes, which has matched the Linux figure on every row above —
+   * re-pin from CI's number if it does not here).
+   *
+   * Large for one provider, and the reason is that it is one provider serving
+   * 237 models: every byte past the shared engine and the OpenAI-compatible
+   * chat validator is GENERATED data from Revana's own catalog —
+   *
+   * | what | roughly |
+   * |---|---|
+   * | five catalog slices (99 chat rows, 74 video, 59 image, 4 speech, 1 music) | 75 KiB |
+   * | four shape tables (what each model takes) | 35 KiB |
+   * | four listed-price tables | 15 KiB |
+   * | the voices, with names and descriptions | 6 KiB |
+   * | the check battery, the wire schema, the id lists, eight addresses | 50 KiB |
+   *
+   * — and all of it is here because this is the barrel. A caller who wants one
+   * address pays for one: each validator imports only its own slice, which is
+   * what the per-address split in `scripts/codegen-revana.ts` is for.
+   *
+   * It grows with Revana's roster, by design: the weekly refresh adds rows.
+   *
+   * 351.0 KiB with the second route and the response side on the barrel, and
+   * every byte of the difference is hand-written: the four `*Queue` addresses
+   * and their factory (11.0), the battery's growth to 34.2 (the queue's two
+   * fields, the second names, three rules the oracle added), `admitted.ts`
+   * (2.9), the two response checkers (3.5) and `verifyWebhook` (4.8). None of
+   * it reaches a single address's graph except `admitted.ts` and the battery.
+   *
+   * 386 is 351.0 × 1.1, the same multiple as every row above.
+   */
+  revana: 386,
 
   /**
    * The six entries that carry the **media retarget seam** — `.toApi("fal")`.
@@ -366,7 +399,7 @@ const MEDIA_RETARGET_MODULES = [
 ];
 
 /**
- * `unmodel/chat` is the ready-made 32-provider pack. It carries every concrete
+ * `unmodel/chat` is the ready-made 33-provider pack. It carries every concrete
  * provider validator, its catalog and (where offered) availability table so
  * provider `.toApi` survives the unified call — asserted for real, across a
  * dialect boundary, in `test/chat/compile.test.ts`. It also retains the public
@@ -419,7 +452,7 @@ const CHAT_FACTORY_BUDGET_KIB = 181;
  * gate: types erase, so no JS budget moves, `tsc` stays clean and every test
  * passes. This entry shipped at 891.9 KiB until `chat` was annotated with
  * `ChatValidator<ChatProviderValidatorRegistry>` — without the annotation
- * `const`-inference emits the whole 32-provider registry expansion twice, and
+ * `const`-inference emits the whole 33-provider registry expansion twice, and
  * the second copy was 48% of the file. 455.0 KiB measured.
  *
  * 500.7 KiB measured, 2026-11-12: the google-vertex slice of that day's
@@ -629,8 +662,24 @@ const VOICE_DESIGN_PACK_BUDGET_KIB = 200;
  * breezeblue's multilingual arm landed on top of the wave's other TTS rows
  * (stepfun StepAudio 3, the Gemini 3.8 TTS hand rows, alibaba's retirements
  * and re-routing). Rows and their per-model gates, no new edge into the pack.
+ * **Bumped 850 → 980 by revana**, measured 889.0 KiB (macOS), up from 825.0, of
+ * which the new provider is 62.1 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks. Four models, and
+ * the speech slice itself is small: the adapter (3.5), its generated rows with
+ * each model's voice ids and languages (3.5), and the speech catalog, shape
+ * and price tables (5.6 together). The rest is what every revana address
+ * carries because all of them are ONE route: the shared check battery
+ * (`checks.ts`, 27.1), the id lists (6.5), and 15.0 of estimate, schema, route
+ * and address derivations.
+ *
+ * The pin had 3% of headroom left before this wave (825.0 against 850), so 980
+ * is the measurement x 1.1 restored rather than the delta added on.
+ *
+ * **Bumped to 1115 where the two land together** (2026-11-13 merge): 1014.2 KiB
+ * measured on macOS with revana's speech slice on top of the model wave's rows
+ * — both causes above, in one tree. 1115 is that × 1.1.
  */
-const TTS_PACK_BUDGET_KIB = 940;
+const TTS_PACK_BUDGET_KIB = 1115;
 
 /**
  * `unmodel/image`'s budget: the kernel plus fifteen text-to-image providers —
@@ -706,8 +755,27 @@ const TTS_PACK_BUDGET_KIB = 940;
  *
  * Runway's text_to_image arms then grew from 9 to 23 (their ratio enums, deny
  * lists and rule tables): 1242.0 measured with everything, under the 1280 pin.
+ * **Bumped 1160 → 1305 by revana**, measured 1185.0 KiB (macOS), up from 1087.6,
+ * of which the new provider is 95.2 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks. Thirteen modules,
+ * and the split is the video pack's with the picture slice in place of the
+ * video one: the shared check battery (`checks.ts`, 27.1 — the SAME module the
+ * video pack carries, because every `revana.*` media address is one route), the
+ * 59 picture catalog rows (`gen/models-image.gen.ts`, 15.1), their shape rows
+ * (12.4) and listed prices (5.5), the 56 unified rows (6.9), the id lists
+ * (6.5), and 21.6 across the adapter, the estimate, the shared schema and
+ * factory, the route and the adapters' shared derivations.
+ *
+ * Fifty-six refs for 95 KiB against fal's twenty-eight for 172: Revana's rows
+ * narrow one body rather than each carrying a wire interface. 1305 is the
+ * measurement x 1.1.
+ *
+ * **Bumped to 1520 where the two land together** (2026-11-13 merge): 1383.3 KiB
+ * measured on macOS with revana's picture slice on top of the model wave's
+ * rows and runway's grown arms — both causes above, in one tree. 1520 is
+ * that × 1.1.
  */
-const IMAGE_PACK_BUDGET_KIB = 1280;
+const IMAGE_PACK_BUDGET_KIB = 1520;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -784,8 +852,33 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  * `videoFromVideo`, with their duration/ratio tables) on top of Kling 4.0,
  * MiniMax H3, Vidu Q4, PixVerse v6-max and Atlas's Veo 3.1 rows. Hand rows
  * and their gates; no module joined the pack.
+ * **Bumped 1170 → 1305 by revana**, measured 1186.0 KiB (macOS), up from 1066.1,
+ * of which the new provider is 117.9 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks, as above. Thirteen
+ * modules arrive, and all but two of them are the WIRE layer the adapter ends
+ * in rather than the adapter:
+ *
+ * | module | KiB | what it is |
+ * |---|---|---|
+ * | `checks.ts` | 27.1 | the one check battery every `revana.*` media address shares (decisions.md §4) |
+ * | `gen/shapes-video.gen.ts` | 19.4 | what each of the 74 video models takes |
+ * | `gen/models-video.gen.ts` | 19.0 | their catalog rows, reached through the validator's `catalog:` |
+ * | `gen/video-params.gen.ts` | 11.0 | the 69 unified rows |
+ * | `gen/prices-video.gen.ts` | 8.2 | the listed rates the estimate reads |
+ * | `unified-video.ts` | 7.8 | the adapter |
+ * | `gen/ids.gen.ts` | 6.5 | every address's id list — the signpost a foreign id gets |
+ * | `pricing.ts`, `generation.ts`, `urls.ts`, `compile-input.ts`, `video.ts`, `addresses.ts` | 19.0 | the estimate, the shared schema and factory, the route, the adapters' shared derivations |
+ *
+ * The shape is fal's rather than Atlas's — one adapter, one schema, GENERATED
+ * rows — at a third of fal's cost per model, because Revana has one body for
+ * every model and its rows narrow that body instead of each carrying a wire
+ * interface. 1305 is the measurement × 1.1.
+ *
+ * **Bumped to 1525 where the two land together** (2026-11-13 merge): 1387.4 KiB
+ * measured on macOS with revana's video slice on top of the model wave's rows
+ * — both causes above, in one tree. 1525 is that × 1.1.
  */
-const VIDEO_PACK_BUDGET_KIB = 1335;
+const VIDEO_PACK_BUDGET_KIB = 1525;
 
 /**
  * The two generated catalogs this pack legitimately reaches.
@@ -798,7 +891,7 @@ const VIDEO_PACK_BUDGET_KIB = 1335;
  */
 const VIDEO_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog/openai.gen.ts"];
 
-/** The fourteen providers `unmodel/video`'s ready-made pack is allowed to reach. */
+/** The fifteen providers `unmodel/video`'s ready-made pack is allowed to reach. */
 const VIDEO_PACK_PROVIDERS: string[] = [
   "alibaba",
   "atlascloud",
@@ -811,6 +904,7 @@ const VIDEO_PACK_PROVIDERS: string[] = [
   "minimax",
   "openai",
   "pixverse",
+  "revana",
   "runway",
   "vidu",
   "xai",
@@ -827,6 +921,10 @@ const VIDEO_PACK_PROVIDERS: string[] = [
  * fal is the sixteenth and the one that moved the budget: it is a queue in
  * front of many vendors rather than a vendor, so it brings 28 endpoints and
  * their generated narrowing rows on its own.
+ *
+ * revana is the second router, reached through `revana/unified-image.ts` and
+ * the picture slice of its generated tables — never the video, speech or music
+ * ones the same route also serves (asserted below).
  */
 const IMAGE_PACK_PROVIDERS: string[] = [
   "black-forest-labs",
@@ -841,6 +939,7 @@ const IMAGE_PACK_PROVIDERS: string[] = [
   "luma",
   "openai",
   "recraft",
+  "revana",
   "reve",
   "runway",
   "stability",
@@ -1005,8 +1104,20 @@ const STT_PACK_PROVIDERS: string[] = [
  * Restoring the ~10% (401.8 × 1.1 ≈ 442, pinned at 440) is what the convention
  * asks; the alternative was deleting recorded reasons to buy bytes, which is
  * the thing this wave exists to stop doing.
+ *
+ * **Bumped 440 → 525 by revana**, measured 477.5 KiB (macOS), up from 423.0, of
+ * which the new provider is 52.5 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks. ONE model
+ * (`suno-v6`), and its own slice is 5.7: the adapter (2.4), the address (1.2),
+ * its generated row (0.9) and the music catalog, shape and price tables (1.2
+ * together). The other 46.8 is what every revana address carries because all
+ * of them are ONE route: the shared check battery (`checks.ts`, 27.1), the id
+ * lists for every kind (6.5), and 13.1 of estimate, schema, route and address
+ * derivations. That floor is the number to weigh at revana, not this pack's
+ * share of it: it is paid once per pack however many models the pack reaches.
+ * 525 is the measurement x 1.1.
  */
-const MUSIC_PACK_BUDGET_KIB = 440;
+const MUSIC_PACK_BUDGET_KIB = 525;
 
 /**
  * `unmodel/sfx`'s budget: the kernel plus two providers, one route each.
@@ -1064,10 +1175,17 @@ const STS_PACK_BUDGET_KIB = 205;
 /** The two providers `unmodel/sts`'s ready-made pack is allowed to reach. */
 const STS_PACK_PROVIDERS: string[] = ["elevenlabs", "hume"];
 
-/** The five providers `unmodel/music`'s ready-made pack is allowed to reach. */
-const MUSIC_PACK_PROVIDERS: string[] = ["elevenlabs", "fal", "google", "mureka", "stability"];
+/** The six providers `unmodel/music`'s ready-made pack is allowed to reach. */
+const MUSIC_PACK_PROVIDERS: string[] = [
+  "elevenlabs",
+  "fal",
+  "google",
+  "mureka",
+  "revana",
+  "stability",
+];
 
-/** The nineteen providers `unmodel/tts`'s ready-made pack is allowed to reach. */
+/** The twenty providers `unmodel/tts`'s ready-made pack is allowed to reach. */
 const TTS_PACK_PROVIDERS: string[] = [
   "alibaba",
   "breezeblue",
@@ -1084,6 +1202,7 @@ const TTS_PACK_PROVIDERS: string[] = [
   "murf",
   "openai",
   "resemble",
+  "revana",
   "rime",
   "smallest-ai",
   "speechify",
@@ -1143,8 +1262,25 @@ const TTS_PACK_PROVIDERS: string[] = [
  *
  * Recraft's 16 new catalog rows (V4.1 Flash, V4 Styles, the `_raster`
  * aliases) and 7 alias edit rows add to it, still under the 600 pin.
+ * **Bumped 530 → 685 by revana**, measured 621.1 KiB (macOS), up from 526.5,
+ * of which the new provider is 92.0 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks. It is very nearly
+ * the image pack's addition (95.2), and for a reason that is a property of the
+ * WIRE rather than of this adapter: `revana.imageEdit` is a narrower VIEW of
+ * `revana.image` over the same route (decisions.md §4), so it carries the same
+ * check battery (27.1) and the same picture slice — all 59 catalog rows
+ * (15.1), their shape rows (12.4) and listed prices (5.5) — to serve the 46 of
+ * them that edit. What is this pack's own is the 46 unified rows (4.4) and the
+ * adapter (3.0).
+ *
+ * Forty-six refs join for those 92 KiB, more than the other five providers
+ * serve between them. 685 is the measurement x 1.1.
+ *
+ * **Bumped to 755 where the two land together** (2026-11-13 merge): 684.3 KiB
+ * measured on macOS — revana's picture slice on top of the wave's GPT-Image,
+ * FLUX.2 and Recraft rows, 0.7 KiB under revana's own pin. 755 is that × 1.1.
  */
-const IMAGE_EDIT_PACK_BUDGET_KIB = 600;
+const IMAGE_EDIT_PACK_BUDGET_KIB = 755;
 
 /**
  * The one generated catalog this pack legitimately reaches.
@@ -1156,13 +1292,14 @@ const IMAGE_EDIT_PACK_BUDGET_KIB = 600;
  */
 const IMAGE_EDIT_PACK_CATALOGS: string[] = ["src/catalog/openai.gen.ts"];
 
-/** The five providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
+/** The six providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
 const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
   "black-forest-labs",
   "fal",
   "ideogram",
   "openai",
   "recraft",
+  "revana",
 ];
 
 /**
@@ -1219,10 +1356,26 @@ const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
 // **Bumped 445 → 490 at the 2026-11-12 model wave**, 445.8 KiB measured: sync's
 // error catalog (62 → 135 codes) and dubbing enum (93 → 110) — the same DATA
 // described above — on top of heygen's and veed's corrections. No new module.
-const LIPSYNC_PACK_BUDGET_KIB = 490;
+//
+// **Bumped 445 → 585 by revana**, measured 528.8 KiB (macOS), up from 426.1, of
+// which the new provider is 100.3 — read off the `//#region
+// src/providers/revana/*` blocks in this pack's own chunks. ONE model
+// (`bytedance-lipsync`) for a hundred kilobytes, and none of it is the adapter
+// (1.6 KiB) or its row (0.6): `revana.lipsync` is a narrower VIEW of
+// `revana.video` over the one route Revana serves every media model from
+// (decisions.md §4), so it carries the check battery every revana address
+// shares (`checks.ts`, 27.1) and the WHOLE video slice — its catalog rows
+// (19.0), their shape rows (19.4) and listed prices (8.2) — plus the id lists
+// (6.5) and 18.4 of estimate, schema, route and shared derivations. 585 is the
+// measurement x 1.1.
+//
+// **Bumped to 635 where the two land together** (2026-11-13 merge): 574.8 KiB
+// measured on macOS — revana's video slice on top of sync's grown catalogs.
+// 635 is that x 1.1.
+const LIPSYNC_PACK_BUDGET_KIB = 635;
 
-/** The four providers `unmodel/lipsync`'s ready-made pack is allowed to reach. */
-const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
+/** The five providers `unmodel/lipsync`'s ready-made pack is allowed to reach. */
+const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "revana", "sync", "veed"];
 
 /**
  * `unmodel/avatar`'s budget: the same shape as its lipsync twin, 4.7 KiB
@@ -1257,10 +1410,24 @@ const LIPSYNC_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
 // before; the lipsync twin 456.4 against its own 490): sync.'s `shared.ts`,
 // which both packs reach, gained the input ceiling, the react-1 gate lists and
 // the `Idempotency-Key` constants. No new module.
-const AVATAR_PACK_BUDGET_KIB = 490;
+//
+// **Bumped 445 → 585 by revana**, measured 531.2 KiB (macOS), up from 427.5, of
+// which the new provider is 101.2. It stays within 2% of its lipsync twin and
+// for the reason it always has, one step further: the two packs now reach the
+// SAME FIVE providers, and at revana they reach the same view of the same video
+// slice — `checks.ts` (27.1), the video catalog rows (19.0), their shapes
+// (19.4) and prices (8.2). The 0.9 KiB between the two revana halves is one
+// adapter leaf (2.2 against 1.6), one address (1.4 against 1.3) and one
+// generated row table (0.8 against 0.6) apiece: four performance models here,
+// one there.
+//
+// **Bumped to 625 where the two land together** (2026-11-13 merge): 565.8 KiB
+// measured on macOS — revana's video slice on top of sync's review fixes;
+// still within 2% of the lipsync twin (574.8). 625 is that x 1.1.
+const AVATAR_PACK_BUDGET_KIB = 625;
 
-/** The four providers `unmodel/avatar`'s ready-made pack is allowed to reach. */
-const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
+/** The five providers `unmodel/avatar`'s ready-made pack is allowed to reach. */
+const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "revana", "sync", "veed"];
 
 /**
  * `unmodel/upscale`'s budget: the third one-provider pack, and the heaviest of
@@ -1290,11 +1457,30 @@ const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
  * `Redefine` creativity narrowing. 415 is measured × ~1.1, the usual slack.
  * Flagged for CI confirmation; JS pins in this file have proven
  * platform-stable, and if the Linux figure differs, re-pin from it.
+ * **Bumped 375 → 505 by revana**, measured 458.2 KiB (macOS), up from 368.8,
+ * of which the new provider is 86.8 — read off the `//#region
+ * src/providers/revana/*` blocks in this pack's own chunks. That is a great
+ * deal for ONE model, and the reason is a property of Revana's wire layer
+ * rather than of this adapter (2.0 KiB) or its one unified row (0.6):
+ * `revana.upscale` is a narrower VIEW of `revana.image` over the one route
+ * Revana serves every media model from (decisions.md §4), so it carries the
+ * check battery every address shares (`checks.ts`, 27.1) and the WHOLE picture
+ * slice — 59 catalog rows (15.1), their shape rows (12.4) and listed prices
+ * (5.5) — plus the id lists (6.5) and 17.6 of estimate, schema, route and
+ * shared derivations.
+ *
+ * The same shape recurs at every one-model revana pack (`lipsync`, `music`),
+ * and it is the number that would move if a view carried only its own rows.
+ * 505 is the measurement x 1.1.
+ *
+ * **Bumped to 535 where the two land together** (2026-11-13 merge): 482.9 KiB
+ * measured on macOS — revana's picture slice on top of the Topaz review
+ * fixes' provenance. 535 is that × 1.1.
  */
-const UPSCALE_PACK_BUDGET_KIB = 415;
+const UPSCALE_PACK_BUDGET_KIB = 535;
 
-/** The two providers `unmodel/upscale`'s ready-made pack is allowed to reach. */
-const UPSCALE_PACK_PROVIDERS: string[] = ["fal", "topaz"];
+/** The three providers `unmodel/upscale`'s ready-made pack is allowed to reach. */
+const UPSCALE_PACK_PROVIDERS: string[] = ["fal", "revana", "topaz"];
 
 /**
  * `unmodel/3d`'s budget: the first of the 2026 categories with TWO providers in
@@ -1407,9 +1593,66 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
  * clear it: lipsync 770 → 845, upscale 615 → 830, 3d 590 → 650. The spread is
  * the measurement's, not the code's — a walker that counted each declaration
  * once regardless of chunking would let these pins tighten back.
+ * ## These figures are not deterministic
+ *
+ * Found during the revana wave, and it changes how every number below should
+ * be read: **building one unchanged tree repeatedly, on one machine, gives
+ * different figures.** rolldown-plugin-dts settles which declarations share a
+ * chunk differently from one build to the next, and this walker counts a whole
+ * chunk when an entry touches any of it. The notes below call the artefact
+ * "chunking" and "platform-sensitive"; it is also run-to-run.
+ *
+ * Measured on macOS, in KiB. The commit before revana, four builds:
+ *
+ * | pack | lowest | highest |
+ * |---|---|---|
+ * | `image` | 1118.5 | 1155.0 |
+ * | `image-edit` | 634.3 | 744.2 |
+ * | `video` | 1024.7 | 1207.2 |
+ * | `upscale` | 463.4 | 548.9 |
+ * | `lipsync` | 465.9 | 551.3 |
+ * | `avatar` | 469.3 | 554.7 |
+ * | `sfx` | 431.2 | 526.5 — over its own 520 pin, on one build in four |
+ *
+ * With revana's adapters registered in all eight of its packs, ten builds of
+ * the one tree:
+ *
+ * | pack | lowest | most often | highest |
+ * |---|---|---|---|
+ * | `image` | 1212.7 | 1251.1 | 1354.7 |
+ * | `image-edit` | 717.4 | 841.5 | 841.5 |
+ * | `video` | 1172.8 | 1337.8 | 1337.8 |
+ * | `upscale` | 565.7 | 638.2 | 640.5 |
+ * | `lipsync` | 555.2 | 640.8 | 643.1 |
+ * | `avatar` | 563.4 | 645.5 | 647.8 |
+ *
+ * …and twice among the two dozen or so other builds of this wave, one layout
+ * much further out: rolldown placed a small pack's ENTRY declaration in the same
+ * chunk as `unmodel/image-edit`'s, so the walker counted the whole image-edit
+ * graph for it — `avatar` at 820.0 and `lipsync` at 808.6 (the latter on a
+ * tree where revana was not in the lipsync pack at all, which is what shows it
+ * is the layout and not the roster).
+ *
+ * What revana adds for certain is one chunk, read off the build: its
+ * `generation.d.ts` — the four generated shape tables and the wire types they
+ * narrow — 81.9 KiB, reached by every pack it joins, because eight addresses
+ * are one route and so one set of wire types.
+ *
+ * So the four pins this wave moved are the highest figure observed x 1.1, the
+ * layout above included, and each is **flagged for CI confirmation** per the
+ * Linux-figure rule in CLAUDE.md. The packs this wave does not touch keep
+ * their pins, `sfx`'s included.
  */
 const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
-  image: 1495,
+  // Bumped 1260 → 1490 by the revana wave: 1354.7 at the highest (see "These
+  // figures are not deterministic" above), up from a pre-revana high of 1155.0.
+  // The 2026-11-12 model wave, measured apart, pinned 1495 from its own maximum.
+  //
+  // Bumped to 1650 where the two land together (2026-11-13 merge): five builds
+  // of the merged tree measured 1447.9–1497.4 on macOS, over BOTH sides' pins
+  // on two of them — revana's picture slice and the wave's rows in one graph.
+  // 1650 is the maximum x 1.1.
+  image: 1650,
   "image-edit": 1660,
   video: 1880,
   // The three fal-only packs, and the cheapest declarations in the table.
@@ -1436,7 +1679,17 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // runner, because rolldown-plugin-dts assigns one shared-vocabulary chunk to
   // a different side of the lipsync/avatar boundary per platform. 770 is the
   // Linux figure ×1.1; the number that matters is still the SPREAD test.
-  lipsync: 845,
+  //
+  // Bumped 770 → 890 by the revana wave: 643.1 on the usual layouts and 808.6
+  // on the one that co-locates this entry with image-edit's (see "These figures
+  // are not deterministic" above). 890 is that x 1.1. The 2026-11-12 model
+  // wave, measured apart, pinned 845 from its own spike (768.2).
+  //
+  // Where the two land together (2026-11-13 merge): five builds of the merged
+  // tree measured 593.9–679.4 on macOS, none on the co-locating layout. 890
+  // stays — the higher of the two spike-derived pins — because that layout is
+  // recorded by both sides and a merged graph can only make it larger.
+  lipsync: 890,
   // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
   // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
   // components — the 3D roster added `ModelUrls`, `BasicAnimations` and their
@@ -1468,13 +1721,32 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Re-checked on the finished wave, which is when the chunk boundary settles:
   // **543.0** measured, against lipsync's 539.6 — still within 0.7% of each
   // other, and 600 is measured x 1.1. The artefact reading holds; the pin stays.
-  avatar: 625,
+  //
+  // Bumped 600 → 905 by the revana wave: 647.8 on the usual layouts and 820.0
+  // on the one that co-locates this entry with image-edit's (see "These figures
+  // are not deterministic" above). 905 is that x 1.1. The 2026-11-12 model
+  // wave, measured apart, pinned 625 from its own maximum (567.2).
+  //
+  // Where the two land together (2026-11-13 merge): five builds of the merged
+  // tree measured 600.6–686.0 on macOS, within 2% of the lipsync twin on each,
+  // none on the co-locating layout. 905 stays, for the reason lipsync's does.
+  avatar: 905,
   // Bumped 450 → 560 by the Topaz wave: 508.8 measured, the largest jump of the
   // three and the one with a real cause rather than a chunking artefact. Topaz
   // brings FIFTEEN rows whose `extras` are hand-transcribed per-model settings
   // tables — between eight and twenty-four typed dials each — so `tsc` has
   // fifteen distinct object types to instantiate where fal's ten share three
   // shapes. That is the declaration cost of the thing this provider exists for.
+  //
+  // Bumped 560 → 705 by the revana wave: 640.6 at the highest observed (see
+  // "These figures are not deterministic" above), up from a pre-revana high of
+  // 548.9. This entry was not seen on the image-edit layout; if CI shows it
+  // there, re-pin from that figure. The 2026-11-12 model wave, measured apart,
+  // pinned 830 from its own spike (751.2).
+  //
+  // Where the two land together (2026-11-13 merge): five builds of the merged
+  // tree measured 582.5–668.1 on macOS. 830 stays — the wave's spike-derived
+  // pin, the higher of the two — for the reason lipsync's does.
   upscale: 830,
   // `unmodel/3d`: 534.1 measured. The most expensive of the four small packs
   // and the only one with two providers, which is most of the difference — the
@@ -1835,8 +2107,13 @@ describe("unmodel/chat", () => {
    * **+1 (→ 62) with `stepfun/constraints.ts`** (2026-11-12): the
    * step-3.5-flash-2603 `reasoning_effort` ladder, a types-only literal leaf
    * imported by `stepfun/chat.ts` — the groq/mistral shape, not barrel leakage.
+   *
+   * **+3 (→ 65) with revana** (2026-11-13): `revana/chat.ts`, its generated
+   * chat slice `revana/gen/models-chat.gen.ts` and `revana/urls.ts` — the
+   * oai-base shape every router in this graph has. No media slice came with
+   * it.
    */
-  test("its provider graph is exactly the enumerated 62 modules", () => {
+  test("its provider graph is exactly the enumerated 65 modules", () => {
     const modules = sourceModulesOf(chatEntry()).filter((m) => m.startsWith("src/providers/"));
     expect(modules).toEqual([
       "src/providers/alibaba/chat.ts",
@@ -1904,6 +2181,9 @@ describe("unmodel/chat", () => {
       "src/providers/openai/constraints.ts",
       "src/providers/openrouter/index.ts",
       "src/providers/perplexity/index.ts",
+      "src/providers/revana/chat.ts",
+      "src/providers/revana/gen/models-chat.gen.ts",
+      "src/providers/revana/urls.ts",
       "src/providers/sarvam/index.ts",
       "src/providers/scaleway/index.ts",
       "src/providers/siliconflow/index.ts",
@@ -2281,7 +2561,7 @@ describe("unmodel/image (the second ready-made pack)", () => {
    * someone imported `providers/<p>/index.ts` instead of the adapter leaf,
    * fails here in the diff that causes it.
    */
-  test("it reaches exactly the fifteen image providers, through their adapters", () => {
+  test("it reaches exactly the eighteen image providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("image"));
     expect(modules).toContain("src/unified/image.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -2320,6 +2600,16 @@ describe("unmodel/image (the second ready-made pack)", () => {
       expect(modules).toContain(`src/providers/${provider}/image.ts`);
     }
     expect(modules).toContain("src/providers/vidu/image-from-reference.ts");
+
+    // revana's split is by SLICE: the picture rows, and none of the video,
+    // speech, music or chat ones the same route also serves.
+    for (const slice of ["video", "tts", "music", "chat"]) {
+      expect(modules).not.toContain(`src/providers/revana/gen/models-${slice}.gen.ts`);
+    }
+    for (const slice of ["video", "tts", "music"]) {
+      expect(modules).not.toContain(`src/providers/revana/gen/shapes-${slice}.gen.ts`);
+    }
+    expect(modules).not.toContain("src/providers/revana/models.ts");
   });
 
   test("its graph carries exactly two catalogs, and no availability or retarget layer", () => {
@@ -2356,12 +2646,12 @@ describe("unmodel/image (the second ready-made pack)", () => {
 describe("unmodel/video (the third ready-made pack)", () => {
   /**
    * The composition assertion. This pack is the one where "exactly these
-   * providers" is doing the most work: seven of the fourteen also serve an image
+   * providers" is doing the most work: seven of the fifteen also serve an image
    * or speech surface, so an adapter that imported its provider's barrel instead
    * of the video leaf would drag a second category's validators and catalogs in
    * without changing a single import in `src/unified/video.ts`.
    */
-  test("it reaches exactly the fourteen video providers, through their adapters", () => {
+  test("it reaches exactly the fifteen video providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("video"));
     expect(modules).toContain("src/unified/video.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -2376,7 +2666,7 @@ describe("unmodel/video (the third ready-made pack)", () => {
     expect(providers).toEqual(VIDEO_PACK_PROVIDERS);
 
     // pixverse and lightricks serve video only, so their adapter is the
-    // unsuffixed leaf; the other twelve split per category. fal is the sharpest
+    // unsuffixed leaf; the other thirteen split per category. fal is the sharpest
     // case for the split in this pack: it serves FIVE categories, so a barrel
     // import here would drag its image, image-edit, lipsync and avatar
     // surfaces — validators, union schemas and generated rows — into a video
@@ -2401,6 +2691,17 @@ describe("unmodel/video (the third ready-made pack)", () => {
       // a provider except through a file with the uniform name.
       expect(modules).toContain(`src/providers/${provider}/video.ts`);
     }
+
+    // revana serves eight categories from ONE route, so its split is by SLICE
+    // rather than by endpoint module: `revana.video` carries the video rows,
+    // and none of the picture, speech or music ones the same body also serves.
+    for (const slice of ["image", "tts", "music", "chat"]) {
+      expect(modules).not.toContain(`src/providers/revana/gen/models-${slice}.gen.ts`);
+    }
+    for (const slice of ["image", "tts", "music"]) {
+      expect(modules).not.toContain(`src/providers/revana/gen/shapes-${slice}.gen.ts`);
+    }
+    expect(modules).not.toContain("src/providers/revana/models.ts");
   });
 
   /**
@@ -2432,6 +2733,44 @@ describe("unmodel/video (the third ready-made pack)", () => {
     expect(specifiers).toContain("./video-params");
     expect(specifiers).toContain("./constraints");
     expect(specifiers).toContain("./video");
+  });
+
+  /**
+   * The same trap at revana, eight times over — and stated here, beside the
+   * rule it instantiates, although only one of the eight leaves is this pack's.
+   *
+   * Revana serves eight categories from ONE route, so its catalog (`models.ts`)
+   * is the union of five generated slices and its barrel (`index.ts`) is nine
+   * validators: one edge from any adapter leaf to either would put 237 catalog
+   * rows into a one-model pack. Each leaf reaches exactly the validator of the
+   * uniformly named file — which carries its own slice — and the import-free
+   * `-params` leaf `unmodel/revana/values` republishes.
+   */
+  test("none of revana's eight adapter leaves imports its catalog or its barrel (R1)", () => {
+    const categories = [
+      "video",
+      "image",
+      "image-edit",
+      "upscale",
+      "lipsync",
+      "avatar",
+      "tts",
+      "music",
+    ];
+    for (const category of categories) {
+      const leaf = readFileSync(
+        join(ROOT, "src", "providers", "revana", `unified-${category}.ts`),
+        "utf8",
+      );
+      const specifiers = [...leaf.matchAll(/from "(\.[^"]+)"/g)].map((m) => m[1] as string);
+      expect(specifiers, category).not.toContain("./models");
+      expect(specifiers, category).not.toContain("./index");
+      expect(specifiers, category).not.toContain(".");
+      expect(specifiers, category).not.toContain("./pricing");
+      // …and the positive half, so the assertion cannot pass on an empty file.
+      expect(specifiers, category).toContain(`./${category}`);
+      expect(specifiers, category).toContain(`./${category}-params`);
+    }
   });
 
   test("its graph carries exactly two catalogs, and no availability or retarget layer", () => {
@@ -2780,6 +3119,18 @@ describe("unmodel/music (the fifth and smallest ready-made pack)", () => {
  * changing a line in `src/unified/lipsync.ts`.
  */
 describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the packs with native halves)", () => {
+  /** The eight categories revana has an adapter leaf for. */
+  const REVANA_UNIFIED_CATEGORIES = [
+    "video",
+    "image",
+    "image-edit",
+    "upscale",
+    "lipsync",
+    "avatar",
+    "tts",
+    "music",
+  ];
+
   const CASES: Array<{
     name: string;
     providers: string[];
@@ -2881,6 +3232,21 @@ describe("unmodel/lipsync, unmodel/avatar and unmodel/upscale (the packs with na
       expect(modules).not.toContain(`src/providers/${native.provider}/unified-${native.twin}.ts`);
       expect(modules).not.toContain(`src/providers/${native.provider}/${native.twin}.ts`);
       expect(modules).not.toContain(`src/providers/${native.provider}/${native.twin}-params.ts`);
+    }
+    // revana, where it is in the pack: eight categories from ONE route, so
+    // the split is the leaf, the view it ends in and that view's own generated
+    // rows — never the barrel, the merged catalog, or another category's leaf.
+    if (kase.providers.includes("revana")) {
+      expect(modules).toContain(`src/providers/revana/unified-${kase.name}.ts`);
+      expect(modules).toContain(`src/providers/revana/${kase.name}.ts`);
+      expect(modules).toContain(`src/providers/revana/gen/${kase.name}-params.gen.ts`);
+      expect(modules).not.toContain("src/providers/revana/unified.ts");
+      expect(modules).not.toContain("src/providers/revana/models.ts");
+      for (const category of REVANA_UNIFIED_CATEGORIES) {
+        if (category === kase.name) continue;
+        expect(modules).not.toContain(`src/providers/revana/unified-${category}.ts`);
+        expect(modules).not.toContain(`src/providers/revana/gen/${category}-params.gen.ts`);
+      }
     }
     if (kase.name === "upscale") {
       // Topaz serves one category, so `unified.ts` IS its adapter leaf — the
@@ -3020,7 +3386,7 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
    * that can never call it, without changing a single import in
    * `src/unified/image-edit.ts`.
    */
-  test("it reaches exactly the four image-edit providers, through their adapters", () => {
+  test("it reaches exactly the six image-edit providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("image-edit"));
     expect(modules).toContain("src/unified/image-edit.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -3035,8 +3401,8 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
     expect(providers).toEqual(IMAGE_EDIT_PACK_PROVIDERS);
 
     for (const provider of IMAGE_EDIT_PACK_PROVIDERS) {
-      // All four serve two categories, so all four adapters are suffixed
-      // leaves and the barrel is never in this graph.
+      // All six serve more than one category, so all six adapters are
+      // suffixed leaves and the barrel is never in this graph.
       expect(modules).toContain(`src/providers/${provider}/unified-image-edit.ts`);
       expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
       // Every provider's editing endpoint module is addressed as

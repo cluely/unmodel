@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "body": {
+    "id": "gen_103d7c0414e04ce0acfd",
+    "object": "generation",
+    "model": "elevenlabs-turbo-2.5",
+    "status": "succeeded",
+    "output": {
+      "urls": [
+        "https://api.revana.si/v1/generations/gen_103d7c0414e04ce0acfd/content"
+      ],
+      "duration_s": 2.739955,
+      "durations_s": [
+        2.739955
+      ]
+    },
+    "quoted_usd": 0.01,
+    "reserved_usd": 0.04,
+    "cost_usd": 0.01,
+    "attempts": 1,
+    "progress": {
+      "stage": "succeeded",
+      "typical_seconds": null,
+      "estimated_finish_at": null,
+      "estimated_seconds_left": null,
+      "slower_than_usual": false
+    },
+    "error": null,
+    "created_at": "2026-11-12T21:02:33.613Z",
+    "completed_at": "2026-11-12T21:02:37.301Z"
+  }
+}

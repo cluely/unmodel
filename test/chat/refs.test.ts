@@ -8,7 +8,7 @@
  *    `split("/", 2)` implementations are all wrong in ways that produce a
  *    plausible-looking provider id. Pinned explicitly below.
  * 2. **`CHAT_PROVIDERS` agreeing with the generated union, in both
- *    directions.** The array is hand-written (32 short strings are easier to
+ *    directions.** The array is hand-written (33 short strings are easier to
  *    read here than in a `.gen.ts`) and the union is generated from the
  *    snapshot, so nothing but a test keeps them honest — and a one-directional
  *    check would miss the failure mode that matters, a provider that leaves
@@ -97,10 +97,10 @@ describe("parseModelRef", () => {
 });
 
 describe("CHAT_PROVIDERS", () => {
-  test("is 32 ids, sorted and unique", () => {
-    expect(CHAT_PROVIDERS.length).toBe(32);
+  test("is 33 ids, sorted and unique", () => {
+    expect(CHAT_PROVIDERS.length).toBe(33);
     expect([...CHAT_PROVIDERS]).toEqual([...CHAT_PROVIDERS].sort());
-    expect(new Set(CHAT_PROVIDERS).size).toBe(32);
+    expect(new Set(CHAT_PROVIDERS).size).toBe(33);
   });
 
   test("every one resolves to a non-factory endpoint with a real URL", () => {

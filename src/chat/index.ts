@@ -42,7 +42,7 @@
  * `chat({ model: "anthropic/claude-opus-5", … })` is typed as an Anthropic
  * `/v1/messages` body, `"google/…"` as a Gemini body with no `model` key (it
  * lives in the URL), and everything else as chat-completions. A ref whose
- * provider is not one of the 32 degrades to the union of all three bodies
+ * provider is not one of the 33 degrades to the union of all three bodies
  * rather than to `any`: unknown at compile time, still callable at runtime.
  */
 import type { ChatCatalog, ChatModelProfile } from "../catalog/chat-profiles.gen";
@@ -84,7 +84,7 @@ export type ChatResult<R extends string> = ChatPackResult<
  * result. `chat.safe()` returns a `ValidateResult` and throws neither.
  *
  * Annotated rather than inferred. `createChat` is `<const Registry>`, so
- * without the alias `const`-inference bakes the entire 32-entry registry
+ * without the alias `const`-inference bakes the entire 33-entry registry
  * object type into the emitted declaration a *second* time — the same 438 KiB
  * expansion that already has to appear once for `CHAT_PROVIDER_VALIDATORS`
  * itself. The alias references it instead: same type, half the file.
@@ -131,7 +131,7 @@ export { chatParamsSchema } from "./schema";
  * compiler and three codecs and nothing else (135 KiB). Reaching the same
  * function through this entry costs ~1.7 MB of JS and 45 extra declaration
  * files, because `chat` above is a top-level call that anchors the whole
- * 32-provider registry into the module — no bundler tree-shakes that away.
+ * 33-provider registry into the module — no bundler tree-shakes that away.
  * The cheap path is the only path; the types are free, so they stay.
  */
 export type {

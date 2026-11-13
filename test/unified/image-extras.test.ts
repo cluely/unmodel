@@ -89,6 +89,9 @@ const CASES: readonly Case[] = [
     extras: { creativity: "high", intensity: 20 },
   },
   { ref: "reve/reve-v2-create", extras: { postprocessing: [{ process: "remove_background" }] } },
+  // Revana's one picture extra, on the models whose catalog row lists their
+  // quality tiers — and one level down, because its body is `{ model, input }`.
+  { ref: "revana/gpt-image-1", extras: { quality: "high" }, at: ["input"] },
 ];
 
 /** The wire node at a path, or `undefined`. */

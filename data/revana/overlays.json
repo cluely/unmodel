@@ -1,0 +1,35 @@
+{
+  "$comment": "Hand-maintained. Facts about a model that Revana states ONLY in its API's own 422 messages — absent from GET /v1/models and from the OpenAPI document (whose ModelInput declares no speech field at all). Each entry quotes the message it was read from, verbatim, with the date. Collected from POST /v1/generations/quote, which validates the same body as a create and is free.",
+  "speechFields": {
+    "elevenlabs-multilingual-v2": {
+      "fields": ["text", "voice", "stability", "similarity_boost", "speed", "language_code"],
+      "quote": "elevenlabs-multilingual-v2 reads text aloud and does not take input.image_url. It takes text, voice, stability, similarity_boost, speed and language_code.",
+      "source": "POST https://api.revana.si/v1/generations/quote",
+      "date": "2026-11-12"
+    },
+    "elevenlabs-turbo-2.5": {
+      "fields": ["text", "voice", "stability", "similarity_boost", "speed", "language_code"],
+      "quote": "elevenlabs-turbo-2.5 reads text aloud and does not take input.image_url. It takes text, voice, stability, similarity_boost, speed and language_code.",
+      "source": "POST https://api.revana.si/v1/generations/quote",
+      "date": "2026-11-12"
+    },
+    "elevenlabs-v3": {
+      "fields": ["text", "voice", "dialogue", "stability", "language_code"],
+      "quote": "elevenlabs-v3 reads text aloud and does not take input.image_url. It takes text, voice, dialogue, stability and language_code.",
+      "source": "POST https://api.revana.si/v1/generations/quote",
+      "date": "2026-11-12"
+    },
+    "elevenlabs-v4": {
+      "fields": ["text", "voice", "stability", "similarity_boost", "speed", "language_code"],
+      "quote": "elevenlabs-v4 reads text aloud and does not take input.image_url. It takes text, voice, stability, similarity_boost, speed and language_code.",
+      "source": "POST https://api.revana.si/v1/generations/quote",
+      "date": "2026-11-12"
+    }
+  },
+  "negativePrompt": {
+    "acceptedBy": ["hunyuan-image-3.5-preview", "kling-2.5-turbo-pro"],
+    "quote": "No route for veo-3.1 can take this input (cannot take negative_prompt).",
+    "source": "POST https://api.revana.si/v1/generations/quote, asked of every ModelInput model; the two listed priced the request and each of the others answered the quoted sentence with its own id",
+    "date": "2026-11-12"
+  }
+}

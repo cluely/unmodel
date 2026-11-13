@@ -39,6 +39,7 @@ import { CHAT_COMPLETIONS_URL as nvidia } from "../../providers/nvidia";
 import { CHAT_COMPLETIONS_URL as openai } from "../../providers/openai";
 import { CHAT_COMPLETIONS_URL as openrouter } from "../../providers/openrouter";
 import { CHAT_COMPLETIONS_URL as perplexity } from "../../providers/perplexity";
+import { CHAT_COMPLETIONS_URL as revana } from "../../providers/revana/chat";
 import { CHAT_COMPLETIONS_URL as sarvam } from "../../providers/sarvam";
 import { CHAT_COMPLETIONS_URL as scaleway } from "../../providers/scaleway";
 import { CHAT_COMPLETIONS_URL as siliconflow } from "../../providers/siliconflow";
@@ -79,6 +80,7 @@ const PROVIDER_CHAT_URLS: Readonly<Record<string, string>> = {
   openai,
   openrouter,
   perplexity,
+  revana,
   sarvam,
   scaleway,
   siliconflow,

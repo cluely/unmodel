@@ -13,6 +13,7 @@
 import { createLipsync, lipsync } from "../../src/unified/lipsync";
 import { lipsync as falLipsync } from "../../src/providers/fal/unified-lipsync";
 import { lipsync as heygenLipsync } from "../../src/providers/heygen/unified-lipsync";
+import { lipsync as revanaLipsync } from "../../src/providers/revana/unified-lipsync";
 import { lipsync as syncLipsync } from "../../src/providers/sync/unified-lipsync";
 import { lipsync as veedLipsync } from "../../src/providers/veed/unified-lipsync";
 import type { UnifiedRef } from "../../src/core/unified/types";
@@ -308,7 +309,38 @@ expectAssignable<"fal">(falLipsync.provider);
 expectAssignable<readonly string[]>(falLipsync.models);
 expectAssignable<LipsyncParams["model"]>("fal/fal-ai/sync-lipsync/v3");
 
+// ---------------------------------------------------------------------------
+// revana — a clip-only row, with `prompt` as its one extra
+// ---------------------------------------------------------------------------
+
+function revanaNarrowingTests(): void {
+  lipsync({ model: "revana/bytedance-lipsync", source: URL_SOURCE, audio: URL_AUDIO, seed: 7 });
+  lipsync({
+    model: "revana/bytedance-lipsync",
+    source: URL_SOURCE,
+    audio: URL_AUDIO,
+    prompt: "The presenter speaks to camera",
+  });
+  lipsync({
+    model: "revana/bytedance-lipsync",
+    // @ts-expect-error — the row's source is a clip; a still is `unmodel/avatar`'s.
+    source: { data: "AAAA", mimeType: "image/png" },
+    audio: URL_AUDIO,
+  });
+  // @ts-expect-error — `sync_mode` is sync.'s word; Revana publishes no mismatch field.
+  lipsync({ model: "revana/bytedance-lipsync", source: URL_SOURCE, audio: URL_AUDIO, sync_mode: "loop" });
+
+  // The curated view, not every video model: the avatar ids are another pack's.
+  // @ts-expect-error — omnihuman-2.0 animates a still.
+  expectAssignable<UnifiedRef<typeof revanaLipsync>>("revana/omnihuman-2.0");
+
+  const result = lipsync({ model: "revana/bytedance-lipsync", source: URL_SOURCE, audio: URL_AUDIO });
+  expectAssignable<{ video_url?: string; audio_url?: string }>(result.input);
+  result.toSdk("revana");
+}
+
 export {
+  revanaNarrowingTests,
   refUnionTests,
   sourceShapeTests,
   resultTypeTests,

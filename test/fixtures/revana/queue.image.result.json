@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "body": {
+    "images": [
+      {
+        "url": "https://api.revana.si/v1/queue/revana/z-image/requests/gen_2d6a38c88396424ca9dc/content",
+        "content_type": "image/png",
+        "file_name": "gen_2d6a38c88396424ca9dc.png",
+        "file_size": 966948,
+        "width": 1024,
+        "height": 1024
+      }
+    ],
+    "description": ""
+  }
+}

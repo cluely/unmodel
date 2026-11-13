@@ -27,6 +27,7 @@ import { describe, expect, test } from "bun:test";
 import type { UpscaleParams } from "../../src/core/unified/vocabulary/upscale";
 import { upscale } from "../../src/unified/upscale";
 import { upscale as fal } from "../../src/providers/fal/unified-upscale";
+import { upscale as revana } from "../../src/providers/revana/unified-upscale";
 import { upscale as topaz } from "../../src/providers/topaz/unified";
 
 type Support = "native" | "unsupported";
@@ -35,6 +36,8 @@ interface Capability {
   ref: string;
   /** The POST this ref compiles to. */
   url: string;
+  /** The key every wire field below sits under, where the body nests them (revana's `input`). */
+  nest?: string;
   /** The wire field the source lands in, and which medium it carries. */
   source: { at: string; kind: "image" | "video" };
   /**
@@ -224,6 +227,24 @@ const TABLE: Readonly<Record<string, Capability>> = {
     // Bloom's pages say 1–9 (Redefine's says 1–6).
     creativity: "creativity",
   },
+  // ---- revana, the second router -------------------------------------------
+  // One upscaler on the one route Revana serves every media model from, and it
+  // is this same Recraft product a third way (`fal-ai/recraft/upscale/crisp`
+  // is above). Two columns differ from fal's resale of it. Inline bytes are
+  // refused — Revana fetches every reference and has no `data:` arm. And
+  // `prompt` is `native`: the field exists on the body every model shares and
+  // `revana.upscale` accepts it, so the adapter sends it. Whether a ROUTE
+  // steers on one is not a fact about the model, and no layer here claims it.
+  "revana/crisp": {
+    ref: "revana/recraft-crisp-upscale",
+    url: "https://api.revana.si/v1/generations",
+    nest: "input",
+    inline: "unsupported",
+    source: { at: "image_url", kind: "image" },
+    factor: "unsupported",
+    prompt: "native",
+    creativity: undefined,
+  },
 };
 
 const STILL = { url: "https://example.com/portrait.png" } as const;
@@ -243,8 +264,11 @@ function compile(row: Capability, extra: Partial<UpscaleParams> = {}): Compiled 
   } as never);
   if (!result.ok) return result.errors.map((issue) => `${issue.code} @ ${issue.path.join(".")}`);
   const request = result.params as unknown as { request: { url: string } };
+  const body = JSON.parse(JSON.stringify(result.params)) as Record<string, unknown>;
   return {
-    body: JSON.parse(JSON.stringify(result.params)) as Record<string, unknown>,
+    // The level the row's wire names are read at — the body itself, or the one
+    // object a nested wire puts them in.
+    body: row.nest === undefined ? body : (body[row.nest] as Record<string, unknown>),
     url: request.request.url,
   };
 }
@@ -271,8 +295,8 @@ test("the table covers every fal endpoint, and names both providers", () => {
   ]);
 });
 
-test("the pack registers exactly two providers", () => {
-  expect([...upscale.providers]).toEqual(["fal", "topaz"]);
+test("the pack registers exactly three providers", () => {
+  expect([...upscale.providers]).toEqual(["fal", "revana", "topaz"]);
 });
 
 describe.each(rows)("%s", (name, row) => {
@@ -404,7 +428,7 @@ describe("no silent drops, over the whole vocabulary", () => {
  * across the roster rather than the same answer repeated.
  */
 test("both source shapes are served, and every row names exactly one", () => {
-  const ROWS = { ...fal.modelParams, ...topaz.modelParams } as Readonly<
+  const ROWS = { ...fal.modelParams, ...topaz.modelParams, ...revana.modelParams } as Readonly<
     Record<string, { readonly sources?: readonly string[] }>
   >;
   const declared = Object.values(ROWS).map((entry) => [...(entry.sources ?? [])]);

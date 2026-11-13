@@ -1,0 +1,10 @@
+{
+  "ref": "revana/veo-3.1",
+  "params": {
+    "model": "veo-3.1",
+    "input": {
+      "prompt": "a drone shot over a fjord at sunrise"
+    }
+  },
+  "url": "https://api.revana.si/v1/generations"
+}

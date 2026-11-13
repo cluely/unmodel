@@ -32,6 +32,7 @@ import { image as googleImage } from "../../src/providers/google/unified-image";
 import type { GoogleImagenInstance } from "../../src/providers/google/image";
 import { image as ideogramImage } from "../../src/providers/ideogram/unified";
 import { image as openaiImage } from "../../src/providers/openai/unified-image";
+import { image as revanaImage } from "../../src/providers/revana/unified-image";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import type { ImageParams } from "../../src/core/unified/vocabulary/image";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
@@ -339,7 +340,53 @@ expectAssignable<"image">(stabilityImage.category);
 expectAssignable<Readonly<Record<string, object>>>(openaiImage.modelParams);
 expectAssignable<Readonly<Record<string, object>>>(stabilityImage.modelParams);
 
+// ---------------------------------------------------------------------------
+// revana — rows generated from a catalog: a shape list, a tier list, no size
+// ---------------------------------------------------------------------------
+
+function revanaNarrowingTests(): void {
+  // nano-banana-pro lists ten shapes and all three tiers.
+  image({ model: "revana/nano-banana-pro", prompt: "hi", aspectRatio: "21:9", resolution: "4k" });
+  // @ts-expect-error — 9:21 is not one of nano-banana-pro's shapes.
+  image({ model: "revana/nano-banana-pro", prompt: "hi", aspectRatio: "9:21" });
+  // @ts-expect-error — seedream-5.0-pro lists 1K and 2K only.
+  image({ model: "revana/seedream-5.0-pro", prompt: "hi", resolution: "4k" });
+  // @ts-expect-error — gpt-image-1 "takes no input.resolution".
+  image({ model: "revana/gpt-image-1", prompt: "hi", resolution: "1k" });
+
+  // A model that lists no shapes keeps the wide `AspectRatio`.
+  image({ model: "revana/ideogram-v3", prompt: "hi", aspectRatio: "5:4" });
+
+  // No Revana model has a `size` spelling: the wire has a shape and a tier.
+  // @ts-expect-error — `size` is `never`; `aspectRatio` is the word.
+  image({ model: "revana/nano-banana-pro", prompt: "hi", size: "1024x1024" });
+  image({ model: "revana/nano-banana-pro", prompt: "hi", dimensions: { width: 1024, height: 1024 } });
+
+  // `quality` is an extra where the catalog lists the model's tiers, typed by them.
+  image({ model: "revana/gpt-image-1", prompt: "hi", quality: "high" });
+  // @ts-expect-error — gpt-image-1's tiers are low, medium and high.
+  image({ model: "revana/gpt-image-1", prompt: "hi", quality: "ultra" });
+  // @ts-expect-error — nano-banana-pro's row lists no quality tiers.
+  image({ model: "revana/nano-banana-pro", prompt: "hi", quality: "high" });
+
+  // The edit-only models and the upscaler are other packs' refs.
+  // @ts-expect-error — not an image ref.
+  expectAssignable<UnifiedRef<typeof revanaImage>>("revana/recraft-crisp-upscale");
+
+  const result = image({ model: "revana/nano-banana-pro", prompt: "hi" });
+  expectAssignable<string>(result.model);
+  expectAssignable<{ prompt?: string }>(result.input);
+  result.toSdk("revana");
+
+  image({
+    model: "revana/nano-banana-pro",
+    prompt: "hi",
+    providerOptions: { revana: { max_wait_s: 60, input: { quality: "high" } } },
+  });
+}
+
 export {
+  revanaNarrowingTests,
   refUnionTests,
   sizingXorTests,
   resultTypeTests,

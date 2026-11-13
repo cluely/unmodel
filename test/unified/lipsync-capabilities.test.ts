@@ -27,6 +27,7 @@ import type { LipsyncParams } from "../../src/core/unified/vocabulary/lipsync";
 import { lipsync } from "../../src/unified/lipsync";
 import { lipsync as fal } from "../../src/providers/fal/unified-lipsync";
 import { lipsync as heygen } from "../../src/providers/heygen/unified-lipsync";
+import { lipsync as revana } from "../../src/providers/revana/unified-lipsync";
 import { lipsync as sync } from "../../src/providers/sync/unified-lipsync";
 import { lipsync as veed } from "../../src/providers/veed/unified-lipsync";
 
@@ -41,6 +42,8 @@ interface Capability {
   /** Where the voice track lands, as a dot path into the body. */
   audio: { at: string; support: Support };
   seed: Support;
+  /** Where a `native` seed lands, as a dot path, when it is not the body root. */
+  seedAt?: string;
   /**
    * What happens to `{ data, mimeType }`. fal fetches a `data:` URI; sync.
    * fetches URLs and asset ids only, and refuses bytes by name.
@@ -243,9 +246,26 @@ const TABLE: Readonly<Record<string, Capability>> = {
     seed: "unsupported",
     mismatch: "enable_dynamic_duration",
   },
+
+  // ---- Revana, a second router ---------------------------------------------
+  // The same two flat URL fields fal has, one level down: Revana's body is
+  // `{ model, input }` for every media model it serves. It is the first row in
+  // the table with a `seed` (every `ModelInput` model takes one), it refuses
+  // inline bytes because it fetches every reference, and — like VEED — it
+  // publishes no mismatch word at all.
+  "revana/bytedance-lipsync": {
+    ref: "revana/bytedance-lipsync",
+    url: "https://api.revana.si/v1/generations",
+    inline: "unsupported",
+    source: { at: "input.video_url", support: "native" },
+    audio: { at: "input.audio_url", support: "native" },
+    seed: "native",
+    seedAt: "input.seed",
+    mismatch: undefined,
+  },
 };
 
-const CLIP = { url: "https://example.com/take-3.mp4" } as const;
+const CLIP ={ url: "https://example.com/take-3.mp4" } as const;
 const VOICE = { url: "https://example.com/vo.wav" } as const;
 const PROBE_SEED = 4242;
 
@@ -295,11 +315,12 @@ test("the table covers every endpoint both adapters serve", () => {
   // has two that are one wire field.
   expect((byProvider.get("veed") ?? []).sort()).toEqual([...veed.models].sort());
   expect((byProvider.get("heygen") ?? []).sort()).toEqual([...heygen.models].sort());
+  expect((byProvider.get("revana") ?? []).sort()).toEqual([...revana.models].sort());
   expect([...byProvider.keys()].sort()).toEqual([...lipsync.providers]);
 });
 
-test("the pack registers exactly four providers", () => {
-  expect([...lipsync.providers]).toEqual(["fal", "heygen", "sync", "veed"]);
+test("the pack registers exactly five providers", () => {
+  expect([...lipsync.providers]).toEqual(["fal", "heygen", "revana", "sync", "veed"]);
 });
 
 describe.each(rows)("%s", (name, row) => {
@@ -346,7 +367,7 @@ describe.each(rows)("%s", (name, row) => {
     }
     expect(compiled).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
-    expect(compiled.body["seed"]).toBe(PROBE_SEED);
+    expect(pluck(compiled.body, row.seedAt ?? "seed")).toBe(PROBE_SEED);
   });
 
   test("the duration-mismatch knob is this endpoint's own word, or none", () => {
@@ -417,6 +438,7 @@ test("every endpoint in this category is clip-driven", () => {
   const ROWS = {
     ...fal.modelParams,
     ...heygen.modelParams,
+    ...revana.modelParams,
     ...sync.modelParams,
     ...veed.modelParams,
   } as Readonly<Record<string, { readonly sources?: readonly string[] }>>;

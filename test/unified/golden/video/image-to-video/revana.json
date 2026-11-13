@@ -1,0 +1,12 @@
+{
+  "ref": "revana/veo-3.1",
+  "params": {
+    "model": "veo-3.1",
+    "input": {
+      "prompt": "the fox turns and walks into the snow",
+      "image_url": "https://example.com/frame.png",
+      "duration": 8
+    }
+  },
+  "url": "https://api.revana.si/v1/generations"
+}

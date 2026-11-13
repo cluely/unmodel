@@ -420,7 +420,47 @@ expectAssignable<"openai">(openaiTts.provider);
 expectAssignable<readonly string[]>(openaiTts.models);
 expectAssignable<TtsParams["model"]>("openai/tts-1");
 
+// ---------------------------------------------------------------------------
+// revana — catalogued voice ids, a per-model language list, and no codec
+// ---------------------------------------------------------------------------
+
+function revanaNarrowingTests(): void {
+  const text = "The lighthouse keeper checked the lamp.";
+
+  // `voices` completes the catalog's ids and stays open, like every voice list.
+  tts({ model: "revana/elevenlabs-v3", text, voice: "EkK5I93UQWFDigLMpZcX" });
+  tts({ model: "revana/elevenlabs-v3", text, voice: "a-cloned-voice-id" });
+  tts({ model: "revana/elevenlabs-v3", text, voice: { id: "EkK5I93UQWFDigLMpZcX" } });
+
+  // `languages` completes too, and a BCP-47 tag still compiles.
+  tts({ model: "revana/elevenlabs-v3", text, language: "pt" });
+  tts({ model: "revana/elevenlabs-v3", text, language: "pt-BR" });
+
+  // No codec at all: Revana's speech input has no encoding field.
+  // @ts-expect-error — `codecs: []`, so no `outputFormat` is assignable.
+  tts({ model: "revana/elevenlabs-v3", text, outputFormat: "mp3" });
+
+  // The extras follow the fields the API says each model takes.
+  tts({ model: "revana/elevenlabs-v3", text, stability: 0.5 });
+  tts({ model: "revana/elevenlabs-turbo-2.5", text, stability: 0.5, similarity_boost: 0.4 });
+  // @ts-expect-error — elevenlabs-v3 takes `stability` and not `similarity_boost`.
+  tts({ model: "revana/elevenlabs-v3", text, similarity_boost: 0.4 });
+  // @ts-expect-error — `dialogue` replaces `text`, so it is `revana.tts`'s and not an extra.
+  tts({ model: "revana/elevenlabs-v3", text, dialogue: [{ text: "hi" }] });
+
+  const result = tts({ model: "revana/elevenlabs-v3", text });
+  expectAssignable<{ text?: string }>(result.input);
+  result.toSdk("revana");
+
+  tts({
+    model: "revana/elevenlabs-v3",
+    text,
+    providerOptions: { revana: { max_cost_usd: 1, input: { stability: 0.2 } } },
+  });
+}
+
 export {
+  revanaNarrowingTests,
   refUnionTests,
   resultTypeTests,
   providerOptionsTests,

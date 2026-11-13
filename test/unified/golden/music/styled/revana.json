@@ -1,0 +1,15 @@
+{
+  "ref": "revana/suno-v6",
+  "params": {
+    "model": "suno-v6",
+    "input": {
+      "prompt": "slow post-rock build, brushed drums, no vocals",
+      "instrumental": true,
+      "style": "post-rock, brushed drums"
+    }
+  },
+  "url": "https://api.revana.si/v1/generations",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

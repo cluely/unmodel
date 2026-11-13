@@ -42,7 +42,7 @@ export type { EndpointAuth } from "../core/translate/endpoints";
 /**
  * Every provider `chat()` can send to, as a runtime array.
  *
- * Hand-written rather than generated, because a 32-element string array is
+ * Hand-written rather than generated, because a 33-element string array is
  * cheaper to read here than to chase into a `.gen.ts`; the generated
  * `ChatProviderId` union is the authority and `test/chat/refs.test.ts`
  * asserts the two agree *in both directions* at compile time, so drift is a
@@ -74,6 +74,7 @@ export const CHAT_PROVIDERS = [
   "openai",
   "openrouter",
   "perplexity",
+  "revana",
   "sarvam",
   "scaleway",
   "siliconflow",
@@ -87,7 +88,7 @@ export const CHAT_PROVIDERS = [
 
 const CHAT_PROVIDER_SET: ReadonlySet<string> = new Set(CHAT_PROVIDERS);
 
-// The three shapes the 32 chat providers use. Spelled here rather than
+// The three shapes the 33 chat providers use. Spelled here rather than
 // imported for the byte reason on `CHAT_AUTH` below; pinned against the
 // endpoint table's own descriptors by `test/chat/providers.test.ts`.
 const BEARER_AUTH: EndpointAuth = Object.freeze({ header: "authorization", scheme: "Bearer" });
@@ -144,6 +145,7 @@ export const CHAT_AUTH: Readonly<Record<ChatProviderId, EndpointAuth>> = {
   openai: BEARER_AUTH,
   openrouter: BEARER_AUTH,
   perplexity: BEARER_AUTH,
+  revana: BEARER_AUTH,
   sarvam: BEARER_AUTH,
   scaleway: BEARER_AUTH,
   siliconflow: BEARER_AUTH,

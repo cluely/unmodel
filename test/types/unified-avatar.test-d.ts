@@ -10,6 +10,7 @@
 import { avatar, createAvatar } from "../../src/unified/avatar";
 import { avatar as falAvatar } from "../../src/providers/fal/unified-avatar";
 import { avatar as heygenAvatar } from "../../src/providers/heygen/unified-avatar";
+import { avatar as revanaAvatar } from "../../src/providers/revana/unified-avatar";
 import { avatar as syncAvatar } from "../../src/providers/sync/unified-avatar";
 import { avatar as veedAvatar } from "../../src/providers/veed/unified-avatar";
 import type { UnifiedRef } from "../../src/core/unified/types";
@@ -246,7 +247,43 @@ expectAssignable<"fal">(falAvatar.provider);
 expectAssignable<readonly string[]>(falAvatar.models);
 expectAssignable<AvatarParams["model"]>("fal/fal-ai/echomimic-v3");
 
+// ---------------------------------------------------------------------------
+// revana — every row takes a still, and `prompt` is its one extra
+// ---------------------------------------------------------------------------
+
+function revanaNarrowingTests(): void {
+  avatar({ model: "revana/omnihuman-2.0", image: URL_IMAGE, audio: URL_AUDIO, seed: 7 });
+  avatar({
+    model: "revana/kling-avatar-pro",
+    image: URL_IMAGE,
+    audio: URL_AUDIO,
+    prompt: "She speaks warmly to camera",
+  });
+  // @ts-expect-error — `sources: ["image"]`: the still is required.
+  avatar({ model: "revana/omnihuman-2.0", audio: URL_AUDIO });
+  // @ts-expect-error — `prompt` is a string.
+  avatar({ model: "revana/omnihuman-2.0", image: URL_IMAGE, audio: URL_AUDIO, prompt: 7 });
+  // @ts-expect-error — `avatar_id` is the preset-performer routes' word; Revana has none.
+  avatar({ model: "revana/omnihuman-2.0", image: URL_IMAGE, audio: URL_AUDIO, avatar_id: "emily_primary" });
+
+  // The curated view, not every video model: the lip-sync id is another pack's.
+  // @ts-expect-error — bytedance-lipsync re-voices a clip.
+  expectAssignable<UnifiedRef<typeof revanaAvatar>>("revana/bytedance-lipsync");
+
+  const result = avatar({ model: "revana/omnihuman-2.0", image: URL_IMAGE, audio: URL_AUDIO });
+  expectAssignable<{ image_url?: string; audio_url?: string }>(result.input);
+  result.toSdk("revana");
+
+  avatar({
+    model: "revana/kling-avatar-pro",
+    image: URL_IMAGE,
+    audio: URL_AUDIO,
+    providerOptions: { revana: { input: { resolution: "1080p", duration: 12 } } },
+  });
+}
+
 export {
+  revanaNarrowingTests,
   refUnionTests,
   imageArmTests,
   resultTypeTests,

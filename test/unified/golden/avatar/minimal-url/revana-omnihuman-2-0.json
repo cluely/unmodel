@@ -1,0 +1,14 @@
+{
+  "ref": "revana/omnihuman-2.0",
+  "params": {
+    "model": "omnihuman-2.0",
+    "input": {
+      "image_url": "https://example.com/headshot.png",
+      "audio_url": "https://example.com/vo-french.wav"
+    }
+  },
+  "url": "https://api.revana.si/v1/generations",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

@@ -44,6 +44,7 @@ import { imageEdit as fal } from "../../src/providers/fal/unified-image-edit";
 import { imageEdit as ideogram } from "../../src/providers/ideogram/unified-image-edit";
 import { imageEdit as openai } from "../../src/providers/openai/unified-image-edit";
 import { imageEdit as recraft } from "../../src/providers/recraft/unified-image-edit";
+import { imageEdit as revana } from "../../src/providers/revana/unified-image-edit";
 
 type Support = "native" | "derived" | "declared" | "refused";
 
@@ -80,7 +81,10 @@ interface Capability {
    * before any other row could be observed.
    */
   base?: Partial<ImageEditParams>;
-  /** Where the shape lands, or `null` when the route has no size field at all. */
+  /**
+   * Where the shape lands, or `null` when the route has no size field at all.
+   * `at` is a dotted path for a body that nests its params (`input.aspect_ratio`).
+   */
   size: { class: SizeClass; at: string } | null;
   /**
    * How the canonical `size` string lands, or `null` when this ref's model has
@@ -93,6 +97,8 @@ interface Capability {
    * declared *and* to reach the wire verbatim. Identity is the whole contract.
    */
   extra: Readonly<Record<string, unknown>>;
+  /** Where that extra lands, when the route nests its params. */
+  extraAt?: string;
   strength: StrengthCell | "declared";
   n: Support;
   seed: Support;
@@ -205,6 +211,32 @@ const TABLE: Readonly<Record<string, Capability>> = {
     aspectRatio: "declared",
     dimensions: "declared",
   },
+  /**
+   * A router whose body nests its params under `input`, and the one provider
+   * here whose source is a URL with no inline alternative.
+   *
+   * `ideogram-v3` is profiled because it is a row that declares an extra
+   * (`quality`, typed from the tiers the catalog lists for it). It lists no
+   * shapes, so its `aspect_ratio` is free-form — any `W:H`, the S5 shape — and
+   * pixels reach it as the exact ratio they reduce to, with the warning that
+   * conversion always carries. The models that DO list shapes are swept in
+   * `image-presets.test.ts`.
+   */
+  revana: {
+    ref: "revana/ideogram-v3",
+    adapter: revana,
+    size: { class: "ratio-string", at: "input.aspect_ratio" },
+    sizeString: null,
+    extra: { quality: "turbo" },
+    extraAt: "input",
+    strength: "declared",
+    n: "native",
+    seed: "native",
+    outputFormat: "declared",
+    aspectRatio: "native",
+    dimensions: "derived",
+    warns: ["dimensions"],
+  },
 };
 
 /**
@@ -303,6 +335,16 @@ function serialize(compiled: Compiled): string {
   return JSON.stringify([compiled.body, compiled.url]);
 }
 
+/** A dotted wire path into a compiled body — revana nests everything under `input`. */
+function at(body: Record<string, unknown>, path: string): unknown {
+  let node: unknown = body;
+  for (const segment of path.split(".")) {
+    if (node === null || typeof node !== "object") return undefined;
+    node = (node as Record<string, unknown>)[segment];
+  }
+  return node;
+}
+
 /** The translation warnings a probe produced, or `[]` when it did not compile. */
 function warningsOf(row: Capability, extra: Partial<ImageEditParams>): readonly unknown[] {
   const base = "dimensions" in extra ? { ...row.base, aspectRatio: undefined } : row.base;
@@ -363,8 +405,10 @@ describe.each(rows)("%s", (provider, row) => {
     const compiled = compile(row, row.extra as Partial<ImageEditParams>);
     expect(compiled, `${provider} could not compile its own extra`).not.toBeInstanceOf(Array);
     if (Array.isArray(compiled)) return;
+    const node = (row.extraAt === undefined ? compiled.body : at(compiled.body, row.extraAt)) as
+      Record<string, unknown>;
     for (const [key, value] of Object.entries(row.extra)) {
-      expect(compiled.body[key], `${provider} ${key} verbatim`).toEqual(value);
+      expect(node[key], `${provider} ${key} verbatim`).toEqual(value);
     }
   });
 
@@ -556,8 +600,9 @@ describe.each(rows)("%s", (provider, row) => {
       const compiled = compile(row, { aspectRatio: PROBE.aspectRatio });
       expect(compiled).not.toBeInstanceOf(Array);
       if (Array.isArray(compiled)) return;
-      const value = String(compiled.body[row.size.at]);
-      expect(compiled.body[row.size.at], `${provider} wrote nothing at ${row.size.at}`).toBeDefined();
+      const landed = at(compiled.body, row.size.at);
+      const value = String(landed);
+      expect(landed, `${provider} wrote nothing at ${row.size.at}`).toBeDefined();
       switch (row.size.class) {
         case "size-freeform":
           expect(value).toMatch(/^\d+x\d+$/);

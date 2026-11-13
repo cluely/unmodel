@@ -1,0 +1,2632 @@
+{
+  "components": {
+    "headers": {
+      "Retry-After": {
+        "description": "Seconds to wait before trying again.",
+        "schema": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "X-Request-Id": {
+        "description": "This response's id (req_ followed by 20 hex digits). Error bodies repeat it as error.request_id.",
+        "schema": {
+          "pattern": "^req_[0-9a-f]{20}$",
+          "type": "string"
+        }
+      }
+    },
+    "parameters": {
+      "id": {
+        "in": "path",
+        "name": "id",
+        "required": true,
+        "schema": {
+          "pattern": "^[\\w-]{1,80}$",
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "properties": {
+          "error": {
+            "properties": {
+              "code": {
+                "description": "Stable and machine-readable; the message is for people and may change.",
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "request_id": {
+                "description": "The X-Request-Id of this response.",
+                "pattern": "^req_[0-9a-f]{20}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "request_id"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "Generation": {
+        "properties": {
+          "attempts": {
+            "type": "integer"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cost_usd": {
+            "description": "The charge once succeeded, 0 once failed, else null.",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "error": {
+            "description": "When failed. message is written to show the person who asked; retryable says whether the same request can work later.",
+            "properties": {
+              "code": {
+                "enum": [
+                  "content_policy",
+                  "invalid_input",
+                  "model_declined",
+                  "reference_changed",
+                  "max_cost_exceeded",
+                  "model_busy",
+                  "model_unavailable",
+                  "timeout",
+                  "all_routes_failed",
+                  "review_required",
+                  "processing_failed"
+                ],
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "reason": {
+                "description": "Only on content_policy: the rule the model cited.",
+                "enum": [
+                  "sexual",
+                  "minors",
+                  "copyright",
+                  "real_person",
+                  "other"
+                ],
+                "type": "string"
+              },
+              "retryable": {
+                "description": "true: send the same request again later. false: the request has to change.",
+                "type": "boolean"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "id": {
+            "examples": [
+              "gen_3f9a1c0d2b7e4a5f6c81"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "description": "Only while a result is being confirmed with a provider.",
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "object": {
+            "const": "generation"
+          },
+          "output": {
+            "description": "Null until succeeded. urls lists every file (a picture model can return several, a music model two: /content, /content/2, ...). Pictures carry width and height; videos also duration_s and has_audio; audio carries duration_s (the first file) and durations_s (each).",
+            "properties": {
+              "duration_s": {
+                "type": "number"
+              },
+              "durations_s": {
+                "description": "Audio only: the length of each file in urls, in order.",
+                "items": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "type": "array"
+              },
+              "has_audio": {
+                "type": "boolean"
+              },
+              "height": {
+                "type": "integer"
+              },
+              "urls": {
+                "items": {
+                  "format": "uri",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "width": {
+                "type": "integer"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "quoted_usd": {
+            "description": "The price on the route tried first. If a dearer backup route makes it instead, the charge is that route's price, up to reserved_usd.",
+            "type": "number"
+          },
+          "reserved_usd": {
+            "description": "Held from the balance while it runs: the dearest route that may run, so the most it can cost. Set max_cost_usd to quoted_usd to skip dearer backups.",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "object",
+          "model",
+          "status",
+          "output",
+          "quoted_usd",
+          "cost_usd",
+          "attempts",
+          "error",
+          "created_at",
+          "completed_at"
+        ],
+        "type": "object"
+      },
+      "GenerationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "input": {
+            "description": "SeedanceInput for seedance-2.5. NemesisInput for nemesis (a 4-30 s clip, rendered as a Seedance 2.5 edit at its rate plus $0.02 a second) and nemesis-lite (a 2-15 s clip, rendered on Wan 3.0 at its rate plus $0.02 a second); both are billed per second of clip in plus video out. ModelInput for every other model. Unknown fields, and values the model does not offer, are refused with 422 invalid_input before anything is charged.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SeedanceInput"
+              },
+              {
+                "$ref": "#/components/schemas/NemesisInput"
+              },
+              {
+                "$ref": "#/components/schemas/ModelInput"
+              }
+            ]
+          },
+          "max_cost_usd": {
+            "default": 100,
+            "description": "The most this generation may cost. Routes above it are skipped.",
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "type": "number"
+          },
+          "max_wait_s": {
+            "description": "Routes expected to take longer than this many seconds are skipped, and once it has passed no new route is tried. A route already running may finish (up to 40 minutes) and is charged if it delivers.",
+            "maximum": 86400,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "model": {
+            "description": "A model id from /data/models.json.",
+            "examples": [
+              "seedance-2.5"
+            ],
+            "type": "string"
+          },
+          "task": {
+            "description": "What to do with input.video_url, on video models. video_edit changes the clip and keeps its length (seedance-2.5, wan-2.7-videoedit, wan-2.7, happyhorse-1.0, kling-3.0-omni, kling-4.0, wan-3.0); video_extend continues it (pixverse-v6). Only the routes that do that task are used; a model without one answers 422 invalid_input naming the models that do. Leave it out to keep each model's own behaviour. Also accepted as input.task.",
+            "enum": [
+              "video_edit",
+              "video_extend"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "model",
+          "input"
+        ],
+        "type": "object"
+      },
+      "ModelInput": {
+        "additionalProperties": false,
+        "description": "The input of every model other than seedance-2.5. Which fields and values a model takes, and its defaults, are in /data/models.json (options, tasks, price).",
+        "properties": {
+          "aspect_ratio": {
+            "description": "One of the model's aspect ratios, e.g. 16:9, 9:16, 1:1.",
+            "type": "string"
+          },
+          "audio": {
+            "description": "Generate sound, on models that offer it. Changes the price on some models.",
+            "type": "boolean"
+          },
+          "audio_url": {
+            "description": "A sound to drive the video (talking avatars, lip sync).",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "duration": {
+            "description": "Video length in seconds: one of the model's durations. Per-second models are billed for it.",
+            "maximum": 300,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "end_image_url": {
+            "description": "The last frame, on models with first and last frame. Needs image_url.",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "image_url": {
+            "description": "The start frame (image to video) or the picture to edit (image to image).",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "image_urls": {
+            "description": "Reference pictures, up to the model's max_input_images.",
+            "items": {
+              "format": "uri",
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "type": "array"
+          },
+          "instrumental": {
+            "default": false,
+            "description": "Music models only: true for no vocals. Not with lyrics.",
+            "type": "boolean"
+          },
+          "lyrics": {
+            "description": "Music models only: the words to sing. Not with instrumental.",
+            "maxLength": 5000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "negative_prompt": {
+            "description": "What to avoid, on models that take it.",
+            "maxLength": 5000,
+            "type": "string"
+          },
+          "num_images": {
+            "default": 1,
+            "description": "Picture models only: how many pictures to make, up to the model's options.max_images in /data/models.json (usually 4). Also accepted as n. The price and the hold are per picture; only the pictures delivered are charged, the rest is released. output.urls lists them all.",
+            "maximum": 10,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "prompt": {
+            "description": "What to generate. Required unless the model only transforms media (an upscaler).",
+            "maxLength": 30000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "quality": {
+            "description": "A quality tier, on models that price by one (e.g. low, medium, high).",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "One of the model's resolutions, e.g. 720p, 1080p, 1K, 2K, 4K.",
+            "type": "string"
+          },
+          "seed": {
+            "description": "A seed, on models that take one.",
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "style": {
+            "description": "Music models only: the genre and sound, such as \"indie folk, warm vocals\". A music request needs style or lyrics; prompt (at most 3000 characters there) is the idea.",
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "video_url": {
+            "description": "A clip to transform or extend, on models that take one. Its length is measured and may be billed.",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "NemesisInput": {
+        "additionalProperties": false,
+        "description": "Input for nemesis: restages a clip with your people, products and places (its movement, timing and camera, played by the references). Priced at a Seedance 2.5 edit's rate plus $0.02 a second, per second of the clip in plus the video out. The result keeps the clip's length and shape.",
+        "properties": {
+          "face_mesh": {
+            "description": "Traces every face in the clip so the new face keeps its expressions, eyes and lips; never shown in the result. nemesis-lite only. Default: true with guide people, false with scene and clip.",
+            "type": "boolean"
+          },
+          "guide": {
+            "description": "nemesis-lite only (nemesis always edits the clip itself). clip (default with a target frame): follows the clip's own picture. people (default without one): the people are replaced and the background kept (a clip with nobody in it is refused, not charged). scene: everything seen comes from the references and prompt.",
+            "enum": [
+              "people",
+              "scene",
+              "clip"
+            ]
+          },
+          "image_urls": {
+            "description": "Reference pictures.",
+            "items": {
+              "format": "uri",
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
+          },
+          "prompt": {
+            "description": "Optional direction.",
+            "maxLength": 5000,
+            "type": "string"
+          },
+          "resolution": {
+            "default": "720p",
+            "enum": [
+              "480p",
+              "720p",
+              "1080p"
+            ]
+          },
+          "roles": {
+            "description": "One per picture, in order. Default: every picture is a person.",
+            "items": {
+              "enum": [
+                "person",
+                "product",
+                "location",
+                "look"
+              ]
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
+          },
+          "sound": {
+            "description": "original (default on nemesis): the clip's own sound is put back on the result. none (default on nemesis-lite): a silent result.",
+            "enum": [
+              "none",
+              "original"
+            ]
+          },
+          "target_frame": {
+            "description": "Before the render, the clip's first frame is redrawn with the change already made, in the same pose, size and light, and sent as the first reference, so hair, face and clothes stay true to the pictures. Default: true for nemesis, false for nemesis-lite. Free.",
+            "type": "boolean"
+          },
+          "video_url": {
+            "description": "The 4-30 s clip to restage.",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_url",
+          "image_urls"
+        ],
+        "type": "object"
+      },
+      "QueueError": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Error"
+          },
+          {
+            "properties": {
+              "detail": {
+                "description": "The message again, where fal clients look for it.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "Quote": {
+        "properties": {
+          "available_usd": {
+            "description": "With a customer key: what the account can spend now.",
+            "type": "number"
+          },
+          "currency": {
+            "const": "usd"
+          },
+          "enough_credit": {
+            "description": "With a customer key: whether available_usd covers reserved_usd, so a create would not be refused 402.",
+            "type": "boolean"
+          },
+          "estimated_seconds": {
+            "description": "How long the first route usually takes.",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "model": {
+            "type": "string"
+          },
+          "object": {
+            "const": "quote"
+          },
+          "quoted_usd": {
+            "description": "The price of the route tried first: what a successful generation normally costs.",
+            "type": "number"
+          },
+          "reserved_usd": {
+            "description": "The hold a create would take: the most it can be charged if a dearer backup route delivers. Never above max_cost_usd.",
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "object",
+          "model",
+          "currency",
+          "quoted_usd",
+          "reserved_usd",
+          "estimated_seconds"
+        ],
+        "type": "object"
+      },
+      "SeedanceInput": {
+        "additionalProperties": false,
+        "description": "Input for seedance-2.5.",
+        "properties": {
+          "aspect_ratio": {
+            "default": "16:9",
+            "enum": [
+              "16:9",
+              "9:16",
+              "1:1",
+              "4:3",
+              "3:4",
+              "21:9",
+              "adaptive"
+            ]
+          },
+          "audio": {
+            "default": false,
+            "type": "boolean"
+          },
+          "audio_urls": {
+            "description": "Reference sound, 30 s in all.",
+            "items": {
+              "description": "A public https URL that downloads directly.",
+              "format": "uri",
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "type": "array"
+          },
+          "duration": {
+            "default": 5,
+            "description": "Seconds. Not with video_url.",
+            "maximum": 30,
+            "minimum": 4,
+            "type": "integer"
+          },
+          "end_image_url": {
+            "description": "Last frame. Needs image_url.",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "image_url": {
+            "description": "Exact first frame. Not with reference media.",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "image_urls": {
+            "description": "Reference images.",
+            "items": {
+              "description": "A public https URL that downloads directly.",
+              "format": "uri",
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "type": "array"
+          },
+          "prompt": {
+            "maxLength": 30000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "resolution": {
+            "default": "720p",
+            "enum": [
+              "480p",
+              "720p",
+              "1080p"
+            ]
+          },
+          "video_url": {
+            "description": "A 4-30 s clip to edit; the result keeps its length.",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "video_urls": {
+            "description": "Reference clips, 30 s in all.",
+            "items": {
+              "description": "A public https URL that downloads directly.",
+              "format": "uri",
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "description": "An API key from https://revana.si/dashboard.",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "queueKey": {
+        "description": "Queue paths accept Key sr_live_… or Bearer sr_live_….",
+        "in": "header",
+        "name": "Authorization",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "One API key for image and video models. Prepaid credits, 100 credits = $1; only the route that succeeds is charged. Every model in /data/models.json takes the same request shape: `input` is SeedanceInput for seedance-2.5 and ModelInput for the others, whose allowed values, defaults and prices are listed per model in /data/models.json. An unknown model id answers 422 model_not_available; a model whose routes are all down at the moment, 503 model_unavailable. Every response carries an X-Request-Id header (req_ followed by 20 hex digits); every error body repeats it as error.request_id, so quote it when asking for help. Every error has a stable machine-readable error.code; every 429 and 503 carries Retry-After in seconds. Price a request first with POST /v1/generations/quote (free; nothing is created or held). Retrying: after a timeout or a 5xx on a create, resend the same body with the same Idempotency-Key, which returns the generation already made instead of starting (and charging) another. After a generation has failed, start again with a new key: the old key keeps answering the failed generation.",
+    "title": "Revana API",
+    "version": "2026-10-31"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/v1/balance": {
+      "get": {
+        "description": "available is what a new generation can reserve; held is reserved by generations still running; balance is both. Credits are 100 to the dollar, rounded so available never reads higher than it is.",
+        "operationId": "getBalance",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "available_credits": {
+                      "type": "integer"
+                    },
+                    "available_usd": {
+                      "type": "number"
+                    },
+                    "balance_credits": {
+                      "type": "integer"
+                    },
+                    "balance_usd": {
+                      "type": "number"
+                    },
+                    "currency": {
+                      "const": "usd"
+                    },
+                    "held_credits": {
+                      "type": "integer"
+                    },
+                    "held_usd": {
+                      "type": "number"
+                    },
+                    "object": {
+                      "const": "balance"
+                    },
+                    "price_tier": {
+                      "description": "Present when the account has a volume price tier.",
+                      "type": "string"
+                    },
+                    "price_tier_until": {
+                      "description": "When that tier lapses.",
+                      "format": "date-time",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "spent_usd": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "currency",
+                    "available_usd",
+                    "held_usd",
+                    "balance_usd",
+                    "available_credits",
+                    "held_credits",
+                    "balance_credits"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The balance.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Missing or invalid key.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "What the key's account can spend"
+      }
+    },
+    "/v1/chat/completions": {
+      "post": {
+        "description": "OpenAI's Chat Completions request and answer (stream: true for server-sent events), for the language models /v1/models lists with kind text, billed per token on the same credits. Errors here use OpenAI's shape, {error: {message, type, code, param}}, not the Error schema. See https://revana.si/chat for the models and fields.",
+        "operationId": "createChatCompletion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "messages": {
+                    "items": {
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "model": {
+                    "type": "string"
+                  },
+                  "stream": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "model",
+                  "messages"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The completion (application/json), or a text/event-stream when stream is true.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request. Codes: invalid_request.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key. Codes: unauthorized.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "402": {
+            "description": "Not enough credit. Codes: insufficient_credits.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "429": {
+            "description": "Over the burst guard. Codes: rate_limited.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "503": {
+            "description": "No route can serve the model right now. Codes: model_unavailable, busy.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Chat completion (OpenAI-compatible)"
+      }
+    },
+    "/v1/generations": {
+      "get": {
+        "description": "Every generation on the key's account, newest first, a page at a time: the account's other keys' and the dashboard's too, not only this key's. Pass the previous page's next_before as before to get the next one; has_more is true only when an older generation exists. A generation still being confirmed with a provider shows, and filters, as running.",
+        "operationId": "listGenerations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Only generations created before this time: the previous page's next_before.",
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "queued",
+                "running",
+                "succeeded",
+                "failed"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "A model id.",
+            "in": "query",
+            "name": "model",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/Generation"
+                      },
+                      "type": "array"
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_before": {
+                      "description": "Pass as before for the next page; null on the last.",
+                      "format": "date-time",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "object": {
+                      "const": "list"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "data",
+                    "has_more",
+                    "next_before"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "One page.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A query parameter is wrong or unknown. Codes: invalid_request.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Missing or invalid API key. Codes: unauthorized.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Over the per-second read burst guard. Codes: rate_limited.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List your generations"
+      },
+      "post": {
+        "operationId": "createGeneration",
+        "parameters": [
+          {
+            "description": "Resending the same key and body returns the same generation instead of starting another. The same key with a different body is 409 idempotency_conflict. Make one key per request, once (a UUID), and send it again on every resend after a timeout, a dropped connection, a 429 or a 5xx: the request is never made or charged twice. After a generation has failed, send it again with a new key: the old one keeps answering the failed generation.",
+            "example": "3f0c9a2e-6c1b-4f53-9d43-1f2a7b8c9d10",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "text_to_video": {
+                  "summary": "A 5 second 720p Seedance 2.5 clip, capped at $1.50",
+                  "value": {
+                    "input": {
+                      "aspect_ratio": "16:9",
+                      "duration": 5,
+                      "prompt": "A slow dolly shot through a neon-lit night market in the rain, steam rising from food stalls",
+                      "resolution": "720p"
+                    },
+                    "max_cost_usd": 1.5,
+                    "model": "seedance-2.5"
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/GenerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Generation"
+                }
+              }
+            },
+            "description": "An Idempotency-Key replay: the generation it created.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Generation"
+                }
+              }
+            },
+            "description": "Accepted.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Malformed request. Codes: invalid_request.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Missing or invalid API key. Codes: unauthorized.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The available balance does not cover reserved_usd. Codes: insufficient_credits.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The account is paused, the key cannot generate yet, or the account's free credit needs a saved card first (add one in the dashboard, then retry). Codes: account_disabled, generation_not_enabled, card_required.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Idempotency-Key reused with a different body. Codes: idempotency_conflict.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Body over 1 MB. Codes: body_too_large.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The input cannot run as asked. Nothing is charged. Codes: invalid_input, max_cost_exceeded, model_not_available.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Over the per-second burst guard (honour Retry-After), or too many generations in progress. Codes: rate_limited, concurrency_limit.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Server error. Safe to retry with the same Idempotency-Key. Codes: server_error.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Busy, or no route up. Retry after Retry-After with the same Idempotency-Key. Codes: busy, model_unavailable.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Submit a generation"
+      }
+    },
+    "/v1/generations/quote": {
+      "post": {
+        "description": "Takes the same body as POST /v1/generations and answers what it would cost, worked out exactly as the create will (input admitted, media measured, routes priced). Nothing is created, held or charged, and it answers even before an account may generate. quoted_usd is the first route's price; reserved_usd is the most that can be held, should a backup route (billed at its provider's cost plus one cent) deliver instead.",
+        "operationId": "quoteGeneration",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            },
+            "description": "The price.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Malformed request. Codes: invalid_request.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Missing or invalid API key. Codes: unauthorized.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The account is paused. Codes: account_disabled.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Body over 1 MB. Codes: body_too_large.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The input cannot run as asked, or every route is priced above max_cost_usd. Codes: invalid_input, model_not_available, max_cost_exceeded.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Over the per-second burst guard. Codes: rate_limited.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Server error. Codes: server_error.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Busy measuring references, or no route up. Codes: busy, model_unavailable.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Price a generation (free)"
+      }
+    },
+    "/v1/generations/{id}": {
+      "get": {
+        "operationId": "getGeneration",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Generation"
+                }
+              }
+            },
+            "description": "The generation.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Missing or invalid API key. Codes: unauthorized.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No generation with this id on your account. Codes: not_found.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Over the per-second burst guard. Codes: rate_limited.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Get a generation"
+      }
+    },
+    "/v1/generations/{id}/content": {
+      "get": {
+        "operationId": "getGenerationContent",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "video/mp4": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The file: a video for video models, a picture for picture models.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "302": {
+            "description": "A redirect to a short-lived file URL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No generation with this id on your account. Codes: not_found.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not succeeded yet. Codes: not_ready.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Download the result (the first file)"
+      }
+    },
+    "/v1/generations/{id}/content/{n}": {
+      "get": {
+        "operationId": "getGenerationContentN",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/id"
+          },
+          {
+            "description": "2 or more: the position of the file in output.urls.",
+            "in": "path",
+            "name": "n",
+            "required": true,
+            "schema": {
+              "maximum": 99,
+              "minimum": 2,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "video/mp4": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The file: a video for video models, a picture for picture models.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "302": {
+            "description": "A redirect to a short-lived file URL.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No generation with this id on your account, or it has fewer files. Codes: not_found.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not succeeded yet. Codes: not_ready.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "Download file n of a result with several files"
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "description": "No key needed. Every model /v1/generations accepts at this moment, with its tasks, options and price (the same fields as /data/models.json). A model missing here answers 422 model_not_available. With a customer key (Authorization: Bearer sr_live_...), prices are that account's own (its price book) and the response carries X-Revana-Price-Book; without one, the public prices. Language models (kind text) are listed too; they run on /v1/chat/completions, not /v1/generations. Prices listed per second are the plain rates: some inputs cost more (Seedance 2.5 with a first frame is $0.11 / $0.25 / $0.55 a second), so price a specific request with POST /v1/generations/quote.",
+        "operationId": "listModels",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "endpoint": {
+                            "description": "Language models (kind text) only: /v1/chat/completions. Every other model runs on /v1/generations.",
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "enum": [
+                              "image",
+                              "video",
+                              "audio",
+                              "text"
+                            ],
+                            "type": "string"
+                          },
+                          "maker": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "object": {
+                            "const": "model"
+                          },
+                          "options": {
+                            "type": "object"
+                          },
+                          "owned_by": {
+                            "description": "Language models only, as OpenAI lists them.",
+                            "type": "string"
+                          },
+                          "price": {
+                            "type": "object"
+                          },
+                          "tasks": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "object"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "object": {
+                      "const": "list"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The models.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "X-Revana-Price-Book": {
+                "description": "With a customer key: the price book the prices come from.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "summary": "List the models you can generate with now"
+      }
+    },
+    "/v1/queue/revana/{model_id}": {
+      "post": {
+        "description": "Same billing and admission as generations. See https://revana.si/queue.md for fal aliases and compatibility limits. Callback URLs are public HTTPS on port 443; callback notifications are unsigned, so verify by authenticated result retrieval.",
+        "operationId": "submitQueueRequest",
+        "parameters": [
+          {
+            "description": "An id returned by GET /v1/models.",
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fal_webhook",
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Make one key per request, once (a UUID), and send it again on every resend after a timeout, a dropped connection, a 429 or a 5xx: a replay with the same input answers 200 with the same request, never a second paid job. Changing the input, endpoint or webhook with that key is 409.",
+            "example": "3f0c9a2e-6c1b-4f53-9d43-1f2a7b8c9d10",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "seedance": {
+                  "summary": "A 5 second 720p Seedance 2.5 clip, capped at $2",
+                  "value": {
+                    "duration": 5,
+                    "max_cost_usd": 2,
+                    "prompt": "A fox walks through snow",
+                    "resolution": "720p"
+                  }
+                }
+              },
+              "schema": {
+                "description": "Raw model input fields, plus optional max_wait_s and max_cost_usd. max_cost_usd is the most you will pay: routes priced above it are skipped (none left: max_cost_exceeded). If the first route cannot make a job, a backup route within the hold is used; a request is never charged more than its hold. See the model catalog.",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "cancel_url": {
+                      "description": "Cancellation is unsupported (405).",
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_type": {
+                      "type": "string"
+                    },
+                    "gateway_request_id": {
+                      "type": "string"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "response_url": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "IN_QUEUE",
+                        "IN_PROGRESS",
+                        "COMPLETED"
+                      ],
+                      "type": "string"
+                    },
+                    "status_url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "request_id",
+                    "status",
+                    "status_url",
+                    "response_url"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Idempotent replay",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "cancel_url": {
+                      "description": "Cancellation is unsupported (405).",
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_type": {
+                      "type": "string"
+                    },
+                    "gateway_request_id": {
+                      "type": "string"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "response_url": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "IN_QUEUE",
+                        "IN_PROGRESS",
+                        "COMPLETED"
+                      ],
+                      "type": "string"
+                    },
+                    "status_url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "request_id",
+                    "status",
+                    "status_url",
+                    "response_url"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Accepted",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Malformed request, or a bad fal_webhook. Codes: invalid_request.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Missing or invalid API key (Key or Bearer). Codes: unauthorized.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "The available balance does not cover the hold. Codes: insufficient_credits.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "The account is paused, the key cannot generate yet, or the account's free credit needs a saved card first (add one in the dashboard, then retry). Codes: account_disabled, generation_not_enabled, card_required.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "409": {
+            "description": "Key reused for different input, endpoint or webhook",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Body over 1 MB. Codes: body_too_large.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "422": {
+            "description": "Unsupported input or unsafe callback URL",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Over the per-second burst guard, or too many requests in progress. Codes: rate_limited, concurrency_limit.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Server error. Safe to retry with the same Idempotency-Key. Codes: server_error.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "503": {
+            "description": "Service or callback worker unavailable",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "queueKey": []
+          }
+        ],
+        "summary": "Submit model input directly to the asynchronous queue"
+      }
+    },
+    "/v1/queue/revana/{model_id}/requests/{request_id}": {
+      "get": {
+        "operationId": "getQueueResult",
+        "parameters": [
+          {
+            "description": "An id returned by GET /v1/models.",
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Image images[], video video{}, or audio audio{} and audios[]; file URLs require this account API key",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Missing or invalid API key. Codes: unauthorized.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "404": {
+            "description": "No request owned by this account at this endpoint",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "409": {
+            "description": "Still processing",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "422": {
+            "description": "Generation failed",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Over the per-second read burst guard. Codes: rate_limited.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "queueKey": []
+          }
+        ],
+        "summary": "Get final model output"
+      }
+    },
+    "/v1/queue/revana/{model_id}/requests/{request_id}/content": {
+      "get": {
+        "operationId": "getQueueContent",
+        "parameters": [
+          {
+            "description": "An id returned by GET /v1/models.",
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Media bytes",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "302": {
+            "description": "Short-lived storage redirect after authentication",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Missing or invalid API key. Codes: unauthorized.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "404": {
+            "description": "No request owned by this account at this endpoint",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "409": {
+            "description": "Not ready",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Over the per-second read burst guard. Codes: rate_limited.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "queueKey": []
+          }
+        ],
+        "summary": "Download the first output"
+      }
+    },
+    "/v1/queue/revana/{model_id}/requests/{request_id}/status": {
+      "get": {
+        "operationId": "getQueueStatus",
+        "parameters": [
+          {
+            "description": "An id returned by GET /v1/models.",
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "cancel_url": {
+                      "description": "Cancellation is unsupported (405).",
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_type": {
+                      "type": "string"
+                    },
+                    "gateway_request_id": {
+                      "type": "string"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "response_url": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "IN_QUEUE",
+                        "IN_PROGRESS",
+                        "COMPLETED"
+                      ],
+                      "type": "string"
+                    },
+                    "status_url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "request_id",
+                    "status",
+                    "status_url",
+                    "response_url"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Queue state; failures are COMPLETED with error",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Missing or invalid API key. Codes: unauthorized.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "404": {
+            "description": "No request owned by this account at this endpoint",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueError"
+                }
+              }
+            },
+            "description": "Over the per-second read burst guard. Codes: rate_limited.",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "queueKey": []
+          }
+        ],
+        "summary": "Get queue status"
+      }
+    },
+    "/v1/status": {
+      "get": {
+        "description": "Each model's status (operational, degraded, outage), its numbered routes, uptime, median latency, 30 days of daily uptime and the last week's incidents. Cached for 30 seconds. The same data as https://revana.si/status.",
+        "operationId": "getStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The status.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "security": [],
+        "summary": "Service status (no key)"
+      }
+    },
+    "/v1/uploads": {
+      "post": {
+        "description": "Answers a presigned upload_url: PUT the file's bytes there within an hour with exactly upload_headers (its content type and length are signed). Then pass url, an api.revana.si link good for 14 days that redirects to the file, as a reference to /v1/generations. image/* up to 30 MB, video/* up to 50 MB, audio/* up to 15 MB. Free.",
+        "operationId": "createUpload",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "bytes": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "content_type": {
+                    "examples": [
+                      "image/png"
+                    ],
+                    "type": "string"
+                  },
+                  "filename": {
+                    "maxLength": 200,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "content_type",
+                  "bytes"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "bytes": {
+                      "type": "integer"
+                    },
+                    "content_type": {
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "filename": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "pattern": "^upl_",
+                      "type": "string"
+                    },
+                    "object": {
+                      "const": "upload"
+                    },
+                    "upload_expires_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "upload_headers": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "upload_method": {
+                      "const": "PUT"
+                    },
+                    "upload_url": {
+                      "format": "uri",
+                      "type": "string"
+                    },
+                    "url": {
+                      "description": "https://api.revana.si/v1/uploads/…: no key needed, answers a redirect to the file until expires_at (14 days).",
+                      "format": "uri",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "object",
+                    "url",
+                    "expires_at",
+                    "upload_url",
+                    "upload_method",
+                    "upload_headers",
+                    "upload_expires_at",
+                    "content_type",
+                    "bytes",
+                    "filename"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The upload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not an image, video or audio type, or a bad body.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Missing or invalid key.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Larger than the reference limit for its kind (too_large).",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Uploads are not available (uploads_unavailable).",
+            "headers": {
+              "Retry-After": {
+                "$ref": "#/components/headers/Retry-After"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "summary": "A link for a local reference file"
+      }
+    },
+    "/v1/uploads/{folder}/{upload_id}/{filename}": {
+      "get": {
+        "description": "The url POST /v1/uploads hands back. Answers 302 to a fresh one-hour storage link on every read, for 14 days (expires_at). Pass it as a reference; there is no need to call it yourself.",
+        "operationId": "readUpload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder",
+            "required": true,
+            "schema": {
+              "pattern": "^[0-9a-f]{16}$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "pattern": "^upl_[0-9a-f]{24}$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_][A-Za-z0-9._-]{0,79}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the file.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "format": "uri",
+                  "type": "string"
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such upload, or uploads are off. Codes: not_found.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          }
+        },
+        "security": [],
+        "summary": "An upload's lasting link (no key)"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://api.revana.si"
+    }
+  ]
+}

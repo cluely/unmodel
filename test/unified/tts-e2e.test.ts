@@ -11,10 +11,11 @@
 import { describe, expect, test } from "bun:test";
 import { UnmodelValidationError } from "../../src/core/issues";
 import { TranslationUnavailableError } from "../../src/core/translate/errors";
+import { tts as revanaAdapter } from "../../src/providers/revana/unified-tts";
 import { tts } from "../../src/unified/tts";
 
 describe("the pack", () => {
-  test("registers exactly the nineteen speech providers, sorted", () => {
+  test("registers exactly the twenty speech providers, sorted", () => {
     expect([...tts.providers]).toEqual([
       "alibaba",
       "breezeblue",
@@ -34,6 +35,7 @@ describe("the pack", () => {
       "murf",
       "openai",
       "resemble",
+      "revana",
       "rime",
       "smallest-ai",
       "speechify",
@@ -572,5 +574,142 @@ describe("speechify", () => {
     });
     expect(params.output_format).toBe("mp3_24000_160");
     expect(params.model).toBe("simba-3.5");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// revana — a voice by id, three kinds of `language_code`, and no encoding
+// ---------------------------------------------------------------------------
+
+describe("revana", () => {
+  const TEXT = "The lighthouse keeper checked the lamp.";
+  const VOICE = "EkK5I93UQWFDigLMpZcX";
+  const body = (params: Record<string, unknown>): unknown =>
+    JSON.parse(JSON.stringify(tts(params as never)));
+
+  test("every scalar and both extras land under `input`", () => {
+    expect(
+      body({
+        model: "revana/elevenlabs-turbo-2.5",
+        text: TEXT,
+        voice: VOICE,
+        speed: 1.1,
+        language: "pt-BR",
+        stability: 0.5,
+        similarity_boost: 0.4,
+      }),
+    ).toEqual({
+      model: "elevenlabs-turbo-2.5",
+      input: {
+        text: TEXT,
+        voice: VOICE,
+        speed: 1.1,
+        // This model lists no languages, so the field takes any code and the
+        // tag goes through as written.
+        language_code: "pt-BR",
+        stability: 0.5,
+        similarity_boost: 0.4,
+      },
+    });
+  });
+
+  test("a voice is an id: `{ id }` is the same request, `{ name }` has no equivalent", () => {
+    expect(body({ model: "revana/elevenlabs-v3", text: TEXT, voice: { id: VOICE } })).toEqual({
+      model: "elevenlabs-v3",
+      input: { text: TEXT, voice: VOICE },
+    });
+    const named = tts.safe({ model: "revana/elevenlabs-v3", text: TEXT, voice: { name: "Rachel" } });
+    expect(named.ok).toBe(false);
+    if (named.ok) return;
+    expect(named.errors[0]).toMatchObject({ code: "invalid_shape", path: ["voice"] });
+  });
+
+  test("every voice id a row completes is one `revana.tts` accepts", () => {
+    // The promise a `voices` list makes, checked exhaustively: sixty-seven ids
+    // per model, each compiled through the provider's own validator.
+    const refused: string[] = [];
+    let swept = 0;
+    for (const [model, row] of Object.entries(revanaAdapter.modelParams)) {
+      for (const voice of row.voices) {
+        swept += 1;
+        const result = tts.safe({ model: `revana/${model}`, text: TEXT, voice } as never);
+        if (!result.ok) refused.push(`${model}/${voice}`);
+      }
+    }
+    expect(swept).toBeGreaterThan(200);
+    expect(refused).toEqual([]);
+  });
+
+  test("an off-list voice is `revana.tts`'s refusal, at `voice`, naming the default", () => {
+    const result = tts.safe({ model: "revana/elevenlabs-v3", text: TEXT, voice: "nope" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["voice"] });
+    expect(result.errors[0]!.message).toContain(`e.g. ${VOICE}`);
+  });
+
+  test("where the model lists languages, a region is dropped — and said", () => {
+    const result = tts.safe({ model: "revana/elevenlabs-v3", text: TEXT, language: "pt-BR" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.params as unknown as { input: { language_code: string } }).input.language_code).toBe(
+      "pt",
+    );
+    expect(result.params.warnings.map((warning) => [warning.code, warning.path])).toEqual([
+      ["approximated_param", ["language"]],
+    ]);
+  });
+
+  test("where its list is EMPTY the model picks the language, and the field is refused", () => {
+    const result = tts.safe({ model: "revana/elevenlabs-v4", text: TEXT, language: "en" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["language"] });
+    expect(result.errors[0]!.message).toContain("picks the language from the text");
+  });
+
+  test("`speed` is per model, and the model without it says what it does take", () => {
+    const result = tts.safe({ model: "revana/elevenlabs-v3", text: TEXT, speed: 1.1 });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["speed"] });
+    expect(result.errors[0]!.message).toContain("`dialogue`");
+    // …and its bounds are the wire schema's, reported at `speed` too.
+    const fast = tts.safe({ model: "revana/elevenlabs-v4", text: TEXT, speed: 2 });
+    expect(fast.ok).toBe(false);
+    if (fast.ok) return;
+    expect(fast.errors[0]!.path).toEqual(["speed"]);
+  });
+
+  test("an extra a sibling model takes is refused by name", () => {
+    const result = tts.safe({
+      model: "revana/elevenlabs-v3",
+      text: TEXT,
+      similarity_boost: 0.4,
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["similarity_boost"] });
+    expect(result.errors[0]!.message).toContain('"elevenlabs-turbo-2.5"');
+  });
+
+  test("`outputFormat` is a declared gap that names the fields a speech model does take", () => {
+    const result = tts.safe({ model: "revana/elevenlabs-v3", text: TEXT, outputFormat: "mp3" } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["outputFormat"]],
+    ]);
+    expect(result.errors[0]!.message).toContain("`similarity_boost`");
+  });
+
+  test("the result is `revana.tts`'s Validated, priced per character, delivered by URL after a poll", () => {
+    const params = tts({ model: "revana/elevenlabs-v3", text: TEXT, voice: VOICE });
+    expect(params.request.url).toBe("https://api.revana.si/v1/generations");
+    expect(params.toSdk("revana")).toEqual(JSON.parse(JSON.stringify(params)));
+    const safe = tts.safe({ model: "revana/elevenlabs-v3", text: TEXT, voice: VOICE });
+    // 39 characters at the listed per-1,000 rate, rounded up to the cent.
+    expect(safe.ok && safe.estimate?.costUSD).toBeCloseTo(0.01, 6);
+    expect(revanaAdapter.delivery).toEqual({ kind: "url", path: ["output", "urls", 0] });
   });
 });

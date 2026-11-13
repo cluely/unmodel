@@ -10,6 +10,7 @@
  */
 import { createMusic, music } from "../../src/unified/music";
 import { music as elevenlabsMusic } from "../../src/providers/elevenlabs/unified-music";
+import { music as revanaMusic } from "../../src/providers/revana/unified-music";
 import { music as stabilityMusic } from "../../src/providers/stability/unified-music";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import type { MusicParams } from "../../src/core/unified/vocabulary/music";
@@ -156,7 +157,29 @@ expectAssignable<"elevenlabs">(elevenlabsMusic.provider);
 expectAssignable<readonly string[]>(elevenlabsMusic.models);
 expectAssignable<MusicParams["model"]>("elevenlabs/music_v1");
 
+// ---------------------------------------------------------------------------
+// revana — `style` and `lyrics` as extras, and no codec
+// ---------------------------------------------------------------------------
+
+function revanaNarrowingTests(): void {
+  music({ model: "revana/suno-v6", prompt: "a song about first snow", style: "indie folk" });
+  music({ model: "revana/suno-v6", prompt: "a song about first snow", lyrics: "la la" });
+  music({ model: "revana/suno-v6", prompt: "a song", style: "ambient", instrumental: true });
+  // @ts-expect-error — `style` is a string.
+  music({ model: "revana/suno-v6", prompt: "a song", style: 7 });
+  // @ts-expect-error — `codecs: []`: Revana's music input has no encoding field.
+  music({ model: "revana/suno-v6", prompt: "a song", style: "ambient", outputFormat: "mp3" });
+  // @ts-expect-error — `steps` is Stability's dial.
+  music({ model: "revana/suno-v6", prompt: "a song", style: "ambient", steps: 40 });
+
+  expectAssignable<UnifiedRef<typeof revanaMusic>>("revana/suno-v6");
+  const result = music({ model: "revana/suno-v6", prompt: "a song", style: "ambient" });
+  expectAssignable<{ prompt?: string; style?: string }>(result.input);
+  result.toSdk("revana");
+}
+
 export {
+  revanaNarrowingTests,
   refUnionTests,
   resultTypeTests,
   providerOptionsTests,

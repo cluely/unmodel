@@ -20,6 +20,7 @@ import type { MusicModelParams } from "../../src/core/unified/vocabulary/model-p
 import { music } from "../../src/unified/music";
 import { music as elevenlabs } from "../../src/providers/elevenlabs/unified-music";
 import { music as fal } from "../../src/providers/fal/unified-music";
+import { music as revana } from "../../src/providers/revana/unified-music";
 import { music as stability } from "../../src/providers/stability/unified-music";
 
 interface Adapter {
@@ -28,7 +29,7 @@ interface Adapter {
   readonly modelParams?: Readonly<Record<string, MusicModelParams>>;
 }
 
-const ADAPTERS: readonly Adapter[] = [elevenlabs, stability, fal];
+const ADAPTERS: readonly Adapter[] = [elevenlabs, stability, fal, revana];
 
 const ALL_CODECS: readonly AudioFormatCodec[] = [
   "mp3",
@@ -157,7 +158,8 @@ describe("every declared music preset is a value the provider accepts", () => {
 
   test("the sweep is not empty", () => {
     expect(codecCells.length).toBe(29);
-    expect(extraCells.length).toBe(58);
+    // 58 across ElevenLabs, Stability and fal, plus Revana's `style` and `lyrics`.
+    expect(extraCells.length).toBe(60);
   });
 
   test.each(codecCells)("music %s outputFormat %s", (_ref, _codec, probe) => {

@@ -169,6 +169,19 @@ const EXPECTED_IDS: readonly string[] = [
   "resemble.tts",
   "resemble.ttsStream",
   "revai.stt",
+  "revana.avatar",
+  "revana.chat",
+  "revana.image",
+  "revana.imageEdit",
+  "revana.imageQueue",
+  "revana.lipsync",
+  "revana.music",
+  "revana.musicQueue",
+  "revana.tts",
+  "revana.ttsQueue",
+  "revana.upscale",
+  "revana.video",
+  "revana.videoQueue",
   "reve.image",
   "reve.imageEdit",
   "reve.imageEditRemix",
@@ -279,6 +292,17 @@ const IMAGE_GENERATION_IDS: readonly string[] = [
   "luma.image",
   "openai.image",
   "recraft.image",
+  // ONE id for every picture model, and — unlike fal and Atlas — not even the
+  // model id forks the route: `nano-banana-pro` is text-to-image or an edit
+  // depending on `input` alone. So `revana.image` is the wide surface and
+  // `revana.imageEdit` / `revana.upscale` are narrower VIEWS of it over the
+  // same POST path (docs/decisions.md §4), not qualified siblings.
+  "revana.image",
+  // The qualified sibling Revana does have names a second ROUTE, not a second
+  // task: `POST /v1/queue/revana/{model_id}`, the same jobs through fal's
+  // convention (model in the path, the input as the whole body, a completion
+  // webhook). Qualified by the route family that serves it, as `imageV4` is.
+  "revana.imageQueue",
   "reve.image",
   "reve.imageV2",
   "runway.image",
@@ -382,6 +406,14 @@ const VIDEO_IDS: readonly string[] = [
   "openai.video",
   "pixverse.video",
   "pixverse.videoFromImage",
+  // ONE id for every video model and NO qualified sibling, for a stronger
+  // reason than Atlas's. There the model id names the task; here not even that
+  // — `veo-3.1` is one id on one POST path, and `input.image_url` is what makes
+  // a request image-to-video. A `revana.videoFromImage` would name neither a
+  // second route nor a second model.
+  "revana.video",
+  // `revana.videoQueue` does name a second route — the per-model queue path.
+  "revana.videoQueue",
   "runway.video",
   "runway.videoFromImage",
   "runway.videoFromVideo",
@@ -402,7 +434,7 @@ test("the video-category endpoints all use the uniform `video` verb", () => {
   // ref a caller reaches for first is the same word everywhere.
   const providers = [...new Set(VIDEO_IDS.map((id) => id.split(".")[0] as string))].sort();
   for (const provider of providers) expect(VIDEO_IDS).toContain(`${provider}.video`);
-  expect(providers).toHaveLength(12);
+  expect(providers).toHaveLength(13);
 
   const retired = [
     "bytedance.contentGenerationTasks",
@@ -596,11 +628,18 @@ test("the voice-creation endpoints use the uniform verbs", () => {
 const LIPSYNC_IDS: readonly string[] = [
   "fal.lipsync",
   "heygen.lipsync",
+  "revana.lipsync",
   "sync.lipsync",
   "veed.lipsync",
 ];
 
-const AVATAR_IDS: readonly string[] = ["fal.avatar", "heygen.avatar", "sync.avatar", "veed.avatar"];
+const AVATAR_IDS: readonly string[] = [
+  "fal.avatar",
+  "heygen.avatar",
+  "revana.avatar",
+  "sync.avatar",
+  "veed.avatar",
+];
 
 test("the lipsync and avatar endpoints use their categories' own verbs", () => {
   for (const id of LIPSYNC_IDS) {
@@ -697,6 +736,8 @@ const MUSIC_IDS: readonly string[] = [
   "google.music",
   "mureka.music",
   "mureka.musicFromPrompt",
+  "revana.music",
+  "revana.musicQueue",
   "stability.music",
   "stability.musicFromAudio",
   "stability.musicInpaint",
@@ -709,7 +750,7 @@ test("the music-category endpoints all use the uniform `music` verb", () => {
   }
   const providers = [...new Set(MUSIC_IDS.map((id) => id.split(".")[0] as string))].sort();
   for (const provider of providers) expect(MUSIC_IDS).toContain(`${provider}.music`);
-  expect(providers).toEqual(["elevenlabs", "fal", "google", "mureka", "stability"]);
+  expect(providers).toEqual(["elevenlabs", "fal", "google", "mureka", "revana", "stability"]);
 
   // The recorded exception, made executable: it exists, it is reachable, and
   // it would not pass the assertion above.
@@ -854,6 +895,7 @@ test("the voice-conversion endpoints all use the uniform `sts` verb", () => {
  */
 const UPSCALE_IDS: readonly string[] = [
   "fal.upscale",
+  "revana.upscale",
   "topaz.upscale",
   "topaz.upscaleGenerative",
 ];
@@ -1000,6 +1042,8 @@ const TTS_IDS: readonly string[] = [
   "openai.tts",
   "resemble.tts",
   "resemble.ttsStream",
+  "revana.tts",
+  "revana.ttsQueue",
   "rime.tts",
   "smallest-ai.tts",
   "speechify.tts",
@@ -1071,6 +1115,7 @@ const IMAGE_EDIT_IDS: readonly string[] = [
   "recraft.imageEditInpaint",
   "recraft.imageEditOutpaint",
   "recraft.imageEditReplaceBackground",
+  "revana.imageEdit",
   "reve.imageEdit",
   "reve.imageEditRemix",
   "stability.imageEditErase",
@@ -1095,13 +1140,14 @@ test("the image-edit endpoints all use the uniform `imageEdit` verb", () => {
     "luma",
     "openai",
     "recraft",
+    "revana",
     "reve",
     "stability",
   ]);
-  // The seven whose primary route is "prompt + one image, no mask" address it
+  // The eight whose primary route is "prompt + one image, no mask" address it
   // as bare `imageEdit` — which is the ref `unmodel/image-edit` reaches for,
   // and therefore the half of the law with teeth.
-  for (const provider of ["black-forest-labs", "bria", "fal", "ideogram", "openai", "recraft", "reve"]) {
+  for (const provider of ["black-forest-labs", "bria", "fal", "ideogram", "openai", "recraft", "revana", "reve"]) {
     expect(IMAGE_EDIT_IDS).toContain(`${provider}.imageEdit`);
   }
 

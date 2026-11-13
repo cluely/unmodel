@@ -1,0 +1,11 @@
+{
+  "ref": "revana/nano-banana-pro",
+  "params": {
+    "model": "nano-banana-pro",
+    "input": {
+      "prompt": "a lighthouse in fog",
+      "aspect_ratio": "21:9"
+    }
+  },
+  "url": "https://api.revana.si/v1/generations"
+}

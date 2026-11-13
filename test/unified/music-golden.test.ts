@@ -9,6 +9,11 @@
  * it stops being a claim — if the conversion ever drifted, one provider would
  * quietly generate a ninety-*millisecond* track and bill for the attempt.
  *
+ * `styled` and `song-lyrics` are the two cases whose canonical request carries
+ * a per-model extra, and they are the only two Revana is in: its music input
+ * needs `style` or `lyrics`, the vocabulary has a word for neither, and so no
+ * prompt-only case in this tree is a request Revana takes.
+ *
  * Same four assertions as every other golden tree: the body is exact, the
  * transport is exact (ElevenLabs puts the encoding in the query string,
  * Stability in a form field), a non-`lossy-` case compiles with zero warnings,

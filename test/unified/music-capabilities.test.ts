@@ -24,6 +24,7 @@ import { music as elevenlabs } from "../../src/providers/elevenlabs/unified-musi
 import { music as fal } from "../../src/providers/fal/unified-music";
 import { music as google } from "../../src/providers/google/unified-music";
 import { music as mureka } from "../../src/providers/mureka/unified";
+import { music as revana } from "../../src/providers/revana/unified-music";
 import { music as stability } from "../../src/providers/stability/unified-music";
 
 type Support =
@@ -158,6 +159,26 @@ const TABLE: Readonly<Record<string, Capability>> = {
     seed: "native",
     format: { shape: "object", at: "response_format", inQuery: false },
     probe: "mp3",
+  },
+  /**
+   * The row with the most gaps in the table, and every one of them is the
+   * API's own closed list: "makes music and does not take input.duration. It
+   * takes prompt, style, lyrics and instrumental". So the length, the seed and
+   * the encoding are declared on the adapter, and `instrumental` is the one
+   * canonical word besides `prompt` that reaches the wire.
+   *
+   * The `base` is what makes the row probe-able at all: a Revana music request
+   * NEEDS `style` or `lyrics`, neither of which the vocabulary has a word for,
+   * so a bare canonical request is refused by `revana.music` (`music-e2e` pins
+   * the sentence) and the `style` extra rides on every probe here.
+   */
+  revana: {
+    ref: "revana/suno-v6",
+    adapter: revana,
+    base: { style: "post-rock, brushed drums" } as Partial<MusicParams>,
+    durationSeconds: "unsupported",
+    instrumental: "native",
+    seed: "unsupported",
   },
 };
 

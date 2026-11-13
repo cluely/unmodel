@@ -103,6 +103,7 @@ import { imageEdit as fal } from "../providers/fal/unified-image-edit";
 import { imageEdit as ideogram } from "../providers/ideogram/unified-image-edit";
 import { imageEdit as openai } from "../providers/openai/unified-image-edit";
 import { imageEdit as recraft } from "../providers/recraft/unified-image-edit";
+import { imageEdit as revana } from "../providers/revana/unified-image-edit";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
 export type ImageEditAdapter = AnyImageEditAdapter;
@@ -135,7 +136,7 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * `stt`, the per-ref `image` narrowing. A generated or
  * dynamically-loaded registry would keep the first and lose the other three.
  *
- * Five providers rather than the nine that ship an editing route, and the five
+ * Six providers rather than the ten that ship an editing route, and the six
  * are exactly the ones with a route this vocabulary can express: image, prompt,
  * no mask. Stability's six routes, Luma's reframe and BFL's FLUX Tools family
  * are all mask- or geometry-driven; Bria's `imageEdit` and Reve's are neither
@@ -149,12 +150,24 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * takes a `mask_url` this vocabulary has no word for, so it stays reachable by
  * name at `unmodel/fal` and its mask arrives as a per-model extra.
  *
- * The cost is honest and measured: importing this pulls in five provider
+ * Revana is the second router, and the only provider here whose source must be
+ * a public URL with no inline alternative: it fetches every reference itself,
+ * so `{ file }` and `{ data }` are refused naming the upload route that turns a
+ * local file into one.
+ *
+ * The cost is honest and measured: importing this pulls in six provider
  * validators, their schemas and their catalogs, pinned in
  * `test/bundle-budget.test.ts`. `createImageEdit([…])` above is the way to pay
- * for two providers instead of five.
+ * for two providers instead of six.
  */
-export const imageEdit = createImageEdit([openai, blackForestLabs, fal, ideogram, recraft]);
+export const imageEdit = createImageEdit([
+  openai,
+  blackForestLabs,
+  fal,
+  ideogram,
+  recraft,
+  revana,
+]);
 
 export type {
   AnyImageEditAdapter,

@@ -64,6 +64,7 @@ import { tts as minimax } from "../../src/providers/minimax/unified-tts";
 import { tts as murf } from "../../src/providers/murf/unified";
 import { tts as openai } from "../../src/providers/openai/unified";
 import { tts as resemble } from "../../src/providers/resemble/unified";
+import { tts as revana } from "../../src/providers/revana/unified-tts";
 import { tts as rime } from "../../src/providers/rime/unified";
 import { tts as smallestAi } from "../../src/providers/smallest-ai/unified";
 import { tts as speechify } from "../../src/providers/speechify/unified";
@@ -390,6 +391,30 @@ const TABLE: Readonly<Record<string, Capability>> = {
     format: { shape: "object", at: "audioConfig" },
     delivery: { kinds: ["base64"], by: [] },
     probe: "mp3",
+  },
+  /**
+   * A router, and the second row in the table with no `format`: Revana's speech
+   * input names its fields itself (`text`, `voice`, `dialogue`, `stability`,
+   * `similarity_boost`, `speed`, `language_code`) and an encoding is not one.
+   *
+   * `elevenlabs-turbo-2.5` is profiled because it takes every scalar the
+   * vocabulary has: `speed` is a per-model field here (`elevenlabs-v3` refuses
+   * it, through `revana.tts`), and this model lists no languages, so its
+   * `language_code` takes any code and the tag goes through as written. The
+   * model that DOES list them — bare primary subtags — is where a region is
+   * dropped with a warning, and `tts-e2e` pins that.
+   *
+   * A queue, like fal: the POST answers a queued `Generation` and the audio's
+   * URL is in the document a poll answers. See src/providers/revana/tts-params.ts.
+   */
+  revana: {
+    ref: "revana/elevenlabs-turbo-2.5",
+    voice_id: "EkK5I93UQWFDigLMpZcX",
+    adapter: revana,
+    voice: "native",
+    speed: "native",
+    language: "native",
+    delivery: { kinds: ["url"], by: [] },
   },
 };
 

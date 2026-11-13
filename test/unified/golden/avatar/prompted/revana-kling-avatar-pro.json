@@ -1,0 +1,15 @@
+{
+  "ref": "revana/kling-avatar-pro",
+  "params": {
+    "model": "kling-avatar-pro",
+    "input": {
+      "image_url": "https://example.com/headshot.png",
+      "audio_url": "https://example.com/vo-french.wav",
+      "prompt": "She speaks warmly to camera"
+    }
+  },
+  "url": "https://api.revana.si/v1/generations",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

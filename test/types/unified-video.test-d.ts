@@ -29,6 +29,7 @@ import type { GoogleVeoInstance } from "../../src/providers/google/video";
 import { video as klingVideo } from "../../src/providers/kling/unified-video";
 import { video as lumaVideo } from "../../src/providers/luma/unified-video";
 import { video as openaiVideo } from "../../src/providers/openai/unified-video";
+import { video as revanaVideo } from "../../src/providers/revana/unified-video";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import type { ValidateResult } from "../../src/core/result";
 import type {
@@ -406,7 +407,92 @@ function unwrap<T>(result: ValidateResult<T>): T | undefined {
   return result.ok ? result.params : undefined;
 }
 
+// ---------------------------------------------------------------------------
+// revana — rows generated from a catalog, narrowing like any hand-written one
+// ---------------------------------------------------------------------------
+
+/**
+ * The generated rows are read by the same derivations as every other
+ * provider's, and the four shapes a Revana row can take are all here: a
+ * duration LIST (a closed enum), a duration RANGE (the wide `number`), no
+ * duration at all (`never`), and a tier list that is the catalog's own words
+ * lowered to the canonical ones.
+ */
+function revanaNarrowingTests(): void {
+  // veo-3.1: `durations: [4, 6, 8]`, tiers 720p / 1080p / 4K, two shapes.
+  video({ model: "revana/veo-3.1", prompt: "hi", duration: 8, resolution: "4k", aspectRatio: "9:16" });
+  // @ts-expect-error — 7 is not one of veo-3.1's listed lengths.
+  video({ model: "revana/veo-3.1", prompt: "hi", duration: 7 });
+  // @ts-expect-error — veo-3.1 lists no 480p.
+  video({ model: "revana/veo-3.1", prompt: "hi", resolution: "480p" });
+  // @ts-expect-error — nor a 1:1.
+  video({ model: "revana/veo-3.1", prompt: "hi", aspectRatio: "1:1" });
+
+  // kling-4.0: a RANGE, so any number compiles and `revana.video` holds the ends.
+  video({ model: "revana/kling-4.0", prompt: "hi", duration: 17 });
+
+  // kling-2.1-master lists no resolutions; a motion-control model sets its own length.
+  // @ts-expect-error — "takes no input.resolution".
+  video({ model: "revana/kling-2.1-master", prompt: "hi", resolution: "720p" });
+  video({
+    model: "revana/kling-3.0-motion-control",
+    video: { url: "https://example.com/clip.mp4" },
+    // @ts-expect-error — "sets its own length; leave input.duration out".
+    duration: 5,
+  });
+
+  // The extras: `audio` where the row has the toggle, Nemesis's own dials on Nemesis.
+  video({ model: "revana/veo-3.1", prompt: "hi", audio: true });
+  // @ts-expect-error — hailuo-02's row offers no sound toggle.
+  video({ model: "revana/hailuo-02", prompt: "hi", audio: true });
+  video({
+    model: "revana/nemesis",
+    video: { url: "https://example.com/clip.mp4" },
+    image: [{ url: "https://example.com/face.png", role: "reference" }],
+    roles: ["product"],
+    guide: "scene",
+    sound: "original",
+  });
+  video({
+    model: "revana/nemesis",
+    video: { url: "https://example.com/clip.mp4" },
+    // @ts-expect-error — `NemesisInput` has no duration: the result keeps the clip's length.
+    duration: 5,
+  });
+  // @ts-expect-error — "hero" is not one of the catalog's roles.
+  video({ model: "revana/nemesis", video: { url: "https://example.com/clip.mp4" }, roles: ["hero"] });
+
+  // The lip-sync and avatar models are `unmodel/lipsync`'s and `unmodel/avatar`'s:
+  // absent from this union, and still callable as an id the snapshot lacks.
+  // @ts-expect-error — not a video ref.
+  expectAssignable<UnifiedRef<typeof revanaVideo>>("revana/bytedance-lipsync");
+  video({ model: "revana/bytedance-lipsync", prompt: "hi", duration: 3 });
+
+  // The result is `revana.video`'s Validated: `{ model, input }`, one SDK target.
+  const result = video({ model: "revana/veo-3.1", prompt: "hi" });
+  expectAssignable<string>(result.model);
+  expectAssignable<{ prompt?: string }>(result.input);
+  expectTrue<IsNever<KeyIn<typeof result, "prompt">>>();
+  result.toSdk("revana");
+  // @ts-expect-error — Revana ships no SDK but its own body.
+  result.toSdk("openai");
+
+  // `providerOptions.revana` is the adapter's wire body, both levels of it.
+  video({
+    model: "revana/veo-3.1",
+    prompt: "hi",
+    providerOptions: { revana: { max_cost_usd: 4, input: { quality: "high" } } },
+  });
+  video({
+    model: "revana/veo-3.1",
+    prompt: "hi",
+    // @ts-expect-error — `max_cost_usd` is a number.
+    providerOptions: { revana: { max_cost_usd: "4" } },
+  });
+}
+
 export {
+  revanaNarrowingTests,
   crossProviderBranchTypeTests,
   refUnionTests,
   routeInputTests,

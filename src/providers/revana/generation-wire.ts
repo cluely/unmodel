@@ -51,6 +51,7 @@ import type { REVANA_MUSIC_SHAPES } from "./gen/shapes-music.gen";
 import type { REVANA_TTS_SHAPES } from "./gen/shapes-tts.gen";
 import type { REVANA_IMAGE_SHAPES } from "./gen/shapes-image.gen";
 import type { REVANA_VIDEO_SHAPES } from "./gen/shapes-video.gen";
+import type { QueueDuration, QueueModelInput, QueueNemesisInput, QueueSeedanceInput } from "./queue-wire";
 import type { RevanaDurationRange } from "./shape-types";
 
 // ---------------------------------------------------------------------------
@@ -191,17 +192,24 @@ interface VisualInput<S> {
   seed?: number;
 }
 
-/** `ModelInput` on a `kind: "video"` model. */
-export interface VideoModelInput<S> extends VisualInput<S>, NoAudioModelFields {
+/**
+ * `ModelInput` on a `kind: "video"` model.
+ *
+ * `Queue` is `true` for the body of the queue route, which reads `duration`
+ * its own way (`./queue-wire.ts`). It is a parameter here, rather than an
+ * `Omit` over there, because re-mapping a per-model interface costs more than
+ * twice the instantiations of the call it types (`test/type-bench`).
+ */
+export interface VideoModelInput<S, Queue extends boolean = false> extends VisualInput<S>, NoAudioModelFields {
   /** "The last frame, on models with first and last frame. Needs image_url." */
   end_image_url?: MediaOf<S, "end_image_url", RevanaMediaUrl>;
   /** "A sound to drive the video (talking avatars, lip sync)." */
   audio_url?: MediaOf<S, "audio_url", RevanaMediaUrl>;
   /**
    * "Video length in seconds: one of the model's durations. Per-second models
-   * are billed for it."
+   * are billed for it." On the queue route also fal's strings, `"8"` and `"8s"`.
    */
-  duration?: DurationOf<S>;
+  duration?: Queue extends true ? QueueDuration<DurationOf<S>> : DurationOf<S>;
   /** "Generate sound, on models that offer it. Changes the price on some models." */
   audio?: AudioOf<S>;
   /** {@link ModelInput.generate_audio} — `audio` under its second name. */
@@ -216,13 +224,14 @@ export interface VideoModelInput<S> extends VisualInput<S>, NoAudioModelFields {
   n?: 1;
 }
 
-/** `ModelInput` on a `kind: "image"` model. */
-export interface ImageModelInput<S> extends VisualInput<S>, NoAudioModelFields {
+/** `ModelInput` on a `kind: "image"` model. `Queue` as on {@link VideoModelInput}. */
+export interface ImageModelInput<S, Queue extends boolean = false> extends VisualInput<S>, NoAudioModelFields {
   /**
    * "Picture models only: how many pictures to make, up to the model's
    * options.max_images … The price and the hold are per picture." Default 1.
+   * The queue route takes it only as 1.
    */
-  num_images?: number;
+  num_images?: Queue extends true ? 1 : number;
   /** "Also accepted as n." Send one of the two: both is a 422. */
   n?: number;
   /** Video models only. */
@@ -464,25 +473,30 @@ export interface NemesisInput {
 // The request
 // ---------------------------------------------------------------------------
 
-type ShapeInput<S> = S extends { kind: "video" }
-  ? VideoModelInput<S>
+type ShapeInput<S, Queue extends boolean> = S extends { kind: "video" }
+  ? VideoModelInput<S, Queue>
   : S extends { kind: "image" }
-    ? ImageModelInput<S>
+    ? ImageModelInput<S, Queue>
     : S extends { tasks: readonly ["text_to_speech"] }
       ? SpeechModelInput<S>
       : MusicModelInput;
 
 /**
  * The `input` a model id takes: the `oneOf` in the OpenAPI document, resolved
- * the way the server resolves it — by `model`.
+ * the way the server resolves it — by `model`. With `Queue`, the same input as
+ * the queue route's body carries it (`QueueInput` in `./queue-wire.ts`).
  */
-export type InputFor<M extends string> = M extends "seedance-2.5"
-  ? SeedanceInput
+export type InputFor<M extends string, Queue extends boolean = false> = M extends "seedance-2.5"
+  ? Queue extends true
+    ? QueueSeedanceInput
+    : SeedanceInput
   : M extends "nemesis" | "nemesis-lite"
-    ? NemesisInput
+    ? Queue extends true
+      ? QueueNemesisInput
+      : NemesisInput
     : M extends RevanaMediaModelId
-      ? ShapeInput<Shapes[M]>
-      : ModelInput & Record<string, unknown>;
+      ? ShapeInput<Shapes[M], Queue>
+      : (Queue extends true ? QueueModelInput : ModelInput) & Record<string, unknown>;
 
 /**
  * `GenerationRequest` — the body of `POST /v1/generations` and of

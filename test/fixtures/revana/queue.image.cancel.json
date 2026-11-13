@@ -1,0 +1,11 @@
+{
+  "status": 405,
+  "body": {
+    "detail": "Cancellation is not supported; accepted jobs continue and may be billed.",
+    "error": {
+      "code": "cancellation_not_supported",
+      "message": "Cancellation is not supported; accepted jobs continue and may be billed.",
+      "request_id": "req_b6d4411e0d2be38ee532"
+    }
+  }
+}

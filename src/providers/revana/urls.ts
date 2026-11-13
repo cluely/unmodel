@@ -33,12 +33,16 @@
  * `failed`", then read `output.urls` or follow {@link generationContentUrl}.
  * Polling is transport and stays out of unmodel's scope.
  *
- * ## Not here: the per-model queue
+ * ## The second route: one path per model
  *
- * `POST /v1/queue/revana/{model_id}` is a second, fal-shaped spelling of the
- * same jobs ("Existing `/v1/generations` … continue to work unchanged",
- * https://revana.si/queue.md). unmodel addresses the native route only; the
- * decline is recorded in `data/revana/curation.json`.
+ * `POST /v1/queue/revana/{model_id}` runs the same jobs through fal's HTTP
+ * convention (https://revana.si/queue.md): the model is the path, the body is
+ * the input with no `{ model, input }` wrapper, and an optional
+ * `?fal_webhook=` has Revana POST the outcome instead of being polled for it.
+ * {@link queueUrl} builds it; the `revana.*Queue` addresses (`./queue.ts`)
+ * validate what goes to it. A queue `request_id` is a generation id, so
+ * {@link generationUrl} answers the same job — with its `cost_usd`, which the
+ * queue's own documents never state.
  */
 
 /** `https://api.revana.si/v1` — every Revana route hangs off this. */
@@ -92,3 +96,41 @@ export function generationContentUrl(id: string, index = 1): string {
   const base = `${generationUrl(id)}/content`;
   return index <= 1 ? base : `${base}/${index}`;
 }
+
+/** `https://api.revana.si/v1/queue` — what a fal client's `https://queue.fal.run` is rewritten to. */
+export const QUEUE_BASE_URL = `${REVANA_BASE_URL}/queue`;
+
+/**
+ * `POST /v1/queue/revana/{model_id}` — submit; answers the queue envelope.
+ *
+ * `falWebhook` becomes the `fal_webhook` query parameter, the only place the
+ * route reads it (in the body it is an unrecognised key). "Optional
+ * `fal_webhook=<url>` queues a POST after success or final failure."
+ */
+export function queueUrl(modelId: string, falWebhook?: string): string {
+  const base = `${QUEUE_BASE_URL}/revana/${encodeURIComponent(modelId)}`;
+  return falWebhook === undefined ? base : `${base}?fal_webhook=${encodeURIComponent(falWebhook)}`;
+}
+
+/**
+ * `GET …/requests/{request_id}/status` — poll this. Prefer the `status_url`
+ * the submit answered; this is for a caller who kept only the id.
+ */
+export function queueStatusUrl(modelId: string, requestId: string): string {
+  return `${queueResultUrl(modelId, requestId)}/status`;
+}
+
+/**
+ * `GET …/requests/{request_id}` — the result document once `status` is
+ * `COMPLETED`: `409 not_ready` before, `422` for a request that failed.
+ */
+export function queueResultUrl(modelId: string, requestId: string): string {
+  return `${queueUrl(modelId)}/requests/${encodeURIComponent(requestId)}`;
+}
+
+/**
+ * `GET /v1/webhooks/secret` — the account's signing secret, for verifying a
+ * delivery's `Revana-Signature` ("Read the secret once …, your API key as
+ * the bearer token").
+ */
+export const WEBHOOKS_SECRET_URL = `${REVANA_BASE_URL}/webhooks/secret`;

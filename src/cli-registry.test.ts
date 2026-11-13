@@ -173,11 +173,15 @@ const EXPECTED_IDS: readonly string[] = [
   "revana.chat",
   "revana.image",
   "revana.imageEdit",
+  "revana.imageQueue",
   "revana.lipsync",
   "revana.music",
+  "revana.musicQueue",
   "revana.tts",
+  "revana.ttsQueue",
   "revana.upscale",
   "revana.video",
+  "revana.videoQueue",
   "reve.image",
   "reve.imageEdit",
   "reve.imageEditRemix",
@@ -294,6 +298,11 @@ const IMAGE_GENERATION_IDS: readonly string[] = [
   // `revana.imageEdit` / `revana.upscale` are narrower VIEWS of it over the
   // same POST path (docs/decisions.md §4), not qualified siblings.
   "revana.image",
+  // The qualified sibling Revana does have names a second ROUTE, not a second
+  // task: `POST /v1/queue/revana/{model_id}`, the same jobs through fal's
+  // convention (model in the path, the input as the whole body, a completion
+  // webhook). Qualified by the route family that serves it, as `imageV4` is.
+  "revana.imageQueue",
   "reve.image",
   "reve.imageV2",
   "runway.image",
@@ -403,6 +412,8 @@ const VIDEO_IDS: readonly string[] = [
   // a request image-to-video. A `revana.videoFromImage` would name neither a
   // second route nor a second model.
   "revana.video",
+  // `revana.videoQueue` does name a second route — the per-model queue path.
+  "revana.videoQueue",
   "runway.video",
   "runway.videoFromImage",
   "runway.videoFromVideo",
@@ -726,6 +737,7 @@ const MUSIC_IDS: readonly string[] = [
   "mureka.music",
   "mureka.musicFromPrompt",
   "revana.music",
+  "revana.musicQueue",
   "stability.music",
   "stability.musicFromAudio",
   "stability.musicInpaint",
@@ -1031,6 +1043,7 @@ const TTS_IDS: readonly string[] = [
   "resemble.tts",
   "resemble.ttsStream",
   "revana.tts",
+  "revana.ttsQueue",
   "rime.tts",
   "smallest-ai.tts",
   "speechify.tts",

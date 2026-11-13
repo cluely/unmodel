@@ -27,10 +27,25 @@ const WIDE_ADDRESSES = {
   "revana.music": REVANA_MUSIC_MODELS,
 } as const satisfies Record<string, readonly string[]>;
 
-/** Every wide address except `own`, with the ids it serves. */
-export function elsewhere(own: keyof typeof WIDE_ADDRESSES): Record<string, readonly string[]> {
+/**
+ * The same partition on the queue route. A foreign id at `revana.videoQueue`
+ * is pointed at the queue address that types it, not at the generation one:
+ * the two routes take different bodies.
+ */
+const QUEUE_ADDRESSES = {
+  "revana.videoQueue": REVANA_VIDEO_MODELS,
+  "revana.imageQueue": REVANA_IMAGE_MODELS,
+  "revana.ttsQueue": REVANA_TTS_MODELS,
+  "revana.musicQueue": REVANA_MUSIC_MODELS,
+} as const satisfies Record<string, readonly string[]>;
+
+/** Every wide address on `own`'s route except `own`, with the ids it serves. */
+export function elsewhere(
+  own: keyof typeof WIDE_ADDRESSES | keyof typeof QUEUE_ADDRESSES,
+): Record<string, readonly string[]> {
+  const route = own in QUEUE_ADDRESSES ? QUEUE_ADDRESSES : WIDE_ADDRESSES;
   const others: Record<string, readonly string[]> = {};
-  for (const [address, ids] of Object.entries(WIDE_ADDRESSES)) {
+  for (const [address, ids] of Object.entries(route)) {
     if (address !== own) others[address] = ids;
   }
   return others;

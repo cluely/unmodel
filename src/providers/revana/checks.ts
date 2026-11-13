@@ -8,6 +8,12 @@
  * differs per address is the table it is handed: its own rows,
  * `REVANA_<ADDRESS>_SHAPES`.
  *
+ * The four `*Queue` addresses share it too. Their route takes the input as the
+ * whole body, at a different URL, and admits it by these same rules — it
+ * answers the generation route's own sentences. They pass `flat`, which
+ * changes where a finding points and adds the two fields that route reads its
+ * own way (`checkQueueLeniencies`); nothing else forks.
+ *
  * # Where each rule comes from
  *
  * Every rule here is one the API states itself. "Unknown fields, and values
@@ -35,11 +41,13 @@
  */
 
 import type { PipelineContext } from "../../core/pipeline";
-import { admittedInput } from "./admitted";
+import { admittedInput, admittedQueueInput, QUEUE_DURATION } from "./admitted";
 import type { RevanaMediaField, RevanaModelShape, RevanaSpeechField } from "./shape-types";
 
 /** The generation API reference; `meta.source` on every finding below. */
 export const REVANA_API_SOURCE = "https://revana.si/openapi.json";
+/** The queue route's own page; `meta.source` on the findings only it produces. */
+export const REVANA_QUEUE_SOURCE = "https://revana.si/queue.md";
 /** The catalog the per-model values come from. */
 export const REVANA_MODELS_SOURCE = "https://api.revana.si/v1/models";
 
@@ -121,6 +129,9 @@ const NEMESIS_FIELDS: readonly string[] = [
   "task",
 ];
 
+/** Every key any of the three input schemas has — what `./generation.ts` declares. */
+const WIRE_FIELDS: readonly string[] = [...MODEL_INPUT_FIELDS, ...SEEDANCE_FIELDS, ...NEMESIS_FIELDS];
+
 /** `SeedanceInput.video_urls` / `.audio_urls`: `maxItems: 10`. */
 const SEEDANCE_MAX_REFERENCE_CLIPS = 10;
 /** `NemesisInput.prompt`: `maxLength: 5000`. */
@@ -152,11 +163,21 @@ export interface RevanaCheckSpec {
   readonly view?: RevanaView;
   /** Every other media address's ids, by address — for the signpost. */
   readonly elsewhere: Readonly<Record<string, readonly string[]>>;
+  /**
+   * Set by the queue addresses, whose body IS the input
+   * (`POST /v1/queue/revana/{model_id}`, "without a `{model, input}`
+   * wrapper"). The rules are the same ones — the queue answers the generation
+   * route's own sentences — so the only differences are the two things that
+   * route reads leniently ({@link admittedQueueInput}) and where a finding points.
+   */
+  readonly flat?: boolean;
 }
 
 interface Scope {
   readonly model: string;
   readonly ctx: PipelineContext;
+  /** The body IS the input — see {@link RevanaCheckSpec.flat}. */
+  readonly flat: boolean;
   /** Fields the caller sent under their second name: `{ audio: "generate_audio" }`. */
   readonly spelled: Readonly<Record<string, string>>;
 }
@@ -166,9 +187,12 @@ type Finding = Parameters<PipelineContext["report"]>[0];
 /**
  * Reports one finding in the caller's own words.
  *
- * Every rule below is written once, about the field's first name. A field
- * sent under its second name (`generate_audio`) is checked as the first and
- * reported as the one the caller typed, here rather than in every message.
+ * Every rule below is written once, about `input.<field>` under the field's
+ * first name — the generation body, and the API's own phrasing on both routes.
+ * Two things can make that not what the caller typed, and both are put right
+ * here rather than in seventy messages: a field sent under its second name
+ * (`generate_audio`), and the queue route, where the fields sit at the top of
+ * the body.
  */
 function emit(scope: Scope, finding: Finding): void {
   let path = finding.path ?? [];
@@ -176,6 +200,10 @@ function emit(scope: Scope, finding: Finding): void {
   for (const [field, sent] of Object.entries(scope.spelled)) {
     if (path[0] === "input" && path[1] === field) path = ["input", sent, ...path.slice(2)];
     message = message.replaceAll(`\`input.${field}\``, `\`input.${sent}\``);
+  }
+  if (scope.flat) {
+    if (path[0] === "input") path = path.slice(1);
+    message = message.replaceAll("`input.", "`");
   }
   scope.ctx.report({ ...finding, path, message });
 }
@@ -224,6 +252,10 @@ function quoted(values: readonly (string | number)[]): string {
 function reportUnknownKeys(scope: Scope, input: Input, known: readonly string[]): void {
   for (const key of Object.keys(input)) {
     if (known.includes(key)) continue;
+    // On the queue route the input IS the top of the body, where the pipeline
+    // already reports a key no input schema has. Only a key that belongs to
+    // another schema (`roles` on a `ModelInput` model) is left to say here.
+    if (scope.flat && !WIRE_FIELDS.includes(key)) continue;
     emit(scope, {
       code: "unknown_param",
       path: ["input", key],
@@ -945,7 +977,9 @@ function signpost(scope: Scope, endpoint: string, elsewhere: RevanaCheckSpec["el
       severity: "warning",
       path: ["model"],
       model: scope.model,
-      message: `"${scope.model}" is a Revana model that \`${address}\` validates; ${endpoint} checked only the body's shape. The request itself is unaffected — every media model posts to the same URL.`,
+      message:
+        `"${scope.model}" is a Revana model that \`${address}\` validates; ${endpoint} checked only the body's shape. ` +
+        `The request itself is unaffected — ${scope.flat ? "the model id is the path, whichever address builds it" : "every media model posts to the same URL"}.`,
       meta: { source: REVANA_MODELS_SOURCE },
     });
     return;
@@ -964,10 +998,12 @@ export function runGenerationChecks(
 ): void {
   const model = params["model"] as string;
   const sent = params["input"] as Input;
-  const input = admittedInput(sent);
+  const flat = spec.flat === true;
+  const input = flat ? admittedQueueInput(sent) : admittedInput(sent);
   const scope: Scope = {
     model,
     ctx,
+    flat,
     spelled: has(sent, "generate_audio") && !has(sent, "audio") ? { audio: "generate_audio" } : {},
   };
 
@@ -983,10 +1019,46 @@ export function runGenerationChecks(
       source: REVANA_API_SOURCE,
     });
   }
+  if (flat) checkQueueLeniencies(scope, sent);
   checkTask(scope, params, input, shape.kind);
   if (model === SEEDANCE_25) checkSeedance(scope, input, shape);
   else if (NEMESIS_MODELS.includes(model)) checkNemesis(scope, input, shape);
   else if (shape.kind !== "audio") checkVisual(scope, input, shape);
   else if (shape.tasks.includes("text_to_speech")) checkSpeech(scope, input, shape);
   else checkMusic(scope, input, shape);
+}
+
+/**
+ * The two fields the queue route reads its own way, before the shared rules
+ * see them (2026-11-12; `test/fixtures/revana/queue-oracle.json`).
+ *
+ * `num_images` must be the number 1 — "Only num_images: 1 is supported; submit
+ * separate requests for more images" — on every model, a picture model with a
+ * `max_images` of four included, and is then dropped: beside an `n`, or on
+ * `seedance-2.5`, whose schema has no such key, the request goes through.
+ *
+ * `duration` may be a string of digits with an optional `s`, fal's spelling
+ * ("String durations such as \"5\" and \"8s\" are accepted"). It is read as that
+ * many seconds and then held to the model's own list.
+ */
+function checkQueueLeniencies(scope: Scope, sent: Input): void {
+  if (has(sent, "num_images") && sent["num_images"] !== 1) {
+    fail(
+      scope,
+      "unsupported_param",
+      "num_images",
+      `The queue route takes \`input.num_images\` only as 1 — "Only num_images: 1 is supported; submit separate requests for more images." For several pictures in one request use \`${scope.ctx.endpoint.replace(/Queue$/, "")}\`.`,
+      { value: sent["num_images"], source: REVANA_QUEUE_SOURCE },
+    );
+  }
+  const duration = sent["duration"];
+  if (typeof duration === "string" && !QUEUE_DURATION.test(duration)) {
+    fail(
+      scope,
+      "invalid_shape",
+      "duration",
+      `\`input.duration\` must be whole seconds — a number, or a string such as "8" or "8s"; got ${JSON.stringify(duration)}.`,
+      { value: duration, source: REVANA_QUEUE_SOURCE },
+    );
+  }
 }

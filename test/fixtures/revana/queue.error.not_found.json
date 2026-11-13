@@ -1,0 +1,11 @@
+{
+  "status": 404,
+  "body": {
+    "detail": "No request at this endpoint.",
+    "error": {
+      "code": "not_found",
+      "message": "No request at this endpoint.",
+      "request_id": "req_4cdb1f21a0c0eb8a2680"
+    }
+  }
+}

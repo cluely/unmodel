@@ -25,7 +25,9 @@
  * - the **uniform category aliases** (`VideoBody`, `ImageBody`, `TtsBody`, …) —
  *   one per endpoint address, named after the word you already type at
  *   `unmodel/revana` and on the CLI. Eight of them are the same wire type over
- *   a different id union, because eight addresses share one route.
+ *   a different id union, because eight addresses share one route; the four
+ *   `*QueueBody` are the second route's — the input fields with no wrapper,
+ *   and no `model`, which that route reads from the URL.
  *
  * Runtime values — the validators, the URL helpers, the catalog, the price
  * tables — stay on `unmodel/revana`.
@@ -40,6 +42,10 @@
  * - `revana.upscale` → `UpscaleBody`
  * - `revana.tts` → `TtsBody`
  * - `revana.music` → `MusicBody`
+ * - `revana.videoQueue` → `VideoQueueBody`
+ * - `revana.imageQueue` → `ImageQueueBody`
+ * - `revana.ttsQueue` → `TtsQueueBody`
+ * - `revana.musicQueue` → `MusicQueueBody`
  * - `revana.chat` → `ChatBody`
  */
 
@@ -56,6 +62,7 @@ import type {
   RevanaVideoModelId,
 } from "./gen/ids.gen";
 import type { GenerationRequest, RevanaMediaModelId } from "./generation-wire";
+import type { QueueBody } from "./queue-wire";
 
 export type {
   Generation,
@@ -83,6 +90,26 @@ export type {
 } from "./generation-wire";
 
 export type { GenerationValidator, RequestFor } from "./generation";
+
+export type {
+  QueueAudioResult,
+  QueueBody,
+  QueueDuration,
+  QueueEnvelope,
+  QueueErrorBody,
+  QueueExtensions,
+  QueueFile,
+  QueueImageResult,
+  QueueInput,
+  QueueRequest,
+  QueueResult,
+  QueueStatus,
+  QueueVideoResult,
+  QueueWebhookDelivery,
+  WebhookSecret,
+} from "./queue-wire";
+
+export type { QueueBodyFor, QueueRequestFor, QueueValidator } from "./queue";
 
 export type {
   RevanaAvatarModelId,
@@ -128,6 +155,13 @@ export type ImageEditBody<M extends RevanaImageEditModelId = RevanaImageEditMode
 export type UpscaleBody<M extends RevanaUpscaleModelId = RevanaUpscaleModelId> = GenerationRequest<M>;
 export type TtsBody<M extends RevanaTtsModelId = RevanaTtsModelId> = GenerationRequest<M>;
 export type MusicBody<M extends RevanaMusicModelId = RevanaMusicModelId> = GenerationRequest<M>;
+// The queue route's JSON body. No `model` and no `fal_webhook`: that route
+// reads both from the URL, so `QueueRequest` — what the address takes — has
+// them and the body does not.
+export type VideoQueueBody<M extends RevanaVideoModelId = RevanaVideoModelId> = QueueBody<M>;
+export type ImageQueueBody<M extends RevanaImageModelId = RevanaImageModelId> = QueueBody<M>;
+export type TtsQueueBody<M extends RevanaTtsModelId = RevanaTtsModelId> = QueueBody<M>;
+export type MusicQueueBody<M extends RevanaMusicModelId = RevanaMusicModelId> = QueueBody<M>;
 export type ChatBody = ChatCompletionsBodyBase<RevanaChatModelId>;
 
 // The OpenAI-compatible chat dialect `revana.chat` speaks. The wire leaf is the

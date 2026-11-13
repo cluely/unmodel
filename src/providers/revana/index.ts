@@ -3,7 +3,7 @@
  * prepaid balance over image, video, speech, music and language models from
  * two dozen makers, each served by the cheapest of several routes.
  *
- * Two wires, nine addresses:
+ * Three routes, thirteen addresses:
  *
  * | address | route | models |
  * |---|---|---|
@@ -15,6 +15,10 @@
  * | `revana.upscale` | 〃 | the upscalers (a view) |
  * | `revana.tts` | 〃 | the speech models |
  * | `revana.music` | 〃 | the music models |
+ * | `revana.videoQueue` | `POST /v1/queue/revana/{model_id}` | every `kind: "video"` model |
+ * | `revana.imageQueue` | 〃 | every `kind: "image"` model |
+ * | `revana.ttsQueue` | 〃 | the speech models |
+ * | `revana.musicQueue` | 〃 | the music models |
  * | `revana.chat` | `POST /v1/chat/completions` | every `kind: "text"` model |
  *
  * The eight media addresses post ONE body — `{ model, input }` — to ONE url,
@@ -23,6 +27,11 @@
  * wire does (`docs/decisions.md` §2 and §4); they share one check battery, and
  * the four marked "a view" refuse nothing their wide neighbour accepts except
  * what is not theirs.
+ *
+ * The four `*Queue` addresses reach the same media models by Revana's second
+ * route, which follows fal's HTTP convention: the model is the URL path, the
+ * body is the input with no wrapper, and `fal_webhook` has Revana POST the
+ * outcome instead of being polled for it. Same battery, same tables.
  *
  * Revana resells weights unmodel already reaches natively — `veo-3.1` is also
  * `google.video`, `seedance-2.5` also `bytedance.video`, `elevenlabs-v3` also
@@ -42,6 +51,10 @@ export { imageEdit } from "./image-edit";
 export { upscale } from "./upscale";
 export { tts } from "./tts";
 export { music } from "./music";
+export { videoQueue } from "./video-queue";
+export { imageQueue } from "./image-queue";
+export { ttsQueue } from "./tts-queue";
+export { musicQueue } from "./music-queue";
 export {
   chat,
   checkChat,
@@ -51,6 +64,26 @@ export {
 } from "./chat";
 
 export type { GenerationValidator, RequestFor } from "./generation";
+export { REVANA_SIGNATURE_HEADER, REVANA_WEBHOOK_ID_HEADER } from "./queue";
+export type { QueueBodyFor, QueueRequestFor, QueueValidator } from "./queue";
+
+export type {
+  QueueAudioResult,
+  QueueBody,
+  QueueDuration,
+  QueueEnvelope,
+  QueueErrorBody,
+  QueueExtensions,
+  QueueFile,
+  QueueImageResult,
+  QueueInput,
+  QueueRequest,
+  QueueResult,
+  QueueStatus,
+  QueueVideoResult,
+  QueueWebhookDelivery,
+  WebhookSecret,
+} from "./queue-wire";
 
 export type {
   Generation,
@@ -82,13 +115,18 @@ export {
   GENERATIONS_QUOTE_URL,
   GENERATIONS_URL,
   MODELS_URL,
+  QUEUE_BASE_URL,
   REVANA_BASE_URL,
   UPLOADS_URL,
+  WEBHOOKS_SECRET_URL,
   generationContentUrl,
   generationUrl,
+  queueResultUrl,
+  queueStatusUrl,
+  queueUrl,
 } from "./urls";
 
-export { REVANA_API_SOURCE, REVANA_MODELS_SOURCE } from "./checks";
+export { REVANA_API_SOURCE, REVANA_MODELS_SOURCE, REVANA_QUEUE_SOURCE } from "./checks";
 
 export { REVANA_PRICING_CAVEAT, REVANA_PRICING_SOURCE, revanaCostUSD } from "./pricing";
 
@@ -139,7 +177,9 @@ export type {
 // polling, which is transport. The document it eventually answers is typed
 // (`Generation`), and it carries its own verdict and its own exact charge
 // (`status`, `error.retryable`, `cost_usd`), so there is nothing for a checker
-// to compute that the wire does not already say.
+// to compute that the wire does not already say. The same holds for the queue
+// route, whose result states no cost at all: its `request_id` is a generation
+// id, and `generationUrl(request_id)` is where the charge is read.
 
 export { models, provider } from "./models";
 export type { RevanaModelId } from "./models";

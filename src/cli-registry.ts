@@ -76,8 +76,13 @@ export const REGISTRY = {
   // ids below are therefore category verbs over ONE route — `image`, `video`,
   // `tts` and `music` between them serve every model, and `imageEdit`,
   // `upscale`, `lipsync` and `avatar` are narrower views of the first two
-  // (docs/decisions.md §4). None is qualified, because there is no second path.
+  // (docs/decisions.md §4). None of those is qualified, because none names a
+  // second path. The four `*Queue` ids do: `POST /v1/queue/revana/{model_id}`
+  // runs the same jobs through fal's convention — model in the path, the input
+  // as the whole body, a completion webhook — so each wide verb has a sibling
+  // qualified by the route family that serves it (§2).
   "revana.image": () => import("./providers/revana").then((m) => asCli(m.image)),
+  "revana.imageQueue": () => import("./providers/revana").then((m) => asCli(m.imageQueue)),
   "vidu.imageFromReference": () =>
     import("./providers/vidu").then((m) => asCli(m.imageFromReference)),
 
@@ -137,6 +142,7 @@ export const REGISTRY = {
   // there the model id names the task, here not even that — `veo-3.1` is one
   // id whose `input.image_url` makes it image-to-video.
   "revana.video": () => import("./providers/revana").then((m) => asCli(m.video)),
+  "revana.videoQueue": () => import("./providers/revana").then((m) => asCli(m.videoQueue)),
   "kling.video": () => import("./providers/kling").then((m) => asCli(m.video)),
   "kling.videoFromImage": () => import("./providers/kling").then((m) => asCli(m.videoFromImage)),
   // EXPERIMENTAL path-addressed family — uncorroborated routes, see
@@ -249,6 +255,7 @@ export const REGISTRY = {
   // (`musicInpaint`), and both are multipart-only.
   "elevenlabs.music": () => import("./providers/elevenlabs").then((m) => asCli(m.music)),
   "revana.music": () => import("./providers/revana").then((m) => asCli(m.music)),
+  "revana.musicQueue": () => import("./providers/revana").then((m) => asCli(m.musicQueue)),
   "fal.music": () => import("./providers/fal").then((m) => asCli(m.music)),
   "google.music": () => import("./providers/google").then((m) => asCli(m.music)),
   "mureka.music": () => import("./providers/mureka").then((m) => asCli(m.music)),
@@ -279,6 +286,7 @@ export const REGISTRY = {
   "openai.tts": () => import("./providers/openai").then((m) => asCli(m.tts)),
   "elevenlabs.tts": () => import("./providers/elevenlabs").then((m) => asCli(m.tts)),
   "revana.tts": () => import("./providers/revana").then((m) => asCli(m.tts)),
+  "revana.ttsQueue": () => import("./providers/revana").then((m) => asCli(m.ttsQueue)),
   "alibaba.tts": () => import("./providers/alibaba").then((m) => asCli(m.tts)),
   "cartesia.tts": () => import("./providers/cartesia").then((m) => asCli(m.tts)),
   // fal is an aggregator, so `fal.tts` is twenty-three vendors' speech routes

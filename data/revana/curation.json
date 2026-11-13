@@ -33,8 +33,8 @@
   },
   "excluded": {
     "routes": {
-      "POST /v1/queue/revana/{model_id}": {
-        "reason": "A second, fal-shaped spelling of the jobs POST /v1/generations already runs (\"Existing /v1/generations and /v1/videos continue to work unchanged\"), with fal aliases for three models only and no cancel, SSE or fal.run(). unmodel addresses the native route; a caller who wants fal's body shape has unmodel/fal.",
+      "POST /v1/queue/fal-ai/{alias}": {
+        "reason": "Three fal endpoint paths (fal-ai/nano-banana-2, fal-ai/nano-banana-pro, fal-ai/veo3.1/fast) answer as aliases of nano-banana-2, nano-banana-pro and veo-3.1-fast, so that a fal client needs only a base-URL rewrite. They are a migration aid, not a surface: \"Only text-generation aliases listed above are provided; use canonical revana/{model_id} endpoints and catalog input fields for editing or other models.\" The canonical paths serve the same three models with their full input, and revana.imageQueue / revana.videoQueue address those.",
         "source": "https://revana.si/queue.md",
         "date": "2026-11-12"
       },

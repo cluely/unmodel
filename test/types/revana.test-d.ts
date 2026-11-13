@@ -14,16 +14,28 @@ import {
   chat,
   image,
   imageEdit,
+  imageQueue,
   lipsync,
   music,
+  musicQueue,
   tts,
+  ttsQueue,
   upscale,
   video,
+  videoQueue,
   type GenerationRequest,
   type InputFor,
   type RevanaMediaUrl,
 } from "../../src/providers/revana";
-import type { ImageBody, TtsBody, VideoBody } from "../../src/providers/revana/types";
+import type {
+  ImageBody,
+  ImageQueueBody,
+  QueueEnvelope,
+  QueueResult,
+  TtsBody,
+  VideoBody,
+  VideoQueueBody,
+} from "../../src/providers/revana/types";
 import { expectAssignable } from "./helpers";
 
 const IMG = "https://example.com/a.png";
@@ -182,6 +194,71 @@ function chatTypeTests(): void {
   expectAssignable<"claude-sonnet-5-5">(c.model);
 }
 
+/**
+ * The queue route: the same per-model narrowing, on a body with no wrapper.
+ */
+function queueTypeTests(): void {
+  const v = videoQueue({
+    model: "veo-3.1",
+    prompt: "a fox",
+    resolution: "1080p",
+    duration: 8,
+    audio: true,
+    max_cost_usd: 4,
+    fal_webhook: "https://your-app.example/revana",
+  });
+  expectAssignable<string>(v.request.url);
+  // What comes back is the BODY: the input fields and the limits.
+  expectAssignable<VideoQueueBody<"veo-3.1">>(v);
+  expectAssignable<VideoQueueBody<"veo-3.1">>(v.toSdk("revana"));
+  // @ts-expect-error — `model` went into the URL; it is not on the body.
+  void v.model.length;
+
+  // fal's spellings: a string duration, from the model's own seconds.
+  videoQueue({ model: "veo-3.1", prompt: "a", duration: "8" });
+  videoQueue({ model: "veo-3.1", prompt: "a", duration: "8s", generate_audio: true });
+  // @ts-expect-error — veo-3.1's durations are 4, 6 and 8, as a string too.
+  videoQueue({ model: "veo-3.1", prompt: "a", duration: "5s" });
+  // @ts-expect-error — the same per-model lists as `revana.video`.
+  videoQueue({ model: "veo-3.1", prompt: "a", resolution: "480p" });
+  // @ts-expect-error — the wrapper is the generation route's.
+  videoQueue({ model: "veo-3.1", input: { prompt: "a" } });
+  // @ts-expect-error — a typo is caught on the flat body too.
+  videoQueue({ model: "veo-3.1", promt: "a" });
+  // @ts-expect-error — a picture model belongs to `revana.imageQueue`.
+  videoQueue({ model: "z-image", prompt: "a" });
+
+  // `num_images` is taken only as 1 here, on a model that makes four elsewhere.
+  imageQueue({ model: "seedream-4.5", prompt: "a", num_images: 1 });
+  // @ts-expect-error — "Only num_images: 1 is supported".
+  imageQueue({ model: "seedream-4.5", prompt: "a", num_images: 4 });
+  image({ model: "seedream-4.5", input: { prompt: "a", num_images: 4 } });
+  // @ts-expect-error — a picture has no duration, as a string or otherwise.
+  imageQueue({ model: "z-image", prompt: "a", duration: "5" });
+
+  // SeedanceInput and NemesisInput keep their own shapes.
+  videoQueue({ model: "seedance-2.5", prompt: "a", duration: "5", video_urls: [VID] });
+  // @ts-expect-error — SeedanceInput requires `prompt`.
+  videoQueue({ model: "seedance-2.5", duration: 5 });
+  videoQueue({ model: "nemesis", video_url: VID, image_urls: [IMG], roles: ["person"] });
+  // @ts-expect-error — NemesisInput has no duration.
+  videoQueue({ model: "nemesis", video_url: VID, image_urls: [IMG], duration: "5" });
+
+  ttsQueue({ model: "elevenlabs-v4", text: "hi", fal_webhook: "https://your-app.example/revana" });
+  // @ts-expect-error — a video field on a speech model.
+  ttsQueue({ model: "elevenlabs-v4", text: "hi", resolution: "720p" });
+  musicQueue({ model: "suno-v6", prompt: "first snow", style: "indie folk" });
+
+  // An id the catalog has no row for takes the loose body.
+  videoQueue({ model: "some-model-from-next-week", prompt: "a", duration: "5s", anything: true });
+
+  expectAssignable<ImageQueueBody<"z-image">>({ prompt: "a", max_cost_usd: 0.05 });
+  const envelope = { status: "IN_QUEUE", request_id: "gen_1", response_url: "u", status_url: "u" } satisfies QueueEnvelope;
+  expectAssignable<QueueEnvelope["status"]>(envelope.status);
+  const result = { images: [{ url: "u" }] } as QueueResult;
+  if ("images" in result) expectAssignable<string | undefined>(result.images[0]?.url);
+}
+
 function typesEntryTypeTests(): void {
   const body = {
     model: "veo-3.1",
@@ -200,4 +277,5 @@ void imageTypeTests;
 void avatarAndLipsyncTypeTests;
 void audioTypeTests;
 void chatTypeTests;
+void queueTypeTests;
 void typesEntryTypeTests;

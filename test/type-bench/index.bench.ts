@@ -25,6 +25,7 @@ import { tts } from "../../src/unified/tts";
 import { image as falImage } from "../../src/providers/fal/image";
 import { video as klingVideo } from "../../src/providers/kling";
 import { video as revanaVideo } from "../../src/providers/revana/video";
+import { videoQueue as revanaVideoQueue } from "../../src/providers/revana/video-queue";
 
 bench("chat: one unified call", () => {
   return chat.safe({
@@ -102,4 +103,25 @@ bench("revana: a video call narrowed by its model's row", () => {
     model: "veo-3.1",
     input: { prompt: "a fox", resolution: "1080p", duration: 8, audio: true },
   });
-}).types([21133, "instantiations"]);
+}).types([22614, "instantiations"]);
+
+/**
+ * The same model on Revana's queue route, where the input is the whole body.
+ *
+ * Pinned beside the bench above because the obvious spelling of the queue's
+ * input — that request's `input` put through an `Omit`, with the two fields
+ * the queue reads its own way intersected back — measured 49,566: a mapped
+ * type over a per-model conditional, paid on every call. So the model
+ * interfaces carry a `Queue` flag instead (`VideoModelInput<S, true>`), which
+ * costs the generation call above about 6% and this one nothing extra. If
+ * this number jumps, someone has re-mapped an input interface.
+ */
+bench("revana: the same call on the queue route", () => {
+  return revanaVideoQueue.safe({
+    model: "veo-3.1",
+    prompt: "a fox",
+    resolution: "1080p",
+    duration: "8s",
+    audio: true,
+  });
+}).types([28293, "instantiations"]);

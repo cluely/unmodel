@@ -14,6 +14,16 @@ is `{ status, body }`: the HTTP status and the JSON body exactly as answered.
 | `chat.completion.json` | `POST /v1/chat/completions` — `gpt-6-luna`, `max_tokens: 5` |
 | `chat.error.unsupported_parameter.json` | the same, with `web_search_options: {}` |
 | `quote-oracle.json` | `POST /v1/generations/quote`, once per body — see below |
+| `queue.image.submitted.json` | `POST /v1/queue/revana/z-image` with an `Idempotency-Key` (`202`) |
+| `queue.image.replayed.json` | the same POST, same key (`200`, the same request) |
+| `queue.image.status.early.json` | `GET {status_url}?logs=1` while it ran |
+| `queue.image.result.not_ready.json` | `GET {response_url}` while it ran (`409`) |
+| `queue.image.cancel.json` | `PUT {cancel_url}` (`405`) |
+| `queue.image.status.completed.json` | `GET {status_url}`, finished |
+| `queue.image.result.json` | `GET {response_url}`, finished |
+| `queue.image.content.json` | `GET` the result's file URL, not followed (`302`; `location` cut to its origin) |
+| `queue.error.not_found.json` | `GET` the status of a request id that does not exist |
+| `queue-oracle.json` | `POST /v1/queue/revana/{model_id}`, once per body — see below |
 
 ## `quote-oracle.json`
 
@@ -39,3 +49,18 @@ rule — of a run that asked the same questions of all of them
 A row here goes stale when Revana changes the model it is about. When a
 catalog refresh fails this test, re-ask the quote endpoint for that row; do not
 edit the expectation to match the code.
+
+## `queue-oracle.json`
+
+The queue route has no quote endpoint, so each body was submitted for real with
+`max_cost_usd: 0.00001` beside it. The route validates first and prices
+second: a body it accepts then answers `422 max_cost_exceeded` ("No route can
+run this generation within max_cost_usd"), and nothing is created or charged.
+So here `passes` is that answer or a media-download failure, and every other
+field means what it does above. `input` is the body without the cap.
+
+Eighty-five bodies over nine models: a sample of ordinary ones, to show the
+route answers the generation route's own sentences, and the cases where the
+two routes part — `num_images`, and a string `duration`. The same bodies are in
+`quote-oracle.json`, so the difference between the routes is the difference
+between the two files. `src/providers/revana/queue.test.ts` replays it.

@@ -47,7 +47,8 @@ const MAX_WAIT_SECONDS = 86_400;
 const url = z.string().max(MAX_URL_LENGTH);
 const urls = z.array(url).min(1);
 
-const inputSchema = z.looseObject({
+/** Every input key the API's validators recognise — also the body of the queue route (`./queue.ts`). */
+export const inputSchema = z.looseObject({
   // "maxLength: 30000" on ModelInput and SeedanceInput. The tighter caps
   // (music 3000, Nemesis 5000) and the `minLength: 1` that NemesisInput alone
   // lacks are per model, in ./checks.ts.
@@ -94,14 +95,19 @@ const inputSchema = z.looseObject({
   face_mesh: z.boolean().optional(),
 });
 
-const generationSchema = z.looseObject({
-  model: z.string().min(1),
-  input: inputSchema,
-  task: z.enum(["video_edit", "video_extend"]).optional(),
+/** The two limits either route takes beside the input fields. */
+export const limitFields = {
   // "exclusiveMinimum: 0". The document's `maximum: 100` is not enforced by
   // the API (101 priced normally on 2026-11-12), so it is not enforced here.
   max_cost_usd: z.number().positive().optional(),
   max_wait_s: z.number().int().min(1).max(MAX_WAIT_SECONDS).optional(),
+};
+
+const generationSchema = z.looseObject({
+  model: z.string().min(1),
+  input: inputSchema,
+  task: z.enum(["video_edit", "video_extend"]).optional(),
+  ...limitFields,
 });
 
 type AnyRequest = GenerationRequest<string>;
@@ -111,7 +117,7 @@ type AnyRequest = GenerationRequest<string>;
  * (its queue page points at fal's, with a URL rewrite), so the target is the
  * wire body unchanged.
  */
-type RevanaSdkTargets<B> = { revana: () => B };
+export type RevanaSdkTargets<B> = { revana: () => B };
 
 export interface GenerationSpec {
   /** The address: `"revana.video"`. */

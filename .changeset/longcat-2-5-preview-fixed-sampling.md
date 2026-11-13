@@ -8,9 +8,12 @@ longcat: `LongCat-2.5-Preview` joins `unmodel/longcat`, and a fixed LongCat temp
   2026-11-12): text and image input, 1,048,576-token context, 262,144-token
   output ceiling, $0.30 / 1M input, $0.006 / 1M cached input, $1.20 / 1M
   output. Rates are the "Discounted Price $/1M Tokens (limited-time)" column
-  of https://longcat.chat/platform/docs/pricing/longcat-2.5 (no end date is
-  published, so cost estimates move when the promotion ends). Reachable from
-  `unmodel/chat` as `"longcat/LongCat-2.5-Preview"`.
+  of
+  https://web.archive.org/web/20261018115714/https://longcat.chat/platform/docs/pricing/longcat-2.5
+  ("Pay-As-You-Go currently supports LongCat-2.5-Preview."; the live page now
+  names only LongCat-2.5, at the same rates). No end date is published, so
+  cost estimates move when the promotion ends. Reachable from `unmodel/chat`
+  as `"longcat/LongCat-2.5-Preview"`.
 - `LongCat-2.0` reprices to $0.30 / $0.006 / $1.20 from $0.75 / $0.015 /
   $2.95: https://longcat.chat/platform/docs/pricing/longcat-2.0 now shows only
   the limited-time discount column. Its context is 1,048,576 tokens and it is

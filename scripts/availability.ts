@@ -260,9 +260,10 @@ interface SurfaceRule {
  * google-vertex.chatMaas is factory-configured and unmodel ships no MaaS
  * module, so every retarget onto it is a structural refusal.
  *
- * azure deliberately has **no** rule. It also serves Claude, but on a wire
- * surface nobody has verified, so those rows are denied rather than labelled
- * with a guess.
+ * azure deliberately has **no** rule. It serves Claude on the Anthropic
+ * Messages API (`…/anthropic/v1/messages`), which unmodel has no azure module
+ * for, so those rows are denied rather than labelled azure.chat (see
+ * data/availability-overrides.json).
  */
 const SURFACE_RULES: Readonly<Record<string, readonly SurfaceRule[]>> = {
   "google-vertex": [

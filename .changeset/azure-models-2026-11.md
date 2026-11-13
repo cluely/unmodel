@@ -2,17 +2,14 @@
 "unmodel": patch
 ---
 
-azure: GPT-6, Claude 5.5 / Fable 5.2, Grok 4.6 / 4.7 and DeepSeek V4.1 Flash on `azure.chat`, with Azure's own limits where they differ from models.dev (models.dev snapshot and Microsoft Learn pages read 2026-11-12)
+azure: GPT-6, Grok 4.6 / 4.7 and DeepSeek V4.1 Flash on `azure.chat`, with Azure's own limits where they differ from models.dev (models.dev snapshot and Microsoft Learn pages read 2026-11-12)
 
 - `azure.chat` deployments named after these models now resolve to their own
   catalog rows and get the full catalog checks and pricing: `gpt-6-astra`,
   `gpt-6-sol`, `gpt-6-luna`, `gpt-6.1-sol`, `gpt-6.1-terra` (1,050,000 context,
-  922,000 input, 128,000 output), `claude-fable-5-2`, `claude-opus-5-5`,
-  `claude-sonnet-5-5`, `claude-haiku-5-5`, `grok-4.6`, `grok-4.7` and
-  `deepseek-v4.1-flash`. A deployment such as `claude-opus-5-5-prod` used to
-  resolve to `claude-opus-5` by longest prefix and was priced at its $5 / $25;
-  it now prices at Opus 5.5's own $4 / $20. models.dev records no Azure price for
-  `grok-4.7`, so its `estimate.costUSD` and `checkChat(...).costUSD` are omitted.
+  922,000 input, 128,000 output), `grok-4.6`, `grok-4.7` and
+  `deepseek-v4.1-flash`. models.dev records no Azure price for `grok-4.7`, so
+  its `estimate.costUSD` and `checkChat(...).costUSD` are omitted.
 - New export `chatModels` from `unmodel/azure`: the catalog `azure.chat`
   validates against, which is the generated `models` table with Azure's
   documented corrections on top. `models` is unchanged.

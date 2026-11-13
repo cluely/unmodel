@@ -131,6 +131,17 @@ const deploymentCatalog = createDeploymentCatalog(chatModels);
  * generated table cannot know. (Azure is also excluded as a `.toApi`
  * *destination* — it has no provider-wide URL.) `.toSdk("openai")` is
  * available, since the wire body is the standard chat-completions dialect.
+ *
+ * **Claude is not served on this chat route.** Microsoft serves Claude in
+ * Foundry only on the Anthropic Messages API, listing just "Messages
+ * (`POST /v1/messages`)" and "Token counting
+ * (`POST /v1/messages/count_tokens`)", with "The deployment endpoint follows
+ * the shape `https://<resource-name>.services.ai.azure.com/anthropic/v1/messages`"
+ * (https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models,
+ * ms.date 2026-09-21, checked 2026-11-13). models.dev's azure Claude rows
+ * agree through their row-level `provider` override (npm `@ai-sdk/anthropic`,
+ * api `…/anthropic/v1`). `azure.chat` does not model that route, yet a
+ * deployment named after a Claude row still resolves to that row here.
  */
 export function createAzure(config: AzureConfig): AzureProvider {
   const chat = createOpenAICompatible<AzureTextModelId, never, "azure">({

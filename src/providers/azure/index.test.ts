@@ -130,10 +130,6 @@ describe("azure deployment-name catalog matching", () => {
 describe("azure catalog rows from the 2026-11-12 models.dev slice", () => {
   // [deployment name, $/1M input + $/1M output, or undefined when the row is unpriced]
   const NEW_CHAT_ROWS: ReadonlyArray<readonly [AzureTextModelId, number | undefined]> = [
-    ["claude-fable-5-2", 8 + 40],
-    ["claude-opus-5-5", 4 + 20],
-    ["claude-sonnet-5-5", 2 + 10],
-    ["claude-haiku-5-5", 0.1 + 0.5],
     ["deepseek-v4.1-flash", 0.3 + 1.2],
     ["gpt-6-astra", 10 + 50],
     ["gpt-6-sol", 2 + 10],
@@ -156,15 +152,6 @@ describe("azure catalog rows from the 2026-11-12 models.dev slice", () => {
     });
     if (perMillion === undefined) expect(report.costUSD).toBeUndefined();
     else expect(report.costUSD).toBeCloseTo(perMillion, 10);
-  });
-
-  test("claude-opus-5-5 is its own row, not claude-opus-5 by longest prefix", () => {
-    const report = azure.checkChat({
-      model: "claude-opus-5-5-prod",
-      usage: { prompt_tokens: 1_000_000, completion_tokens: 1_000_000 },
-    });
-    // $4 / $20 (its own row), not claude-opus-5's $5 / $25.
-    expect(report.costUSD).toBeCloseTo(24, 10);
   });
 });
 

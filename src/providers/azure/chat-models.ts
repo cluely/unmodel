@@ -64,6 +64,8 @@ export const chatModels = {
   ...chatModelOverlay,
 } as const satisfies Record<string, ModelInfo>;
 
-function withAdjustableSampling(info: ModelInfo): ModelInfo {
-  return { ...info, temperature: true };
+function withAdjustableSampling<Row extends ModelInfo>(
+  row: Row,
+): Omit<Row, "temperature"> & { readonly temperature: true } {
+  return { ...row, temperature: true };
 }

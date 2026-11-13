@@ -1217,8 +1217,15 @@ really is a `google.chat` (`:generateContent`) request.
 Currently denied there, each for a wire surface unmodel has not verified or has no
 module for:
 
-- `*  → azure:*claude*` — models.dev lists 16 Claude rows on Azure but records `api: null`,
-  and unmodel's Azure module is OpenAI-compatible only. The surface is unconfirmed.
+- `*  → azure:*claude*` — Azure serves Claude on the Anthropic Messages API
+  (`https://<resource>.services.ai.azure.com/anthropic/v1/messages`, plus `count_tokens`
+  and nothing else, per Microsoft's
+  [Claude-in-Foundry page](https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models),
+  ms.date 2026-09-21, checked 2026-11-13), and unmodel's Azure module has no Messages
+  surface. models.dev agrees: its 16 azure Claude rows carry a row-level `provider`
+  override (`@ai-sdk/anthropic`, `…/anthropic/v1`). `azure.chat` does not model that
+  route, yet a deployment named after a Claude row still resolves to that row there —
+  Microsoft documents no chat-completions route for Claude.
 - `*  → google-vertex:*claude*` — Vertex serves Claude through an Anthropic-shaped
   `rawPredict` route that unmodel has no module for.
 - `*  → google-vertex:mistral-*`, `*  → google-vertex:codestral-*` — Vertex serves

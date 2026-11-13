@@ -503,21 +503,24 @@ routes take a still and four take a clip, so `source` is narrowed per model and 
 modality is read off each endpoint's own response schema. `factor` is the one cross-vendor word, and it has
 three answers per model: a range, a closed set (AuraSR upscales by 4 or not at all), or absent.
 
-**Topaz Labs — `topaz.upscale` and `topaz.upscaleGenerative`, 15 models.** Tier: **native**.
+**Topaz Labs — `topaz.upscale` and `topaz.upscaleGenerative`, 18 models.** Tier: **native**.
 `https://api.topazlabs.com/image/v1`, `X-API-Key: <TOPAZ_API_KEY>`, and **multipart/form-data**
 bodies at both addresses: neither path declares a JSON arm, so even a request whose only input is
 a `source_url` is a form. `.request.headers` is empty — the boundary belongs to the `FormData` —
 and `.request.body` is `"form"`; post `topaz.toFormData(params)`. Two addresses because Topaz
 publishes two real urls with disjoint model enums and different dials, `POST /enhance/async` for
-the six classic Gigapixel (GAN) models and `POST /enhance-gen/async` for the nine generative
-Wonder and Bloom ones — the `stability.imageCore` / `ideogram.imageV4` shape. The ids are Topaz's
-own PRODUCT NAMES, spaces and all: `Standard V2`, `High Fidelity V2`, `Upscale High Fidelity V3`,
-`Low Resolution V2`, `CGI` and `Text Refine` on the classic route; `Redefine`, `Wonder`,
-`Wonder 2`, `Wonder 3`, `Wonder 3.5`, `Standard MAX`, `Recover 3`, `Bloom 2` and `Bloom Realism`
-on the generative one. So a ref reads `"topaz/Standard V2"`.
+the six classic Gigapixel (GAN) models and `POST /enhance-gen/async` for the twelve generative
+Wonder, Bloom and Detail ones — the `stability.imageCore` / `ideogram.imageV4` shape. The ids are
+Topaz's own PRODUCT NAMES, spaces and all: `Standard V2`, `High Fidelity V2`,
+`Upscale High Fidelity V3`, `Low Resolution V2`, `CGI` and `Text Refine` on the classic route;
+`Redefine`, `Wonder`, `Wonder 2`, `Wonder 3`, `Wonder 3.5`, `Wonder 4`, `Standard MAX`,
+`Recover 3`, `Detail`, `Bloom 2`, `Bloom Realism` and `Bloom` on the generative one. So a ref
+reads `"topaz/Standard V2"`.
 
-Pricing is credits, per output megapixel, `credits = ceil(outputMP / mpPerCredit)` — 24 MP per
-credit for the Gigapixel family, 4 for Wonder, 2 for Bloom — at $0.12 a credit pay-as-you-go
+Pricing is credits, per output megapixel, `credits = ceil(outputMP / mpPerCredit)` at the rate
+each model's page states (`MP_PER_CREDIT`, per model) — 24 MP per credit for the classic six and
+`Detail`, 8 for `Wonder 4`, 4 for `Redefine`, `Standard MAX`, `Recover 3` and the earlier
+Wonders, 2 for the Bloom models — at $0.12 a credit pay-as-you-go
 ($0.10 on Developer, $0.08 on Scale). Topaz bills the OUTPUT's pixel count and the request states
 it, which makes this one of the few media providers whose estimate is EXACT; the other half of
 the same fact is that `output_width` and `output_height` are both optional, so a request that
@@ -527,7 +530,7 @@ Topaz has **no `factor`** — it states an absolute output size rather than a mu
 category's one cross-vendor word types as `never` at every Topaz ref. That is a DIFFERENT reason
 from `fal-ai/recraft/upscale/crisp`'s `never`, which has no multiplier because it chooses its own
 size, and the two therefore carry different messages. What Topaz did bring the category is a
-second witness for the canonical `prompt`: nine of its fifteen models steer on one.
+second witness for the canonical `prompt`: ten of its eighteen models steer on one.
 
 The per-model tuning dials — `faceEnhancement`, `creativity`, `texture`, `denoise`, `strength`
 and the rest — are not in Topaz's published OpenAPI document, which types the whole space as
@@ -960,7 +963,7 @@ leaves rather than whole validators.
 | `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (2 models, `POST /v1/sound-generation`), fal (6 endpoints from five vendors, ElevenLabs' own among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 4 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
 | `unmodel/avatar` | `avatar`, `createAvatar` | 4 | fal (8 endpoints; the still-driven twin of lipsync), heygen (`avatar_iv`, the one engine that renders raw image input — Avatar V and Avatar III do not), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
-| `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (11 endpoints, seven taking a still and four taking a clip), topaz (15 models over two routes, stills only, multipart bodies) |
+| `unmodel/upscale` | `upscale`, `createUpscale` | 2 | fal (11 endpoints, seven taking a still and four taking a clip), topaz (18 models over two routes, stills only, multipart bodies) |
 | `unmodel/3d` | `threeD`, `createThreeD` | 2 | fal (19 endpoints from seven vendors), tripo3d (4 models over two routes) — the first category shipped with two witnesses, and the only one where an aggregator's resale and the vendor's own API are both in the pack |
 | `unmodel/sts` | `sts`, `createSts` | 2 | elevenlabs (3 models, `POST /v1/speech-to-speech/{voice_id}`), hume (1 synthetic id, `POST /v0/tts/voice_conversion/file`) — the smallest pack in the library, the only one with no fal arm, and the only category where three of five words are REQUIRED. Both endpoints are `MULTIPART_ONLY`, so there is no `unified.sts` CLI entry |
 | `unmodel/voice-clone` | `voiceClone`, `createVoiceClone` | 6 | cartesia, elevenlabs, fish-audio, inworld, lmnt, minimax — speechify's clone route is wire-only (its consent challenge/response ceremony is a one-provider, multi-request flow) |

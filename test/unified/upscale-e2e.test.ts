@@ -62,7 +62,7 @@ describe("the pack", () => {
 
   test("each provider is one adapter, and either builds a pack on its own", () => {
     expect(falAdapter.models).toHaveLength(11);
-    expect(topazAdapter.models).toHaveLength(15);
+    expect(topazAdapter.models).toHaveLength(18);
     expect([...createUpscale([falAdapter]).providers]).toEqual(["fal"]);
     expect([...createUpscale([topazAdapter]).providers]).toEqual(["topaz"]);
   });
@@ -95,6 +95,23 @@ describe("the result is Topaz's own Validated, and it is multipart", () => {
     // FormData, and a hand-set content-type would break the request.
     expect(result.request.headers).toEqual({});
     expect(result.request.body).toBe("form");
+  });
+
+  test("`prompt` follows the model's page, not the route", () => {
+    // `Wonder 4` and `Detail` ride `/enhance-gen/async` and document no
+    // `prompt`; `Bloom` documents one.
+    for (const model of ["topaz/Wonder 4", "topaz/Detail"] as const) {
+      const refused = upscale.safe({ model, source: STILL, prompt: "a sailing boat" });
+      expect(refused.ok, model).toBe(false);
+      if (refused.ok) continue;
+      const issue = refused.errors.find((error) => error.path.join(".") === "prompt");
+      expect(issue?.code, model).toBe("unsupported_param");
+      expect(issue?.message, model).toContain("generative route");
+      expect(issue?.message, model).toContain("`topaz/Redefine`");
+    }
+    const bloom = upscale({ model: "topaz/Bloom", source: STILL, prompt: "ornate fantasy castle" });
+    expect(bloom.request.url).toBe("https://api.topazlabs.com/image/v1/enhance-gen/async");
+    expect(JSON.parse(JSON.stringify(bloom))).toMatchObject({ model: "Bloom", prompt: "ornate fantasy castle" });
   });
 
   test("the ref picks the ROUTE, because Topaz's two model enums are disjoint", () => {

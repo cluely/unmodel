@@ -99,10 +99,10 @@ export function createUpscale<A extends UpscaleAdapter>(
  *
  * fal serves ten endpoints across two media: Clarity, AuraSR, Real-ESRGAN,
  * Recraft and SeedVR for stills; Topaz, SeedVR and FLUX for clips; and Topaz's
- * generative arm for either. Topaz serves fifteen models at its own API, across
+ * generative arm for either. Topaz serves eighteen models at its own API, across
  * two routes — and brings the category two things fal's resale of it cannot.
  *
- * The first is `prompt`: nine of Topaz's fifteen steer on one, which is what
+ * The first is `prompt`: ten of Topaz's eighteen steer on one, which is what
  * turns a word with one real witness into a word with two.
  *
  * The second is a `factor` that is `never`. Topaz has no multiplier anywhere —

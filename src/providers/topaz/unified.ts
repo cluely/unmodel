@@ -5,7 +5,7 @@
  *
  * Topaz publishes two image-upscale paths with disjoint model enums —
  * `/enhance/async` for the six classic (GAN) upscalers and
- * `/enhance-gen/async` for the nine generative and creative ones — so the ref
+ * `/enhance-gen/async` for the twelve generative and creative ones — so the ref
  * decides the URL and there is nothing for the caller to say:
  *
  * ```ts
@@ -35,10 +35,12 @@
  *
  * # `prompt` is the word Topaz brought to the category
  *
- * Nine of the fifteen models take one, on the generative route. The other six
- * refuse it by name, counting the ones that do — the same shape the fal adapter
- * uses, and here it splits the roster almost in half rather than naming an
- * exception.
+ * Ten of the eighteen models take one, all on the generative route — the ones
+ * whose `TOPAZ_SETTINGS_BY_MODEL` row lists it. The other eight refuse it by
+ * name, listing the ones that do: the six classic upscalers, and `Wonder 4` and
+ * `Detail`, which ride the generative route with no `prompt` on their pages.
+ * The same shape the fal adapter uses, and here it splits the roster almost in
+ * half rather than naming an exception.
  *
  * # Inline bytes are refused, not encoded
  *
@@ -50,7 +52,7 @@
  *
  * # There is no adapter-wide `unsupported`
  *
- * Risk R7. `seed` exists at two of the fifteen models, `creativity` at nine,
+ * Risk R7. `seed` exists at three of the eighteen models, `creativity` at ten,
  * `strength` at six, `enhancementStrength` at two — a provider-wide claim about
  * any of them would be false at most of this roster. Every refusal comes off
  * the row, and the row is Topaz's own per-model documentation, which the
@@ -66,7 +68,7 @@ import {
   type TopazUpscaleGenerativeParams,
 } from "./upscale-generative";
 import { MODELS, TOPAZ_UPSCALE_MODEL_PARAMS } from "./upscale-params";
-import { DOCS_BASE, TOPAZ_ENHANCE_GEN_MODELS } from "./shared";
+import { DOCS_BASE, TOPAZ_ENHANCE_GEN_MODELS, TOPAZ_SETTINGS_BY_MODEL } from "./shared";
 
 const SOURCE = `${DOCS_BASE}/reference/api-endpoints/image`;
 
@@ -81,8 +83,17 @@ export type TopazUpscaleResult =
 /** See vidu's video adapter: `CompiledCall.validate` is contravariant. */
 type TopazUpscaleValidate = CompiledCall<TopazUpscaleWire, TopazUpscaleResult>["validate"];
 
-/** The nine ids on `/enhance-gen/async`, as a lookup. */
+/** The twelve ids on `/enhance-gen/async`, as a lookup. */
 const GENERATIVE = new Set<string>(TOPAZ_ENHANCE_GEN_MODELS);
+
+/**
+ * The ids that take a `prompt`, read off the settings table — so the adapter,
+ * the per-model setting gate and the catalog's `text` input answer the same
+ * question from one place.
+ */
+const PROMPTED: readonly string[] = MODELS.filter(
+  (id) => TOPAZ_SETTINGS_BY_MODEL[id]?.includes("prompt") === true,
+);
 
 /**
  * The body under construction, before the route narrows it.
@@ -110,6 +121,7 @@ export const upscale = {
     const body: TopazDraft = { model: ctx.model };
     const generative = GENERATIVE.has(ctx.model);
     const known = Object.hasOwn(TOPAZ_UPSCALE_MODEL_PARAMS, ctx.model);
+    const prompted = !known || PROMPTED.includes(ctx.model);
 
     // --- the picture -------------------------------------------------------
     ctx.from(["source_url"], "source");
@@ -140,21 +152,26 @@ export const upscale = {
       });
     }
 
-    // --- the prompt, on the generative route only --------------------------
+    // --- the prompt, where the model's page documents one -----------------
     if (input.prompt !== undefined) {
       ctx.from(["prompt"], "prompt");
-      if (generative || !known) {
+      if (prompted) {
         body.prompt = input.prompt;
       } else {
         ctx.fail({
           code: "unsupported_param",
           path: ["prompt"],
           message:
-            `"${ctx.model}" is one of Topaz's classic upscalers: it enlarges what is already in the ` +
-            "picture and declares no `prompt` field, so `prompt` has nothing to become. " +
-            `${GENERATIVE.size} of the ${MODELS.length} Topaz models — the Wonder and Bloom families on ` +
-            "`/enhance-gen/async` — do steer on one; `topaz/Redefine` is the one to reach for first.",
-          meta: { source: SOURCE, generative: [...GENERATIVE] },
+            (generative
+              ? `"${ctx.model}" runs on Topaz's generative route, and its page documents no ` +
+                "`prompt` field — Topaz uses only the settings a model reads, so a prompt here " +
+                "would be dropped. "
+              : `"${ctx.model}" is one of Topaz's classic upscalers: it enlarges what is already in ` +
+                "the picture and declares no `prompt` field, so `prompt` has nothing to become. ") +
+            `${PROMPTED.length} of the ${MODELS.length} Topaz models do steer on one — ` +
+            `${PROMPTED.map((id) => `\`topaz/${id}\``).join(", ")}; \`topaz/Redefine\` is the one ` +
+            "to reach for first.",
+          meta: { source: SOURCE, prompted: [...PROMPTED] },
         });
       }
     }

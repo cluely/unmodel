@@ -165,10 +165,14 @@ export type TopazEnhanceModel = (typeof TOPAZ_ENHANCE_MODELS)[number];
  *
  * ⚠️ The same two-source union, and here the drift is much wider. The spec
  * enumerates four: `["Standard MAX", "Recovery V2", "Wonder", "Redefine"]`.
- * The live pages under /image-models/wonder/ and /image-models/bloom/ document
- * nine on this endpoint — the four minus `"Recovery V2"`, plus `"Wonder 2"`,
- * `"Wonder 3"`, `"Wonder 3.5"`, `"Recover 3"`, `"Bloom 2"` and
- * `"Bloom Realism"`.
+ * The live pages under /image-models/upscaling-and-enhancement/ document twelve
+ * on this endpoint — the four minus `"Recovery V2"`, plus `"Wonder 2"`,
+ * `"Wonder 3"`, `"Wonder 3.5"`, `"Wonder 4"`, `"Recover 3"`, `"Detail"`,
+ * `"Bloom 2"`, `"Bloom Realism"` and `"Bloom"`. `"Detail"` (Detail Faces) is
+ * filed under Precision Upscaling in the docs and still names this endpoint:
+ * “`https://api.topazlabs.com/image/v1/enhance-gen/async`” on its page
+ * (https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/detail-faces.md,
+ * verified 2026-11-12).
  *
  * `"Recovery V2"` is the one value that goes the other way: it is in the spec
  * and on no page, has no published credit table, and reads like the earlier
@@ -176,10 +180,6 @@ export type TopazEnhanceModel = (typeof TOPAZ_ENHANCE_MODELS)[number];
  * as a second accepted string). unmodel does not type it, for the reason it
  * does not type sync.'s undocumented models: a string with no reference page is
  * a string nobody can look up.
- *
- * `"Bloom 1 Creative"` is documented as a product and its page does not state a
- * `model` string, so it is absent here too — the id is the one thing that
- * cannot be inferred.
  */
 export const TOPAZ_ENHANCE_GEN_MODELS = [
   "Redefine",
@@ -187,10 +187,13 @@ export const TOPAZ_ENHANCE_GEN_MODELS = [
   "Wonder 2",
   "Wonder 3",
   "Wonder 3.5",
+  "Wonder 4",
   "Standard MAX",
   "Recover 3",
+  "Detail",
   "Bloom 2",
   "Bloom Realism",
+  "Bloom",
 ] as const;
 export type TopazEnhanceGenModel = (typeof TOPAZ_ENHANCE_GEN_MODELS)[number];
 
@@ -302,9 +305,13 @@ export interface TopazModelSettings extends TopazEnhanceSettings, TopazEnhanceGe
    */
   outputWidth?: number;
   outputHeight?: number;
-  /** `Bloom 2`. Keep the source's colours while new detail is introduced. */
+  /** `Bloom 2`, `Bloom`. Keep the source's colours while new detail is introduced. */
   colorPreservation?: boolean;
-  /** `Bloom 2` (default 2), `Bloom Realism` (1–2000, default 1). */
+  /** `Bloom`. Increases the effect of `creativity`. Default false. */
+  creativityBoost?: boolean;
+  /** `Bloom`. Keeps faces close to the source. Default true. */
+  facePreservation?: boolean;
+  /** `Bloom 2` (default 2), `Bloom Realism` (1–2000, default 1), `Bloom` (default 1). */
   seed?: number;
 }
 
@@ -353,6 +360,13 @@ const DIMENSIONS = ["inputWidth", "inputHeight", "outputWidth", "outputHeight"] 
  * `creativity` to `Standard V2` and the request succeeds, costs the same, and
  * comes back exactly as if you had not. {@link checkModelSettings} is the only
  * place that failure is visible.
+ *
+ * The rows for `Wonder 4`, `Detail` and `Bloom` (transcribed 2026-11-12) are
+ * each their page's parameter table and nothing else, because the request
+ * parameters page puts every model-specific setting on the model's own page:
+ * “Model-specific settings are sent as additional form fields in the same
+ * request … They're listed on each model's page.”
+ * (https://developer.topazlabs.com/getting-started/request-parameters/image.md).
  */
 export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>> = {
   // --- /enhance/async ------------------------------------------------------
@@ -374,10 +388,28 @@ export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>
   "Wonder 2": ENHANCE_GEN_COMMON,
   "Wonder 3": [...ENHANCE_GEN_COMMON, "enhancementStrength"],
   "Wonder 3.5": [...ENHANCE_GEN_COMMON, "enhancementStrength", ...GRAIN, ...DIMENSIONS],
+  // No setting at all. Verified 2026-11-12: the parameter table on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-4.md
+  // is the `model` row alone — “| `model`   | `string` | Required           |
+  // `"Wonder 4"`    | —           |” — and https://developer.topazlabs.com/whats-new.md
+  // says it outright: “**No settings.** Wonder 3.5 offered Low, Medium and High
+  // strength. Wonder 4 gets there automatically.”
+  "Wonder 4": [],
   "Standard MAX": ENHANCE_GEN_COMMON,
   "Recover 3": ENHANCE_GEN_COMMON,
+  // One setting, with no `detail` switch beside it. Verified 2026-11-12 on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/detail-faces.md:
+  // “| `detailStrength` | `decimal` | Optional           | `0.0` to `10.0` | How
+  // much detail is added to faces. |”
+  Detail: ["detailStrength"],
   "Bloom 2": [...ENHANCE_GEN_COMMON, "colorPreservation", "seed", ...GRAIN, ...DIMENSIONS],
   "Bloom Realism": [...ENHANCE_GEN_COMMON, "seed"],
+  // The six settings rows of
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative/bloom-1-creative.md,
+  // verified 2026-11-12 — among them “| `creativityBoost`   | `boolean` |
+  // <p>Optional<br>Default: <code>false</code></p> |” and “| `facePreservation`
+  // | `boolean` | <p>Optional<br>Default: <code>true</code></p>  |”.
+  Bloom: ["colorPreservation", "creativity", "creativityBoost", "facePreservation", "prompt", "seed"],
 };
 
 /**
@@ -400,8 +432,16 @@ export const TOPAZ_MEGAPIXEL_LIMITS: Readonly<
   "Text Refine": { input: 512, output: 1024 },
   Redefine: { input: 256, output: 256 },
   Wonder: { input: 128, output: 128 },
+  // “This model accepts up to 256 MP input and output.” —
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-4.md,
+  // verified 2026-11-12.
+  "Wonder 4": { input: 256, output: 256 },
   "Standard MAX": { input: 24, output: 384 },
   "Recover 3": { input: 24, output: 384 },
+  // “This model accepts up to 256 MP input and output.” —
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative/bloom-1-creative.md,
+  // verified 2026-11-12. `Detail` has no row: its page states no ceiling.
+  Bloom: { input: 256, output: 256 },
 };
 
 // ---------------------------------------------------------------------------

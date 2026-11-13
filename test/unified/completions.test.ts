@@ -792,7 +792,7 @@ upscale({ model: "fal/fal-ai/esrgan", source: { url: "https://x/a.png" }, creati
    * a different cause, and the pair is what makes the empty list a mechanism
    * rather than a special case.
    */
-  test("probe 4c — Topaz refuses `factor`, offers `prompt` on nine of fifteen", () => {
+  test("probe 4c — Topaz refuses `factor`, offers `prompt` on ten of eighteen", () => {
     // No multiplier anywhere, on either route.
     for (const model of ["topaz/Standard V2", "topaz/Redefine"]) {
       expect(
@@ -802,8 +802,8 @@ upscale({ model: "${model}", source: { url: "https://x/a.png" }, factor: 2 });`)
       ).toBeGreaterThan(0);
     }
 
-    // `prompt` is the word Topaz DID bring, and it is a route fact: the nine
-    // generative models steer on one and the six classic ones have no field.
+    // `prompt` is the word Topaz DID bring, and it is a per-model fact: ten
+    // generative models steer on one and the rest have no field.
     expect(
       semanticErrorsIn(`import { upscale } from "./src/unified/upscale";
 upscale({ model: "topaz/Redefine", source: { url: "https://x/a.png" }, prompt: "a sailing boat" });`),

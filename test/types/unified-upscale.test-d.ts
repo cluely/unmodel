@@ -37,7 +37,10 @@ expectAssignable<PackRefs>("topaz/Upscale High Fidelity V3");
 expectAssignable<PackRefs>("topaz/Text Refine");
 expectAssignable<PackRefs>("topaz/Redefine");
 expectAssignable<PackRefs>("topaz/Wonder 3.5");
+expectAssignable<PackRefs>("topaz/Wonder 4");
+expectAssignable<PackRefs>("topaz/Detail");
 expectAssignable<PackRefs>("topaz/Bloom Realism");
+expectAssignable<PackRefs>("topaz/Bloom");
 // @ts-expect-error — in the published OpenAPI enum only: no page, no credit table.
 expectAssignable<PackRefs>("topaz/Recovery V2");
 // @ts-expect-error — denoise is a separate route and does not upscale.

@@ -201,18 +201,125 @@ describe("the per-model settings table", () => {
     }
     for (const model of TOPAZ_ENHANCE_GEN_MODELS) {
       const dials = TOPAZ_SETTINGS_BY_MODEL[model] ?? [];
-      expect(dials, model).toContain("creativity");
       expect(dials, model).not.toContain("strength");
     }
   });
 
-  test("`prompt` is on the generative route only, which is the canonical word", () => {
+  test("`prompt` is never a classic dial, and `Wonder 4` and `Detail` lack it too", () => {
     for (const model of TOPAZ_ENHANCE_MODELS) {
       expect(TOPAZ_SETTINGS_BY_MODEL[model], model).not.toContain("prompt");
     }
-    for (const model of TOPAZ_ENHANCE_GEN_MODELS) {
-      expect(TOPAZ_SETTINGS_BY_MODEL[model], model).toContain("prompt");
+    const prompted = TOPAZ_ENHANCE_GEN_MODELS.filter((model) =>
+      TOPAZ_SETTINGS_BY_MODEL[model]?.includes("prompt"),
+    );
+    expect(TOPAZ_ENHANCE_GEN_MODELS.filter((model) => !prompted.includes(model))).toEqual([
+      "Wonder 4",
+      "Detail",
+    ]);
+  });
+});
+
+/**
+ * Three generative-route ids whose rows are their pages' parameter tables and
+ * nothing else — each validated, priced against its own published credit
+ * table, and gated on its own settings row.
+ */
+describe("`Wonder 4`, `Detail` and `Bloom`", () => {
+  const TABLE_MP = [1, 4, 8, 16, 24, 32, 40];
+  function credits(model: string): (number | undefined)[] {
+    return TABLE_MP.map((mp) => topazCredits({ model, outputWidth: mp * 1000, outputHeight: 1000 }));
+  }
+
+  test("each validates on the generative route with no warnings", () => {
+    for (const model of ["Wonder 4", "Detail", "Bloom"]) {
+      const result = upscaleGenerative.safe({ source_url: PHOTO, model });
+      expect(result.ok, model).toBe(true);
+      if (!result.ok) continue;
+      expect(result.warnings, model).toEqual([]);
+      expect(result.params.request.url, model).toBe(ENHANCE_GEN_URL);
     }
+  });
+
+  test("each reproduces the credit table on its own page", () => {
+    // “| Output MP | 1 | 4 | 8 | 16 | 24 | 32 | 40 |” on all three pages.
+    expect(credits("Wonder 4")).toEqual([1, 1, 1, 2, 3, 4, 5]);
+    expect(credits("Detail")).toEqual([1, 1, 1, 1, 1, 2, 2]);
+    expect(credits("Bloom")).toEqual([1, 2, 4, 8, 12, 16, 20]);
+    expect(MP_PER_CREDIT["Wonder 4"]).toBe(8);
+    expect(MP_PER_CREDIT.Detail).toBe(24);
+    expect(MP_PER_CREDIT.Bloom).toBe(2);
+  });
+
+  test("…and the estimate rides on the validated request", () => {
+    const result = upscaleGenerative.safe({
+      source_url: PHOTO,
+      model: "Wonder 4",
+      output_width: 4096,
+      output_height: 4096,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // 16.8 MP at 8 MP per credit is three credits.
+    expect(result.estimate?.costUSD).toBeCloseTo(3 * CREDIT_USD, 10);
+  });
+
+  test("`Wonder 4` reads no setting, so any dial warns", () => {
+    const result = upscaleGenerative.safe({ source_url: PHOTO, model: "Wonder 4", creativity: 4 });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const issue = result.warnings.find((warning) => warning.path.join(".") === "creativity");
+    expect(issue?.code).toBe("unknown_param");
+    expect(issue?.message).toContain('"Redefine"');
+  });
+
+  test("`Detail` reads `detailStrength` alone, 0–10, with no `detail` switch", () => {
+    const silent = upscaleGenerative.safe({ source_url: PHOTO, model: "Detail", detailStrength: 5 });
+    expect(silent.ok).toBe(true);
+    if (silent.ok) expect(silent.warnings).toEqual([]);
+    const warned = upscaleGenerative.safe({ source_url: PHOTO, model: "Detail", detail: true, detailStrength: 5 });
+    expect(warned.ok).toBe(true);
+    if (warned.ok) expect(warned.warnings.map((issue) => issue.path.join("."))).toEqual(["detail"]);
+    expect(upscaleGenerative.safe({ source_url: PHOTO, model: "Detail", detailStrength: 11 }).ok).toBe(false);
+  });
+
+  test("`Bloom` reads `creativityBoost` and `facePreservation`, which `Bloom 2` does not", () => {
+    const bloom = upscaleGenerative.safe({
+      source_url: PHOTO,
+      model: "Bloom",
+      prompt: "ornate fantasy castle, detailed stonework",
+      creativity: 5,
+      creativityBoost: true,
+      facePreservation: false,
+      colorPreservation: true,
+      seed: 7,
+    });
+    expect(bloom.ok, JSON.stringify(bloom.ok ? [] : bloom.errors)).toBe(true);
+    if (bloom.ok) expect(bloom.warnings).toEqual([]);
+    const bloom2 = upscaleGenerative.safe({ source_url: PHOTO, model: "Bloom 2", facePreservation: false });
+    expect(bloom2.ok).toBe(true);
+    if (!bloom2.ok) return;
+    const issue = bloom2.warnings.find((warning) => warning.path.join(".") === "facePreservation");
+    expect(issue?.code).toBe("unknown_param");
+    expect(issue?.message).toContain('"Bloom"');
+  });
+
+  test("`Wonder 4` and `Bloom` cap their output at 256 MP; `Detail` states no ceiling", () => {
+    for (const model of ["Wonder 4", "Bloom"]) {
+      const at = upscaleGenerative.safe({ source_url: PHOTO, model, output_width: 16000, output_height: 16000 });
+      expect(at.ok, model).toBe(true);
+      const over = upscaleGenerative.safe({ source_url: PHOTO, model, output_width: 17000, output_height: 16000 });
+      expect(over.ok, model).toBe(false);
+      if (over.ok) continue;
+      expect(over.errors[0]?.code, model).toBe("media_dimensions_exceeded");
+      expect(over.errors[0]?.message, model).toContain("256 MP");
+    }
+    const detail = upscaleGenerative.safe({
+      source_url: PHOTO,
+      model: "Detail",
+      output_width: 20000,
+      output_height: 20000,
+    });
+    expect(detail.ok).toBe(true);
   });
 });
 
@@ -280,8 +387,9 @@ describe("the credit arithmetic", () => {
       .toEqual(published);
   });
 
-  test("the three family rates are the ones the pricing page publishes", () => {
-    expect(MP_PER_CREDIT).toEqual({ gigapixel: 24, wonder: 4, bloom: 2 });
+  test("every rostered model has a rate, and no other id does", () => {
+    expect(Object.keys(MP_PER_CREDIT).sort()).toEqual([...TOPAZ_MODELS].sort());
+    for (const model of TOPAZ_ENHANCE_MODELS) expect(MP_PER_CREDIT[model], model).toBe(24);
     expect(CREDIT_USD).toBe(0.12);
   });
 
@@ -329,10 +437,10 @@ describe("the credit arithmetic", () => {
 });
 
 describe("the catalog", () => {
-  test("every rostered id has a row, and the roster is fifteen across two routes", () => {
+  test("every rostered id has a row, and the roster is eighteen across two routes", () => {
     expect([...(TOPAZ_MODELS as readonly string[])].sort()).toEqual(Object.keys(models).sort());
     expect(TOPAZ_ENHANCE_MODELS).toHaveLength(6);
-    expect(TOPAZ_ENHANCE_GEN_MODELS).toHaveLength(9);
+    expect(TOPAZ_ENHANCE_GEN_MODELS).toHaveLength(12);
     // The two enums are disjoint, which is what lets the unified adapter pick
     // the route from the ref rather than from a parameter.
     const gen = new Set<string>(TOPAZ_ENHANCE_GEN_MODELS);
@@ -357,10 +465,11 @@ describe("the catalog", () => {
     }
   });
 
-  test("only the generative models declare a text input, which is `prompt`", () => {
-    const gen = new Set<string>(TOPAZ_ENHANCE_GEN_MODELS);
+  test("a row declares a text input exactly where its settings list `prompt`", () => {
     for (const [id, row] of Object.entries(models)) {
-      expect((row.modalities.input as readonly string[]).includes("text"), id).toBe(gen.has(id));
+      expect((row.modalities.input as readonly string[]).includes("text"), id).toBe(
+        TOPAZ_SETTINGS_BY_MODEL[id]?.includes("prompt") === true,
+      );
       expect(row.modalities.output, id).toEqual(["image"]);
       expect(row.limit.context, id).toBe(0);
     }

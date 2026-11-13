@@ -12,7 +12,7 @@
  * is generated from fal's own OpenAPI `required` list minus everything fal
  * defaults. A hand-written list would be ten transcriptions to keep in step
  * with a weekly refresh, and the first one to go stale would turn a real
- * regression into a passing sweep. Topaz's fifteen models need nothing beyond
+ * regression into a passing sweep. Topaz's eighteen models need nothing beyond
  * `source`, and two halves of the sweep FORK there: it takes no multiplier at
  * all (it states an absolute output size) and it refuses inline bytes (it reads
  * raw bytes only as a multipart file part, which `UpscaleSource` cannot carry).
@@ -21,7 +21,7 @@ import { describe, expect, test } from "bun:test";
 import { upscale } from "../../src/unified/upscale";
 import { upscale as fal } from "../../src/providers/fal/unified-upscale";
 import { upscale as topaz } from "../../src/providers/topaz/unified";
-import { TOPAZ_ENHANCE_GEN_MODELS } from "../../src/providers/topaz/shared";
+import { TOPAZ_SETTINGS_BY_MODEL } from "../../src/providers/topaz/shared";
 import { FAL_REQUIRED_PROBES } from "../../src/providers/fal/gen/endpoints.gen";
 
 const STILL = { url: "https://example.com/portrait.png" } as const;
@@ -60,8 +60,8 @@ const ROWS = { ...fal.modelParams, ...topaz.modelParams } as Readonly<
 
 test("the sweep covers the whole roster", () => {
   expect(falRefs).toHaveLength(11);
-  expect(topazRefs).toHaveLength(15);
-  expect(refs).toHaveLength(26);
+  expect(topazRefs).toHaveLength(18);
+  expect(refs).toHaveLength(29);
 });
 
 /**
@@ -183,13 +183,14 @@ describe.each(refs)("%s", (ref) => {
   test("`prompt` is accepted exactly where the route has one", () => {
     // `prompt` is CANONICAL here, so it never lives in a row's `extras` — at
     // fal it is the generated `textWire` (three of the ten endpoints have one),
-    // and at Topaz it is a fact about which of the two ROUTES the model is on:
-    // the nine generative models steer on a prompt and the six classic ones
-    // have no field for it. Both read off data rather than transcribed here.
+    // and at Topaz it is a fact about the model's own page: the settings row
+    // lists `prompt` at ten generative models, and the six classic ones plus
+    // `Wonder 4` and `Detail` have no field for it. Both read off data rather
+    // than transcribed here.
     const declared =
       provider === "fal"
         ? row?.textWire !== undefined
-        : (TOPAZ_ENHANCE_GEN_MODELS as readonly string[]).includes(id);
+        : TOPAZ_SETTINGS_BY_MODEL[id]?.includes("prompt") === true;
     const result = upscale.safe({
       model: ref,
       source: video ? CLIP : STILL,
@@ -216,10 +217,10 @@ test("the roster splits both ways, which is what the two narrowings are for", ()
   expect(factors.filter((list) => list === undefined).length).toBeGreaterThan(0);
   // …a closed SET at exactly one (`fal-ai/aura-sr`, whose only legal value is 4)…
   expect(factors.filter((list) => (list?.length ?? 0) > 0).length).toBe(1);
-  // …and NOTHING at sixteen: `fal-ai/recraft/upscale/crisp`, which picks its own
-  // output size, plus all fifteen Topaz models, which take an absolute one. Two
-  // different reasons to have no multiplier, and the adapters' messages say
+  // …and NOTHING at nineteen: `fal-ai/recraft/upscale/crisp`, which picks its
+  // own output size, plus all eighteen Topaz models, which take an absolute one.
+  // Two different reasons to have no multiplier, and the adapters' messages say
   // which is which.
-  expect(factors.filter((list) => list?.length === 0).length).toBe(16);
+  expect(factors.filter((list) => list?.length === 0).length).toBe(19);
   expect(topazRefs.every((ref) => ROWS[bare(ref)]?.factors?.length === 0)).toBe(true);
 });

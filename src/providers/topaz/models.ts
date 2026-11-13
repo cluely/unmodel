@@ -1,15 +1,16 @@
 // Hand-maintained — Topaz Labs is not in models.dev; refresh from
 //   https://openapi.gitbook.com/o/HctdcUHRfIWXBVA1egPp/spec/image-yaml-feb-2026.yaml  (Image API 1.2.0, OpenAPI 3.1.2)
 //   https://developer.topazlabs.com/reference/openapi-specs/readme                    (re-resolve that URL from here — the slug is dated)
-//   https://developer.topazlabs.com/image-models/gigapixel                            (the classic upscalers, one page per model)
-//   https://developer.topazlabs.com/image-models/wonder                               (the generative upscalers)
-//   https://developer.topazlabs.com/image-models/bloom                                (the creative upscalers)
-//   https://developer.topazlabs.com/getting-started/model-pricing                     (MP per credit, per family)
+//   https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision  (the classic upscalers and Detail, one page per model)
+//   https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative (the generative upscalers)
+//   https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative   (the creative upscalers)
+//   https://developer.topazlabs.com/getting-started/model-pricing/image-models        (the formula; each model page states its own MP per credit)
 //   https://developer.topazlabs.com/getting-started/api-key-setup                     (X-API-Key, self-serve)
 //   https://developer.topazlabs.com/resources/api-limits                              (500 MB request cap; rate limits are load-dependent)
 //   https://www.topazlabs.com/enhance-api                                             (USD per credit)
-// Verified 2026-08-25. Every developer.topazlabs.com route also serves raw
-// Markdown at `<route>.md`, which is what was read.
+// Verified 2026-08-25; rows added 2026-11-12 carry their own dated quotes. Every
+// developer.topazlabs.com route also serves raw Markdown at `<route>.md`, which
+// is what was read.
 //
 // THE MODEL IDS HAVE SPACES IN THEM, AND THAT IS DELIBERATE.
 // Topaz's `model` field takes product names — "Standard V2", "Upscale High
@@ -30,7 +31,7 @@
 //
 // MODEL COVERAGE, AND THE ONE PLACE THE SPEC AND THE DOCS DISAGREE.
 // The published OpenAPI document enumerates five models on /enhance/async and
-// four on /enhance-gen/async. The live per-model pages document six and nine
+// four on /enhance-gen/async. The live per-model pages document six and twelve
 // respectively — the spec is a dated snapshot (`image-yaml-feb-2026`) and the
 // model pages are the per-route reference, each naming its endpoint and its own
 // `model` string, so the pages win where they ADD. The one value that goes the
@@ -88,15 +89,16 @@ export const provider = {
   doc: "https://developer.topazlabs.com/reference/api-endpoints/image",
 } as const satisfies ProviderInfo;
 
-/** A picture in, a bigger picture out. No prompt, no seed, no invention. */
+/** A picture in, a bigger picture out, and no field that takes text. */
 const enhanceModality = { input: ["image"], output: ["image"] } as const;
 
 /**
  * A picture and optionally a description in, a bigger picture out.
  *
- * `text` is on the INPUT side for the generative route because `prompt` is a
- * real field there — it is the second witness that made `prompt` canonical in
- * `unmodel/upscale`.
+ * `text` is on the INPUT side exactly where `TOPAZ_SETTINGS_BY_MODEL` lists
+ * `prompt` — it is the second witness that made `prompt` canonical in
+ * `unmodel/upscale`. `Wonder 4` and `Detail` ride the same route with no
+ * `prompt` on their pages, so they take {@link enhanceModality}.
  */
 const enhanceGenModality = { input: ["image", "text"], output: ["image"] } as const;
 
@@ -196,7 +198,7 @@ export const models = {
     // snake_cased; see ./shared.ts on the casing.
   },
 
-  // --- POST /image/v1/enhance-gen/async — Wonder (4 MP/credit) --------------
+  // --- POST /image/v1/enhance-gen/async — the generative upscalers ----------
   /**
    * 4 MP of output per credit.
    *
@@ -264,10 +266,32 @@ export const models = {
     openWeights: false,
     modalities: enhanceGenModality,
     limit: { context: 0 },
-    // The newest generative upscaler and the one with the film-grain block.
+    // The generative upscaler with the film-grain block.
     // Its page lists a camelCased `outputWidth`/`outputHeight` alongside the
     // envelope's `output_width`/`output_height` and says nothing about
     // precedence — both are typed, neither is preferred.
+  },
+  /**
+   * Topaz's recommended generative upscaler, and per its page a model with no
+   * setting at all — no `prompt` either, so its input is the picture alone.
+   *
+   * Source: https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-4.md — verified 2026-11-12.
+   * Quotes: “| `model`   | `string` | Required           | `"Wonder 4"`    | —           |”,
+   * “**Wonder 4** costs 1 credit per every 8 MP of generated output.” and “This
+   * model accepts up to 256 MP input and output.” The family page,
+   * https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative.md:
+   * “We recommend using **Wonder 4** for generative upscaling.”
+   */
+  "Wonder 4": {
+    id: "Wonder 4",
+    name: "Wonder 4",
+    family: "wonder",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: enhanceModality,
+    limit: { context: 0 },
   },
   "Standard MAX": {
     id: "Standard MAX",
@@ -296,6 +320,29 @@ export const models = {
     // can be the row key and it is the one the page leads with; the alias is
     // recorded here rather than typed, because two ids for one model would show
     // up twice in every picker.
+  },
+  /**
+   * Detail Faces: adds natural detail to faces in AI-generated images. Topaz
+   * files it under Precision Upscaling — hence the family label and the classic
+   * rate — while it rides this route. Its one setting is `detailStrength`; no
+   * `prompt`, so its input is the picture alone. Its page states no MP ceiling.
+   *
+   * Source: https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/detail-faces.md — verified 2026-11-12.
+   * Quotes: “`https://api.topazlabs.com/image/v1/enhance-gen/async`”,
+   * “| `model`          | `string`  | Required           | `"Detail"`      | —                                  |”,
+   * “**Detail Faces** costs 1 credit per every 24 MP of generated output.” and
+   * “Works best when faces in the input are at least 512 × 512 pixels.”
+   */
+  Detail: {
+    id: "Detail",
+    name: "Detail Faces",
+    family: "gigapixel",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: enhanceModality,
+    limit: { context: 0 },
   },
 
   // --- POST /image/v1/enhance-gen/async — Bloom (2 MP/credit) ---------------
@@ -333,6 +380,35 @@ export const models = {
     // The realism half of the first Bloom generation. Its `creativity` runs
     // 1–4 where the endpoint's own block says 1–9 — a per-model narrowing of a
     // shared dial, and the sharpest one in this catalog.
+  },
+  /**
+   * The creative half of the first Bloom generation, prompt-guided, with
+   * `creativityBoost` and `facePreservation` beside the Bloom 2 dials.
+   *
+   * Source: https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative/bloom-1-creative.md — verified 2026-11-12.
+   * Quotes: “| `model`             | `string`  | Required                                       | `"Bloom"`       | —                                                 |”,
+   * “**Bloom 1 Creative** costs 1 credit per every 2 MP of generated output.”
+   * and “This model accepts up to 256 MP input and output.”
+   *
+   * Legacy, not deprecated: the family page,
+   * https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative.md,
+   * says “Bloom 1 Creative is a legacy model and is no longer recommended. Bloom
+   * 2 replaces this model. This model will be retired no sooner than December 9,
+   * 2026.”, while https://developer.topazlabs.com/resources/model-deprecations.md
+   * lists `Bloom` as “Active”. Topaz's own lifecycle words keep the two apart
+   * (“**Legacy:** The model will no longer receive updates and may be deprecated
+   * in the future.”), so the row carries no `status`.
+   */
+  Bloom: {
+    id: "Bloom",
+    name: "Bloom 1 Creative",
+    family: "bloom",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: enhanceGenModality,
+    limit: { context: 0 },
   },
 } as const satisfies Record<string, ModelInfo>;
 

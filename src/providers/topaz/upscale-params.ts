@@ -27,7 +27,7 @@
  *
  * ## `prompt` is the word Topaz DID bring
  *
- * Nine of the fifteen models take one, up to 1024 characters, and Topaz asks
+ * Ten of the eighteen models take one, up to 1024 characters, and Topaz asks
  * for it descriptive rather than imperative. That is the second independent
  * witness for `unmodel/upscale`'s `prompt` — `fal-ai/clarity-upscaler` and
  * `topaz/upscale/image/generative` at fal were the first, and one of those two
@@ -35,12 +35,14 @@
  *
  * ## The route is a fact about the model
  *
- * Six models are on `/enhance/async` and nine on `/enhance-gen/async`, and the
- * enums are disjoint — so `unified.ts` picks the URL from the ref rather than
- * from a parameter, the way `unmodel/tripo3d` picks its URL from the input.
+ * Six models are on `/enhance/async` and twelve on `/enhance-gen/async`, and
+ * the enums are disjoint — so `unified.ts` picks the URL from the ref rather
+ * than from a parameter, the way `unmodel/tripo3d` picks its URL from the input.
  * Which route a model is on shows up here as the shape of its extras: the
- * classic six take `strength` and `fixCompression`, the generative nine take
- * `creativity`, `texture`, `detail` and `autoprompt`, and nothing takes both.
+ * classic six take `strength` and `fixCompression`, the generative models take
+ * `creativity`, `texture`, `detail` and `autoprompt` where they take a dial at
+ * all, and nothing takes both. `Wonder 4` takes none, and its row is the
+ * envelope alone.
  */
 
 import { EXTRA } from "../../core/unified/derive";
@@ -65,10 +67,13 @@ export const MODELS = [
   "Wonder 2",
   "Wonder 3",
   "Wonder 3.5",
+  "Wonder 4",
   "Standard MAX",
   "Recover 3",
+  "Detail",
   "Bloom 2",
   "Bloom Realism",
+  "Bloom",
 ] as const;
 
 /** A still, at every model. Topaz's clip surface is a different API — see `./models.ts`. */
@@ -230,8 +235,19 @@ export const TOPAZ_UPSCALE_MODEL_PARAMS = {
       ...DIMENSION_EXTRAS,
     },
   },
+  // No setting on its page, so nothing beyond the envelope.
+  "Wonder 4": { sources: SOURCES, factors: FACTORS, extras: ENVELOPE_EXTRAS },
   "Standard MAX": ENHANCE_GEN_ROW,
   "Recover 3": ENHANCE_GEN_ROW,
+  Detail: {
+    sources: SOURCES,
+    factors: FACTORS,
+    extras: {
+      ...ENVELOPE_EXTRAS,
+      /** 0–10. How much detail is added to faces. No server default is stated. */
+      detailStrength: EXTRA as number,
+    },
+  },
   "Bloom 2": {
     sources: SOURCES,
     factors: FACTORS,
@@ -251,6 +267,23 @@ export const TOPAZ_UPSCALE_MODEL_PARAMS = {
     extras: {
       ...ENHANCE_GEN_EXTRAS,
       /** 1–2000, default 1. */
+      seed: EXTRA as number,
+    },
+  },
+  Bloom: {
+    sources: SOURCES,
+    factors: FACTORS,
+    extras: {
+      ...ENVELOPE_EXTRAS,
+      /** Keep the source's colours. Default true. */
+      colorPreservation: EXTRA as boolean,
+      /** Integer 1–9, default 3. How strongly the model transforms the image. */
+      creativity: EXTRA as number,
+      /** Increases the effect of `creativity`. Default false. */
+      creativityBoost: EXTRA as boolean,
+      /** Keeps faces close to the source. Default true. */
+      facePreservation: EXTRA as boolean,
+      /** Default 1. */
       seed: EXTRA as number,
     },
   },

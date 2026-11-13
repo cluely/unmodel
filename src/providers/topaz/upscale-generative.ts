@@ -1,8 +1,9 @@
 /**
  * Topaz generative upscale — POST https://api.topazlabs.com/image/v1/enhance-gen/async
  *
- * The Wonder and Bloom families: nine diffusion models that ADD detail rather
- * than recovering it, steered by a prompt and a creativity dial. The classic
+ * The Wonder and Bloom families, plus Detail: twelve diffusion models that ADD
+ * detail rather than recovering it, most of them steered by a prompt and a
+ * creativity dial. The classic
  * half lives one route over at {@link ./upscale}, and the split is Topaz's own
  * — two paths, two disjoint model enums, two different sets of dials. That is a
  * wire route fork, so it is a second address (`topaz.upscaleGenerative`) rather
@@ -93,6 +94,8 @@ const ENHANCE_GEN_SETTINGS = [
   "outputWidth",
   "outputHeight",
   "colorPreservation",
+  "creativityBoost",
+  "facePreservation",
   "seed",
 ] as const;
 
@@ -103,7 +106,7 @@ export interface TopazUpscaleGenerativeParams extends TopazEnhanceGenSettings {
   source_id?: string;
   /** A URL Topaz fetches. The spelling `unmodel/upscale` compiles to. */
   source_url?: string;
-  /** One of the nine generative models. Defaults to `"Redefine"` server-side. */
+  /** One of the twelve generative models. Defaults to `"Redefine"` server-side. */
   model?: TopazEnhanceGenModel | (string & {});
   /** 1–32000. */
   output_height?: number;
@@ -135,9 +138,13 @@ export interface TopazUpscaleGenerativeParams extends TopazEnhanceGenSettings {
    */
   outputWidth?: number;
   outputHeight?: number;
-  /** `Bloom 2`. Keep the source's colours while new detail is added. */
+  /** `Bloom 2`, `Bloom`. Keep the source's colours while new detail is added. */
   colorPreservation?: boolean;
-  /** `Bloom 2` (default 2), `Bloom Realism` (1–2000, default 1). */
+  /** `Bloom`. Increases the effect of `creativity`. Default false. */
+  creativityBoost?: boolean;
+  /** `Bloom`. Keeps faces close to the source. Default true. */
+  facePreservation?: boolean;
+  /** `Bloom 2` (default 2), `Bloom Realism` (1–2000, default 1), `Bloom` (default 1). */
   seed?: number;
 }
 
@@ -166,6 +173,8 @@ const upscaleGenSchema = z.looseObject({
   outputWidth: z.number().int().optional(),
   outputHeight: z.number().int().optional(),
   colorPreservation: z.boolean().optional(),
+  creativityBoost: z.boolean().optional(),
+  facePreservation: z.boolean().optional(),
   seed: z.number().int().optional(),
 });
 

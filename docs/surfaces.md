@@ -417,7 +417,7 @@ FLUX.
 Topaz Labs is the category's second provider, and at its own API the ROUTE
 follows the model rather than the input: two paths with disjoint model enums —
 `/enhance/async` for the six classic Gigapixel upscalers, `/enhance-gen/async`
-for the nine generative Wonder and Bloom ones — so the ref decides the url and
+for the twelve generative Wonder, Bloom and Detail ones — so the ref decides the url and
 there is nothing for the caller to say. The ids are Topaz's own product names,
 spaces and all.
 
@@ -446,7 +446,7 @@ to the `FormData`, and a hand-set content-type would break the request.
 (`output_width`, `output_height`) rather than a multiplier, and a multiplier is
 not derivable from a URL. The two refusals carry different messages because a
 caller can act differently on each. What Topaz brought the category is a
-second witness for `prompt` — nine of its fifteen models steer on one. The
+second witness for `prompt` — ten of its eighteen models steer on one. The
 tuning dials stay per-model extras: they are absent from Topaz's own OpenAPI
 document and hand-transcribed here, and Topaz ignores a dial a model does not
 read rather than refusing it, so a wrong one is a silent no-op at the API and a

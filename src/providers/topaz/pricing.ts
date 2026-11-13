@@ -1,18 +1,20 @@
 /**
  * Topaz bills in CREDITS, per output megapixel, and the arithmetic is exact.
  *
- * Transcribed from https://developer.topazlabs.com/getting-started/model-pricing
- * (the per-family MP-per-credit rates), the per-model credit tables on each
- * model's page under https://developer.topazlabs.com/image-models/, and
+ * Transcribed from
+ * https://developer.topazlabs.com/getting-started/model-pricing/image-models
+ * (the formula), the "Model Pricing" section of each model's own page under
+ * https://developer.topazlabs.com/image-models/upscaling-and-enhancement/ (the
+ * rate and its credit table) — verified 2026-11-12 — and
  * https://www.topazlabs.com/enhance-api (the USD price of a credit) — verified
  * 2026-08-25.
  *
  * ## One formula reproduces every published table
  *
- * The pricing page states the rule in one sentence: "Image models are priced
- * linearly based on MP output (e.g. 1 credit = 24 MP of output)", and gives the
- * rate per family. Rounding is up, per whole credit, which is what the "Up to
- * 24 MP output: 1 credit" phrasing on the public FAQ means. So:
+ * The image pricing page states the rule in one line — "`credits = ceil(output
+ * megapixels ÷ MP per credit)`" — and each model page states its own rate in
+ * one sentence: "**Wonder 4** costs 1 credit per every 8 MP of generated
+ * output." So:
  *
  * ```text
  * credits = ceil(outputMegapixels / mpPerCredit)
@@ -23,7 +25,8 @@
  * 40, 50, 64, 100 MP — which is the table on its page, entry for entry.
  * `Redefine` and `Recover 3` at 4 MP/credit give 1, 1, 2, 4, 6, 8, 10, 13, 16,
  * 25 — their table. `Bloom 2` at 2 MP/credit gives 1, 2, 4, 8, 12, 16, 20, 25,
- * 32, 50 — its table. Three families, thirty numbers, no exceptions.
+ * 32, 50 — its table. `Wonder 4` at 8 gives 1, 1, 1, 2, 3, 4, 5 for 1, 4, 8, 16,
+ * 24, 32, 40 MP — its table.
  *
  * ## Why the estimate is EXACT here, and why it is often absent
  *
@@ -48,6 +51,8 @@
  * endpoint estimates per request, exactly, whenever the request said enough.
  */
 
+import type { TopazModelId } from "./shared";
+
 /**
  * USD per credit at the pay-as-you-go rate.
  *
@@ -60,45 +65,76 @@
 export const CREDIT_USD = 0.12;
 
 /**
- * Megapixels of OUTPUT per credit, per model family.
+ * Megapixels of OUTPUT per credit, per model — the rate each model's own page
+ * states.
  *
- * Source: https://developer.topazlabs.com/getting-started/model-pricing —
- * verified 2026-08-25. Quote: “| Precision Upscale | `Gigapixel` | 24 |
- * Generative Upscale | `Wonder` | 4 | Creative Upscale | `Bloom` | 2 |”.
+ * Per model because the rate does not follow the route or the family: `Detail`
+ * rides `/enhance-gen/async` at the classic route's 24, and `Wonder 4` bills at
+ * 8 beside `Redefine`'s 4. Every page states its rate in one sentence, and each
+ * row quotes it.
  *
- * Higher is cheaper: a Gigapixel model fits 24 megapixels into one credit where
- * a Bloom model fits two, which is a twelve-fold difference in price for the
- * same picture and the single most consequential number on this page.
+ * Higher is cheaper: a model at 24 fits 24 megapixels into one credit where a
+ * Bloom model fits two, which is a twelve-fold difference in price for the same
+ * picture and the single most consequential number on this page.
  */
 export const MP_PER_CREDIT = {
-  /** The classic GAN upscalers on `/enhance/async`. */
-  gigapixel: 24,
-  /** The generative upscalers on `/enhance-gen/async`. */
-  wonder: 4,
-  /** The creative upscalers on `/enhance-gen/async`. */
-  bloom: 2,
-} as const;
-
-export type TopazPricingFamily = keyof typeof MP_PER_CREDIT;
-
-/** Which family each rostered model bills as. */
-export const TOPAZ_PRICING_FAMILY: Readonly<Record<string, TopazPricingFamily>> = {
-  "Standard V2": "gigapixel",
-  "High Fidelity V2": "gigapixel",
-  "Upscale High Fidelity V3": "gigapixel",
-  "Low Resolution V2": "gigapixel",
-  CGI: "gigapixel",
-  "Text Refine": "gigapixel",
-  Redefine: "wonder",
-  Wonder: "wonder",
-  "Wonder 2": "wonder",
-  "Wonder 3": "wonder",
-  "Wonder 3.5": "wonder",
-  "Standard MAX": "wonder",
-  "Recover 3": "wonder",
-  "Bloom 2": "bloom",
-  "Bloom Realism": "bloom",
-};
+  // --- POST /image/v1/enhance/async ----------------------------------------
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/standard-2.md — verified 2026-11-12.
+  // “**Standard 2** costs 1 credit per every 24 MP of generated output.”
+  "Standard V2": 24,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/high-fidelity-2.md — verified 2026-11-12.
+  // “**High Fidelity 2** costs 1 credit per every 24 MP of generated output.”
+  "High Fidelity V2": 24,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/high-fidelity-3.md — verified 2026-11-12.
+  // “**High Fidelity 3** costs 1 credit per every 24 MP of generated output.”
+  "Upscale High Fidelity V3": 24,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/low-resolution-2.md — verified 2026-11-12.
+  // “**Low Resolution 2** costs 1 credit per every 24 MP of generated output.”
+  "Low Resolution V2": 24,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/art-and-cgi.md — verified 2026-11-12.
+  // “**Art & CGI** costs 1 credit per every 24 MP of generated output.”
+  CGI: 24,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/text-and-shapes.md — verified 2026-11-12.
+  // “**Text & Shapes** costs 1 credit per every 24 MP of generated output.”
+  "Text Refine": 24,
+  // --- POST /image/v1/enhance-gen/async ------------------------------------
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/redefine.md — verified 2026-11-12.
+  // “**Redefine** costs 1 credit per every 4 MP of generated output.”
+  Redefine: 4,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-1.md — verified 2026-11-12.
+  // “**Wonder 1** costs 1 credit per every 4 MP of generated output.”
+  Wonder: 4,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-2.md — verified 2026-11-12.
+  // “**Wonder 2** costs 1 credit per every 4 MP of generated output.”
+  "Wonder 2": 4,
+  // https://developer.topazlabs.com/getting-started/model-pricing — verified 2026-08-25.
+  // “| Generative Upscale | `Wonder` | 4 |” (the family rate).
+  "Wonder 3": 4,
+  // https://developer.topazlabs.com/getting-started/model-pricing — verified 2026-08-25.
+  // “| Generative Upscale | `Wonder` | 4 |” (the family rate).
+  "Wonder 3.5": 4,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-4.md — verified 2026-11-12.
+  // “**Wonder 4** costs 1 credit per every 8 MP of generated output.”
+  "Wonder 4": 8,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/standard-max.md — verified 2026-11-12.
+  // “**Standard Max** costs 1 credit per every 4 MP of generated output.”
+  "Standard MAX": 4,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/recover-3.md — verified 2026-11-12.
+  // “**Recover 3** costs 1 credit per every 4 MP of generated output.”
+  "Recover 3": 4,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/detail-faces.md — verified 2026-11-12.
+  // “**Detail Faces** costs 1 credit per every 24 MP of generated output.”
+  Detail: 24,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative/bloom-2.md — verified 2026-11-12.
+  // “**Bloom 2** costs 1 credit per every 2 MP of generated output.”
+  "Bloom 2": 2,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative/bloom-1-realism.md — verified 2026-11-12.
+  // “**Bloom 1 Realism** costs 1 credit per every 2 MP of generated output.”
+  "Bloom Realism": 2,
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative/bloom-1-creative.md — verified 2026-11-12.
+  // “**Bloom 1 Creative** costs 1 credit per every 2 MP of generated output.”
+  Bloom: 2,
+} as const satisfies Record<TopazModelId, number>;
 
 export interface TopazCostInputs {
   model: string;
@@ -118,13 +154,14 @@ export interface TopazCostInputs {
  * not carry).
  */
 export function topazCredits(inputs: TopazCostInputs): number | undefined {
-  const family = TOPAZ_PRICING_FAMILY[inputs.model];
-  if (family === undefined) return undefined;
+  const rates: Readonly<Record<string, number>> = MP_PER_CREDIT;
+  const rate = Object.hasOwn(rates, inputs.model) ? rates[inputs.model] : undefined;
+  if (rate === undefined) return undefined;
   const { outputWidth: width, outputHeight: height } = inputs;
   if (width === undefined || height === undefined) return undefined;
   const megapixels = (width * height) / 1_000_000;
   if (!(megapixels > 0)) return undefined;
-  return Math.ceil(megapixels / MP_PER_CREDIT[family]);
+  return Math.ceil(megapixels / rate);
 }
 
 /** The same figure in USD, at the pay-as-you-go {@link CREDIT_USD} rate. */

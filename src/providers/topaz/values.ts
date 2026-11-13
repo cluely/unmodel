@@ -23,9 +23,9 @@
  *   one out is the only way a user finds out before they are billed.
  * - `TOPAZ_MEGAPIXEL_LIMITS` — the input and output ceilings, which differ
  *   eight-fold across the roster (128 MP at `Wonder`, 1024 at `Standard V2`).
- * - `MP_PER_CREDIT` + `TOPAZ_PRICING_FAMILY` + `CREDIT_USD` — enough to show a
- *   live price as the user drags an output-size slider, since Topaz's price is
- *   a pure function of the output's pixel count.
+ * - `MP_PER_CREDIT` (per model) + `CREDIT_USD` — enough to show a live price as
+ *   the user drags an output-size slider, since Topaz's price is a pure
+ *   function of the output's pixel count.
  */
 
 export {
@@ -50,4 +50,4 @@ export {
   TOPAZ_SUBJECT_DETECTION,
 } from "./shared";
 
-export { CREDIT_USD, MP_PER_CREDIT, TOPAZ_PRICING_FAMILY } from "./pricing";
+export { CREDIT_USD, MP_PER_CREDIT } from "./pricing";

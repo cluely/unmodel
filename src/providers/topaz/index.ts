@@ -11,8 +11,8 @@
  * - `upscale` — `POST /image/v1/enhance/async`, the Gigapixel family: six
  *   classic (GAN) models that enlarge what is already in the picture.
  * - `upscaleGenerative` — `POST /image/v1/enhance-gen/async`, the Wonder and
- *   Bloom families: nine diffusion models that ADD detail, steered by a prompt
- *   and a creativity dial.
+ *   Bloom families plus Detail: twelve diffusion models that ADD detail, most
+ *   of them steered by a prompt and a creativity dial.
  *
  * Two addresses because Topaz publishes two paths with disjoint model enums and
  * different dials — a wire route fork, which is what a qualified address names.
@@ -128,14 +128,8 @@ export type {
   TopazSubjectDetection,
 } from "./shared";
 
-export {
-  CREDIT_USD,
-  MP_PER_CREDIT,
-  TOPAZ_PRICING_FAMILY,
-  topazCostUSD,
-  topazCredits,
-} from "./pricing";
-export type { TopazCostInputs, TopazPricingFamily } from "./pricing";
+export { CREDIT_USD, MP_PER_CREDIT, topazCostUSD, topazCredits } from "./pricing";
+export type { TopazCostInputs } from "./pricing";
 
 export { models, provider } from "./models";
 export type { TopazCatalogModelId } from "./models";

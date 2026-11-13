@@ -555,16 +555,13 @@ function reportOverBudget(
   });
 }
 
-/** `model_name` values this route accepts. */
-export const TEXT2VIDEO_MODELS = [
-  "kling-v1",
-  "kling-v1-6",
-  "kling-v2-master",
-  "kling-v2-1-master",
-  "kling-v2-5-turbo",
-  "kling-v2-6",
-  "kling-v3",
-] as const;
+/**
+ * `model_name` values `POST /v1/videos/text2video` accepts.
+ * https://kling.ai/document-api/api/video/3-0-omni/text-to-video/legacy
+ * (2026-11-12): `{name:"model_name",type:"string",required:!0,...,
+ * enum:["kling-v2-5-turbo","kling-v2-6","kling-v3"]}`.
+ */
+export const TEXT2VIDEO_MODELS = ["kling-v2-5-turbo", "kling-v2-6", "kling-v3"] as const;
 
 /** Documented `aspect_ratio` values on the image routes. */
 export const KLING_IMAGE_ASPECT_RATIOS = [

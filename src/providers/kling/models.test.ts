@@ -11,7 +11,7 @@ import {
 import { videoCostUSD } from "./pricing";
 
 /** Ids that name a video model AND a different image model. */
-const SHADOWED = ["kling-v3", "kling-v2-1", "kling-v1-5", "kling-v1"] as const;
+const SHADOWED = ["kling-v3"] as const;
 
 describe("kling catalog shape", () => {
   test("the per-kind maps are unambiguous", () => {
@@ -62,7 +62,7 @@ describe("kling shadowed ids", () => {
       const merged = models[id];
       // The bug this pins: a plain spread let the video row win, so
       // `models["kling-v3"].cost.perImage` was undefined and a caller reading
-      // `perVideoSecond` for an image job was off by 3x-24x.
+      // `perVideoSecond` for an image job was off by 3x.
       expect(merged.cost.perImage, `${id} keeps its per-image rate`).toBe(
         imageModels[id].cost.perImage,
       );
@@ -74,11 +74,22 @@ describe("kling shadowed ids", () => {
   });
 
   test("non-shadowed image ids survive the merge with an image rate", () => {
-    // `kling-v2` / `kling-v2-new` are image-only and were previously the only
-    // image rows cherry-picked into `models`.
-    expect(models["kling-v2"].cost?.perImage).toBe(0.014);
-    expect(models["kling-v2-new"]).toBe(imageModels["kling-v2-new"]);
+    // `kling-v2-1` names an image model only.
+    expect(models["kling-v2-1"]).toBe(imageModels["kling-v2-1"]);
+    expect(models["kling-v2-1"].cost.perImage).toBe(0.014);
     expect(models["kling-image-o1"]).toBe(omniImageModels["kling-image-o1"]);
+  });
+
+  test("the catalogs carry each route's documented enum, and nothing else", () => {
+    // https://kling.ai/document-api/api/image/3-0-omni/image-generation
+    // (2026-11-12): enum ["kling-v2-1","kling-v3"]; the /v1/videos/* legacy
+    // pages: enum ["kling-v2-5-turbo","kling-v2-6","kling-v3"].
+    expect(Object.keys(imageModels).sort()).toEqual(["kling-v2-1", "kling-v3"]);
+    expect(Object.keys(v1VideoModels).sort()).toEqual([
+      "kling-v2-5-turbo",
+      "kling-v2-6",
+      "kling-v3",
+    ]);
   });
 
   test("every id in every per-kind map is reachable from `models`", () => {

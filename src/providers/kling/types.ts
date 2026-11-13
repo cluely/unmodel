@@ -55,11 +55,7 @@ import type { ImageToVideoV3Params } from "./video-v3-from-image";
 
 export type { TextToVideoParams } from "./video";
 
-export type {
-  ImageToVideoParams,
-  KlingDynamicMask,
-  KlingTrajectoryPoint,
-} from "./video-from-image";
+export type { ImageToVideoParams } from "./video-from-image";
 
 export type { TextToVideoV3Params, TextToVideoV3Settings } from "./video-v3";
 
@@ -92,9 +88,6 @@ export type {
 } from "./shared";
 
 export type {
-  KlingCameraConfig,
-  KlingCameraControl,
-  KlingCameraType,
   KlingShot,
   KlingShotType,
   KlingV1Duration,

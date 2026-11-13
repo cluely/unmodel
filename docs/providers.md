@@ -1207,7 +1207,7 @@ guess.
 Stated normatively, and asserted by the goldens in `test/interop/media-retarget.test.ts`:
 
 - a param the target **cannot express** is an **error** naming the param, the fal endpoint and
-  the reason. It is never dropped and never warned — a dropped `camera_control` produces a
+  the reason. It is never dropped and never warned — a dropped `image_tail` produces a
   *different* video, not a lossier one;
 - a param the target expresses **approximately** (a value derived from two source fields, or a
   structure flattened) is exactly one `approximated_param` warning carrying `requested` and

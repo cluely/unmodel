@@ -11,7 +11,7 @@
  *
  * | model ids | family | duration | size | inputs |
  * |---|---|---|---|---|
- * | `kling-v1` … `kling-v3` | `/v1/videos/*` | `duration: "5"` — **a string** | `mode`: std / pro / 4k | `image`, `image_tail` |
+ * | `kling-v3`, `kling-v2-6`, `kling-v2-5-turbo` | `/v1/videos/*` | `duration: "5"` — **a string** | `mode`: std / pro / 4k | `image`, `image_tail` |
  * | `kling-3.0`, `-turbo`, `kling-2.6`, `kling-2.5-turbo` | `/text-to-video/{model}` | `settings.duration: 5` — a number | `settings.resolution` | `contents[]` |
  * | `kling-3.0-omni`, `kling-o1` | `/omni-video/{model}` | `settings.duration: 5` | `settings.resolution` | `contents[]`, incl. video |
  * | `kling-4.0`, `kling-4.0-flash` | all three path routes — text and frames go to `/text-to-video` / `/image-to-video`, references and clips to `/omni-video` | `settings.duration: 5` | `settings.resolution` | `contents[]` |
@@ -240,7 +240,7 @@ function compileV1(
   if (input.duration !== undefined) {
     // The one place in the category where seconds go out as a string. The
     // allowed list is this model's own row of the capability map, so the error
-    // names the durations `kling-v2-1` actually offers rather than the widest.
+    // names the durations `kling-v2-5-turbo` actually offers rather than the widest.
     const allowed = V1_MODEL_RULES[ctx.model]?.durations.map(Number);
     const duration = ctx.take(
       toDurationString(input.duration, allowed, { path: ["duration"], warn: ctx.warn }),
@@ -252,7 +252,7 @@ function compileV1(
     const mode = ctx.take(
       toTier(input.resolution, V1_MODES, { path: ["resolution"], warn: ctx.warn }),
     );
-    // Which modes this model has is `checkV1Support`'s business — `kling-v1`
+    // Which modes this model has is `checkV1Support`'s business — `kling-v2-6`
     // is std/pro only, and its message names them.
     if (mode !== undefined) body.mode = mode;
   }

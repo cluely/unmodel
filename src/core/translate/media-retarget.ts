@@ -27,7 +27,7 @@
  *
  * - a param the target **cannot express** is an `error` — the retarget fails
  *   and names the param. It is never dropped silently, and never warned: a
- *   dropped `camera_control` produces a different video, not a lossier one.
+ *   dropped `image_tail` produces a different video, not a lossier one.
  * - a param the target expresses **approximately** — a value snapped onto the
  *   target's enum, or derived from two of the source's fields — is exactly one
  *   `approximated_param` warning naming what was asked for and what was

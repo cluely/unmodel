@@ -4,28 +4,26 @@
  * Exported as `kling.videoFromImage`: the PRIMARY image-to-video validator.
  *
  * Wire notes (verified against
- * https://kling.ai/document-api/apiReference/model/imageToVideo,
- * https://kling.ai/document-api/api/video/1-0/image-to-video and the
- * capability map on 2026-08-13):
+ * https://kling.ai/document-api/apiReference/model/imageToVideo and the
+ * capability map on 2026-08-13; the `model_name` enum and field list against
+ * https://kling.ai/document-api/api/video/3-0-omni/image-to-video/legacy on
+ * 2026-11-12):
  * - The `model_name`-in-the-body route, and the corroborated one — see
  *   ./video.ts for why the path-addressed family ships EXPERIMENTAL as
- *   `kling.videoV3FromImage` (./video-v3-from-image.ts). Its model enum is wider
- *   than text2video's: it adds `kling-v1-5` and `kling-v2-1`, which are
- *   image-to-video-only.
+ *   `kling.videoV3FromImage` (./video-v3-from-image.ts). Its model enum is
+ *   text2video's: `enum:["kling-v2-5-turbo","kling-v2-6","kling-v3"]`.
  * - `image` is the start frame and `image_tail` the end frame (both an HTTPS
- *   URL or base64). `static_mask` / `dynamic_masks` drive motion brush,
- *   `element_list` and `voice_list` carry Elements and voices.
+ *   URL or base64); `element_list` and `voice_list` carry Elements and voices.
  * - There is no `aspect_ratio` here — the input image sets the frame.
- * - The same capability gates as text2video apply (`sound`, `cfg_scale`,
- *   `camera_control`, `multi_shot`), plus the shared shot-pairing rules.
+ * - The same capability gates as text2video apply (`sound`, `multi_shot`),
+ *   plus the shared shot-pairing rules.
  * - Async: responds with a task object; poll
  *   `GET /v1/videos/image2video/{id}`. Auth is `Authorization: Bearer <key>`.
  *
  * PER-MODEL VALUE SPACE. As on text2video, a literal `model_name` narrows
- * `mode`, `duration`, `sound`, `cfg_scale`, `camera_control` and `multi_shot`
- * to that model's own `V1_MODEL_RULES` row — the row `checkV1Support` reports
- * against and the row `./unified-video.ts` derives its nine `kling-v*` rows
- * from. See {@link ImageToVideoArm} and `V1CapabilityArm` in ./v1-routes.
+ * `mode`, `duration`, `sound` and `multi_shot` to that model's own
+ * `V1_MODEL_RULES` row — the row `checkV1Support` reports against and the row
+ * `./unified-video.ts` derives its `kling-v*` rows from. See {@link ImageToVideoArm} and `V1CapabilityArm` in ./v1-routes.
  */
 
 import { z } from "zod";
@@ -46,16 +44,13 @@ import {
   type KlingWatermarkInfo,
 } from "./shared";
 import {
-  DEFAULT_V1_MODEL,
   KLING_SHOT_TYPES,
-  cameraControlSchema,
   checkV1Shape,
   checkV1Support,
   elementListSchema,
   v1PromptSchema,
   multiPromptSchema,
   watermarkInfoSchema,
-  type KlingCameraControl,
   type KlingShot,
   type KlingShotType,
   type KlingV1Duration,
@@ -69,37 +64,19 @@ export const IMAGE2VIDEO_URL = `${KLING_BASE_URL}/v1/videos/image2video`;
 
 const SOURCE = `${DOCS_BASE}/apiReference/model/imageToVideo`;
 
-/** `model_name` values this route accepts. */
-export const IMAGE2VIDEO_MODELS = [
-  "kling-v1",
-  "kling-v1-5",
-  "kling-v1-6",
-  "kling-v2-master",
-  "kling-v2-1",
-  "kling-v2-1-master",
-  "kling-v2-5-turbo",
-  "kling-v2-6",
-  "kling-v3",
-] as const;
+/**
+ * `model_name` values this route accepts.
+ * https://kling.ai/document-api/api/video/3-0-omni/image-to-video/legacy
+ * (2026-11-12): `{name:"model_name",type:"string",required:!0,...,
+ * enum:["kling-v2-5-turbo","kling-v2-6","kling-v3"]}`.
+ */
+export const IMAGE2VIDEO_MODELS = ["kling-v2-5-turbo", "kling-v2-6", "kling-v3"] as const;
 
 /**
  * A `model_name` this route serves AND the capability map bounds — the ids
- * that get a per-model body arm below. This enum is TEXT2VIDEO_MODELS plus
- * `kling-v1-5` and `kling-v2-1`, which are image-to-video-only.
+ * that get a per-model body arm below.
  */
 export type ImageToVideoModelId = Extract<(typeof IMAGE2VIDEO_MODELS)[number], V1RuleModelId>;
-
-/** One motion-brush trajectory point. */
-export interface KlingTrajectoryPoint {
-  x: number;
-  y: number;
-}
-
-/** A motion-brush mask plus the path its region should travel. */
-export interface KlingDynamicMask {
-  mask: string;
-  trajectories: KlingTrajectoryPoint[];
-}
 
 /**
  * The WIDE body — every documented value of every model on this route. A
@@ -107,7 +84,12 @@ export interface KlingDynamicMask {
  * run-time id, a post-snapshot id and an omitted `model_name` fall back to.
  */
 export interface ImageToVideoParams {
-  /** Defaults to "kling-v1". */
+  /**
+   * The current reference marks it `required:!0` (enum `kling-v2-5-turbo`,
+   * `kling-v2-6`, `kling-v3`) while its prose still says an empty one calls
+   * "the V1 model", which is retired — so an omitted one validates with no
+   * model-dependent check and no estimate rather than a guessed default.
+   */
   model_name?: KlingV1VideoModelId | (string & {});
   /** Start frame: an HTTPS URL or base64. */
   image?: string;
@@ -126,22 +108,13 @@ export interface ImageToVideoParams {
   voice_list?: unknown[];
   /** Native audio. Defaults to "off". */
   sound?: "on" | "off";
-  /** 0–1. Defaults to 0.5. Not supported on the kling-v2.x models. */
-  cfg_scale?: number;
   /** std = 720P, pro = 1080P, 4k = 4K. Defaults to "std". */
   mode?: KlingMode;
-  /** Motion-brush static region. */
-  static_mask?: string;
-  /** Motion-brush moving regions. */
-  dynamic_masks?: KlingDynamicMask[];
-  /** kling-v1 only (720P, 5s). */
-  camera_control?: KlingCameraControl;
   /**
    * Seconds, as a string. Defaults to "5". The union is the widest documented
    * range (kling-v3's 3–15s), which is what a run-time or post-snapshot
    * `model_name` gets; a LITERAL one is narrowed to its own `V1_MODEL_RULES`
-   * row at compile time — every model but kling-v3 and kling-v2-6 offers only
-   * "5" and "10".
+   * row at compile time — kling-v2-5-turbo offers only "5" and "10".
    */
   duration?: KlingV1Duration;
   watermark_info?: KlingWatermarkInfo;
@@ -180,18 +153,7 @@ const videoFromImageSchema = z.looseObject({
   element_list: elementListSchema.optional(),
   voice_list: z.array(z.unknown()).optional(),
   sound: z.enum(KLING_SOUND).optional(),
-  cfg_scale: z.number().min(0).max(1).optional(),
   mode: z.enum(KLING_MODES).optional(),
-  static_mask: z.string().optional(),
-  dynamic_masks: z
-    .array(
-      z.looseObject({
-        mask: z.string(),
-        trajectories: z.array(z.looseObject({ x: z.number().int(), y: z.number().int() })),
-      }),
-    )
-    .optional(),
-  camera_control: cameraControlSchema.optional(),
   duration: z.string().optional(),
   watermark_info: watermarkInfoSchema.optional(),
   callback_url: z.string().optional(),
@@ -203,8 +165,8 @@ export const MAX_ELEMENT_LIST = 3;
 export const MAX_VOICE_LIST = 2;
 
 /**
- * The route's own pairing rules: at least one frame, the three
- * mutually-exclusive motion inputs, and the element/voice caps.
+ * The route's own pairing rules: at least one frame, and the element/voice
+ * caps.
  */
 function checkImageInput(
   params: ImageToVideoParams,
@@ -218,23 +180,6 @@ function checkImageInput(
       path: ["image"],
       message: "at least one of `image` (start frame) or `image_tail` (end frame) is required.",
       meta: { source: SOURCE },
-    });
-  }
-
-  // "`image_tail`, `dynamic_masks`/`static_mask`, and `camera_control` are
-  // mutually exclusive — only one can be used at a time."
-  const exclusive: string[] = [];
-  if (params.image_tail != null) exclusive.push("image_tail");
-  if (params.dynamic_masks != null || params.static_mask != null) {
-    exclusive.push("dynamic_masks/static_mask");
-  }
-  if (params.camera_control != null) exclusive.push("camera_control");
-  if (exclusive.length > 1) {
-    ctx.report({
-      code: "unsupported_param",
-      path: ["image_tail"],
-      message: `\`image_tail\`, \`dynamic_masks\`/\`static_mask\` and \`camera_control\` are mutually exclusive; got ${exclusive.join(" + ")}.`,
-      meta: { conflicting: exclusive, source: SOURCE },
     });
   }
 
@@ -268,10 +213,10 @@ function checkImageInput(
 }
 
 function estimate(params: ImageToVideoParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
-  if (info === undefined) return {};
+  if (info === undefined || params.model_name === undefined) return {};
   const duration = params.duration === undefined ? undefined : Number(params.duration);
   const costUSD = videoCostUSD({
-    model: params.model_name ?? DEFAULT_V1_MODEL,
+    model: params.model_name,
     resolution: MODE_RESOLUTION[params.mode ?? "std"] ?? "720p",
     ...(duration !== undefined && Number.isFinite(duration) && { duration }),
     ...(params.sound !== undefined && { audio: params.sound === "on" }),
@@ -301,7 +246,7 @@ function finalize(params: ImageToVideoParams): unknown {
 const validator = createValidator<ImageToVideoParams, unknown>({
   endpoint: "kling.videoFromImage",
   schema: videoFromImageSchema,
-  modelId: (params) => params.model_name ?? DEFAULT_V1_MODEL,
+  modelId: (params) => params.model_name,
   catalog: v1VideoModels,
   checks: [
     checkV1Support("image2video", IMAGE2VIDEO_MODELS, SOURCE),
@@ -317,7 +262,7 @@ const validator = createValidator<ImageToVideoParams, unknown>({
  *
  * ```ts
  * const params = kling.videoFromImage({
- *   model_name: "kling-v2-1",
+ *   model_name: "kling-v2-6",
  *   image: "https://example.com/frame.png",
  *   prompt: "she turns to the window as the train moves",
  *   mode: "pro",

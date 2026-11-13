@@ -21,9 +21,8 @@
  * ## Why a cell may try more than one route
  *
  * Video is the category where "which endpoint" is derived from the *inputs*,
- * and half these models are not on the text route at all — `kling-v2-1` is
- * image-to-video only, `runway/aleph2` video-to-video only, `vidu/viduq3` has
- * only a reference arm. A declared value is therefore asserted **reachable**:
+ * and half these models are not on the text route at all — `runway/aleph2`
+ * is video-to-video only, `vidu/viduq3` has only a reference arm. A declared value is therefore asserted **reachable**:
  * it must compile cleanly on at least one of the four route shapes. That is
  * the honest statement a per-model row can make about a provider whose fields
  * differ per route, and it is exactly how the tables were derived.
@@ -506,14 +505,14 @@ describe("every declared video preset is a value the provider accepts", () => {
    */
   test("an extra belonging to a sibling model is refused, naming the models that take it", () => {
     const result = video.safe({
-      model: "kling/kling-v3",
+      model: "kling/kling-v2-5-turbo",
       prompt: "hi",
-      cfg_scale: 0.5,
+      sound: "on",
     } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["cfg_scale"] });
-    expect(result.errors[0]!.message).toContain("kling-v1");
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["sound"] });
+    expect(result.errors[0]!.message).toContain("kling-v3");
   });
 
   test("a nested extra lands under its own wire prefix", () => {
@@ -521,7 +520,7 @@ describe("every declared video preset is a value the provider accepts", () => {
     // `watermark_info` is a body-root field on `/v1/videos/*` and lives under
     // `options` on the path-addressed routes, from one table.
     const v1 = video({
-      model: "kling/kling-v1",
+      model: "kling/kling-v3",
       prompt: "hi",
       watermark_info: { enabled: true },
     } as never) as unknown as Record<string, unknown>;

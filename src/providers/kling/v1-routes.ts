@@ -19,72 +19,9 @@ import { DOCS_BASE, V1_PROMPT_MAX_CHARS, SHOT_PROMPT_MAX_CHARS, MAX_SHOTS } from
 
 export const CAPABILITY_MAP_SOURCE = `${DOCS_BASE}/guides/capability-map/video`;
 
-/** Server-side default when `model_name` is omitted. */
-export const DEFAULT_V1_MODEL = "kling-v1";
-
 /** `shot_type`, required when `multi_shot` is true. */
 export const KLING_SHOT_TYPES = ["customize", "intelligence"] as const;
 export type KlingShotType = (typeof KLING_SHOT_TYPES)[number];
-
-/** `camera_control.type`. Only `simple` takes a `config`. */
-export const KLING_CAMERA_TYPES = [
-  "simple",
-  "down_back",
-  "forward_up",
-  "right_turn_forward",
-  "left_turn_forward",
-] as const;
-export type KlingCameraType = (typeof KLING_CAMERA_TYPES)[number];
-
-/** The six `camera_control.config` axes; each is −10…10 and only one may be non-zero. */
-export const KLING_CAMERA_AXES = [
-  "horizontal",
-  "vertical",
-  "pan",
-  "tilt",
-  "roll",
-  "zoom",
-] as const;
-
-export const CAMERA_AXIS_MIN = -10;
-export const CAMERA_AXIS_MAX = 10;
-
-export interface KlingCameraConfig {
-  /** −10…10; negative pans left, positive pans right. */
-  horizontal?: number;
-  /** −10…10; negative moves down, positive moves up. */
-  vertical?: number;
-  /** −10…10; rotation around the y-axis. */
-  pan?: number;
-  /** −10…10; rotation around the x-axis. */
-  tilt?: number;
-  /** −10…10; rotation around the z-axis. */
-  roll?: number;
-  /** −10…10; negative is a longer focal length, positive a wider field. */
-  zoom?: number;
-}
-
-export interface KlingCameraControl {
-  type?: KlingCameraType;
-  /** Required when `type` is "simple"; must be omitted for the presets. */
-  config?: KlingCameraConfig;
-}
-
-const axisSchema = z.number().min(CAMERA_AXIS_MIN).max(CAMERA_AXIS_MAX);
-
-export const cameraControlSchema = z.looseObject({
-  type: z.enum(KLING_CAMERA_TYPES).optional(),
-  config: z
-    .looseObject({
-      horizontal: axisSchema.optional(),
-      vertical: axisSchema.optional(),
-      pan: axisSchema.optional(),
-      tilt: axisSchema.optional(),
-      roll: axisSchema.optional(),
-      zoom: axisSchema.optional(),
-    })
-    .optional(),
-});
 
 /** One storyboard shot in `multi_prompt`. */
 export interface KlingShot {
@@ -120,10 +57,6 @@ export interface V1ModelRules {
   readonly durations: readonly string[];
   /** Whether the model supports native audio (`sound: "on"`). */
   readonly sound?: boolean;
-  /** Whether the model supports `cfg_scale`. */
-  readonly cfgScale?: boolean;
-  /** Whether the model supports `camera_control`. */
-  readonly cameraControl?: boolean;
   /** Whether the model supports multi-shot generation. */
   readonly multiShot?: boolean;
 }
@@ -157,13 +90,16 @@ export type KlingV1Duration = (typeof THREE_TO_FIFTEEN)[number];
 
 /**
  * Support per `model_name`, from the capability map's Generation Range /
- * Resolution columns and its Native Audio / Camera Control / Multi-shot rows.
+ * Resolution columns and its Native Audio / Multi-shot rows. The three rows
+ * are the route's whole `model_name` enum —
+ * https://kling.ai/document-api/api/video/3-0-omni/text-to-video/legacy
+ * (2026-11-12): `enum:["kling-v2-5-turbo","kling-v2-6","kling-v3"]`.
  *
  * ONE TABLE, READ THREE TIMES. {@link checkV1Support} applies it at run time;
  * `./video.ts` and `./video-from-image.ts` narrow `mode` / `duration` /
- * `sound` / `cfg_scale` / `camera_control` / `multi_shot` per `model_name`
- * from it ({@link V1CapabilityArm}); and `./unified-video.ts` builds the nine
- * `kling-v*` rows of `KLING_VIDEO_MODEL_PARAMS` out of it. Before that, the
+ * `sound` / `multi_shot` per `model_name` from it ({@link V1CapabilityArm});
+ * and `./unified-video.ts` builds the `kling-v*` rows of
+ * `KLING_VIDEO_MODEL_PARAMS` out of it. Before that, the
  * unified surface refused `duration: 8` on `kling-v2-5-turbo` at compile time
  * while the wire validator it compiles down to accepted it — a wire-exact
  * validator looser than the layer above it, which inverts docs/decisions.md
@@ -184,19 +120,6 @@ const V1_MODEL_RULES_TABLE = {
   },
   "kling-v2-6": { modes: ["std", "pro"], durations: THREE_TO_TEN, sound: true },
   "kling-v2-5-turbo": { modes: ["std", "pro"], durations: FIVE_TEN },
-  // Master models are 1080P-only on the capability map.
-  "kling-v2-1-master": { modes: ["pro"], durations: FIVE_TEN },
-  "kling-v2-1": { modes: ["std", "pro"], durations: FIVE_TEN },
-  "kling-v2-master": { modes: ["pro"], durations: FIVE_TEN },
-  "kling-v1-6": { modes: ["std", "pro"], durations: FIVE_TEN, cfgScale: true },
-  "kling-v1-5": { modes: ["std", "pro"], durations: FIVE_TEN, cfgScale: true },
-  "kling-v1": {
-    modes: ["std", "pro"],
-    durations: FIVE_TEN,
-    cfgScale: true,
-    // "Only supports 720P and 5s duration" — the capability map's tooltip.
-    cameraControl: true,
-  },
 } as const satisfies Readonly<Record<string, V1ModelRules>>;
 
 /**
@@ -228,7 +151,7 @@ export const V1_MODE_TIERS = {
 } as const satisfies Readonly<Record<string, string>>;
 
 /**
- * `mode` / `duration` and the four capability switches, as ONE `model_name`
+ * `mode` / `duration` and the two capability switches, as ONE `model_name`
  * accepts them.
  *
  * Every list is {@link V1_MODEL_RULES}' own — the list `checkV1Support`
@@ -243,17 +166,12 @@ export const V1_MODE_TIERS = {
  *
  * - **`aspect_ratio`** (text2video only). The capability map has no per-model
  *   aspect-ratio column and `checkV1Support` never gates it, so all three of
- *   `KLING_ASPECT_RATIOS` stay legal on every model. (The unified rows *do*
- *   carry `ratios: []` for `kling-v1-5` / `kling-v2-1` — that is route
- *   membership, not a ratio rule: neither id is in `TEXT2VIDEO_MODELS`, and
- *   `image2video` has no `aspect_ratio` field at all.)
+ *   `KLING_ASPECT_RATIOS` stay legal on every model.
  * - **`shot_type` / `multi_prompt`**. They only do anything alongside
  *   `multi_shot`, but no check refuses them on their own, so narrowing them to
  *   `never` off `kling-v3` would refuse a request the runtime accepts. The
  *   unified rows declare them on `kling-v3` alone, which is the layer that may
  *   say "not a parameter this model accepts"; the wire may not.
- * - **`cfg_scale`'s range**. `0–1` is a bound, not an enum; the zod schema
- *   owns it.
  */
 export type V1CapabilityArm<M extends V1RuleModelId> = {
   /** This model's own `mode` values (std = 720P, pro = 1080P, 4k = 4K). */
@@ -262,32 +180,18 @@ export type V1CapabilityArm<M extends V1RuleModelId> = {
   duration?: V1RulesOf<M>["durations"][number];
   /** `"on"` only where the capability map gives the model native audio. */
   sound?: V1RulesOf<M> extends { sound: true } ? "on" | "off" : "off";
-  /** `never` where the capability map has no `cfg_scale` for the model. */
-  cfg_scale?: V1RulesOf<M> extends { cfgScale: true } ? number : never;
-  /** `never` off `kling-v1` — the one model with camera control. */
-  camera_control?: V1RulesOf<M> extends { cameraControl: true }
-    ? KlingCameraControl
-    : never;
   /** `true` only on `kling-v3`; `false` stays legal everywhere. */
   multi_shot?: V1RulesOf<M> extends { multiShot: true } ? boolean : false;
 };
 
 /** The keys {@link V1CapabilityArm} restates, to `Omit` from the wide body. */
-export type V1NarrowedKey =
-  | "mode"
-  | "duration"
-  | "sound"
-  | "cfg_scale"
-  | "camera_control"
-  | "multi_shot";
+export type V1NarrowedKey = "mode" | "duration" | "sound" | "multi_shot";
 
 interface V1Params {
   model_name?: string;
   mode?: string;
   duration?: string;
   sound?: string;
-  cfg_scale?: number;
-  camera_control?: KlingCameraControl;
   multi_shot?: boolean;
   shot_type?: string;
   multi_prompt?: readonly unknown[];
@@ -296,8 +200,12 @@ interface V1Params {
 
 /**
  * Enforces the per-model support table: route membership, `mode` and
- * `duration` values, and the four capability switches
- * (`sound`, `cfg_scale`, `camera_control`, `multi_shot`).
+ * `duration` values, and the two capability switches (`sound`, `multi_shot`).
+ *
+ * An omitted `model_name` checks nothing model-dependent: the reference marks
+ * the field `required:!0` while its prose still says an empty one calls "the
+ * V1 model", which is retired, so what the server does with none is
+ * unverifiable.
  */
 export function checkV1Support<P extends V1Params>(
   route: string,
@@ -305,8 +213,8 @@ export function checkV1Support<P extends V1Params>(
   source: string,
 ): (params: P, info: ModelInfo | undefined, ctx: PipelineContext) => void {
   return (params, info, ctx) => {
-    if (info === undefined) return;
-    const model = params.model_name ?? DEFAULT_V1_MODEL;
+    const model = params.model_name;
+    if (info === undefined || model === undefined) return;
     if (!supported.includes(model)) {
       ctx.report({
         code: "unsupported_capability",
@@ -345,8 +253,6 @@ export function checkV1Support<P extends V1Params>(
 
     const switches: ReadonlyArray<[keyof V1ModelRules, string, unknown, string]> = [
       ["sound", "sound", params.sound === "on" ? true : undefined, "native audio"],
-      ["cfgScale", "cfg_scale", params.cfg_scale, "`cfg_scale`"],
-      ["cameraControl", "camera_control", params.camera_control, "camera control"],
       ["multiShot", "multi_shot", params.multi_shot === true ? true : undefined, "multi-shot generation"],
     ];
     for (const [key, field, value, label] of switches) {
@@ -364,8 +270,7 @@ export function checkV1Support<P extends V1Params>(
 
 /**
  * Enforces the `multi_shot` / `shot_type` / `multi_prompt` / `prompt` pairing
- * rules and the camera-control shape rules, which are wire-level and
- * model-independent.
+ * rules, which are wire-level and model-independent.
  */
 export function checkV1Shape<P extends V1Params>(
   source: string,
@@ -406,41 +311,6 @@ export function checkV1Shape<P extends V1Params>(
         path: ["multi_prompt"],
         message: `\`multi_prompt\` supports up to ${MAX_SHOTS} storyboards; got ${params.multi_prompt.length}.`,
         meta: { max: MAX_SHOTS, count: params.multi_prompt.length, source },
-      });
-    }
-
-    const camera = params.camera_control;
-    if (camera == null) return;
-    if (camera.type === "simple") {
-      if (camera.config == null) {
-        ctx.report({
-          code: "invalid_shape",
-          path: ["camera_control", "config"],
-          message: "`camera_control.config` is required when `camera_control.type` is simple.",
-          meta: { source },
-        });
-        return;
-      }
-      const nonZero = KLING_CAMERA_AXES.filter((axis) => {
-        const value = camera.config?.[axis];
-        return typeof value === "number" && value !== 0;
-      });
-      if (nonZero.length > 1) {
-        ctx.report({
-          code: "invalid_shape",
-          path: ["camera_control", "config"],
-          message: `exactly one \`camera_control.config\` axis may be non-zero; got ${nonZero.join(", ")}.`,
-          meta: { axes: nonZero, source },
-        });
-      }
-      return;
-    }
-    if (camera.type != null && camera.config != null) {
-      ctx.report({
-        code: "unsupported_param",
-        path: ["camera_control", "config"],
-        message: `\`camera_control.config\` must be omitted when \`camera_control.type\` is "${camera.type}".`,
-        meta: { source },
       });
     }
   };

@@ -124,7 +124,7 @@ export type MediaOverlapTable = Readonly<Record<string, object>>;
  * release by days, and refusing to compile would be worse than a runtime
  * throw. There is no snapshot here: the overlap table is hand-written, and a
  * model that is not in it has no hand-verified mapping *by definition*. So
- * `.toApi` simply does not exist there — `kling.video({ model_name: "kling-v1", … }).toApi`
+ * `.toApi` simply does not exist there — `elevenlabs.tts({ model_id: "eleven_flash_v2_5", … }).toApi`
  * is a compile error naming a member that is not on the type, which is the
  * honest answer, and intersecting `unknown` costs nothing on the models that
  * do have one.

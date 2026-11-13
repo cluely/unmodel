@@ -51,4 +51,4 @@ export {
   TEXT2VIDEO_MODELS,
 } from "./shared";
 
-export { KLING_CAMERA_AXES, KLING_CAMERA_TYPES, KLING_SHOT_TYPES } from "./v1-routes";
+export { KLING_SHOT_TYPES } from "./v1-routes";

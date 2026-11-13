@@ -308,8 +308,9 @@ onFal.request.url; // https://queue.fal.run/fal-ai/kling-video/v2.5-turbo/pro/te
 onFal.warnings;    // []  ← empty means the mapping was exact
 onFal.toSdk("fal");// { input: { … } } for @fal-ai/client
 
-video({ model_name: "kling-v1", prompt: "…" }).toApi("fal");
-//                                             ~~~~~ TypeScript error: fal serves no Kling v1
+declare const fromConfig: string; // an id only known at run time
+video({ model_name: fromConfig, prompt: "…" }).toApi("fal");
+//                                             ~~~~~ TypeScript error: no verified fal mapping for it
 ```
 
 It is a different mechanism from chat's, not the same one widened, and the differences are the ones you will feel:

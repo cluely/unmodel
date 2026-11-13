@@ -49,8 +49,8 @@
  * video({ model: "openai/sora-2",     prompt, duration: 8 });         // ok
  * video({ model: "openai/sora-2",     prompt, duration: 7 });         // compile error
  * video({ model: "openai/sora-2",     prompt, resolution: "1080p" }); // pro only
- * video({ model: "kling/kling-v1-6",  prompt, cfg_scale: 0.5 });      // ok
- * video({ model: "kling/kling-v3",    prompt, cfg_scale: 0.5 });      // compile error
+ * video({ model: "kling/kling-v3",    prompt, sound: "on" });         // ok
+ * video({ model: "kling/kling-v2-5-turbo", prompt, sound: "on" });    // compile error
  * ```
  *
  * A model whose lengths are a *range* rather than a list — Seedance takes any

@@ -15,7 +15,6 @@ import { KLING_4_ASPECT_RATIOS, KLING_ASPECT_RATIOS, type KlingWatermarkInfo } f
 import {
   V1_MODEL_RULES,
   V1_MODE_TIERS,
-  type KlingCameraControl,
   type KlingShot,
   type KlingShotType,
   type V1RuleModelId,
@@ -29,12 +28,6 @@ export const MODELS = [
   "kling-v3",
   "kling-v2-6",
   "kling-v2-5-turbo",
-  "kling-v2-1-master",
-  "kling-v2-1",
-  "kling-v2-master",
-  "kling-v1-6",
-  "kling-v1-5",
-  "kling-v1",
   // EXPERIMENTAL path-addressed routes.
   "kling-3.0",
   "kling-3.0-turbo",
@@ -54,8 +47,8 @@ export const MODELS = [
  *
  * `mode` on `/v1/videos/*` is a resolution with another name ("std = 720P, pro
  * = 1080P, 4k = 4K"), so a `kling-v*` row's `resolutions` is that model's mode
- * set translated back into tiers — `kling-v2-master` is pro-only, hence
- * `["1080p"]`. Those nine rows are no longer written out: {@link rowOf} DERIVES
+ * set translated back into tiers — `kling-v3` is std/pro/4k, hence
+ * `["720p", "1080p", "4k"]`. Those rows are not written out: {@link rowOf} DERIVES
  * them from `V1_MODEL_RULES`, the same table `kling.video` /
  * `kling.videoFromImage` narrow their bodies from, so the two surfaces cannot
  * disagree about a model again (see the block above `rowOf`). The
@@ -66,13 +59,13 @@ export const MODELS = [
  * are on nothing. `./video.test.ts` ties every row to its rule tables
  * either way.
  *
- * `ratios: []` marks `kling-v2-1` and `kling-v1-5`: both are **image-to-video
- * only** ids (they are absent from `TEXT2VIDEO_MODELS` — which is now what the
- * derivation reads, rather than a fact restated here), and
- * `/v1/videos/image2video` has no `aspect_ratio` field because the frame sets
- * the shape. Every other model keeps the three-value enum, which the image
- * route still refuses at run time — the shape is a text-route param on both
- * families, and only omni takes it alongside a frame.
+ * `ratios` is the three-value enum for an id `TEXT2VIDEO_MODELS` serves and
+ * `[]` for an image-to-video-only one — `/v1/videos/image2video` has no
+ * `aspect_ratio` field because the frame sets the shape, and the derivation
+ * reads route membership rather than restating it. Every id the image route
+ * serves today is on the text route too, and the image route still refuses
+ * the shape at run time — it is a text-route param on both families, and only
+ * omni takes it alongside a frame.
  *
  * ## Extras, and why they nest differently per family
  *
@@ -85,7 +78,7 @@ export const MODELS = [
  *
  * Excluded on purpose:
  *
- * - **`static_mask`, `dynamic_masks`, `element_list`, `voice_list`** exist on
+ * - **`element_list`, `voice_list`** exist on
  *   `image2video` and not on `text2video`, and this surface picks the route
  *   from the inputs. `videoSchema` is a `looseObject`, so one of them on a
  *   text request would ride onto a body that has no such field and be ignored
@@ -93,25 +86,20 @@ export const MODELS = [
  * - **`shot_type` and `multi_prompt`** are accepted by the schema on every v1
  *   id, but they only do anything alongside `multi_shot`, which is `kling-v3`'s
  *   alone. They are declared on `kling-v3` for that reason: a `shot_type` on
- *   `kling-v1` is accepted-and-ignored, which is worse than refused.
- * - **`cfg_scale`** is `kling-v1` / `-v1-5` / `-v1-6` only (`V1_MODEL_RULES`),
- *   and **`camera_control`** is `kling-v1` alone — not `kling-v1-6`, which the
- *   research had wrong and `V1_MODEL_RULES` settles.
+ *   `kling-v2-6` is accepted-and-ignored, which is worse than refused.
  *
  * `callback_url` and `external_task_id` are transport and stay on
  * `providerOptions.kling`.
  */
 export const WATERMARK = { watermark_info: EXTRA as KlingWatermarkInfo } as const;
 
-export const V1_CFG_ROW_EXTRAS = { ...WATERMARK, cfg_scale: EXTRA as number } as const;
-
 export const THREE_ZERO_DURATIONS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] as const;
 
 // ---------------------------------------------------------------------------
 // The `/v1/videos/*` rows are DERIVED from `V1_MODEL_RULES`, not restated.
 //
-// Those nine rows used to be nine hand-written literals beside a rule table
-// describing the same nine models, and the two disagreed in the direction that
+// Those rows used to be hand-written literals beside a rule table
+// describing the same models, and the two disagreed in the direction that
 // matters most: the rows said `kling-v2-5-turbo` runs 5 or 10 seconds — which
 // `V1_MODEL_RULES` also says — while `kling.video`, the wire validator this
 // adapter compiles *down to*, accepted `duration: "8"` there at compile time.
@@ -126,16 +114,16 @@ export const THREE_ZERO_DURATIONS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 //   number (5), so the row is the rule list parsed — not a second list.
 // - **`resolutions` are `modes`.** "std = 720P, pro = 1080P, 4k = 4K" is the
 //   parameter's own description (see {@link V1_MODE_TIERS}), so a model's mode
-//   set IS its tier set: `kling-v2-master` is pro-only, hence `["1080p"]`.
-// - **`ratios: []` is route membership, not a ratio rule.** `kling-v2-1` and
-//   `kling-v1-5` are image-to-video-only ids (absent from
-//   `TEXT2VIDEO_MODELS`), and `/v1/videos/image2video` has no `aspect_ratio`
-//   field because the frame sets the shape. Every id the text route serves
-//   keeps the full three-value enum — no source narrows `aspect_ratio` per
-//   model, which is why the wire arm leaves it wide too.
+//   set IS its tier set: `kling-v2-6` is std/pro, hence `["720p", "1080p"]`.
+// - **`ratios: []` is route membership, not a ratio rule.** An id absent from
+//   `TEXT2VIDEO_MODELS` would be image-to-video-only, and
+//   `/v1/videos/image2video` has no `aspect_ratio` field because the frame
+//   sets the shape. Every id the text route serves keeps the full three-value
+//   enum — no source narrows `aspect_ratio` per model, which is why the wire
+//   arm leaves it wide too.
 //
 // `extras` stays hand-written, exactly as google's rows do: it carries TYPES
-// (`cfg_scale` is a number, `sound` is `"on" | "off"`) that a boolean
+// (`sound` is `"on" | "off"`, `multi_prompt` a list of shots) that a boolean
 // capability flag cannot spell. `./video.test.ts` asserts each extra key is
 // present iff the rule table sets its switch, in both directions.
 // ---------------------------------------------------------------------------
@@ -187,15 +175,6 @@ export const KLING_VIDEO_MODEL_PARAMS = {
   }),
   "kling-v2-6": rowOf("kling-v2-6", { ...WATERMARK, sound: EXTRA as "on" | "off" }),
   "kling-v2-5-turbo": rowOf("kling-v2-5-turbo", WATERMARK),
-  "kling-v2-1-master": rowOf("kling-v2-1-master", WATERMARK),
-  "kling-v2-1": rowOf("kling-v2-1", WATERMARK),
-  "kling-v2-master": rowOf("kling-v2-master", WATERMARK),
-  "kling-v1-6": rowOf("kling-v1-6", V1_CFG_ROW_EXTRAS),
-  "kling-v1-5": rowOf("kling-v1-5", V1_CFG_ROW_EXTRAS),
-  "kling-v1": rowOf("kling-v1", {
-    ...V1_CFG_ROW_EXTRAS,
-    camera_control: EXTRA as KlingCameraControl,
-  }),
   // --- The path-addressed families ----------------------------------------
   "kling-3.0": {
     durations: THREE_ZERO_DURATIONS,

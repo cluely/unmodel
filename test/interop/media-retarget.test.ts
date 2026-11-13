@@ -272,13 +272,6 @@ describe("kling.video → fal", () => {
     }
   });
 
-  test("refused: a model fal does not serve names the reason, not 'unknown'", () => {
-    const result = toApiSafeUntyped(klingVideo({ model_name: "kling-v1", prompt: "x" }));
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.errors[0]?.message).toContain("serves no v1 endpoint");
-    expect(result.errors[0]?.meta).toMatchObject({ structural: true });
-  });
 });
 
 describe("kling.videoFromImage → fal", () => {
@@ -309,12 +302,11 @@ describe("kling.videoFromImage → fal", () => {
     expect(wire(v3)).toMatchObject({ start_image_url: "https://example.com/first.png" });
   });
 
-  test("refused: bare base64, an end-frame-only request, and the motion brush", () => {
+  test("refused: bare base64, an end-frame-only request, and Elements", () => {
     const base = { model_name: "kling-v3", prompt: "x", mode: "pro" } as const;
     const cases: ReadonlyArray<[string, Record<string, unknown>]> = [
       ["image", { image: "iVBORw0KGgoAAAANSUhEUg==" }],
       ["image", { image_tail: "https://example.com/last.png" }],
-      ["static_mask", { image: "https://example.com/a.png", static_mask: "https://x/m.png" }],
       [
         "element_list",
         { image: "https://example.com/a.png", element_list: [{ element_id: "el_1" }] },

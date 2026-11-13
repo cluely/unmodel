@@ -1021,12 +1021,11 @@ video({ model: "minimax/MiniMax-Hailuo-02", prompt: "x", aspectRatio: "¦" });`)
 
   test("property names include the model's extras, and its extras only", () => {
     const entries = completionsAt(`import { video } from "./src/unified/video";
-video({ model: "kling/kling-v1", prompt: "x", ¦ });`);
-    for (const name of ["duration", "resolution", "aspectRatio", "cfg_scale", "camera_control"]) {
+video({ model: "kling/kling-v3", prompt: "x", ¦ });`);
+    for (const name of ["duration", "resolution", "aspectRatio", "sound", "multi_shot"]) {
       expect(entries).toContain(name);
     }
-    // `sound` is kling-v3's and `audio` the path-addressed family's.
-    expect(entries).not.toContain("sound");
+    // `audio` is the path-addressed family's.
     expect(entries).not.toContain("audio");
   });
 
@@ -2682,18 +2681,11 @@ image({ model: "openai/gpt-image-2", prompt: "x" }).¦`);
 // OWN parameters
 //
 // The completion half of the drift invariant in
-// src/providers/kling/video.test.ts. Before the per-model arm, every one of
-// the nine `/v1/videos/*` models completed the same three modes, the same
-// thirteen durations and the same two `sound` values — including
-// `kling-v2-master`, which is 1080P-only, and `kling-v2-5-turbo`, which runs 5
-// or 10 seconds and has no native audio at all. Measured per model:
-//   mode        3/3/3/3/3 before → 3 / 2 / 2 / 1 / 2 after
-//               (v3 / v2-6 / v2-5-turbo / v2-master / v1)
-//   duration   13/13/13/13/13 before → 13 / 8 / 2 / 2 / 2 after
-//   sound       2/2/2/2/2 before → 2 / 2 / 1 / 1 / 1 after
-// `aspect_ratio` is 3 before and 3 after on every model, deliberately: no
-// source bounds it per `model_name`, so it is the field this change does NOT
-// narrow.
+// src/providers/kling/video.test.ts: each `/v1/videos/*` model completes its
+// own modes, durations and `sound` values — `kling-v2-5-turbo` runs 5 or 10
+// seconds and has no native audio at all. `aspect_ratio` is the same three on
+// every model, deliberately: no source bounds it per `model_name`, so it is
+// the field the arm does NOT narrow.
 // ---------------------------------------------------------------------------
 
 const KLING_VIDEO_PROBE = `import { video, videoFromImage } from "./src/providers/kling";
@@ -2710,11 +2702,7 @@ describe("kling.video: per-model parameter completions", () => {
   test("mode is the model's own list (std = 720P, pro = 1080P, 4k = 4K)", () => {
     expect(klingParam("kling-v3", "mode")).toEqual(["std", "pro", "4k"]);
     expect(klingParam("kling-v2-6", "mode")).toEqual(["std", "pro"]);
-    expect(klingParam("kling-v1", "mode")).toEqual(["std", "pro"]);
-    // The master models are 1080P-only on the capability map — one entry, and
-    // it is the compile-time half of the `allowed: ["pro"]` the runtime reports.
-    expect(klingParam("kling-v2-master", "mode")).toEqual(["pro"]);
-    expect(klingParam("kling-v2-1-master", "mode")).toEqual(["pro"]);
+    expect(klingParam("kling-v2-5-turbo", "mode")).toEqual(["std", "pro"]);
   });
 
   test("duration is the model's own closed enum — seconds as strings", () => {
@@ -2725,7 +2713,6 @@ describe("kling.video: per-model parameter completions", () => {
       "3", "4", "5", "6", "7", "8", "9", "10",
     ]);
     expect(klingParam("kling-v2-5-turbo", "duration")).toEqual(["5", "10"]);
-    expect(klingParam("kling-v1", "duration")).toEqual(["5", "10"]);
   });
 
   test("sound offers \"on\" only where the model has native audio", () => {
@@ -2734,24 +2721,15 @@ describe("kling.video: per-model parameter completions", () => {
     // Not a denied key: `sound: "off"` is legal on every model and the run-time
     // check only refuses switching it ON, so the type offers exactly "off".
     expect(klingParam("kling-v2-5-turbo", "sound")).toEqual(["off"]);
-    expect(klingParam("kling-v1", "sound")).toEqual(["off"]);
   });
 
   test("aspect_ratio is NOT narrowed — the same three on every model", () => {
-    for (const model of ["kling-v3", "kling-v2-master", "kling-v1"]) {
+    for (const model of ["kling-v3", "kling-v2-6", "kling-v2-5-turbo"]) {
       expect(klingParam(model, "aspect_ratio")).toEqual(["16:9", "9:16", "1:1"]);
     }
   });
 
-  test("camera_control's shape completes on kling-v1 and nowhere else", () => {
-    // `never` off kling-v1, so the object literal has no contextual type and
-    // the field's own keys are not offered.
-    expect(klingParam("kling-v1", "camera_control", "{ ¦ }")).toEqual(["config", "type"]);
-    expect(klingParam("kling-v1-6", "camera_control", "{ ¦ }")).not.toContain("config");
-    expect(klingParam("kling-v2-6", "camera_control", "{ ¦ }")).not.toContain("config");
-  });
-
-  test("the image route narrows the same fields, over its two extra ids", () => {
+  test("the image route narrows the same fields", () => {
     const i2v = (model: string, field: string): string[] =>
       completionsAt(
         `${KLING_VIDEO_PROBE}videoFromImage({ model_name: "${model}", image: "u", prompt: "x", ${field}: "¦" });`,
@@ -2759,15 +2737,14 @@ describe("kling.video: per-model parameter completions", () => {
     expect(i2v("kling-v3", "duration")).toEqual([
       "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
     ]);
-    // The two image-to-video-only ids — absent from text2video entirely.
-    expect(i2v("kling-v2-1", "duration")).toEqual(["5", "10"]);
-    expect(i2v("kling-v1-5", "mode")).toEqual(["std", "pro"]);
+    expect(i2v("kling-v2-5-turbo", "duration")).toEqual(["5", "10"]);
+    expect(i2v("kling-v2-6", "mode")).toEqual(["std", "pro"]);
   });
 
   test("the degraded arms keep every documented value", () => {
-    // `model_name` is optional on this route, so an omitted one is a real
+    // `model_name` is optional in this body, so an omitted one is a real
     // caller shape — and nothing in the request names a model, so nothing is
-    // narrowed (the server default is kling-v1, but the request does not say so).
+    // narrowed.
     expect(completionsAt(`${KLING_VIDEO_PROBE}video({ prompt: "x", duration: "¦" });`)).toEqual([
       "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
     ]);

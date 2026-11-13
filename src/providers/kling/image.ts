@@ -8,7 +8,7 @@
  *   generation: pass `image` (an HTTPS URL or base64) to condition on a
  *   picture, `image_reference` to say whether it is a `subject` or a `face`,
  *   and `element_list` to pin Elements.
- * - `model_name` defaults to `kling-v1`; `resolution` to "1k"; `n` to 1;
+ * - `model_name` defaults to `kling-v3`; `resolution` to "1k"; `n` to 1;
  *   `aspect_ratio` to "16:9"; `image_fidelity` to 0.5 and `human_fidelity` to
  *   0.45 (both 0–1).
  * - This is the Kolors/Kling Image family — the census's "Kolors 2.1" is
@@ -51,14 +51,19 @@ export const IMAGE_GENERATIONS_URL = `${KLING_BASE_URL}/v1/images/generations`;
 
 const SOURCE = `${DOCS_BASE}/api/image/3-0-omni/image-generation`;
 
-/** Server-side default when `model_name` is omitted. */
-export const DEFAULT_IMAGE_MODEL = "kling-v1";
+/**
+ * Server-side default when `model_name` is omitted.
+ * https://kling.ai/document-api/api/image/3-0-omni/image-generation
+ * (2026-11-12): `{name:"model_name",type:"string",required:!1,
+ * default:"kling-v3",...,enum:["kling-v2-1","kling-v3"]}`.
+ */
+export const DEFAULT_IMAGE_MODEL = "kling-v3";
 export type KlingImageAspectRatio = (typeof KLING_IMAGE_ASPECT_RATIOS)[number];
 /** `resolution` on `/v1/images/generations` — a closed enum, zod-enforced. */
 export type KlingImageResolution = (typeof KLING_IMAGE_RESOLUTIONS)[number];
 
 export interface ImageGenerationsParams {
-  /** Defaults to "kling-v1". */
+  /** Defaults to "kling-v3". */
   model_name?: KlingImageModelId | (string & {});
   /** Required. */
   prompt: string;

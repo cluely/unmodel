@@ -75,10 +75,14 @@ describe("kling.image", () => {
     if (withElements.ok) expect(withElements.estimate.costUSD).toBeCloseTo(0.028, 10);
   });
 
-  test("kling-v2-new has no published rate", () => {
-    const r = image.safe({ model_name: "kling-v2-new", prompt: "hi" });
+  test("an omitted model_name is the documented default, kling-v3", () => {
+    const r = image.safe({ prompt: "hi" });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.estimate.costUSD).toBeUndefined();
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      // Kling Image 3.0 at 1K: $0.028.
+      expect(r.estimate.costUSD).toBeCloseTo(0.028, 10);
+    }
   });
 });
 

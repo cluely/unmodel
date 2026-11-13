@@ -251,9 +251,9 @@ function sizeNarrowingTests(): void {
   video({ model: "kling/kling-v3", prompt: "hi", aspectRatio: "16:9" });
   // @ts-expect-error — Kling's three shapes do not include 4:3.
   video({ model: "kling/kling-v3", prompt: "hi", aspectRatio: "4:3" });
-  // @ts-expect-error — and an image-only id has no aspect-ratio field at all.
-  video({ model: "kling/kling-v2-1", prompt: "hi", aspectRatio: "16:9" });
-  // @ts-expect-error — same for every Hailuo model on /v1/video_generation.
+  // Kling 4.0 adds 21:9.
+  video({ model: "kling/kling-4.0", prompt: "hi", aspectRatio: "21:9" });
+  // @ts-expect-error — a Hailuo model on /v1/video_generation has no aspect-ratio field at all.
   video({ model: "minimax/MiniMax-Hailuo-02", prompt: "hi", aspectRatio: "16:9" });
   // `MiniMax-H3` is the v2 route, which does have `ratio`.
   video({ model: "minimax/MiniMax-H3", prompt: "hi", aspectRatio: "21:9", duration: 6, resolution: "720p" });
@@ -266,14 +266,9 @@ function sizeNarrowingTests(): void {
 }
 
 function extrasNarrowingTests(): void {
-  video({ model: "kling/kling-v1-6", prompt: "hi", cfg_scale: 0.5 });
-  // @ts-expect-error — `cfg_scale` is kling-v1 / -v1-5 / -v1-6 only.
-  video({ model: "kling/kling-v3", prompt: "hi", cfg_scale: 0.5 });
-  // @ts-expect-error — and `camera_control` is `kling-v1` alone.
-  video({ model: "kling/kling-v1-6", prompt: "hi", camera_control: { type: "simple" } });
-  video({ model: "kling/kling-v1", prompt: "hi", camera_control: { type: "simple" } });
-
   video({ model: "kling/kling-v3", prompt: "hi", sound: "on" });
+  // @ts-expect-error — `sound` is kling-v3 / kling-v2-6 only.
+  video({ model: "kling/kling-v2-5-turbo", prompt: "hi", sound: "on" });
   // @ts-expect-error — an extra's own values are narrowed too.
   video({ model: "kling/kling-v3", prompt: "hi", sound: "loud" });
   // The path-addressed family spells it `settings.audio`, with a per-model set.

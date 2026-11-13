@@ -35,12 +35,7 @@ export {
   MAX_ELEMENT_LIST,
   MAX_VOICE_LIST,
 } from "./video-from-image";
-export type {
-  ImageToVideoParams,
-  ImageToVideoArm,
-  KlingDynamicMask,
-  KlingTrajectoryPoint,
-} from "./video-from-image";
+export type { ImageToVideoParams, ImageToVideoArm } from "./video-from-image";
 
 /** What `model_name` may be: a catalogued id, or any string at run time. */
 type KlingVideoModelInput = KlingV1VideoModelId | (string & {});
@@ -52,10 +47,10 @@ type KlingVideoModelInput = KlingV1VideoModelId | (string & {});
  * this provider through `./unified-video.ts` → `./video` — pays nothing for a
  * seam it cannot call. See `core/translate/media-retarget.ts`.
  *
- * `.toApi` exists for the three ids fal serves (`kling-v3`, `kling-v2-6`,
- * `kling-v2-5-turbo`) and nowhere else; on the other six the member is simply
- * not on the type, which is the honest answer for a hand-written overlap
- * table. See `MediaApiMember` for why that differs from chat's permissive
+ * `.toApi` exists for the ids fal serves — `kling-v3`, `kling-v2-6`,
+ * `kling-v2-5-turbo`, the route's whole enum — and nowhere else; on a run-time
+ * or post-snapshot id the member is simply not on the type, which is the
+ * honest answer for a hand-written overlap table. See `MediaApiMember` for why that differs from chat's permissive
  * degradation.
  */
 export const video = withApiTarget(
@@ -180,19 +175,8 @@ export type {
   RouteRules,
 } from "./shared";
 
-export {
-  DEFAULT_V1_MODEL,
-  KLING_SHOT_TYPES,
-  KLING_CAMERA_TYPES,
-  KLING_CAMERA_AXES,
-  CAMERA_AXIS_MIN,
-  CAMERA_AXIS_MAX,
-  V1_MODEL_RULES,
-} from "./v1-routes";
+export { KLING_SHOT_TYPES, V1_MODEL_RULES } from "./v1-routes";
 export type {
-  KlingCameraConfig,
-  KlingCameraControl,
-  KlingCameraType,
   KlingShot,
   KlingShotType,
   KlingV1Duration,

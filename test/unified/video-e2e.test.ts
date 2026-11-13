@@ -261,9 +261,9 @@ describe("a value a model cannot serve is refused, never approximated", () => {
   });
 
   test("the same miss at a provider whose bound is the endpoint's own table", () => {
-    // Nothing about kling-v2-1's 5-or-10 is copied into the adapter: the
+    // Nothing about kling-v2-5-turbo's 5-or-10 is copied into the adapter: the
     // capability map lives in `v1-routes.ts` and answers here, at `duration`.
-    const result = video.safe({ model: "kling/kling-v2-1", prompt: "hi", duration: 7 } as never);
+    const result = video.safe({ model: "kling/kling-v2-5-turbo", prompt: "hi", duration: 7 } as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors[0]).toMatchObject({ path: ["duration"], meta: { allowed: [5, 10] } });

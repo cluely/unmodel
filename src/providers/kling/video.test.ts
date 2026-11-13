@@ -1,13 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { video, TEXT2VIDEO_MODELS, TEXT2VIDEO_URL } from "./video";
 import { videoFromImage, IMAGE2VIDEO_MODELS, IMAGE2VIDEO_URL } from "./video-from-image";
-// The unified adapter derives its nine `/v1/videos/*` rows from the same
+// The unified adapter derives its `/v1/videos/*` rows from the same
 // `V1_MODEL_RULES` these validators narrow their bodies from; the drift suite
-// at the end of this file is what asserts that stays true — for those nine and
-// for the path-addressed rows beside them.
+// at the end of this file is what asserts that stays true — for those and for
+// the path-addressed rows beside them.
 import { video as unifiedVideo } from "./unified-video";
 import { V1_MODE_TIERS, V1_MODEL_RULES, type V1ModelRules } from "./v1-routes";
 import { MODE_RESOLUTION } from "./pricing";
+import { KLING_VIDEO_FAL_OVERLAP, KLING_VIDEO_FAL_REFUSALS } from "./fal-target";
 import { TEXT_TO_VIDEO_V3_RULES } from "./video-v3";
 import { IMAGE_TO_VIDEO_V3_RULES } from "./video-v3-from-image";
 import { OMNI_VIDEO_RULES } from "./video-omni";
@@ -33,11 +34,28 @@ describe("kling.video happy path", () => {
     expect(v.request.method).toBe("POST");
   });
 
-  test("model_name defaults to kling-v1", () => {
-    const r = video.safe({ prompt: "hi" });
+  test("an omitted model_name checks and prices nothing model-dependent", () => {
+    // The reference marks it required while its prose says an empty one calls
+    // a retired model, so no default is guessed: no rule row, no estimate.
+    const r = video.safe({ prompt: "hi", mode: "4k", duration: "12" });
     expect(r.ok).toBe(true);
-    // kling-v1 at 720P/5s: $0.028/s × 5.
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.14, 10);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeUndefined();
+    }
+    const i2v = videoFromImage.safe({ image: "https://example.com/a.png", prompt: "hi" });
+    expect(i2v.ok).toBe(true);
+    if (i2v.ok) expect(i2v.estimate.costUSD).toBeUndefined();
+  });
+
+  test("the route's enum is the three ids the reference names", () => {
+    // https://kling.ai/document-api/api/video/3-0-omni/text-to-video/legacy and
+    // /image-to-video/legacy (2026-11-12): enum ["kling-v2-5-turbo","kling-v2-6","kling-v3"].
+    expect([...TEXT2VIDEO_MODELS].sort()).toEqual(["kling-v2-5-turbo", "kling-v2-6", "kling-v3"]);
+    expect([...IMAGE2VIDEO_MODELS].sort()).toEqual([...TEXT2VIDEO_MODELS].sort());
+    // Each has a fal row, so there is no refusal left to record.
+    expect(Object.keys(KLING_VIDEO_FAL_OVERLAP).sort()).toEqual([...TEXT2VIDEO_MODELS].sort());
+    expect(Object.keys(KLING_VIDEO_FAL_REFUSALS)).toEqual([]);
   });
 
   test("path-segment model ids are unknown on the /v1 route", () => {
@@ -48,60 +66,6 @@ describe("kling.video happy path", () => {
 });
 
 describe("kling.video capability gates", () => {
-  test("kling-v2-1 is image-to-video only", () => {
-    const r = video.safe({ model_name: "kling-v2-1", prompt: "hi" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "unsupported_capability");
-      expect(issue?.path).toEqual(["model_name"]);
-      expect(issue?.meta?.supported).not.toContain("kling-v2-1");
-    }
-  });
-
-  test("camera_control is kling-v1 only", () => {
-    expect(
-      video.safe({
-        model_name: "kling-v1",
-        prompt: "hi",
-        camera_control: { type: "down_back" },
-      }).ok,
-    ).toBe(true);
-
-    // The wire arm now types `camera_control` as `never` on every model but
-    // kling-v1, so this input is illegal for a TS caller. The runtime path is
-    // still reachable (and still what a JS caller hits), which is what this
-    // assertion covers — the cast keeps it exercised without weakening the type.
-    const r = video.safe({
-      model_name: "kling-v1-6",
-      prompt: "hi",
-      // @ts-expect-error camera_control is kling-v1 only — the compile-time
-      // half of the unsupported_capability asserted below.
-      camera_control: { type: "down_back" },
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.errors.find((e) => e.code === "unsupported_capability")?.path).toEqual([
-        "camera_control",
-      ]);
-    }
-  });
-
-  test("cfg_scale is not supported on the kling-v2.x models", () => {
-    const r = video.safe({
-      model_name: "kling-v2-6",
-      prompt: "hi",
-      // @ts-expect-error `cfg_scale` types as `never` off kling-v1/-v1-5/-v1-6;
-      // the runtime path this asserts is the one a JS caller still reaches.
-      cfg_scale: 0.7,
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.path).toEqual(["cfg_scale"]);
-
-    expect(video.safe({ model_name: "kling-v1-6", prompt: "hi", cfg_scale: 0.7 }).ok).toBe(
-      true,
-    );
-  });
-
   test("native audio is kling-v3 / kling-v2-6 only", () => {
     expect(video.safe({ model_name: "kling-v3", prompt: "hi", sound: "on" }).ok).toBe(true);
 
@@ -114,22 +78,6 @@ describe("kling.video capability gates", () => {
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors[0]?.path).toEqual(["sound"]);
-  });
-
-  test("the master models are 1080P-only", () => {
-    const r = video.safe({
-      model_name: "kling-v2-master",
-      prompt: "hi",
-      // @ts-expect-error the master models are 1080P-only, so `mode` is `"pro"`
-      // on the type as well as in the enum message asserted below.
-      mode: "std",
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "invalid_enum_value");
-      expect(issue?.path).toEqual(["mode"]);
-      expect(issue?.meta?.allowed).toEqual(["pro"]);
-    }
   });
 
   test("duration is a string on this route and per-model", () => {
@@ -178,47 +126,12 @@ describe("kling.video shape rules", () => {
     if (!r.ok) expect(r.errors.map((e) => e.path[0])).toContain("prompt");
   });
 
-  test("simple camera control takes exactly one non-zero axis", () => {
-    expect(
-      video.safe({
-        model_name: "kling-v1",
-        prompt: "hi",
-        camera_control: { type: "simple", config: { pan: 5, tilt: 0 } },
-      }).ok,
-    ).toBe(true);
-
-    const two = video.safe({
-      model_name: "kling-v1",
-      prompt: "hi",
-      camera_control: { type: "simple", config: { pan: 5, zoom: 2 } },
-    });
-    expect(two.ok).toBe(false);
-    if (!two.ok) expect(two.errors[0]?.path).toEqual(["camera_control", "config"]);
-
-    const preset = video.safe({
-      model_name: "kling-v1",
-      prompt: "hi",
-      camera_control: { type: "forward_up", config: { pan: 1 } },
-    });
-    expect(preset.ok).toBe(false);
-    if (!preset.ok) expect(preset.errors[0]?.code).toBe("unsupported_param");
-  });
-
-  test("camera axes are bounded to -10..10", () => {
-    const r = safeUnchecked({
-      model_name: "kling-v1",
-      prompt: "hi",
-      camera_control: { type: "simple", config: { pan: 11 } },
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]?.code).toBe("invalid_shape");
-  });
 });
 
 describe("kling.videoFromImage", () => {
   test("wire-pure body with a start frame", () => {
     const v = videoFromImage({
-      model_name: "kling-v2-1",
+      model_name: "kling-v2-5-turbo",
       image: "https://example.com/frame.png",
       prompt: "she turns to the window",
       mode: "pro",
@@ -229,36 +142,22 @@ describe("kling.videoFromImage", () => {
     expect(v.request.url).toBe(IMAGE2VIDEO_URL);
     expect(v.request.method).toBe("POST");
     expect(v.request.headers).toEqual({ "content-type": "application/json" });
-    // kling-v2-1 at 1080P: $0.098/s × 5.
+    // kling-v2-5-turbo at 1080P: $0.07/s × 5.
     const r = videoFromImage.safe({
-      model_name: "kling-v2-1",
+      model_name: "kling-v2-5-turbo",
       image: "https://example.com/frame.png",
       prompt: "hi",
       mode: "pro",
       duration: "5",
     });
-    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.49, 10);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.35, 10);
   });
 
   test("needs a start or end frame", () => {
-    const r = videoFromImage.safe({ model_name: "kling-v1-6", prompt: "hi" });
+    const r = videoFromImage.safe({ model_name: "kling-v2-6", prompt: "hi" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors.map((e) => e.path[0])).toContain("image");
-  });
-
-  test("image_tail, masks and camera_control are mutually exclusive", () => {
-    const r = videoFromImage.safe({
-      model_name: "kling-v1",
-      image: "https://example.com/a.png",
-      image_tail: "https://example.com/b.png",
-      prompt: "hi",
-      camera_control: { type: "down_back" },
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "unsupported_param");
-      expect(issue?.meta?.conflicting).toEqual(["image_tail", "camera_control"]);
-    }
   });
 
   test("element_list and voice_list cannot coexist and are capped", () => {
@@ -309,16 +208,6 @@ describe("kling.videoFromImage", () => {
     }
   });
 
-  test("kling-v1-5 is accepted here but not on video", () => {
-    expect(
-      videoFromImage.safe({
-        model_name: "kling-v1-5",
-        image: "https://example.com/a.png",
-        prompt: "hi",
-      }).ok,
-    ).toBe(true);
-    expect(video.safe({ model_name: "kling-v1-5", prompt: "hi" }).ok).toBe(false);
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -330,7 +219,7 @@ describe("kling.videoFromImage", () => {
 // refused it at run time. Three descriptions of the same models, and nothing
 // compared them, which is exactly why it rotted unnoticed. `V1_MODEL_RULES` is
 // now the one the `/v1/videos/*` types are built from AND the one
-// `./unified-video.ts` derives its nine `kling-v*` rows from; the assertions
+// `./unified-video.ts` derives its `kling-v*` rows from; the assertions
 // below tie every unified row to its rule tables in BOTH directions,
 // so a value added to either side alone fails here. (The compile-time half
 // lives in test/types/kling.test-d.ts, and the completion lists in
@@ -371,7 +260,7 @@ describe("kling video: the per-model tables agree (wire ↔ runtime ↔ unified)
   });
 
   test("every /v1/videos/* model has a rule row, and every rule row a unified row", () => {
-    expect(v1Ids.length).toBe(9);
+    expect(v1Ids.length).toBe(3);
     for (const id of [...TEXT2VIDEO_MODELS, ...IMAGE2VIDEO_MODELS]) {
       expect(v1Ids, `${id} is on a /v1/videos/* route with no V1_MODEL_RULES row`).toContain(id);
     }
@@ -409,21 +298,15 @@ describe("kling video: the per-model tables agree (wire ↔ runtime ↔ unified)
     // has no switch — it is the one extra the rule table says nothing about.
     expect(declared("watermark_info"), `${id} watermark_info`).toBe(true);
     expect(declared("sound"), `${id} sound`).toBe(rules.sound === true);
-    expect(declared("cfg_scale"), `${id} cfg_scale`).toBe(rules.cfgScale === true);
-    expect(declared("camera_control"), `${id} camera_control`).toBe(rules.cameraControl === true);
     // multi-shot brings its two companions with it: `shot_type` and
     // `multi_prompt` do nothing without it.
     for (const key of ["multi_shot", "shot_type", "multi_prompt"]) {
       expect(declared(key), `${id} ${key}`).toBe(rules.multiShot === true);
     }
     // …and nothing else: an extra with no rule behind it would be a third
-    // opinion about the same nine models.
+    // opinion about the same models.
     expect(sorted(Object.keys(extras)).length).toBe(
-      1 +
-        (rules.sound === true ? 1 : 0) +
-        (rules.cfgScale === true ? 1 : 0) +
-        (rules.cameraControl === true ? 1 : 0) +
-        (rules.multiShot === true ? 3 : 0),
+      1 + (rules.sound === true ? 1 : 0) + (rules.multiShot === true ? 3 : 0),
     );
   });
 
@@ -469,8 +352,6 @@ describe("kling video: the per-model tables agree (wire ↔ runtime ↔ unified)
       // the runtime refuses exactly the same requests.
       const gated: Array<[string, Record<string, unknown>, boolean]> = [
         ["sound", { sound: "on" }, rules.sound === true],
-        ["cfg_scale", { cfg_scale: 0.7 }, rules.cfgScale === true],
-        ["camera_control", { camera_control: { type: "down_back" } }, rules.cameraControl === true],
       ];
       for (const [label, extra, supported] of gated) {
         const r = safeFromImageUnchecked({

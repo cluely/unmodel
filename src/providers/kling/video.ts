@@ -4,9 +4,10 @@
  * Exported as `kling.video`: the PRIMARY text-to-video validator.
  *
  * Wire notes (verified against
- * https://kling.ai/document-api/apiReference/model/textToVideo,
- * https://kling.ai/document-api/api/video/1-0/text-to-video and the capability
- * map on 2026-08-13):
+ * https://kling.ai/document-api/apiReference/model/textToVideo and the
+ * capability map on 2026-08-13; the `model_name` enum and field list against
+ * https://kling.ai/document-api/api/video/3-0-omni/text-to-video/legacy on
+ * 2026-11-12):
  * - This is the `model_name`-in-the-body route, and the only Kling video route
  *   any reachable source corroborates: the endpoint line reads
  *   `POST https://api-singapore.klingai.com/v1/videos/text2video` and the
@@ -15,20 +16,17 @@
  *   corroborate it — it ships as the EXPERIMENTAL `kling.videoV3` (see
  *   ./video-v3.ts), and its id spellings differ (`kling-3.0` there vs
  *   `kling-v3` here).
- * - `model_name` defaults to `kling-v1`, `mode` to `std` (720P), `duration` to
- *   "5" (a STRING on this route), `aspect_ratio` to "16:9", `sound` to "off"
- *   and `cfg_scale` to 0.5.
+ * - `model_name` is one of `kling-v3`, `kling-v2-6`, `kling-v2-5-turbo`;
+ *   `mode` defaults to `std` (720P), `duration` to "5" (a STRING on this
+ *   route), `aspect_ratio` to "16:9" and `sound` to "off".
  * - `prompt` and `negative_prompt` cap at 2500 characters. Multi-shot rides on
  *   `multi_shot` + `shot_type` + `multi_prompt` (up to 6 storyboards of ≤512
  *   characters), and turning it on makes `prompt` inert.
- * - `cfg_scale` is documented as unsupported on the kling-v2.x models, and
- *   `camera_control` only on kling-v1 (720P, 5s) — both enforced from the
- *   capability map.
  * - Async: responds with a task object; poll
  *   `GET /v1/videos/text2video/{id}`. Auth is `Authorization: Bearer <key>`.
  *
  * PER-MODEL VALUE SPACE. A literal `model_name` narrows `mode`, `duration`,
- * `sound`, `cfg_scale`, `camera_control` and `multi_shot` to that model's own
+ * `sound` and `multi_shot` to that model's own
  * row of `V1_MODEL_RULES` (see {@link TextToVideoArm} and `V1CapabilityArm` in
  * ./v1-routes) — the SAME row `checkV1Support` reports against, and the same
  * row `./unified-video.ts` builds `KLING_VIDEO_MODEL_PARAMS` from. Until that
@@ -60,15 +58,12 @@ import {
   type KlingWatermarkInfo,
 } from "./shared";
 import {
-  DEFAULT_V1_MODEL,
   KLING_SHOT_TYPES,
-  cameraControlSchema,
   checkV1Shape,
   checkV1Support,
   v1PromptSchema,
   multiPromptSchema,
   watermarkInfoSchema,
-  type KlingCameraControl,
   type KlingShot,
   type KlingShotType,
   type KlingV1Duration,
@@ -89,9 +84,9 @@ const SOURCE = `${DOCS_BASE}/apiReference/model/textToVideo`;
 
 /**
  * A `model_name` this route serves AND the capability map bounds — the ids
- * that get a per-model body arm below. Every one of the seven has a row today;
- * the `Extract` is what makes adding an eighth to `TEXT2VIDEO_MODELS` without
- * a rule row degrade to the wide body instead of failing to compile.
+ * that get a per-model body arm below. Every one has a row today; the
+ * `Extract` is what makes adding an id to `TEXT2VIDEO_MODELS` without a rule
+ * row degrade to the wide body instead of failing to compile.
  */
 export type TextToVideoModelId = Extract<(typeof TEXT2VIDEO_MODELS)[number], V1RuleModelId>;
 
@@ -99,13 +94,18 @@ export type TextToVideoModelId = Extract<(typeof TEXT2VIDEO_MODELS)[number], V1R
  * The WIDE body — every documented value of every model on this route.
  *
  * A call whose `model_name` is a literal gets {@link TextToVideoArm} instead,
- * which narrows six of these fields to that model's own row of
+ * which narrows four of these fields to that model's own row of
  * `V1_MODEL_RULES`; this interface is what a run-time-discovered id, a
  * post-snapshot id and an OMITTED `model_name` fall back to, and what the
  * checks are written against.
  */
 export interface TextToVideoParams {
-  /** Defaults to "kling-v1". */
+  /**
+   * The current reference marks it `required:!0` (enum `kling-v2-5-turbo`,
+   * `kling-v2-6`, `kling-v3`) while its prose still says an empty one calls
+   * "the V1 model", which is retired — so an omitted one validates with no
+   * model-dependent check and no estimate rather than a guessed default.
+   */
   model_name?: KlingV1VideoModelId | (string & {});
   /** Multi-shot generation; makes `prompt` inert. Defaults to false. */
   multi_shot?: boolean;
@@ -119,12 +119,8 @@ export interface TextToVideoParams {
   negative_prompt?: string;
   /** Native audio. Defaults to "off"; kling-v3 / kling-v2-6 only. */
   sound?: "on" | "off";
-  /** 0–1. Defaults to 0.5. Not supported on the kling-v2.x models. */
-  cfg_scale?: number;
   /** std = 720P, pro = 1080P, 4k = 4K. Defaults to "std". */
   mode?: KlingMode;
-  /** kling-v1 only (720P, 5s). */
-  camera_control?: KlingCameraControl;
   /**
    * Defaults to "16:9". NOT narrowed per model: no source bounds `aspect_ratio`
    * per `model_name`, so all three values stay legal on every id here.
@@ -134,8 +130,7 @@ export interface TextToVideoParams {
    * Seconds, as a string. Defaults to "5". The union is the widest documented
    * range (kling-v3's 3–15s), which is what a run-time or post-snapshot
    * `model_name` gets; a LITERAL one is narrowed to its own `V1_MODEL_RULES`
-   * row at compile time — every model but kling-v3 and kling-v2-6 offers only
-   * "5" and "10".
+   * row at compile time — kling-v2-5-turbo offers only "5" and "10".
    */
   duration?: KlingV1Duration;
   watermark_info?: KlingWatermarkInfo;
@@ -147,17 +142,16 @@ export interface TextToVideoParams {
  * Resolves a `model_name` literal to its exact body — the same per-model arm
  * shape `google.video` and `openai.image` use.
  *
- * The six narrowed keys are REMOVED from the wide shape and restated rather
+ * The four narrowed keys are REMOVED from the wide shape and restated rather
  * than intersected with it: intersecting a wide union with a narrow one is how
  * the `& {}` tails elsewhere in this repo get discharged, and the completion
  * list dies while tsc stays green (see the `SizingArms` note in
  * `src/core/unified/vocabulary/model-params.ts`).
  *
  * `[M] extends [TextToVideoModelId]` rather than the usual naked `M extends …`
- * on purpose: `model_name` is OPTIONAL on this route (it defaults to
- * `kling-v1` server-side), so an omitted one leaves `M` at its constraint —
- * the whole id union — and a distributive conditional would answer with a
- * union of seven arms. The non-distributive form answers with the wide body
+ * on purpose: `model_name` is OPTIONAL in this body (see its doc), so an
+ * omitted one leaves `M` at its constraint — the whole id union — and a
+ * distributive conditional would answer with a union of every arm. The non-distributive form answers with the wide body
  * instead, which is what an unnamed model deserves: no per-model narrowing,
  * and every documented value still completes.
  */
@@ -178,9 +172,7 @@ const videoSchema = z.looseObject({
   multi_prompt: multiPromptSchema.optional(),
   negative_prompt: v1PromptSchema.optional(),
   sound: z.enum(KLING_SOUND).optional(),
-  cfg_scale: z.number().min(0).max(1).optional(),
   mode: z.enum(KLING_MODES).optional(),
-  camera_control: cameraControlSchema.optional(),
   aspect_ratio: z.enum(KLING_ASPECT_RATIOS).optional(),
   duration: z.string().optional(),
   watermark_info: watermarkInfoSchema.optional(),
@@ -189,10 +181,10 @@ const videoSchema = z.looseObject({
 });
 
 function estimate(params: TextToVideoParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
-  if (info === undefined) return {};
+  if (info === undefined || params.model_name === undefined) return {};
   const duration = params.duration === undefined ? undefined : Number(params.duration);
   const costUSD = videoCostUSD({
-    model: params.model_name ?? DEFAULT_V1_MODEL,
+    model: params.model_name,
     resolution: MODE_RESOLUTION[params.mode ?? "std"] ?? "720p",
     ...(duration !== undefined && Number.isFinite(duration) && { duration }),
     ...(params.sound !== undefined && { audio: params.sound === "on" }),
@@ -222,7 +214,7 @@ function finalize(params: TextToVideoParams): unknown {
 const validator = createValidator<TextToVideoParams, unknown>({
   endpoint: "kling.video",
   schema: videoSchema,
-  modelId: (params) => params.model_name ?? DEFAULT_V1_MODEL,
+  modelId: (params) => params.model_name,
   catalog: v1VideoModels,
   checks: [
     checkV1Support("text2video", TEXT2VIDEO_MODELS, SOURCE),

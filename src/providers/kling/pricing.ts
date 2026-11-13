@@ -120,12 +120,6 @@ const VIDEO_RATES: Readonly<Record<string, VideoRates>> = {
     audioVoice: { "1080p": 0.168 },
   },
   "kling-v2-5-turbo": { silent: { "720p": 0.042, "1080p": 0.07 } },
-  "kling-v2-1": { silent: { "720p": 0.056, "1080p": 0.098 } },
-  "kling-v2-1-master": { silent: { "1080p": 0.28 } },
-  "kling-v2-master": { silent: { "1080p": 0.28 } },
-  "kling-v1-6": { silent: { "720p": 0.056, "1080p": 0.098 } },
-  "kling-v1-5": { silent: { "720p": 0.056, "1080p": 0.098 } },
-  "kling-v1": { silent: { "720p": 0.028, "1080p": 0.098 } },
 };
 
 /** The path-addressed routes key models by path segment; pricing is keyed `model_name`-side. */
@@ -236,21 +230,6 @@ const IMAGE_RATES: Readonly<Record<string, ImageRates>> = {
     "image-to-image": { "1k": 0.028, "2k": 0.028 },
     "multi-image-to-image": { "1k": 0.056, "2k": 0.056 },
   },
-  "kling-v2": {
-    "text-to-image": { "1k": 0.014, "2k": 0.014 },
-    "image-to-image": { "1k": 0.028 },
-    "multi-image-to-image": { "1k": 0.056 },
-  },
-  "kling-v1-5": {
-    "text-to-image": { "1k": 0.014 },
-    "image-to-image": { "1k": 0.028 },
-  },
-  "kling-v1": {
-    "text-to-image": { "1k": 0.0035 },
-    "image-to-image": { "1k": 0.0035 },
-  },
-  // kling-v2-new: the pricing page's "Kling Image 2.1 New" row cannot be tied
-  // to this id from the docs alone (see ./models.ts), so it has no rate.
 };
 
 export interface ImageCostInputs {

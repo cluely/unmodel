@@ -299,6 +299,38 @@ describe("google-vertex Gemini 4 thinking (Vertex model pages, 2026-11-12)", () 
   });
 });
 
+describe("google-vertex Gemini 4 sampling is ignored, not refused (Vertex model pages, 2026-11-12)", () => {
+  test.each(["gemini-4-argon", "gemini-4-carbon", "gemini-4-hydrogen"])(
+    "%s accepts temperature, topP and topK with one ignored-warning each",
+    (model) => {
+      const r = vertex.chat.safe({
+        model,
+        contents: textContents("hi"),
+        generationConfig: { temperature: 0.2, topP: 0.5, topK: 10 },
+      });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings.map((w) => [w.code, w.path.at(-1), w.meta?.ignored])).toEqual([
+          ["unsupported_param", "temperature", true],
+          ["unsupported_param", "topP", true],
+          ["unsupported_param", "topK", true],
+        ]);
+        expect(r.warnings[0]?.message).toContain("is ignored by");
+      }
+    },
+  );
+
+  test("a row with temperature: false and no page rule is still refused", () => {
+    const r = vertex.chat.safe({
+      model: "gemini-embedding-001",
+      contents: textContents("hi"),
+      generationConfig: { temperature: 0.2 },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.path).toEqual(["generationConfig", "temperature"]);
+  });
+});
+
 describe("google-vertex gemini-nano-banana-2.1 sampling (Vertex model page, 2026-11-12)", () => {
   test("seed, topK, logprobs, temperature and topP are each refused", () => {
     const r = vertex.chat.safe({

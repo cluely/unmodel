@@ -237,9 +237,30 @@ const REFUSED_SAMPLING_PARAMS = {
   },
 } as const satisfies Record<string, { params: readonly SamplingParam[]; source: string }>;
 
+/**
+ * Sampling fields a model page says the API ignores: the request is fulfilled
+ * and the model's fixed value replaces the one sent, so these warn and never
+ * refuse. This overrides the generated rows' `temperature: false`, which would
+ * otherwise refuse a request the API fulfils.
+ *
+ * - `gemini-4-argon`, `gemini-4-carbon`, `gemini-4-hydrogen` (`/4-argon`,
+ *   `/4-carbon`, `/4-hydrogen`): "Custom values for sampling parameters (
+ *   temperature , top_p , and top_k ) are ignored." Carbon and Hydrogen add
+ *   "Temperature: 1.0 (fixed; custom values ignored) topP: 0.95 (fixed; custom
+ *   values ignored) topK: 64 (fixed; custom values ignored)".
+ */
+const IGNORED_SAMPLING_PARAMS = {
+  "gemini-4-argon": { params: ["temperature", "topP", "topK"], source: `${VERTEX_GEMINI_DOCS_URL}/4-argon` },
+  "gemini-4-carbon": { params: ["temperature", "topP", "topK"], source: `${VERTEX_GEMINI_DOCS_URL}/4-carbon` },
+  "gemini-4-hydrogen": {
+    params: ["temperature", "topP", "topK"],
+    source: `${VERTEX_GEMINI_DOCS_URL}/4-hydrogen`,
+  },
+} as const satisfies Record<string, { params: readonly SamplingParam[]; source: string }>;
+
 /** True when a per-model sampling table owns the `temperature` decision for this id. */
 function hasSamplingRule(id: string): boolean {
-  return Object.hasOwn(REFUSED_SAMPLING_PARAMS, id);
+  return Object.hasOwn(REFUSED_SAMPLING_PARAMS, id) || Object.hasOwn(IGNORED_SAMPLING_PARAMS, id);
 }
 
 /** Gemini 4 `thinkingConfig`: any `thinkingBudget`, and `thinkingLevel` MINIMAL, are a 400. */
@@ -276,7 +297,7 @@ function checkGemini4Thinking(
   }
 }
 
-/** Sampling fields a model page says the API refuses. */
+/** Sampling fields a model page says the API refuses (an error) or ignores (a warning). */
 function checkSamplingParams(
   params: VertexGenerateContentBody,
   _info: ModelInfo | undefined,
@@ -285,17 +306,34 @@ function checkSamplingParams(
   const config = params.generationConfig;
   if (config === undefined) return;
   const id = stripModelPath(params.model);
-  if (!Object.hasOwn(REFUSED_SAMPLING_PARAMS, id)) return;
-  const rule = REFUSED_SAMPLING_PARAMS[id as keyof typeof REFUSED_SAMPLING_PARAMS];
-  for (const param of rule.params) {
-    if (config[param] === undefined) continue;
-    ctx.report({
-      code: "unsupported_param",
-      path: ["generationConfig", param],
-      model: params.model,
-      message: `\`generationConfig.${param}\` is refused by "${params.model}" on Vertex (an API error); its sampling is fixed, so remove it.`,
-      meta: { source: rule.source },
-    });
+
+  if (Object.hasOwn(REFUSED_SAMPLING_PARAMS, id)) {
+    const rule = REFUSED_SAMPLING_PARAMS[id as keyof typeof REFUSED_SAMPLING_PARAMS];
+    for (const param of rule.params) {
+      if (config[param] === undefined) continue;
+      ctx.report({
+        code: "unsupported_param",
+        path: ["generationConfig", param],
+        model: params.model,
+        message: `\`generationConfig.${param}\` is refused by "${params.model}" on Vertex (an API error); its sampling is fixed, so remove it.`,
+        meta: { source: rule.source },
+      });
+    }
+  }
+
+  if (Object.hasOwn(IGNORED_SAMPLING_PARAMS, id)) {
+    const rule = IGNORED_SAMPLING_PARAMS[id as keyof typeof IGNORED_SAMPLING_PARAMS];
+    for (const param of rule.params) {
+      if (config[param] === undefined) continue;
+      ctx.report({
+        code: "unsupported_param",
+        severity: "warning",
+        path: ["generationConfig", param],
+        model: params.model,
+        message: `\`generationConfig.${param}\` is ignored by "${params.model}" on Vertex: the request is accepted and the model's fixed value replaces the one sent.`,
+        meta: { ignored: true, source: rule.source },
+      });
+    }
   }
 }
 

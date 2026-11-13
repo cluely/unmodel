@@ -100,12 +100,29 @@ export type ElevenlabsOptimizeStreamingLatency =
  * https://elevenlabs.io/docs/overview/capabilities/text-to-speech/best-practices
  * ("Values below 1.0 will slow the voice down, to a minimum of 0.7. Values
  * above 1.0 will speed up the voice, to a maximum of 1.2."). The API
- * reference itself publishes no bounds, so this is the only documented
- * source; `stability`, `similarity_boost` and `style` have no documented
- * numeric range anywhere and are therefore left unconstrained.
+ * reference leaves `speed` unbounded (`{"type":"number"}` on
+ * https://api.elevenlabs.io/openapi.json), so this page is the only source.
+ * `stability`, `similarity_boost` and `clone_strength` are bounded by the
+ * request schema itself (below); of the voice settings, only `style` has no
+ * published bound and is left unconstrained.
  */
 export const TTS_SPEED_MIN = 0.7;
 export const TTS_SPEED_MAX = 1.2;
+
+/**
+ * Bounds of `voice_settings.stability` and `voice_settings.similarity_boost`.
+ * The text-to-speech bodies on https://api.elevenlabs.io/openapi.json
+ * (`Body_text_to_speech_full`, and its `_stream` / `_with_timestamps`
+ * siblings, read 2026-11-13) type `voice_settings` as
+ * `VoiceSettingsResponseModel`, which gives both
+ * `{"anyOf":[{"type":"number","maximum":1.0,"minimum":0.0},{"type":"null"}]}`.
+ */
+export const TTS_STABILITY_MIN = 0;
+export const TTS_STABILITY_MAX = 1;
+const STABILITY_RANGE_MESSAGE = `stability must be between ${TTS_STABILITY_MIN} and ${TTS_STABILITY_MAX}`;
+export const TTS_SIMILARITY_BOOST_MIN = 0;
+export const TTS_SIMILARITY_BOOST_MAX = 1;
+const SIMILARITY_BOOST_RANGE_MESSAGE = `similarity_boost must be between ${TTS_SIMILARITY_BOOST_MIN} and ${TTS_SIMILARITY_BOOST_MAX}`;
 
 /**
  * Bounds of `voice_settings.clone_strength`, the v4 Professional Voice Clone
@@ -127,10 +144,13 @@ const CLONE_STRENGTH_RANGE_MESSAGE = `clone_strength must be between ${TTS_CLONE
 export interface ElevenlabsVoiceSettings {
   /**
    * Voice consistency; lower values give more emotional range. Default 0.5.
-   * The docs publish no numeric bounds, so unmodel enforces none.
+   * 0–1 on the text-to-speech body ({@link TTS_STABILITY_MIN}–{@link TTS_STABILITY_MAX}).
    */
   stability?: number | null;
-  /** Adherence to the original voice. Default 0.75. No documented bounds. */
+  /**
+   * Adherence to the original voice. Default 0.75. 0–1 on the text-to-speech
+   * body ({@link TTS_SIMILARITY_BOOST_MIN}–{@link TTS_SIMILARITY_BOOST_MAX}).
+   */
   similarity_boost?: number | null;
   /** Style exaggeration. Default 0. No documented bounds. */
   style?: number | null;
@@ -257,8 +277,20 @@ export interface TextToSpeechSdkParams {
 // ---------------------------------------------------------------------------
 
 const voiceSettingsSchema = z.looseObject({
-  stability: z.number().nullable().optional(),
-  similarity_boost: z.number().nullable().optional(),
+  // `stability` / `similarity_boost`: `{"anyOf":[{"type":"number","maximum":1.0,"minimum":0.0},{"type":"null"}]}`
+  // on `VoiceSettingsResponseModel`, https://api.elevenlabs.io/openapi.json (2026-11-13).
+  stability: z
+    .number()
+    .min(TTS_STABILITY_MIN, STABILITY_RANGE_MESSAGE)
+    .max(TTS_STABILITY_MAX, STABILITY_RANGE_MESSAGE)
+    .nullable()
+    .optional(),
+  similarity_boost: z
+    .number()
+    .min(TTS_SIMILARITY_BOOST_MIN, SIMILARITY_BOOST_RANGE_MESSAGE)
+    .max(TTS_SIMILARITY_BOOST_MAX, SIMILARITY_BOOST_RANGE_MESSAGE)
+    .nullable()
+    .optional(),
   style: z.number().nullable().optional(),
   use_speaker_boost: z.boolean().nullable().optional(),
   speed: z.number().nullable().optional(),
@@ -347,9 +379,11 @@ function checkTtsModelKind(
 }
 
 /**
- * `voice_settings.speed` is the only voice setting with documented bounds
- * (0.7–1.2, CONTROLS_DOCS_URL). stability / similarity_boost / style publish
- * none, so they are deliberately unchecked.
+ * `voice_settings.speed`'s bounds (0.7–1.2) come from the best-practices page
+ * (CONTROLS_DOCS_URL), because the API reference leaves `speed` unbounded.
+ * `stability`, `similarity_boost` and `clone_strength` are bounded 0–1 by the
+ * request schema, which the zod schema above enforces. `style` has no
+ * published bound, so it is deliberately unchecked.
  */
 function checkVoiceSettings(
   params: TextToSpeechParams,

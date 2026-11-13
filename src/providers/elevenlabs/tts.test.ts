@@ -7,6 +7,10 @@ import {
   TTS_OPTIMIZE_STREAMING_LATENCY_LEVELS,
   TTS_SPEED_MIN,
   TTS_SPEED_MAX,
+  TTS_STABILITY_MIN,
+  TTS_STABILITY_MAX,
+  TTS_SIMILARITY_BOOST_MIN,
+  TTS_SIMILARITY_BOOST_MAX,
   TTS_CLONE_STRENGTH_MAX,
   TTS_CLONE_STRENGTH_MIN,
 } from "./tts";
@@ -475,14 +479,41 @@ describe("elevenlabs.tts voice_settings bounds (doc audit 2026-08-13)", () => {
     }
   });
 
-  test("stability/similarity_boost/style stay unconstrained (docs publish no bounds)", () => {
-    const r = tts.safe({
-      voice_id: "a",
-      text: "hi",
-      voice_settings: { stability: 1, similarity_boost: 0, style: 1 },
-    });
+  test("style stays unconstrained (no published bound)", () => {
+    const r = tts.safe({ voice_id: "a", text: "hi", voice_settings: { style: 1.5 } });
     expect(r.ok).toBe(true);
   });
+});
+
+// `{"anyOf":[{"type":"number","maximum":1.0,"minimum":0.0},{"type":"null"}]}` on
+// VoiceSettingsResponseModel, https://api.elevenlabs.io/openapi.json (2026-11-13).
+describe("elevenlabs.tts stability / similarity_boost bounds (openapi.json 2026-11-13)", () => {
+  const bounds = {
+    stability: [TTS_STABILITY_MIN, TTS_STABILITY_MAX],
+    similarity_boost: [TTS_SIMILARITY_BOOST_MIN, TTS_SIMILARITY_BOOST_MAX],
+  } as const;
+
+  for (const [key, [min, max]] of Object.entries(bounds)) {
+    test(`${key} accepts the schema's own bounds, 0 and 1`, () => {
+      expect([min, max]).toEqual([0, 1]);
+      for (const value of [min, max]) {
+        const r = tts.safe({ voice_id: "a", text: "hi", voice_settings: { [key]: value } });
+        expect(r.ok, `${key}: ${value}`).toBe(true);
+      }
+    });
+
+    test(`${key} just outside 0–1 is refused at its path`, () => {
+      for (const value of [-0.01, 1.01]) {
+        const r = tts.safe({ voice_id: "a", text: "hi", voice_settings: { [key]: value } });
+        expect(r.ok, `${key}: ${value}`).toBe(false);
+        if (!r.ok) {
+          expect(r.errors[0]?.code).toBe("invalid_shape");
+          expect(r.errors[0]?.path).toEqual(["voice_settings", key]);
+          expect(r.errors[0]?.message).toContain(`${key} must be between 0 and 1`);
+        }
+      }
+    });
+  }
 });
 
 describe("elevenlabs.tts model gating (doc audit 2026-08-13)", () => {

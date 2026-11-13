@@ -354,8 +354,12 @@ const speechToSpeechModels = {
     toolCall: false,
     openWeights: false,
     modalities: { input: ["audio"], output: ["audio"] },
-    // 10,000 characters per request — https://elevenlabs.io/docs/models
-    limit: { context: 0, characters: 10000 },
+    // No `characters`: the "Character limits" table on
+    // https://elevenlabs.io/docs/overview/models (2026-11-13) lists only the
+    // English STS ids (`eleven_english_sts_v2`, `eleven_english_sts_v1`); the
+    // voice-changer capabilities and API reference pages state no figure for
+    // this id either.
+    limit: { context: 0 },
     cost: { perAudioMinute: VOICE_CHANGER_PER_AUDIO_MINUTE },
   },
   eleven_english_sts_v2: {

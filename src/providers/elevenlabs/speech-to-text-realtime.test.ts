@@ -169,7 +169,7 @@ describe("elevenlabs.speechToTextRealtime schema enforcement", () => {
 
   // "Batch supports up to 1000 keyterms (50 characters each), while realtime
   // supports up to 50 keyterms (20 characters each)."
-  // https://elevenlabs.io/docs/capabilities/speech-to-text
+  // https://elevenlabs.io/docs/overview/capabilities/speech-to-text
   test("each keyterm is capped at the documented 20 characters", () => {
     expect(REALTIME_STT_KEYTERM_MAX_CHARACTERS).toBe(20);
 
@@ -183,7 +183,7 @@ describe("elevenlabs.speechToTextRealtime schema enforcement", () => {
       expect(issue?.path).toEqual(["keyterms", 0]);
       expect(issue?.meta?.limit).toBe(REALTIME_STT_KEYTERM_MAX_CHARACTERS);
       expect(issue?.meta?.actual).toBe(500);
-      expect(issue?.meta?.source).toBe("https://elevenlabs.io/docs/capabilities/speech-to-text");
+      expect(issue?.meta?.source).toBe("https://elevenlabs.io/docs/overview/capabilities/speech-to-text");
       // The offending term is named, not just its index.
       expect(issue?.message).toContain("500 characters");
     }

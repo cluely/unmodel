@@ -77,7 +77,7 @@ const MODELS_DOCS_URL = "https://elevenlabs.io/docs/overview/models";
  * The capabilities page, which is where the per-keyterm length caps are
  * published (the realtime AsyncAPI reference states only the 50-term count).
  */
-const CAPABILITIES_DOCS_URL = "https://elevenlabs.io/docs/capabilities/speech-to-text";
+const CAPABILITIES_DOCS_URL = "https://elevenlabs.io/docs/overview/capabilities/speech-to-text";
 /** Where the `turn_prediction` refusal on other models is published. */
 const TURN_PREDICTION_DOCS_URL =
   "https://elevenlabs.io/docs/eleven-api/guides/how-to/speech-to-text/realtime/transcripts-and-commit-strategies";

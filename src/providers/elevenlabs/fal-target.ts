@@ -203,20 +203,25 @@ function noteNamespaceChange(
   });
 }
 
-/** Refuses a 0–1 setting fal bounds but ElevenLabs does not. */
-function unitRange(
+/**
+ * Refuses a `style` outside 0–1, which fal bounds and ElevenLabs does not.
+ *
+ * `stability` and `similarity_boost` need no guard here: fal's 0–1 is the
+ * bound `elevenlabs.tts`'s own schema already enforces (`TTS_STABILITY_MIN`…),
+ * and `.toApi` only hangs off a request that passed it.
+ */
+function styleRange(
   value: number | null | undefined,
-  key: "stability" | "similarity_boost" | "style",
   ctx: MediaMapContext,
   endpoint: string,
 ): number | undefined {
   if (value == null) return undefined;
   if (value >= 0 && value <= 1) return value;
   ctx.unsupported({
-    path: ["voice_settings", key],
+    path: ["voice_settings", "style"],
     message:
-      `\`voice_settings.${key}\` is ${value}; ${endpoint} bounds it to 0–1. ElevenLabs publishes no numeric ` +
-      "bounds for it, so unmodel enforces none on the source — but fal does, and the request would 422.",
+      `\`voice_settings.style\` is ${value}; ${endpoint} bounds it to 0–1. ElevenLabs publishes no numeric ` +
+      "bound for it, so unmodel enforces none on the source — but fal does, and the request would 422.",
   });
   return undefined;
 }
@@ -254,11 +259,10 @@ function mapElevenV3(params: TextToSpeechParams, ctx: MediaMapContext): FalEleve
       "publishes no continuity fields on the Eleven v3 row",
     );
   }
-  const stability = unitRange(settings?.stability, "stability", ctx, endpoint);
   return {
     text: requireText(params, ctx, endpoint),
     voice: params.voice_id,
-    ...(stability !== undefined && { stability }),
+    ...(settings?.stability != null && { stability: settings.stability }),
     ...(params.language_code != null && { language_code: params.language_code }),
     ...(params.apply_text_normalization !== undefined && {
       apply_text_normalization: params.apply_text_normalization,
@@ -282,9 +286,7 @@ function mapElevenFull(
   refuseUniversal(params, ctx, endpoint);
   noteNamespaceChange(params, ctx, endpoint);
   const settings = params.voice_settings;
-  const stability = unitRange(settings?.stability, "stability", ctx, endpoint);
-  const similarity = unitRange(settings?.similarity_boost, "similarity_boost", ctx, endpoint);
-  const style = unitRange(settings?.style, "style", ctx, endpoint);
+  const style = styleRange(settings?.style, ctx, endpoint);
   const speed = settings?.speed;
   if (speed != null && (speed < 0.7 || speed > 1.2)) {
     ctx.unsupported({
@@ -295,8 +297,8 @@ function mapElevenFull(
   return {
     text: requireText(params, ctx, endpoint),
     voice: params.voice_id,
-    ...(stability !== undefined && { stability }),
-    ...(similarity !== undefined && { similarity_boost: similarity }),
+    ...(settings?.stability != null && { stability: settings.stability }),
+    ...(settings?.similarity_boost != null && { similarity_boost: settings.similarity_boost }),
     ...(style !== undefined && { style }),
     ...(speed != null && speed >= 0.7 && speed <= 1.2 && { speed }),
     ...(params.previous_text != null && { previous_text: params.previous_text }),

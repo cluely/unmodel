@@ -256,10 +256,14 @@ function checkOutputFormat(
 }
 
 /**
- * `voice_settings.speed` is the one member with documented bounds, and they
- * live on the controls page rather than the API reference — the same source
- * `elevenlabs.tts` cites. `stability`, `similarity_boost` and `style` have no
- * documented range anywhere and are therefore left unconstrained.
+ * `voice_settings.speed`'s bounds live on the controls page rather than the
+ * API reference — the same source `elevenlabs.tts` cites. `stability`,
+ * `similarity_boost` and `style` are left unconstrained here: this body types
+ * `voice_settings` as an untyped JSON-encoded string ("Needs to be send as a
+ * JSON encoded string", https://api.elevenlabs.io/openapi.json, 2026-11-13),
+ * so nothing bounds its members for this endpoint. The 0–1 `elevenlabs.tts`
+ * enforces on `stability` / `similarity_boost` is the text-to-speech body's
+ * `VoiceSettingsResponseModel`, which this schema does not reference.
  */
 function checkVoiceSettings(
   params: SpeechToSpeechParams,

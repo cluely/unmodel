@@ -157,7 +157,7 @@ describe("runway.videoFromVideo per-model enums", () => {
 
   test("mode is a seedance2_5-only enum", () => {
     expect(
-      videoFromVideo.safe({ model: "seedance2_5", promptVideo: VIDEO, mode: "extend" }).ok,
+      videoFromVideo.safe({ model: "seedance2_5", promptVideo: VIDEO, promptText: "x", mode: "extend" }).ok,
     ).toBe(true);
 
     const wrongModel = safeUnchecked({ model: "seedance2", promptVideo: VIDEO, mode: "extend" });
@@ -503,5 +503,64 @@ describe("runway.videoFromVideo — corrected arms (2026-11-12)", () => {
     const hdr = safeUnchecked({ model: "aleph2", videoUri: VIDEO, outputFormat: "hdr10" });
     expect(hdr.ok).toBe(false);
     if (!hdr.ok) expect(hdr.errors[0]?.code).toBe("invalid_enum_value");
+  });
+});
+
+describe("runway.videoFromVideo — seedance2_5 modes (guides/models.md, 2026-11-12)", () => {
+  const base = { model: "seedance2_5", promptVideo: VIDEO } as const;
+
+  test("extend and edit with their documented fields validate", () => {
+    // The guides/models.md edit example body.
+    const edit = videoFromVideo.safe({
+      ...base,
+      promptText: "Change the jacket to red leather",
+      mode: "edit",
+      duration: "auto",
+    });
+    expect(edit.ok).toBe(true);
+    if (edit.ok) expect(edit.warnings).toEqual([]);
+    expect(videoFromVideo.safe({ ...base, promptText: "keep walking", mode: "extend", duration: 5 }).ok).toBe(true);
+    // reference mode keeps ratio and duration.
+    expect(videoFromVideo.safe({ ...base, mode: "reference", ratio: "1280:720", duration: 5 }).ok).toBe(true);
+  });
+
+  test("extend and edit require promptText", () => {
+    for (const mode of ["extend", "edit"] as const) {
+      const r = videoFromVideo.safe({ ...base, mode, duration: "auto" });
+      expect(r.ok, mode).toBe(false);
+      if (!r.ok) expect(r.errors[0]).toMatchObject({ code: "invalid_shape", path: ["promptText"] });
+    }
+  });
+
+  test("extend and edit take no ratio", () => {
+    for (const mode of ["extend", "edit"] as const) {
+      const r = videoFromVideo.safe({ ...base, promptText: "x", mode, ratio: "1280:720", duration: "auto" });
+      expect(r.ok, mode).toBe(false);
+      if (!r.ok) {
+        expect(r.errors[0]).toMatchObject({ code: "unsupported_param", path: ["ratio"] });
+        expect(r.errors[0]?.message).not.toContain("resolution");
+      }
+    }
+  });
+
+  test('edit requires duration "auto" — an omitted duration is the default 5', () => {
+    const five = videoFromVideo.safe({ ...base, promptText: "x", mode: "edit", duration: 5 });
+    expect(five.ok).toBe(false);
+    if (!five.ok) expect(five.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["duration"] });
+    const omitted = videoFromVideo.safe({ ...base, promptText: "x", mode: "edit" });
+    expect(omitted.ok).toBe(false);
+    if (!omitted.ok) expect(omitted.errors[0]?.meta?.value).toBe(5);
+  });
+
+  test("bitrate is seedance2's here too; a seedance2_5 draft refuses mov and bills 480p", () => {
+    expect(videoFromVideo.safe({ model: "seedance2", promptVideo: VIDEO, bitrate: "high" }).ok).toBe(true);
+    expect(safeUnchecked({ model: "aleph2", videoUri: VIDEO, bitrate: "high" }).ok).toBe(false);
+    const draft = videoFromVideo.safe({ ...base, ratio: "1920:1080", duration: 5, draft: true });
+    expect(draft.ok).toBe(true);
+    // 5 s × 20 cr/s; the input video's 10 cr/s are not estimable from a URL.
+    if (draft.ok) expect(draft.estimate.costUSD).toBeCloseTo(1, 10);
+    const mov = videoFromVideo.safe({ ...base, draft: true, outputFormat: "mov" });
+    expect(mov.ok).toBe(false);
+    if (!mov.ok) expect(mov.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["outputFormat"] });
   });
 });

@@ -693,6 +693,22 @@ describe("bounds the adapter did not copy surface as the provider's own finding"
     expect(params["ratio"]).toBe("1440:1440");
   });
 
+  test("seedance2_fast / mini split their twelve sizes into 480p and 720p, and serve no 1080p", () => {
+    for (const model of ["runway/seedance2_fast", "runway/seedance2_mini"] as const) {
+      const square = (resolution: "480p" | "720p"): unknown =>
+        (video({ model, prompt: "a fox", resolution, aspectRatio: "1:1" }) as unknown as Record<string, unknown>)[
+          "ratio"
+        ];
+      expect(square("480p"), model).toBe("640:640");
+      expect(square("720p"), model).toBe("960:960");
+      const fullHd = video.safe({ model, prompt: "a fox", resolution: "1080p", aspectRatio: "1:1" } as never);
+      expect(fullHd.ok, model).toBe(false);
+      if (!fullHd.ok) {
+        expect(fullHd.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["resolution"] });
+      }
+    }
+  });
+
   test("Gemini Omni Flash 1.x's 360p sizes have no canonical tier and are never picked", () => {
     const plain = video({
       model: "runway/gemini_omni_flash_1.2",

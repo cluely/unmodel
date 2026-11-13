@@ -43,7 +43,7 @@ import {
   RATIO_TIERS,
   SEEDANCE2_5_1080P_RATIOS,
   SEEDANCE2_5_4K_RATIOS,
-  SEEDANCE2_SMALL_RATIOS,
+  SEEDANCE2_SMALL_RATIOS_BY_TIER,
   type RunwayRatioTier,
 } from "./constraints";
 
@@ -73,6 +73,8 @@ interface VideoPricingFields {
    * `referenceVideos` — which switches Kling 4.0's per-second rate.
    */
   inputVideo?: boolean;
+  /** seedance2_5 `draft: true` — a preview billed at the 480p rate. */
+  draft?: boolean;
 }
 
 /** This model's documented billing tier for `ratio`, from ./constraints.ts. */
@@ -119,25 +121,26 @@ export function videoCreditsPerSecond(
     }
     case "seedance2": {
       // guides/pricing.md, 2026-11-12: 14 at 480p, 30 at 720p, 40 at 1080p,
-      // 150 at 4K (56-credit minimum). No page says which of the twelve
-      // SEEDANCE2_SMALL_RATIOS sizes is 480p and which 720p, so the small
-      // group bills at the 720p rate (worst case). The 3840/2880-family is
-      // 4K; everything else in the enum is 1080p (1440:1440 included, despite
-      // its small max dimension). Omitted/unknown ratio → worst case 150.
+      // 150 at 4K (56-credit minimum). The small sizes split six and six
+      // into 480p and 720p (SEEDANCE2_SMALL_RATIOS_BY_TIER). The
+      // 3840/2880-family is 4K; everything else in the enum is 1080p
+      // (1440:1440 included, despite its small max dimension). Omitted/unknown
+      // ratio → worst case 150.
       if (fields.ratio === undefined) return 150;
-      if ((SEEDANCE2_SMALL_RATIOS as readonly string[]).includes(fields.ratio)) return 30;
+      if ((SEEDANCE2_SMALL_RATIOS_BY_TIER["480p"] as readonly string[]).includes(fields.ratio)) return 14;
+      if ((SEEDANCE2_SMALL_RATIOS_BY_TIER["720p"] as readonly string[]).includes(fields.ratio)) return 30;
       const max = maxDim(fields.ratio);
       if (max === undefined) return 150;
       if (max < 2880) return 40;
       return 150;
     }
     case "seedance2_fast":
-      // 11 at 480p, 24 at 720p (44-credit minimum); which size is which tier
-      // is undocumented → 24.
-      return 24;
+      // 11 at 480p, 24 at 720p (44-credit minimum), by RATIO_TIERS; no
+      // default ratio is documented, so an omitted one bills at 24.
+      return ratioTier(model, fields.ratio) === "480p" ? 11 : 24;
     case "seedance2_mini":
-      // 7 at 480p, 15 at 720p (28-credit minimum) → 15, as above.
-      return 15;
+      // 7 at 480p, 15 at 720p (28-credit minimum), as above.
+      return ratioTier(model, fields.ratio) === "480p" ? 7 : 15;
     case "seedance2_5": {
       // 20 / 30 / 68 credits/s of output at 480p / 720p / 1080p (80-credit
       // minimum). "480p 16:9 / 9:16 use `854:480` / `480:854`" (inputs.md),
@@ -146,6 +149,12 @@ export function videoCreditsPerSecond(
       // published, so the 4K sizes get no estimate. Input/reference video
       // seconds also bill (10 / 15 / 34 credits/s) but are not estimable
       // from URLs.
+      //
+      // A draft preview "is always 480p `.mp4`, and it is billed at the 480p
+      // rate" (guides/models.md, 2026-11-12) at any `ratio`: "a 720p, 1080p,
+      // or 4K ratio is accepted, and the preview uses the 480p frame for that
+      // aspect" (guides/models.md, 2026-11-13). The minimum still applies.
+      if (fields.draft === true) return 20;
       if (fields.ratio === "854:480" || fields.ratio === "480:854") return 20;
       if (fields.ratio !== undefined && (SEEDANCE2_5_4K_RATIOS as readonly string[]).includes(fields.ratio)) {
         return undefined;

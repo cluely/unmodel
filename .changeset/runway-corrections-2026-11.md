@@ -31,9 +31,8 @@ Re-read against Runway's OpenAPI document, `guides/pricing.md` and
 - **Prices** (`guides/pricing.md`):
   - `seedance2` 14 / 30 / 40 / 150 credits/s at 480p / 720p / 1080p / 4K with
     a 56-credit minimum; `seedance2_fast` 11 / 24 (44 minimum);
-    `seedance2_mini` 7 / 15 (28 minimum). No page says which small size is
-    480p, so those bill at the 720p rate, and the fast / mini catalog rates
-    are removed (no documented default ratio).
+    `seedance2_mini` 7 / 15 (28 minimum). The fast / mini catalog rates are
+    removed (no documented default ratio).
   - `seedance2_5` gains its 1080p tier (68 credits/s); its 4K sizes get no
     estimate (no published 2.5 rate); the catalog now carries the default
     `1280:720` rate, $0.30/s.

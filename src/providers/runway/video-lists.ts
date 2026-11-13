@@ -91,20 +91,23 @@ export const VIDEO_TO_VIDEO_MODELS = [
   "gemini_omni_flash_1.2",
 ] as const;
 
+/**
+ * The seedance2 family's 480p and 720p sizes, by tier. "Seedance 2.0 Fast
+ * supports 480p and 720p only" (api.md, 2026-11-12), and the spec enum lists
+ * the same six shapes twice: first at ~0.42 MP (854×480's area), then at
+ * ~0.92 MP, the run holding `1280:720`. seedance2_5's first run is the same
+ * six with `854:480` / `480:854` in the 16:9 slots — "480p 16:9 / 9:16 use
+ * `854:480` / `480:854`" (assets/inputs.md, 2026-11-12).
+ */
+export const SEEDANCE2_SMALL_RATIOS_BY_TIER = {
+  "480p": ["992:432", "864:496", "752:560", "640:640", "560:752", "496:864"],
+  "720p": ["1470:630", "1280:720", "1112:834", "960:960", "834:1112", "720:1280"],
+} as const;
+
 /** seedance2_fast / seedance2_mini full enum; seedance2's 480p/720p tier. */
 export const SEEDANCE2_SMALL_RATIOS = [
-  "992:432",
-  "864:496",
-  "752:560",
-  "640:640",
-  "560:752",
-  "496:864",
-  "1470:630",
-  "1280:720",
-  "1112:834",
-  "960:960",
-  "834:1112",
-  "720:1280",
+  ...SEEDANCE2_SMALL_RATIOS_BY_TIER["480p"],
+  ...SEEDANCE2_SMALL_RATIOS_BY_TIER["720p"],
 ] as const;
 
 /** `targetAspectRatio` (aleph2 expand/outpaint) — openapi.json. */

@@ -139,8 +139,7 @@ describe("runway.video cost estimation", () => {
       duration: 10,
     });
     expect(small.ok).toBe(true);
-    // 30 cr/s: the 720p rate, which the 480p/720p sizes bill at (their
-    // split is undocumented).
+    // 30 cr/s: 1280:720 is in the 720p run of the small sizes.
     if (small.ok) expect(small.estimate.costUSD).toBeCloseTo(3, 10);
 
     const fourK = video.safe({
@@ -354,12 +353,130 @@ describe("runway.video — corrected arms and rates (2026-11-12)", () => {
     expect(cost("1440:1440")).toBeCloseTo(1.2, 10); // 1080p: 30 cr/s
   });
 
-  test("seedance2's 480p/720p sizes bill at 30, its 1080p sizes at 40, with a 56-credit floor", () => {
+  test("seedance2's 480p sizes bill at 14, 720p at 30, 1080p at 40, with a 56-credit floor", () => {
     const cost = (ratio: string, duration: number): number | undefined => {
       const r = safeUnchecked({ model: "seedance2", promptText: "hi", ratio, duration });
       return r.ok ? (r.estimate as { costUSD?: number }).costUSD : undefined;
     };
     expect(cost("1920:1080", 4)).toBeCloseTo(1.6, 10);
-    expect(cost("992:432", 4)).toBeCloseTo(1.2, 10);
+    expect(cost("992:432", 4)).toBeCloseTo(0.56, 10); // 4 × 14 = 56, the floor
+    expect(cost("640:640", 5)).toBeCloseTo(0.7, 10);
+    expect(cost("960:960", 4)).toBeCloseTo(1.2, 10);
+  });
+
+  test("seedance2_fast / seedance2_mini bill their 480p run at the 480p rate", () => {
+    const cost = (model: string, ratio: string): number | undefined => {
+      const r = safeUnchecked({ model, promptText: "hi", ratio, duration: 10 });
+      return r.ok ? (r.estimate as { costUSD?: number }).costUSD : undefined;
+    };
+    expect(cost("seedance2_fast", "640:640")).toBeCloseTo(1.1, 10); // 11 cr/s
+    expect(cost("seedance2_fast", "960:960")).toBeCloseTo(2.4, 10); // 24 cr/s
+    expect(cost("seedance2_mini", "864:496")).toBeCloseTo(0.7, 10); // 7 cr/s
+    expect(cost("seedance2_mini", "1280:720")).toBeCloseTo(1.5, 10); // 15 cr/s
+  });
+});
+
+describe("runway.video — seedance bitrate, draft and draftTaskId (openapi.json, 2026-11-12)", () => {
+  const DRAFT_ID = "11111111-1111-4111-8111-111111111111";
+
+  test("bitrate is a seedance2 / fast / mini param, and nobody else's", () => {
+    const ok = video.safe({ model: "seedance2", promptText: "hi", bitrate: "high" });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) expect(ok.warnings).toEqual([]);
+    expect(video.safe({ model: "seedance2_mini", promptText: "hi", bitrate: "standard" }).ok).toBe(true);
+    for (const model of ["gen4.5", "seedance2_5"]) {
+      const r = safeUnchecked({ model, promptText: "hi", ratio: "1280:720", duration: 5, bitrate: "high" });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) expect(r.errors.find((e) => e.code === "unsupported_param")?.path).toEqual(["bitrate"]);
+    }
+    expect(safeUnchecked({ model: "seedance2", promptText: "hi", bitrate: "ultra" }).ok).toBe(false);
+  });
+
+  test("bitrate does not change the price", () => {
+    const base = { model: "seedance2", promptText: "hi", ratio: "1280:720", duration: 5 } as const;
+    const standard = video.safe(base);
+    const high = video.safe({ ...base, bitrate: "high" });
+    if (standard.ok && high.ok) expect(high.estimate.costUSD).toBe(standard.estimate.costUSD);
+  });
+
+  test("a seedance2_5 draft bills at the 480p rate whatever its ratio", () => {
+    // The guides/models.md example body: 5 s × 20 cr/s = 100 credits.
+    const r = video.safe({
+      model: "seedance2_5",
+      promptText: "A red panda walks through a lantern-lit alley",
+      ratio: "1280:720",
+      duration: 5,
+      draft: true,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(1, 10);
+    }
+    // The 80-credit minimum still applies (4 s × 20 = 80).
+    const short = video.safe({ model: "seedance2_5", ratio: "1920:1080", duration: 4, draft: true });
+    if (short.ok) expect(short.estimate.costUSD).toBeCloseTo(0.8, 10);
+  });
+
+  test("draft is a seedance2_5-only param", () => {
+    const r = safeUnchecked({ model: "seedance2", promptText: "hi", draft: true });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.find((e) => e.code === "unsupported_param")?.path).toEqual(["draft"]);
+  });
+
+  test("a draft is always mp4: outputFormat mov is refused", () => {
+    const mov = video.safe({ model: "seedance2_5", promptText: "hi", draft: true, outputFormat: "mov" });
+    expect(mov.ok).toBe(false);
+    if (!mov.ok) {
+      const issue = mov.errors.find((e) => e.code === "invalid_enum_value");
+      expect(issue?.path).toEqual(["outputFormat"]);
+      expect(issue?.meta?.source).toContain("guides/models.md");
+    }
+    expect(video.safe({ model: "seedance2_5", promptText: "hi", draft: true, outputFormat: "mp4" }).ok).toBe(true);
+    expect(video.safe({ model: "seedance2_5", promptText: "hi", draft: false, outputFormat: "mov" }).ok).toBe(true);
+  });
+
+  test("an enhance sends model and draftTaskId only, and gets no estimate", () => {
+    const r = video.safe({ model: "seedance2_5", draftTaskId: DRAFT_ID });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeUndefined();
+    }
+  });
+
+  test("every generation field is refused beside draftTaskId", () => {
+    const extras: Record<string, unknown> = {
+      promptText: "hi",
+      ratio: "1280:720",
+      duration: 5,
+      seed: 1,
+      audio: true,
+      references: [{ uri: "https://example.com/a.png" }],
+      referenceVideos: [{ type: "video", uri: "https://example.com/a.mp4" }],
+      referenceAudio: [{ type: "audio", uri: "https://example.com/a.mp3" }],
+      draft: false,
+      outputFormat: "mp4",
+    };
+    for (const [param, value] of Object.entries(extras)) {
+      const r = safeUnchecked({ model: "seedance2_5", draftTaskId: DRAFT_ID, [param]: value });
+      expect(r.ok, param).toBe(false);
+      if (!r.ok) {
+        const issue = r.errors.find((e) => e.code === "unsupported_param");
+        expect(issue?.path, param).toEqual([param]);
+        expect(issue?.message).toContain("draftTaskId");
+      }
+    }
+  });
+
+  test("draftTaskId is seedance2_5's, and a v4 UUID", () => {
+    const other = safeUnchecked({ model: "seedance2", promptText: "hi", draftTaskId: DRAFT_ID });
+    expect(other.ok).toBe(false);
+    if (!other.ok) expect(other.errors.find((e) => e.code === "unsupported_param")?.path).toEqual(["draftTaskId"]);
+    expect(safeUnchecked({ model: "seedance2_5", draftTaskId: "task-123" }).ok).toBe(false);
+    // Version 1 — outside the spec's `-4[0-9a-fA-F]{3}-` pattern.
+    expect(safeUnchecked({ model: "seedance2_5", draftTaskId: "11111111-1111-1111-8111-111111111111" }).ok).toBe(
+      false,
+    );
   });
 });

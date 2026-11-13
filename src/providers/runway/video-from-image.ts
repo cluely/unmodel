@@ -120,6 +120,20 @@ export interface ImageToVideoParams {
   outputFormat?: RunwayVideoOutputFormat;
   /** gen4.5 only, with outputFormat "prores" or "hdr_prores". */
   proresProfile?: "422" | "4444" | "422 Proxy" | "422 LT" | "422 HQ" | "4444 XQ";
+  /**
+   * seedance2 / seedance2_fast / seedance2_mini only. `"standard"` (the
+   * default) or `"high"`, which "keeps more detail with fewer compression
+   * artifacts, at a larger file size" — openapi.json, 2026-11-12. Both bill
+   * at the same rate.
+   */
+  bitrate?: "standard" | "high";
+  /**
+   * seedance2_5 only: "Generate a cheap 480p preview instead of a
+   * full-quality video", always `mp4` and billed at the 480p rate. Enhancing
+   * it to 1080p is a text_to_video request with `draftTaskId` —
+   * openapi.json, 2026-11-12.
+   */
+  draft?: boolean;
 }
 
 const videoFromImageSchema = z.looseObject({
@@ -141,6 +155,8 @@ const videoFromImageSchema = z.looseObject({
   promptExpansionMode: z.string().optional(),
   outputFormat: z.enum(VIDEO_OUTPUT_FORMATS).optional(),
   proresProfile: z.enum(["422", "4444", "422 Proxy", "422 LT", "422 HQ", "4444 XQ"]).optional(),
+  bitrate: z.enum(["standard", "high"]).optional(),
+  draft: z.boolean().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -178,6 +194,7 @@ function estimate(params: ImageToVideoParams, info: ModelInfo | undefined, _ctx:
     flatExtraCredits:
       params.model === "gemini_omni_flash" || params.model === "grok_imagine_1_5_lite" ? 1 : 0,
     ...(params.outputFormat !== undefined && { outputFormat: params.outputFormat }),
+    ...(params.draft !== undefined && { draft: params.draft }),
   });
   return costUSD === undefined ? {} : { costUSD };
 }

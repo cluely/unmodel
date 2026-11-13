@@ -76,11 +76,12 @@ export const MODELS = [
  *
  * Where Runway prices — and so documents — which tier each pair is (wan3,
  * kling_4, kling_4_flash, grok_imagine_1_5_lite, the gemini_omni_flash_1.x
- * pair), the row follows that grouping (`RATIO_TIERS` in ./constraints.ts)
- * rather than the short edge, so `1440:1440` is kling_4's 1080p square. The
- * Gemini Omni Flash 1.x 360p sizes have no canonical tier and are left out.
- * Those models' `auto_<tier>` tokens are what a tier given without a shape
- * compiles to.
+ * pair, seedance2_fast / seedance2_mini), the row follows that grouping
+ * (`RATIO_TIERS` in ./constraints.ts) rather than the short edge, so
+ * `1440:1440` is kling_4's 1080p square and `960:960` seedance2_fast's 720p
+ * one. The Gemini Omni Flash 1.x 360p sizes have no canonical tier and are
+ * left out. Those models' `auto_<tier>` tokens are what a tier given without
+ * a shape compiles to.
  *
  * `aleph2` is the exception twice over. It has **no duration parameter at all**
  * (the output follows the input clip) and no resolution field, so both lists
@@ -131,7 +132,7 @@ export const SEEDANCE_RATIOS = [
 
 export const SEEDANCE_SMALL_ROW = {
   durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-  resolutions: ["480p", "720p", "1080p"],
+  resolutions: ["480p", "720p"],
   ratios: SEEDANCE_RATIOS,
   extras: SEEDANCE_2_EXTRAS,
 } as const;

@@ -832,6 +832,31 @@ describe("runway.videoFromImage — Kling, WAN, H3 Max, Grok Lite and Gemini Omn
     if (!mixed.ok) expect(mixed.errors[0]).toMatchObject({ code: "invalid_shape", path: ["promptImage"] });
   });
 
+  test("seedance and hailuo3: keyframes cannot mix with references either", () => {
+    // "The two modes cannot be mixed." — the same promptImage sentence as
+    // wan3's, on each of these arms (openapi.json, 2026-11-12).
+    const mixed = [{ uri: IMAGE, position: "first" }, { uri: IMAGE }];
+    for (const model of ["seedance2", "seedance2_fast", "seedance2_mini", "seedance2_5", "hailuo3"]) {
+      const r = safeUnchecked({ model, promptImage: mixed, promptText: TEXT });
+      expect(r.ok, model).toBe(false);
+      if (!r.ok) expect(r.errors[0]).toMatchObject({ code: "invalid_shape", path: ["promptImage"] });
+    }
+    // All references, or all keyframes, stays valid.
+    expect(videoFromImage.safe({ model: "seedance2", promptImage: [{ uri: IMAGE }, { uri: IMAGE }] }).ok).toBe(true);
+    expect(
+      videoFromImage.safe({
+        model: "seedance2",
+        promptImage: [
+          { uri: IMAGE, position: "first" },
+          { uri: IMAGE, position: "last" },
+        ],
+      }).ok,
+    ).toBe(true);
+    expect(
+      videoFromImage.safe({ model: "hailuo3", promptImage: [{ uri: IMAGE }, { uri: IMAGE }], promptText: TEXT }).ok,
+    ).toBe(true);
+  });
+
   test("h3_max: a last frame requires a first frame", () => {
     const lone = safeUnchecked({
       model: "h3_max",
@@ -970,5 +995,37 @@ describe("runway.videoFromImage — corrected arms and rates (2026-11-12)", () =
       outputFormat: "hdr10",
     });
     expect(turbo.ok).toBe(false);
+  });
+});
+
+describe("runway.videoFromImage — seedance bitrate and draft (openapi.json, 2026-11-12)", () => {
+  test("bitrate is accepted on seedance2 and refused on gen4.5", () => {
+    const ok = videoFromImage.safe({ model: "seedance2_fast", promptImage: IMAGE, bitrate: "high" });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) expect(ok.warnings).toEqual([]);
+    const r = safeUnchecked({
+      model: "gen4.5",
+      promptImage: IMAGE,
+      promptText: "x",
+      ratio: "1280:720",
+      duration: 5,
+      bitrate: "high",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.find((e) => e.code === "unsupported_param")?.path).toEqual(["bitrate"]);
+  });
+
+  test("a seedance2_5 draft bills at the 480p rate and refuses mov", () => {
+    const r = videoFromImage.safe({ model: "seedance2_5", promptImage: IMAGE, ratio: "1280:720", duration: 5, draft: true });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toEqual([]);
+      expect(r.estimate.costUSD).toBeCloseTo(1, 10);
+    }
+    const mov = videoFromImage.safe({ model: "seedance2_5", promptImage: IMAGE, draft: true, outputFormat: "mov" });
+    expect(mov.ok).toBe(false);
+    if (!mov.ok) expect(mov.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["outputFormat"] });
+    const elsewhere = safeUnchecked({ model: "seedance2", promptImage: IMAGE, draft: true });
+    expect(elsewhere.ok).toBe(false);
   });
 });

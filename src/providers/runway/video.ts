@@ -114,6 +114,26 @@ export interface TextToVideoParams {
   outputFormat?: RunwayVideoOutputFormat;
   /** gen4.5 only, with outputFormat "prores" or "hdr_prores". */
   proresProfile?: "422" | "4444" | "422 Proxy" | "422 LT" | "422 HQ" | "4444 XQ";
+  /**
+   * seedance2 / seedance2_fast / seedance2_mini only. `"standard"` (the
+   * default) or `"high"`, which "keeps more detail with fewer compression
+   * artifacts, at a larger file size" — openapi.json, 2026-11-12. Both bill
+   * at the same rate.
+   */
+  bitrate?: "standard" | "high";
+  /**
+   * seedance2_5 only: "Generate a cheap 480p preview instead of a
+   * full-quality video", always `mp4` and billed at the 480p rate; enhance it
+   * to 1080p within 7 days with `draftTaskId` — openapi.json, 2026-11-12.
+   */
+  draft?: boolean;
+  /**
+   * seedance2_5 only: "The ID of a succeeded draft task to enhance to 1080p.
+   * The draft is regenerated with its original prompt, references, and
+   * settings, so no other generation fields may be provided" — send `model`
+   * and `draftTaskId` alone (openapi.json, 2026-11-12). A UUID v4.
+   */
+  draftTaskId?: string;
 }
 
 const videoSchema = z.looseObject({
@@ -134,6 +154,10 @@ const videoSchema = z.looseObject({
   promptExpansionMode: z.string().optional(),
   outputFormat: z.enum(VIDEO_OUTPUT_FORMATS).optional(),
   proresProfile: z.enum(["422", "4444", "422 Proxy", "422 LT", "422 HQ", "4444 XQ"]).optional(),
+  bitrate: z.enum(["standard", "high"]).optional(),
+  draft: z.boolean().optional(),
+  // The spec's `format: uuid` pattern admits version 4 alone.
+  draftTaskId: z.uuidv4().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -143,6 +167,10 @@ const videoSchema = z.looseObject({
 
 function estimate(params: TextToVideoParams, info: ModelInfo | undefined, _ctx: PipelineContext) {
   if (info === undefined) return {};
+  // An enhance bills "at the 1080p rate for the same output duration and
+  // input video" as the preview (guides/pricing.md, 2026-11-12) — neither of
+  // which the request carries.
+  if (params.draftTaskId !== undefined) return {};
   let flatReferenceCount = 0;
   if (params.model === "grok_imagine_1_5") {
     // 1 credit per image or audio reference.
@@ -167,6 +195,7 @@ function estimate(params: TextToVideoParams, info: ModelInfo | undefined, _ctx: 
     inputVideo: (params.referenceVideos?.length ?? 0) > 0,
     flatReferenceCount,
     ...(params.outputFormat !== undefined && { outputFormat: params.outputFormat }),
+    ...(params.draft !== undefined && { draft: params.draft }),
   });
   return costUSD === undefined ? {} : { costUSD };
 }

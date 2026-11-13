@@ -1,13 +1,12 @@
 /**
  * Per-model constraint tables for the Runway API's generation routes,
  * transcribed from the official OpenAPI spec (spec version 2024-11-06):
- * https://docs.dev.runwayml.com/openapi.json — every arm verified 2026-11-12
- * (the `bitrate` / `draft` / `draftTaskId` fields of the seedance arms are
- * not yet typed, so they pass as unknown params). Each route's request body
- * is a strict per-model union there, so a param absent from a model's arm is
- * rejected (or ignored) by the API; those are the `deny` rules. `enums` carry
- * each arm's documented ratio/duration/resolution/quality values; integer
- * ranges (e.g. duration 2–10) are expanded to explicit lists.
+ * https://docs.dev.runwayml.com/openapi.json — every arm verified 2026-11-12.
+ * Each route's request body is a strict per-model union there, so a param
+ * absent from a model's arm is rejected (or ignored) by the API; those are
+ * the `deny` rules. `enums` carry each arm's documented
+ * ratio/duration/resolution/quality values; integer ranges (e.g. duration
+ * 2–10) are expanded to explicit lists.
  */
 
 import type { EndpointConstraints, DenyRule } from "../../core/constraint-types";
@@ -16,6 +15,7 @@ import {
   ALEPH2_TARGET_ASPECT_RATIOS,
   IMAGE_TO_VIDEO_MODELS,
   SEEDANCE2_SMALL_RATIOS,
+  SEEDANCE2_SMALL_RATIOS_BY_TIER,
   TEXT_TO_VIDEO_MODELS,
   VIDEO_TO_VIDEO_MODELS,
 } from "./video-lists";
@@ -41,6 +41,7 @@ export {
   TEXT_TO_VIDEO_MODELS,
   VIDEO_TO_VIDEO_MODELS,
   SEEDANCE2_SMALL_RATIOS,
+  SEEDANCE2_SMALL_RATIOS_BY_TIER,
   ALEPH2_TARGET_ASPECT_RATIOS,
 };
 
@@ -373,6 +374,8 @@ export const RATIO_TIERS: Readonly<Record<string, Readonly<Record<string, Runway
   kling_4: byTier(KLING4_RATIOS_BY_TIER, KLING4_AUTO_RATIOS),
   // Every kling_4_flash size, `auto_720p` included, is 720p.
   kling_4_flash: byTier({ "720p": KLING4_FLASH_RATIOS }),
+  seedance2_fast: byTier(SEEDANCE2_SMALL_RATIOS_BY_TIER),
+  seedance2_mini: byTier(SEEDANCE2_SMALL_RATIOS_BY_TIER),
 };
 
 // ---------------------------------------------------------------------------
@@ -500,6 +503,45 @@ const KLING4_PROMPT_WITH_REFERENCES: readonly PairingRule[] = [
   },
 ];
 
+/**
+ * Seedance 2.5 draft previews, on every route: "The preview is always 480p
+ * `.mp4` … `outputFormat: \"mov\"` is rejected with `draft: true`" —
+ * guides/models.md, 2026-11-12. `outputFormat` "Defaults to `mp4`"
+ * (openapi.json).
+ */
+const SEEDANCE2_5_DRAFT_FORMAT_RULE: PairingRule = {
+  if: { path: ["draft"], values: [true] },
+  then: { path: ["outputFormat"], values: ["mp4"], default: "mp4" },
+  message: 'A `draft: true` preview is always `outputFormat: "mp4"`',
+  source: MODELS_SOURCE,
+};
+
+/**
+ * Enhancing a Seedance 2.5 draft (text_to_video `draftTaskId`): "Send `model`
+ * and `draftTaskId` only. … An enhance request that also includes
+ * `promptText`, `ratio`, `duration`, `seed`, `audio`, references, or `draft`
+ * is rejected." — guides/models.md; "`outputFormat` can't be combined with
+ * `draftTaskId`" — assets/inputs.md (both 2026-11-12). openapi.json: "no
+ * other generation fields may be provided".
+ */
+const SEEDANCE2_5_ENHANCE_RULES: readonly PairingRule[] = [
+  "promptText",
+  "ratio",
+  "duration",
+  "seed",
+  "audio",
+  "references",
+  "referenceVideos",
+  "referenceAudio",
+  "draft",
+  "outputFormat",
+].map((param): PairingRule => ({
+  if: { path: ["draftTaskId"] },
+  then: { path: [param], absent: true },
+  message: `\`${param}\` cannot be sent with \`draftTaskId\` — an enhance request takes \`model\` and \`draftTaskId\` only and reuses the preview's settings`,
+  source: MODELS_SOURCE,
+}));
+
 // ---------------------------------------------------------------------------
 // POST /v1/image_to_video
 // ---------------------------------------------------------------------------
@@ -527,7 +569,12 @@ export const videoFromImageRequired: Readonly<Partial<Record<string, readonly st
  * and the per-model `position` rule on prompt images. Most arms take exactly
  * one first-frame image and *require* `position: "first"` on it; veo3.1 takes
  * up to two with "first"/"last"; the seedance family takes an unbounded array
- * with optional positions; hailuo3 takes up to 9 with no position schema.
+ * with optional positions; hailuo3 takes up to 9 with no position schema. On
+ * the seedance, hailuo3 and wan3 arms (`promptImageModesExclusive`) an array
+ * is all keyframes or all references: "Use position `first`/`last` for
+ * keyframe mode, or omit position for reference images. The two modes cannot
+ * be mixed." — the `promptImage` description on each of those arms,
+ * openapi.json, 2026-11-12.
  */
 export const videoFromImageShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>> = {
   "gen4.5": {
@@ -557,6 +604,7 @@ export const videoFromImageShapeRules: Readonly<Partial<Record<string, ModelShap
   hailuo3: {
     promptText: PT_6K,
     arrays: { promptImage: { min: 1, max: 9 }, referenceAudio: { max: 3 } },
+    promptImageModesExclusive: true,
   },
   happyhorse_1_0: {
     promptText: PT_2500_MIN2,
@@ -568,21 +616,26 @@ export const videoFromImageShapeRules: Readonly<Partial<Record<string, ModelShap
     promptText: PT_10K,
     arrays: { referenceAudio: { max: 3 } },
     promptImagePositions: ["first", "last"],
+    promptImageModesExclusive: true,
   },
   seedance2_fast: {
     promptText: PT_10K,
     arrays: { referenceAudio: { max: 3 } },
     promptImagePositions: ["first", "last"],
+    promptImageModesExclusive: true,
   },
   seedance2_mini: {
     promptText: PT_10K,
     arrays: { referenceAudio: { max: 3 } },
     promptImagePositions: ["first", "last"],
+    promptImageModesExclusive: true,
   },
   seedance2_5: {
     promptText: PT_15K,
     arrays: { referenceAudio: { max: 10 } },
     promptImagePositions: ["first", "last"],
+    promptImageModesExclusive: true,
+    pairings: [SEEDANCE2_5_DRAFT_FORMAT_RULE],
   },
   grok_imagine_1_5: {
     promptText: PT_2500,
@@ -685,7 +738,9 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   "gen4.5": {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
+      "draft",
       "negativePrompt",
       "promptExpansionMode",
       "providerSettings",
@@ -704,7 +759,9 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   gen4_turbo: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -719,8 +776,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   },
   "veo3.1": {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "outputFormat",
       "promptExpansionMode",
       "proresProfile",
@@ -734,8 +793,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   },
   "veo3.1_fast": {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "outputFormat",
       "promptExpansionMode",
       "proresProfile",
@@ -750,8 +811,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   hailuo3: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -766,8 +829,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   happyhorse_1_0: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -785,6 +850,7 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -800,6 +866,7 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -815,6 +882,7 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -828,6 +896,7 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   },
   seedance2_5: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
+      "bitrate",
       "cfgScale",
       "contentModeration",
       "negativePrompt",
@@ -847,8 +916,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   grok_imagine_1_5: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -865,8 +936,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   gemini_omni_flash: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -883,7 +956,9 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   "kling2.5_turbo_pro": {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -907,8 +982,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   kling_4: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -923,8 +1000,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   kling_4_flash: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -940,8 +1019,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   },
   ...rowsFor(WAN3_MODELS, {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -956,8 +1037,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   h3_max: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "proresProfile",
@@ -976,8 +1059,10 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
   grok_imagine_1_5_lite: {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -999,7 +1084,9 @@ export const videoFromImageConstraints: Readonly<Partial<Record<string, Endpoint
 function kling3ImageToVideo(ratio: readonly string[]): EndpointConstraints {
   return {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
+      "bitrate",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1018,8 +1105,10 @@ function kling3ImageToVideo(ratio: readonly string[]): EndpointConstraints {
 function klingO3ImageToVideo(ratio: readonly string[]): EndpointConstraints {
   return {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1042,8 +1131,10 @@ function geminiOmniFlash1xImageToVideo(seconds: readonly number[]): EndpointCons
   return {
     deny: notInSchema("image_to_video", IMAGE_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1121,6 +1212,7 @@ export const videoShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>>
     promptText: PT_15K,
     arrays: { references: { max: 30 }, referenceVideos: { max: 10 }, referenceAudio: { max: 10 } },
     referenceVideoTyped: true,
+    pairings: [SEEDANCE2_5_DRAFT_FORMAT_RULE, ...SEEDANCE2_5_ENHANCE_RULES],
   },
   grok_imagine_1_5: {
     promptText: PT_2500,
@@ -1157,7 +1249,10 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   "gen4.5": {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "promptExpansionMode",
       "providerSettings",
@@ -1175,8 +1270,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   },
   "veo3.1": {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "outputFormat",
       "promptExpansionMode",
       "proresProfile",
@@ -1190,8 +1288,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   },
   "veo3.1_fast": {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "outputFormat",
       "promptExpansionMode",
       "proresProfile",
@@ -1206,8 +1307,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   hailuo3: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1220,8 +1324,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   happyhorse_1_0: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1242,6 +1349,8 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1255,6 +1364,8 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1268,6 +1379,8 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1279,6 +1392,7 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   },
   seedance2_5: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
+      "bitrate",
       "cfgScale",
       "contentModeration",
       "negativePrompt",
@@ -1296,8 +1410,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   grok_imagine_1_5: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1315,8 +1432,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   gemini_omni_flash: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1333,7 +1453,10 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   "kling2.5_turbo_pro": {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1356,8 +1479,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   kling_4: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1372,8 +1498,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   kling_4_flash: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1387,8 +1516,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   },
   ...rowsFor(WAN3_MODELS, {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1402,8 +1534,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   h3_max: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "proresProfile",
@@ -1422,8 +1557,11 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   grok_imagine_1_5_lite: {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1451,8 +1589,11 @@ function klingTextToVideo(
 ): EndpointConstraints {
   return {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
+      "bitrate",
       ...(options.cfgScale ? [] : ["cfgScale"]),
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1472,8 +1613,11 @@ function geminiOmniFlash1xTextToVideo(seconds: readonly number[]): EndpointConst
   return {
     deny: notInSchema("text_to_video", TEXT_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "cfgScale",
       "contentModeration",
+      "draft",
+      "draftTaskId",
       "negativePrompt",
       "outputFormat",
       "promptExpansionMode",
@@ -1549,6 +1693,37 @@ const GEMINI_OMNI_FLASH_1_2_MODE_RULES: readonly PairingRule[] = [
   },
 ];
 
+/**
+ * seedance2_5's video_to_video modes — guides/models.md, 2026-11-12: "|
+ * `extend` | Continues the input video | Requires `promptText`; does not
+ * accept `ratio` |" and "| `edit` | Changes the input video in place |
+ * Requires `promptText` and `duration: \"auto\"`; does not accept `ratio` |";
+ * "`extend` and `edit` require `promptText`, do not accept `ratio`, and keep
+ * the input video's aspect ratio; `edit` also requires `duration: \"auto\"`"
+ * — assets/inputs.md, 2026-11-12. `duration` "Defaults to 5" on this arm
+ * (openapi.json), so an edit that omits it is refused.
+ */
+const SEEDANCE2_5_MODE_RULES: readonly PairingRule[] = [
+  {
+    if: { path: ["mode"], values: ["extend", "edit"] },
+    then: { path: ["promptText"], present: true },
+    message: '`mode` "extend" and "edit" require `promptText`',
+    source: MODELS_SOURCE,
+  },
+  {
+    if: { path: ["mode"], values: ["extend", "edit"] },
+    then: { path: ["ratio"], absent: true },
+    message: '`ratio` is not accepted in `mode` "extend" or "edit" — the output keeps the input video\'s aspect ratio',
+    source: MODELS_SOURCE,
+  },
+  {
+    if: { path: ["mode"], values: ["edit"] },
+    then: { path: ["duration"], values: ["auto"], default: 5 },
+    message: '`mode: "edit"` requires `duration: "auto"`',
+    source: MODELS_SOURCE,
+  },
+];
+
 export const videoFromVideoShapeRules: Readonly<Partial<Record<string, ModelShapeRules>>> = {
   aleph2: { promptText: PT_1K, arrays: { keyframes: { min: 1, max: 5 } } },
   hailuo3: {
@@ -1575,6 +1750,7 @@ export const videoFromVideoShapeRules: Readonly<Partial<Record<string, ModelShap
     promptText: PT_15K,
     arrays: { references: { max: 30 }, referenceVideos: { max: 9 }, referenceAudio: { max: 10 } },
     referenceVideoTyped: true,
+    pairings: [SEEDANCE2_5_DRAFT_FORMAT_RULE, ...SEEDANCE2_5_MODE_RULES],
   },
   gemini_omni_flash: { promptText: PT_4K, arrays: { references: { max: 5 } } },
   ...rowsFor(KLING_O3_MODELS, {
@@ -1603,6 +1779,8 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
   aleph2: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
+      "draft",
       "duration",
       "mode",
       "promptVideo",
@@ -1627,7 +1805,9 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
   hailuo3: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "contentModeration",
+      "draft",
       "keyframes",
       "mode",
       "negativePrompt",
@@ -1643,6 +1823,7 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
   seedance2: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "contentModeration",
+      "draft",
       "keyframes",
       "mode",
       "negativePrompt",
@@ -1658,6 +1839,7 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
   seedance2_fast: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "contentModeration",
+      "draft",
       "keyframes",
       "mode",
       "negativePrompt",
@@ -1673,6 +1855,7 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
   seedance2_mini: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "contentModeration",
+      "draft",
       "keyframes",
       "mode",
       "negativePrompt",
@@ -1687,6 +1870,7 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
   },
   seedance2_5: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
+      "bitrate",
       "contentModeration",
       "keyframes",
       "negativePrompt",
@@ -1708,7 +1892,9 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
   gemini_omni_flash: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "contentModeration",
+      "draft",
       "duration",
       "keyframes",
       "mode",
@@ -1731,7 +1917,9 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
     // framing the edit keeps.
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "contentModeration",
+      "draft",
       "duration",
       "keyframes",
       "mode",
@@ -1751,7 +1939,9 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
     // assets/inputs.md, 2026-11-12.
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "contentModeration",
+      "draft",
       "duration",
       "keyframes",
       "mode",
@@ -1770,7 +1960,9 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
   kling_4_flash: {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "contentModeration",
+      "draft",
       "keyframes",
       "mode",
       "outputFormat",
@@ -1787,7 +1979,9 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
   "gemini_omni_flash_1.1": {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "contentModeration",
+      "draft",
       "keyframes",
       "outputFormat",
       "promptVideo",
@@ -1808,7 +2002,9 @@ export const videoFromVideoConstraints: Readonly<Partial<Record<string, Endpoint
   "gemini_omni_flash_1.2": {
     deny: notInSchema("video_to_video", VIDEO_TO_VIDEO_SOURCE, [
       "audio",
+      "bitrate",
       "contentModeration",
+      "draft",
       "keyframes",
       "outputFormat",
       "promptVideo",

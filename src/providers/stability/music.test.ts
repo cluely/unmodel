@@ -35,6 +35,8 @@ describe("stability.music", () => {
     expect(v.request.method).toBe("POST");
     // Multipart: fetch derives the boundary from FormData; no static headers.
     expect(v.request.headers).toEqual({});
+    // The marker `toRequestInit` refuses on — a JSON body would send `{}` Blobs.
+    expect(v.request.body).toBe("form");
     expect(v.toSdk("stability")).toEqual({
       prompt: "A cheerful acoustic guitar loop in 3/4",
       duration: 20,
@@ -140,6 +142,7 @@ describe("stability.musicFromAudio", () => {
       strength: 0.6,
     });
     expect(v.request.url).toBe(STABLE_AUDIO_AUDIO_TO_AUDIO_URL);
+    expect(v.request.body).toBe("form");
     const form = toFormData(v);
     expect(form.get("prompt")).toBe("make it a jazz trio");
     expect(form.get("strength")).toBe("0.6");
@@ -186,6 +189,7 @@ describe("stability.musicInpaint", () => {
     });
     expect(Object.keys(v)).toEqual(["prompt", "audio", "mask_start", "mask_end"]);
     expect(v.request.url).toBe(STABLE_AUDIO_INPAINT_URL);
+    expect(v.request.body).toBe("form");
     const r = musicInpaint.safe({ prompt: "hi", audio: mp3Blob });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.estimate.costUSD).toBeCloseTo(0.08, 10);

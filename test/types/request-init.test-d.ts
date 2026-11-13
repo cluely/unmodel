@@ -12,6 +12,7 @@ import { chat as anthropicChat } from "../../src/providers/anthropic";
 import { stt as openaiStt, tts as openaiTts } from "../../src/providers/openai";
 import { voiceClone as elevenlabsVoiceClone } from "../../src/providers/elevenlabs";
 import { listenLive } from "../../src/providers/deepgram";
+import { music as stabilityMusic, imageEditErase as stabilityErase } from "../../src/providers/stability";
 import { toRequestInit, type FetchArgs } from "../../src";
 import { expectAssignable, expectNotAny } from "./helpers";
 
@@ -71,6 +72,14 @@ function multipartIsExcluded(): void {
   const voice = elevenlabsVoiceClone({ name: "Narrator", files: [new Blob([new Uint8Array(4)])] });
   // @ts-expect-error elevenlabs.voiceClone is multipart
   toRequestInit(voice);
+
+  const song = stabilityMusic({ prompt: "a cheerful acoustic loop", model: "stable-audio-2.5" });
+  // @ts-expect-error stability.music is multipart — no JSON framing exists
+  toRequestInit(song);
+
+  const erased = stabilityErase({ image: new Blob([new Uint8Array(4)], { type: "image/png" }) });
+  // @ts-expect-error stability.imageEditErase is multipart — its image Blob would send as {}
+  toRequestInit(erased);
 }
 
 /**

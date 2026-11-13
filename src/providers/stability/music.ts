@@ -29,7 +29,7 @@
 
 import { z } from "zod";
 import { createValidator, type PipelineContext } from "../../core/pipeline";
-import { toValidated, type Validated, type ExactKeys } from "../../core/request";
+import { toValidated, type ValidatedForm, type ExactKeys } from "../../core/request";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
@@ -315,6 +315,7 @@ function finalizeTo(url: string) {
       // boundary from the FormData body. Add your own accept header
       // (audio/* or application/json) and auth.
       headers: {},
+      body: "form",
     }, {
       sdk: { stability: () => body },
     });
@@ -356,11 +357,11 @@ interface StableAudioValidator<P> {
   <T extends P>(
     params: T & ExactKeys<T, P>,
     options?: ValidateOptions<T>,
-  ): Validated<T, StabilitySdkTargets<T>>;
+  ): ValidatedForm<T, StabilitySdkTargets<T>>;
   safe<T extends P>(
     params: T & ExactKeys<T, P>,
     options?: ValidateOptions<T>,
-  ): ValidateResult<Validated<T, StabilitySdkTargets<T>>>;
+  ): ValidateResult<ValidatedForm<T, StabilitySdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
 }
 

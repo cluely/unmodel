@@ -80,6 +80,8 @@ describe("stability.imageEditInpaint", () => {
     expect(Object.keys(v)).toEqual(["image", "prompt"]);
     expect(v.request.url).toBe(STABLE_IMAGE_INPAINT_URL);
     expect(v.request.headers).toEqual({});
+    // The marker `toRequestInit` refuses on — a JSON body would send `{}` Blobs.
+    expect(v.request.body).toBe("form");
     const form = toFormData(v);
     expect(form.get("prompt")).toBe("a golden retriever");
     expect(form.get("image")).toBeInstanceOf(Blob);
@@ -114,6 +116,7 @@ describe("stability.imageEditErase", () => {
     expect(Object.keys(v)).toEqual(["image", "mask", "grow_mask"]);
     expect(v.request.url).toBe(STABLE_IMAGE_ERASE_URL);
     expect(v.request.headers).toEqual({});
+    expect(v.request.body).toBe("form");
   });
 
   test("needs only an image and caps grow_mask at 20", () => {
@@ -136,6 +139,7 @@ describe("stability.imageEditOutpaint", () => {
     expect(Object.keys(v)).toEqual(["image", "left", "creativity"]);
     expect(v.request.url).toBe(STABLE_IMAGE_OUTPAINT_URL);
     expect(v.request.headers).toEqual({});
+    expect(v.request.body).toBe("form");
   });
 
   test("requires at least one non-zero direction", () => {
@@ -169,6 +173,7 @@ describe("stability search-and-* routes", () => {
     expect(Object.keys(replace)).toEqual(["image", "prompt", "search_prompt"]);
     expect(replace.request.url).toBe(STABLE_IMAGE_SEARCH_AND_REPLACE_URL);
     expect(replace.request.headers).toEqual({});
+    expect(replace.request.body).toBe("form");
 
     const recolor = imageEditSearchAndRecolor({
       image: png(),
@@ -178,6 +183,7 @@ describe("stability search-and-* routes", () => {
     expect(Object.keys(recolor)).toEqual(["image", "prompt", "select_prompt"]);
     expect(recolor.request.url).toBe(STABLE_IMAGE_SEARCH_AND_RECOLOR_URL);
     expect(recolor.request.headers).toEqual({});
+    expect(recolor.request.body).toBe("form");
   });
 
   test("search-and-replace requires prompt + search_prompt", () => {
@@ -209,6 +215,7 @@ describe("stability.imageEditRemoveBackground", () => {
     expect(Object.keys(v)).toEqual(["image", "output_format"]);
     expect(v.request.url).toBe(STABLE_IMAGE_REMOVE_BACKGROUND_URL);
     expect(v.request.headers).toEqual({});
+    expect(v.request.body).toBe("form");
   });
 
   test("output_format is png/webp only — jpeg cannot carry alpha", () => {

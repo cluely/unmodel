@@ -11,7 +11,8 @@
  * wire defaults to "private", and "Public requests are downgraded to private;
  * use the web publish flow to publish publicly." `cover_image` — "required if
  * the model is public" — is an extra, so an explicit `visibility: "public"`
- * stays expressible.
+ * stays expressible. The wire validator warns that it is downgraded, and
+ * warns again when it has no `cover_image`.
  *
  * `type: "tts"` and `train_mode: "fast"` are the wire's required consts; the
  * adapter writes them.

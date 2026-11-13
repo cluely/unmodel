@@ -186,8 +186,10 @@ function estimate(
 type VoiceDesignWireBody = Omit<VoiceDesignBody, "model">;
 
 /**
- * SDK targets for `fish-audio.voiceDesign`. `fish-audio-sdk` (JS) takes
- * wire-shaped params, so the single `"fish-audio"` formatter is the identity.
+ * SDK targets for `fish-audio.voiceDesign`. The JavaScript SDK (`fish-audio`
+ * on npm; `fish-audio-sdk` is the Python package) has no voice-design method
+ * as of 0.1.0, so the single `"fish-audio"` formatter is the identity: the
+ * wire body, for your own POST to /v1/voice-design.
  * Type alias, not interface: an interface has no implicit index signature and
  * cannot satisfy `SdkFormatters`.
  */

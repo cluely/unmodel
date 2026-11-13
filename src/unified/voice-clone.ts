@@ -45,9 +45,10 @@
  * ## The words that refuse rather than approximate
  *
  * The vocabulary carries the facts a caller cannot afford to learn from an
- * invoice: `visibility` (Fish defaults new voices to PUBLIC; say
- * `"private"`), `voiceId` (required by MiniMax — the one wire where the
- * caller mints the handle — refused everywhere else), per-sample `transcript`
+ * invoice: `visibility` (who can see a new voice is a privacy fact; Fish
+ * downgrades a `"public"` request to private), `voiceId` (required by
+ * MiniMax — the one wire where the caller mints the handle — refused
+ * everywhere else), per-sample `transcript`
  * (a field at Fish/Inworld/MiniMax, refused where no wire field exists), and
  * `name` (refused only at MiniMax, whose `voiceId` is the handle). A member a
  * provider cannot express is an error naming what that route does take —

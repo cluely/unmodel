@@ -170,6 +170,41 @@ describe("the category's own rules", () => {
     expect(result.warnings).toEqual([]);
   });
 
+  test('fish: an explicit "public" compiles, warning at `visibility` that it is downgraded', () => {
+    const result = voiceClone.safe({
+      model: "fish-audio/fast",
+      operation: "clone",
+      name: "Narrator",
+      visibility: "public",
+      samples: [fileSample()],
+      cover_image: blob(),
+    } as never);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toMatchObject({
+      code: "unsupported_param",
+      path: ["visibility"],
+      meta: { ignored: true, applied: "private" },
+    });
+  });
+
+  test('fish: "public" without a cover image warns rather than refuses', () => {
+    const result = voiceClone.safe({
+      model: "fish-audio/fast",
+      operation: "clone",
+      name: "Narrator",
+      visibility: "public",
+      samples: [fileSample()],
+    } as never);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings.map((w) => [w.code, w.path?.[0]])).toEqual([
+      ["unsupported_param", "visibility"],
+      ["invalid_shape", "cover_image"],
+    ]);
+  });
+
   test('cartesia: visibility "unlisted" is refused naming the two access values', () => {
     const result = voiceClone.safe({
       model: "cartesia/voice-clone",

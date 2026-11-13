@@ -2,7 +2,7 @@
 "unmodel": patch
 ---
 
-fish-audio: `s1` is deprecated, `s2-pro` has open weights, the TTS `language` and `pronunciation_dictionary` fields and the voice-clone `voice_design_signatures` field are accepted, and the false public-visibility warning is gone
+fish-audio: `s1` is deprecated, `s2-pro` has open weights, the TTS `language` and `pronunciation_dictionary` fields and the voice-clone `voice_design_signatures` field are accepted, `repetition_penalty` on `s2.1-pro` warns as a no-op, and the voice-clone visibility checks follow the private default
 
 - `s1` now carries `status: "deprecated"`, so requests that use it get a
   `deprecated_model` warning. "S1 is deprecated and will be retired on December 31,
@@ -36,6 +36,26 @@ fish-audio: `s1` is deprecated, `s2-pro` has open weights, the TTS `language` an
   `"default": "private"`, and "Public requests are downgraded to private; use
   the web publish flow to publish publicly"
   ([openapi.json](https://docs.fish.audio/api-reference/openapi.json)).
+- `fish-audio.voiceClone` (and `unmodel/voice-clone` on `fish-audio/fast`)
+  now warns that an explicit `visibility: "public"` is downgraded to private.
+  The warning is `unsupported_param` at `visibility`, with `meta.applied:
+  "private"`.
+- `fish-audio.voiceClone` (and `unmodel/voice-clone` on `fish-audio/fast`)
+  now warns, and no longer refuses, when `visibility: "public"` has no
+  `cover_image`. Public requests are downgraded to private, and the docs do
+  not say whether the server still requires one.
+- `fish-audio.tts` warns that `repetition_penalty` is accepted but has no
+  effect on `s2.1-pro`, including when the `model` header is omitted and the
+  server falls back to `s2.1-pro`. The source is "`repetition_penalty` applies
+  to S1 but has no effect on S2.1-Pro"
+  ([migrate-from-s1](https://docs.fish.audio/developer-guide/models-pricing/migrate-from-s1)).
+  On `unmodel/tts`, `fish-audio/s2.1-pro` no longer takes `repetition_penalty`
+  as an extra, so the request is refused at compile time.
+  `s2.1-pro-free`, `s2-pro`, `drama-3` and `s1` still take it, because the
+  page names only S2.1-Pro.
+- `pronunciation_dictionary` is now a typed extra on `unmodel/tts` for every
+  `fish-audio/…` model, and `TTS_MODEL_PARAMS` in `unmodel/fish-audio/values`
+  lists it. Before this change it was reachable only through `providerOptions`.
 - The doc comments now give the JavaScript SDK's real package name, `fish-audio`
   (`fish-audio-sdk` is the Python package), and list the fields its
   0.1.0 types lack.

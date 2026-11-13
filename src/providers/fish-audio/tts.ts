@@ -52,6 +52,8 @@ export const TTS_URL = "https://api.fish.audio/v1/tts";
 
 const TTS_DOCS = "https://docs.fish.audio/api-reference/endpoint/openapi-v1/text-to-speech";
 const MODELS_DOCS = "https://docs.fish.audio/developer-guide/models-pricing/models-overview";
+const MIGRATE_FROM_S1_DOCS =
+  "https://docs.fish.audio/developer-guide/models-pricing/migrate-from-s1";
 
 /**
  * Server-side default for the `model` header — "If omitted or set to an
@@ -232,7 +234,10 @@ export interface TtsBody {
   latency?: FishAudioLatency;
   /** "Maximum audio tokens per chunk"; default 1024. */
   max_new_tokens?: number | null;
-  /** "Values >1.0 reduce repetition"; default 1.2. */
+  /**
+   * "Values >1.0 reduce repetition"; default 1.2. "Applies to S1 but has no
+   * effect on S2.1-Pro" (migrate-from-s1).
+   */
   repetition_penalty?: number | null;
   /** Range 0–100, default 50. */
   min_chunk_length?: number | null;
@@ -351,6 +356,8 @@ const MULTI_SPEAKER_MODEL_ID_SET = new Set<string>(MULTI_SPEAKER_MODEL_IDS);
 
 /** The one model `prosody.normalize_loudness` is documented as a no-op on. */
 const NORMALIZE_LOUDNESS_NO_OP_MODEL = "s1";
+/** The one model `repetition_penalty` is documented as a no-op on. */
+const REPETITION_PENALTY_NO_OP_MODEL = "s2.1-pro";
 
 function modelOf(params: TtsBody): string {
   return params.model ?? DEFAULT_TTS_MODEL;
@@ -511,6 +518,31 @@ function checkNormalizeLoudness(
 }
 
 /**
+ * "`repetition_penalty` applies to S1 but has no effect on S2.1-Pro"
+ * (migrate-from-s1, 2026-11-12). The request is fulfilled, so this is a
+ * warning about a silent no-op rather than an error. Only `s2.1-pro` is
+ * named: the page does not say how it behaves on `s2-pro`, `s2.1-pro-free`
+ * or `drama-3`, and an undocumented effect is not a documented no-op. An
+ * omitted model warns too, because the server falls back to `s2.1-pro`.
+ */
+function checkRepetitionPenalty(
+  params: TtsBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  const model = modelOf(params);
+  if (model !== REPETITION_PENALTY_NO_OP_MODEL || params.repetition_penalty == null) return;
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["repetition_penalty"],
+    model,
+    message: `\`repetition_penalty\` is accepted but has no effect on "${model}"; it is documented as applying to s1.`,
+    meta: { ignored: true, source: MIGRATE_FROM_S1_DOCS },
+  });
+}
+
+/**
  * "Provide either references to platform-managed dictionaries OR inline
  * literal dictionaries (the two forms are mutually exclusive in a single
  * request)." The schema accepts each entry on its own; this is the
@@ -653,6 +685,7 @@ const validator = createValidator<TtsBody, Validated<TtsWireBody, TtsSdkTargets<
     checkBitrateFormatPairing,
     checkMultiSpeaker,
     checkNormalizeLoudness,
+    checkRepetitionPenalty,
     checkPronunciationDictionaryForms,
     checkReferencesNeedMsgpack,
   ],

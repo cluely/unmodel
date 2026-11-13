@@ -365,6 +365,42 @@ describe("fish-audio.tts multi-speaker and loudness gates", () => {
     if (r.ok) expect(r.warnings).toEqual([]);
   });
 
+  // "`repetition_penalty` applies to S1 but has no effect on S2.1-Pro"
+  // (developer-guide/models-pricing/migrate-from-s1, 2026-11-12).
+  test("repetition_penalty on s2.1-pro, or with no model, warns as a silent no-op", () => {
+    for (const model of ["s2.1-pro", undefined] as const) {
+      const r = tts.safe(
+        model === undefined
+          ? { text: "hi", repetition_penalty: 1.5 }
+          : { model, text: "hi", repetition_penalty: 1.5 },
+      );
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings).toHaveLength(1);
+        expect(r.warnings[0]?.code).toBe("unsupported_param");
+        expect(r.warnings[0]?.path).toEqual(["repetition_penalty"]);
+        expect(r.warnings[0]?.meta?.ignored).toBe(true);
+      }
+    }
+  });
+
+  // The page names S2.1-Pro only; nothing is documented for the others.
+  test("repetition_penalty on s1, s2-pro, s2.1-pro-free and drama-3 draws no no-op warning", () => {
+    for (const model of ["s1", "s2-pro", "s2.1-pro-free", "drama-3"] as const) {
+      const r = tts.safe({ model, text: "hi", repetition_penalty: 1.5 });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.warnings.some((w) => w.path[0] === "repetition_penalty"), model).toBe(false);
+      }
+    }
+  });
+
+  test("an explicit null repetition_penalty on s2.1-pro is clean", () => {
+    const r = tts.safe({ model: "s2.1-pro", text: "hi", repetition_penalty: null });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.warnings).toEqual([]);
+  });
+
   test("an unknown model does not trigger the family gates", () => {
     const r = tts.safe({ model: "s9-pro", text: "hi", reference_id: ["a", "b"] });
     expect(r.ok).toBe(true);

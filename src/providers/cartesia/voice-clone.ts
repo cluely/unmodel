@@ -18,7 +18,8 @@
  *   is a closed 44-value ISO 639-1 enum. `accent` takes a catalog accent ID
  *   from GET /accents (e.g. `southern-us`), never a display name; unmodel
  *   cannot see the accent catalog, so the value is typed open.
- * - `access` defaults to "private" (unlike Fish Audio's public default).
+ * - `access` defaults to "private" (as Fish Audio's `visibility` does) and
+ *   takes two values; Fish adds `unlist`.
  * - The response is `VoiceMetadata`; its `id` is the created voice —
  *   the value `voice.id` takes on POST /tts/bytes.
  * - PRICING: speech from a cloned voice bills at the TTS rate, 1 credit per

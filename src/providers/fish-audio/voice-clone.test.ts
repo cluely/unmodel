@@ -119,18 +119,44 @@ describe("fish-audio.voiceClone shape enforcement", () => {
     }
   });
 
-  test("an explicitly public model without a cover image is rejected", () => {
+  // "required if the model is public" vs "Public requests are downgraded to
+  // private" (openapi.json /model, 2026-11-12): whether the server refuses
+  // this body is undocumented, so it warns rather than refuses.
+  test("an explicitly public model without a cover image warns", () => {
     const r = voiceClone.safe({ ...minimal(), visibility: "public" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((i) => i.path?.[0] === "cover_image");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const issue = r.warnings.find((i) => i.path?.[0] === "cover_image");
       expect(issue?.code).toBe("invalid_shape");
+      expect(issue?.path).toEqual(["cover_image"]);
     }
   });
 
   test("a public model with a cover image passes", () => {
     const r = voiceClone.safe({ ...minimal(), visibility: "public", cover_image: sample() });
     expect(r.ok).toBe(true);
+  });
+
+  test('an explicit "public" warns that POST /model downgrades it to private', () => {
+    const r = voiceClone.safe({ ...minimal(), visibility: "public", cover_image: sample() });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]?.code).toBe("unsupported_param");
+      expect(r.warnings[0]?.path).toEqual(["visibility"]);
+      expect(r.warnings[0]?.meta?.ignored).toBe(true);
+      expect(r.warnings[0]?.meta?.applied).toBe("private");
+    }
+  });
+
+  test('"private", "unlist" and an omitted visibility draw no visibility warning', () => {
+    for (const visibility of ["private", "unlist", undefined] as const) {
+      const r = voiceClone.safe(
+        visibility === undefined ? minimal() : { ...minimal(), visibility },
+      );
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings).toEqual([]);
+    }
   });
 });
 

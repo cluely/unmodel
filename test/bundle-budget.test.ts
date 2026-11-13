@@ -518,8 +518,16 @@ const ALL_UNIFIED_ENTRIES: string[] = [
  * asked for one anyway, and `core/unified/derive.ts` is in every media pack's
  * graph. 220.9 measured, which is the tightest headroom in this file and the
  * reason the pin moves rather than the code; 232 is measured x 1.05.
+ *
+ * Bumped 232 → 244 by the fish-audio visibility fix: `fish-audio/voice-clone.ts`
+ * gained the check that warns an explicit `visibility: "public"` is downgraded
+ * to private, and its cover-image check became a warning whose message says
+ * why. 230.7 → 232.4 measured, most of it the provenance those checks carry
+ * (JSDoc survives into dist). Measured on macOS; the JS figures in this file
+ * have proven platform-stable, so confirm against the Linux run. 244 is
+ * measured x 1.05.
  */
-const VOICE_CLONE_PACK_BUDGET_KIB = 232;
+const VOICE_CLONE_PACK_BUDGET_KIB = 244;
 
 /**
  * `unmodel/voice-design`'s budget: the kernel plus four design providers.

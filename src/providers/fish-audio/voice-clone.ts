@@ -19,9 +19,14 @@
  *   synthetic catalog id `fast` — the documented train mode — so a future
  *   full-training mode is a new id, not a param.
  * - VISIBILITY: `visibility` defaults to "private", and "Public requests are
- *   downgraded to private; use the web publish flow to publish publicly."
+ *   downgraded to private; use the web publish flow to publish publicly", so
+ *   an explicit "public" warns that the voice will be private. The docs
+ *   contradict each other here: docs.fish.audio/features/voice-cloning still
+ *   says "`public` to publish to the Voice Library" (2026-11-13).
  *   `cover_image` is still described as "required if the model is public",
- *   so an explicit "public" without one stays refused.
+ *   but now that a public request is downgraded, whether the server refuses
+ *   one without a cover image is undocumented, so that check warns and does
+ *   not refuse.
  * - The response is the created model document; its `_id` is the voice id —
  *   the value `reference_id` takes on POST /v1/tts.
  * - Pricing: docs.fish.audio publishes no rate for model creation, so there
@@ -162,8 +167,32 @@ function checkVisibilityEnum(
 }
 
 /**
+ * "Public requests are downgraded to private; use the web publish flow to
+ * publish publicly" (openapi.json /model `visibility`, 2026-11-12). The
+ * request is fulfilled, but as a private voice, so this is a warning about
+ * an accepted-and-replaced value, not an error.
+ */
+function checkVisibilityPublicDowngraded(
+  params: CreateModelParams,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.visibility !== "public") return;
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["visibility"],
+    message:
+      '`visibility: "public"` is downgraded to "private" by POST /model ("use the web publish flow to publish publicly"); the created voice will be private.',
+    meta: { ignored: true, value: "public", applied: "private", source: CREATE_MODEL_DOCS },
+  });
+}
+
+/**
  * "Model cover image, this is required if the model is public." Only an
- * explicit "public" can trip this — the default is "private".
+ * explicit "public" can trip this — the default is "private". A warning, not
+ * an error: POST /model downgrades a public request to private, and whether
+ * the server still refuses one without a cover image is undocumented.
  */
 function checkCoverImageIfPublic(
   params: CreateModelParams,
@@ -173,8 +202,10 @@ function checkCoverImageIfPublic(
   if (params.visibility !== "public" || params.cover_image != null) return;
   ctx.report({
     code: "invalid_shape",
+    severity: "warning",
     path: ["cover_image"],
-    message: '`cover_image` is required if the model is public.',
+    message:
+      '`cover_image` is described as "required if the model is public", but POST /model says "Public requests are downgraded to private"; whether the server refuses a public request without one is undocumented, so add a cover image or send `visibility: "private"`.',
     meta: { source: CREATE_MODEL_DOCS },
   });
 }
@@ -264,7 +295,7 @@ const validator = createValidator<
   // catalog-keyed machinery stays coherent (see module JSDoc).
   modelId: () => VOICE_CLONE_MODEL_ID,
   catalog: models,
-  checks: [checkVisibilityEnum, checkCoverImageIfPublic],
+  checks: [checkVisibilityEnum, checkVisibilityPublicDowngraded, checkCoverImageIfPublic],
   finalize,
 });
 
@@ -277,8 +308,9 @@ const validator = createValidator<
  * is `.request.url` + `voiceCloneToFormData(validated)` as the body — never
  * `JSON.stringify`. The response document's `_id` is the created voice's id,
  * usable as `reference_id` on POST /v1/tts. `visibility` defaults to
- * "private", and a "public" request is downgraded to private (see module
- * JSDoc). Auth is your job: add an `authorization: Bearer …` header.
+ * "private", and a "public" request is downgraded to private and warned
+ * about (see module JSDoc). Auth is your job: add an `authorization: Bearer …`
+ * header.
  */
 export const voiceClone = validator as unknown as {
   <T extends CreateModelParams>(

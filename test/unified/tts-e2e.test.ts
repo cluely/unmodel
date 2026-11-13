@@ -490,6 +490,76 @@ describe("stepfun", () => {
   });
 });
 
+describe("fish-audio", () => {
+  const TEXT = "a".repeat(1000);
+
+  test("`pronunciation_dictionary` is an extra on every model, landing at the body root", () => {
+    const dictionary = [{ items: [{ key: "Nguyen", value: "w i n" }] }];
+    const result = tts.safe({
+      model: "fish-audio/s2.1-pro",
+      text: TEXT,
+      pronunciation_dictionary: dictionary,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).toEqual({
+      text: TEXT,
+      pronunciation_dictionary: dictionary,
+    });
+    // Phoneme rules "never change billing", so the byte-count estimate stays.
+    expect(result.estimate.costUSD).toBeCloseTo((1000 * 15) / 1_000_000, 12);
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("an alias entry or a dictionary reference leaves the request without an estimate", () => {
+    for (const pronunciation_dictionary of [
+      [{ items: [{ key: "NASA", value: "N A S A", type: "alias" as const }] }],
+      [{ id: "brand-names", version: "v3" }],
+    ]) {
+      const result = tts.safe({ model: "fish-audio/s2-pro", text: TEXT, pronunciation_dictionary });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.estimate.costUSD).toBeUndefined();
+    }
+  });
+
+  // "`repetition_penalty` applies to S1 but has no effect on S2.1-Pro"
+  // (developer-guide/models-pricing/migrate-from-s1, 2026-11-12).
+  test("`repetition_penalty` is refused on s2.1-pro, naming the models that take it", () => {
+    const result = tts.safe({
+      model: "fish-audio/s2.1-pro",
+      text: "hi",
+      repetition_penalty: 1.5,
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toMatchObject({ code: "unsupported_param", path: ["repetition_penalty"] });
+    expect(result.errors[0]!.meta?.["models"]).toEqual(["s2.1-pro-free", "s2-pro", "drama-3", "s1"]);
+  });
+
+  test("`repetition_penalty` still compiles on s2-pro", () => {
+    const params = tts({ model: "fish-audio/s2-pro", text: "hi", repetition_penalty: 1.5 });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({ text: "hi", repetition_penalty: 1.5 });
+  });
+
+  test("through `providerOptions` on s2.1-pro it reaches the wire, which warns it is ignored", () => {
+    const result = tts.safe({
+      model: "fish-audio/s2.1-pro",
+      text: "hi",
+      providerOptions: { "fish-audio": { repetition_penalty: 1.5 } },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toMatchObject({
+      code: "unsupported_param",
+      path: ["repetition_penalty"],
+      meta: { ignored: true },
+    });
+  });
+});
+
 describe("speechify", () => {
   test("a 160 kbps mp3 compiles to the `mp3_*_160` composite", () => {
     // "160 kbps is the ceiling an MP3 carries at 22.05 and 24 kHz"

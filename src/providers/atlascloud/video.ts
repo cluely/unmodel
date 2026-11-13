@@ -101,7 +101,17 @@ export type AtlasMediaUrl = `https://${string}` | `http://${string}`;
 /** A `data:` URL — the prefixed spelling of the Base64 form. */
 export type AtlasMediaDataUrl = `data:${string}`;
 
-/** `asset://<ASSET_ID>` — an id from `POST /api/v1/model/uploadMedia`. */
+/**
+ * `asset://<atlas_asset_id>` — an id from Atlas's Asset Library
+ * (`POST https://console.atlascloud.ai/api/v1/sd/assets`, the console host,
+ * not api.atlascloud.ai), usable once the asset is `Active`. `uploadMedia`
+ * answers a temporary URL, not an asset id.
+ *
+ * > "Asset Library endpoints live on the console host, NOT on the inference
+ * > host where generation endpoints live." … "Once an asset reaches Active
+ * > status, it can be reused across many generation calls."
+ * — https://www.atlascloud.ai/models/bytedance/seedance-2.5/reference-to-video, read 2026-11-12
+ */
 export type AtlasAssetRef = `asset://${string}`;
 
 /** URL | Base64 | `asset://<ASSET_ID>`. */

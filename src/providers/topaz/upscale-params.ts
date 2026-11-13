@@ -27,8 +27,9 @@
  *
  * ## `prompt` is the word Topaz DID bring
  *
- * Ten of the eighteen models take one, up to 1024 characters, and Topaz asks
- * for it descriptive rather than imperative. That is the second independent
+ * Three of the eighteen models take one (`Redefine`, `Bloom 2`, `Bloom`), up
+ * to 1024 characters, and Topaz asks for it descriptive rather than
+ * imperative. That is the second independent
  * witness for `unmodel/upscale`'s `prompt` — `fal-ai/clarity-upscaler` and
  * `topaz/upscale/image/generative` at fal were the first, and one of those two
  * is this very model behind a reseller.
@@ -124,13 +125,17 @@ const ENHANCE_EXTRAS = {
   strength: EXTRA as number,
 } as const;
 
-/** `/enhance-gen/async` — the generative dials. `prompt` is canonical, so absent. */
+/**
+ * `/enhance-gen/async` — the generative dials. `prompt` is canonical, so absent;
+ * `autoprompt` rides with it, on the two rows whose pages list both.
+ */
 const ENHANCE_GEN_EXTRAS = {
   ...ENVELOPE_EXTRAS,
   ...SHARED_FACE,
-  /** Write the prompt automatically, ignoring whatever `prompt` said. */
-  autoprompt: EXTRA as boolean,
-  /** Integer 1–9, default 3. How far the model may stray from the source. */
+  /**
+   * Integer, default 3. How far the model may stray from the source: 1–9 at
+   * `Bloom 2` and `Bloom`, 1–6 at `Redefine`, 1–4 at `Bloom Realism`.
+   */
   creativity: EXTRA as number,
   /** Integer 1–5. Topaz recommends 1 at low creativity, 3 at high. */
   texture: EXTRA as number,
@@ -178,6 +183,12 @@ const DIMENSION_EXTRAS = {
   inputHeight: EXTRA as number,
   outputWidth: EXTRA as number,
   outputHeight: EXTRA as number,
+} as const;
+
+/** `autoprompt`, where the page lists it beside `prompt`. */
+const AUTOPROMPT_EXTRAS = {
+  /** Write the prompt automatically, ignoring whatever `prompt` said. */
+  autoprompt: EXTRA as boolean,
 } as const;
 
 const ENHANCE_GEN_ROW = { sources: SOURCES, factors: FACTORS, extras: ENHANCE_GEN_EXTRAS } as const;
@@ -256,6 +267,9 @@ export const TOPAZ_UPSCALE_MODEL_PARAMS = {
     factors: FACTORS,
     extras: {
       ...ENHANCE_GEN_EXTRAS,
+      ...AUTOPROMPT_EXTRAS,
+      /** Integer 1–6, default 3 — narrower than Bloom 2's and Bloom's 1–9. */
+      creativity: EXTRA as number,
       /** Increases the effect of `creativity`. Default true. */
       creativityBoost: EXTRA as boolean,
       /** Integer 1–5, default 1. Amount of fine detail added. */
@@ -321,6 +335,7 @@ export const TOPAZ_UPSCALE_MODEL_PARAMS = {
     factors: FACTORS,
     extras: {
       ...ENHANCE_GEN_EXTRAS,
+      ...AUTOPROMPT_EXTRAS,
       /** Keep the source's colours while new detail is introduced. */
       colorPreservation: EXTRA as boolean,
       /** Default 2. */
@@ -334,7 +349,7 @@ export const TOPAZ_UPSCALE_MODEL_PARAMS = {
     factors: FACTORS,
     extras: {
       ...ENHANCE_GEN_EXTRAS,
-      /** Integer 1–4, default 2 — narrower than the route's 1–9. */
+      /** Integer 1–4, default 2 — narrower than Bloom 2's and Bloom's 1–9. */
       creativity: EXTRA as number,
       /** Default 1. */
       seed: EXTRA as number,

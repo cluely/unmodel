@@ -6,8 +6,8 @@
  * (the formula), the "Model Pricing" section of each model's own page under
  * https://developer.topazlabs.com/image-models/upscaling-and-enhancement/ (the
  * rate and its credit table) — verified 2026-11-12 — and
- * https://www.topazlabs.com/enhance-api (the USD price of a credit) — verified
- * 2026-08-25.
+ * https://www.topazlabs.com/api (the USD price of a credit, per plan) —
+ * verified 2026-11-13.
  *
  * ## One formula reproduces every published table
  *
@@ -54,15 +54,20 @@
 import type { TopazModelId } from "./shared";
 
 /**
- * USD per credit at the pay-as-you-go rate.
+ * USD per credit at the highest published plan rate, Developer's.
  *
- * Source: https://www.topazlabs.com/enhance-api — verified 2026-08-25.
- * Quote: “Starter … $0.12 / credit”. The subscription tiers are cheaper —
- * Developer at $50/mo for 500 credits is $0.10, Scale at $240/mo for 3,000 is
- * $0.08 — so this is the undiscounted ceiling, which is the right direction for
- * an estimate. Unused credits roll over up to 5× the monthly volume.
+ * Source: https://www.topazlabs.com/api — verified 2026-11-13.
+ * Quotes: “Developer … $50/mo … 500 credits/mo … $0.10 / credit” and “Scale …
+ * $240/mo … 3000 credits/mo … $0.08 / credit”. A plan that runs out is
+ * reloaded “at the current per-credit price” (the page's own worked example,
+ * “750 credits and charged $49.75”, comes out lower still), so $0.10 is the
+ * most a published plan charges, which is the right direction for an
+ * estimate. It is not a ceiling for every account:
+ * https://developer.topazlabs.com/getting-started/faqs.md (verified
+ * 2026-11-13) mentions “a small one-time pack” of credits whose price is not
+ * published.
  */
-export const CREDIT_USD = 0.12;
+export const CREDIT_USD = 0.1;
 
 /**
  * Megapixels of OUTPUT per credit, per model — the rate each model's own page
@@ -164,7 +169,7 @@ export function topazCredits(inputs: TopazCostInputs): number | undefined {
   return Math.ceil(megapixels / rate);
 }
 
-/** The same figure in USD, at the pay-as-you-go {@link CREDIT_USD} rate. */
+/** The same figure in USD, at the Developer plan's {@link CREDIT_USD} rate. */
 export function topazCostUSD(inputs: TopazCostInputs): number | undefined {
   const credits = topazCredits(inputs);
   return credits === undefined ? undefined : credits * CREDIT_USD;

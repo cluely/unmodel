@@ -191,9 +191,9 @@ describe.each(refs)("%s", (ref) => {
     // `prompt` is CANONICAL here, so it never lives in a row's `extras` — at
     // fal it is the generated `textWire` (three of the ten endpoints have one),
     // and at Topaz it is a fact about the model's own page: the settings row
-    // lists `prompt` at ten generative models, and the six classic ones plus
-    // `Wonder 4` and `Detail` have no field for it. Both read off data rather
-    // than transcribed here.
+    // lists `prompt` at `Redefine`, `Bloom 2` and `Bloom`, and the other
+    // fifteen have no field for it. Both read off data rather than transcribed
+    // here.
     const declared =
       provider === "fal"
         ? row?.textWire !== undefined

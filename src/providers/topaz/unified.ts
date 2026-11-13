@@ -35,12 +35,11 @@
  *
  * # `prompt` is the word Topaz brought to the category
  *
- * Ten of the eighteen models take one, all on the generative route — the ones
- * whose `TOPAZ_SETTINGS_BY_MODEL` row lists it. The other eight refuse it by
- * name, listing the ones that do: the six classic upscalers, and `Wonder 4` and
- * `Detail`, which ride the generative route with no `prompt` on their pages.
- * The same shape the fal adapter uses, and here it splits the roster almost in
- * half rather than naming an exception.
+ * Three of the eighteen models take one — `Redefine`, `Bloom 2` and `Bloom`,
+ * the ones whose `TOPAZ_SETTINGS_BY_MODEL` row lists it because their pages do.
+ * The other fifteen refuse it by name, listing the three: the six classic
+ * upscalers, and the nine models that ride the generative route with no
+ * `prompt` on their pages. The same shape the fal adapter uses.
  *
  * # Inline bytes are refused, not encoded
  *
@@ -70,7 +69,7 @@ import {
 import { MODELS, TOPAZ_UPSCALE_MODEL_PARAMS } from "./upscale-params";
 import { DOCS_BASE, TOPAZ_ENHANCE_GEN_MODELS, TOPAZ_SETTINGS_BY_MODEL } from "./shared";
 
-const SOURCE = `${DOCS_BASE}/reference/api-endpoints/image`;
+const SOURCE = `${DOCS_BASE}/reference/image/enhance`;
 
 /** The wire body of whichever of the two routes the ref selects. */
 export type TopazUpscaleWire = TopazUpscaleParams | TopazUpscaleGenerativeParams;

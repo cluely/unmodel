@@ -98,17 +98,21 @@ describe("the result is Topaz's own Validated, and it is multipart", () => {
   });
 
   test("`prompt` follows the model's page, not the route", () => {
-    // `Wonder 4` and `Detail` ride `/enhance-gen/async` and document no
-    // `prompt`; `Bloom` documents one.
-    for (const model of ["topaz/Wonder 4", "topaz/Detail"] as const) {
+    // These ride `/enhance-gen/async` and document no `prompt` — “Wonder 1 has
+    // no model-specific parameters.”, “Standard Max has no model-specific
+    // parameters.” — while `Redefine`, `Bloom 2` and `Bloom` document one.
+    for (const model of ["topaz/Wonder", "topaz/Standard MAX", "topaz/Wonder 4", "topaz/Detail"] as const) {
       const refused = upscale.safe({ model, source: STILL, prompt: "a sailing boat" });
       expect(refused.ok, model).toBe(false);
       if (refused.ok) continue;
       const issue = refused.errors.find((error) => error.path.join(".") === "prompt");
       expect(issue?.code, model).toBe("unsupported_param");
       expect(issue?.message, model).toContain("generative route");
+      expect(issue?.message, model).toContain("3 of the 18 Topaz models");
       expect(issue?.message, model).toContain("`topaz/Redefine`");
     }
+    const redefine = upscale({ model: "topaz/Redefine", source: STILL, prompt: "a sailing boat" });
+    expect(JSON.parse(JSON.stringify(redefine))).toMatchObject({ model: "Redefine", prompt: "a sailing boat" });
     const bloom = upscale({ model: "topaz/Bloom", source: STILL, prompt: "ornate fantasy castle" });
     expect(bloom.request.url).toBe("https://api.topazlabs.com/image/v1/enhance-gen/async");
     expect(JSON.parse(JSON.stringify(bloom))).toMatchObject({ model: "Bloom", prompt: "ornate fantasy castle" });
@@ -150,14 +154,15 @@ describe("the result is Topaz's own Validated, and it is multipart", () => {
   test("the estimate is EXACT when the request states an output size", () => {
     // Topaz bills per output megapixel, rounded up to a whole credit: 4096×4096
     // is 16.8 MP, and `Standard V2` fits 24 MP into one credit — so one credit,
-    // at $0.12. The arithmetic is a pure function of the body, which is rare.
+    // at the Developer plan's $0.10. The arithmetic is a pure function of the
+    // body, which is rare.
     expect(topazCostUSD({ model: "Standard V2", outputWidth: 4096, outputHeight: 4096 })).toBeCloseTo(
-      0.12,
+      0.1,
       10,
     );
     // Redefine fits 4 MP into a credit, so the same picture is five credits.
     expect(topazCostUSD({ model: "Redefine", outputWidth: 4096, outputHeight: 4096 })).toBeCloseTo(
-      5 * 0.12,
+      5 * 0.1,
       10,
     );
     // …and a request that lets Topaz choose the size declines rather than

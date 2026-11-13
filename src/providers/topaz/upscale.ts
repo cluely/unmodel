@@ -7,8 +7,9 @@
  * dials, which is why the two are separate addresses.
  *
  * Wire notes (verified against the published OpenAPI 3.1.2 document and the
- * per-model pages under https://developer.topazlabs.com/image-models/gigapixel
- * on 2026-08-25):
+ * per-model pages under
+ * https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision
+ * on 2026-08-25; the URLs re-checked 2026-11-13):
  *
  * - **multipart/form-data, always.** The path declares no JSON arm, so even a
  *   `source_url`-only request is form-encoded. Build the body with
@@ -58,7 +59,7 @@ import { topazCostUSD } from "./pricing";
 
 export { ENHANCE_URL, toFormData } from "./shared";
 
-const SOURCE = `${DOCS_BASE}/image-models/gigapixel`;
+const SOURCE = `${DOCS_BASE}/image-models/upscaling-and-enhancement/precision`;
 
 /** Every setting this route documents, in one list for the model-gate check. */
 const ENHANCE_SETTINGS = [

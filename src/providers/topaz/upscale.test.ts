@@ -13,8 +13,8 @@
  *
  * Three other rules are checked here for the same reason: nothing is
  * `required` in the schema and a request still needs exactly one of three
- * source fields; the output-megapixel ceiling differs four-fold across the
- * roster; and the framing is multipart on every path, including one whose only
+ * source fields; the output-megapixel ceiling moves with the model rather than
+ * the envelope; and the framing is multipart on every path, including one whose only
  * input is a URL.
  */
 
@@ -173,9 +173,21 @@ describe("the dials the 2026-11-12 pages document on rostered models", () => {
     expect(
       upscaleGenerative.safe({ source_url: PHOTO, model: "Recover 3", enhancementStrength: 10.5 }).ok,
     ).toBe(false);
+    // …and never one of the Wonders' words: “| `enhancementStrength` |
+    // `decimal` | … | `0.0` to `10.0` |” is the page's whole story.
+    const word = upscaleGenerative.safe({ source_url: PHOTO, model: "Recover 3", enhancementStrength: "high" });
+    expect(word.ok).toBe(false);
+    if (word.ok) return;
+    const issue = word.errors.find((error) => error.path.join(".") === "enhancementStrength");
+    expect(issue?.code).toBe("invalid_shape");
+    expect(issue?.message).toContain("decimal 0.0–10.0");
   });
 
   test("…while Wonder 3 and 3.5 keep their three words", () => {
+    for (const model of ["Wonder 3", "Wonder 3.5"]) {
+      const result = upscaleGenerative.safe({ source_url: PHOTO, model, enhancementStrength: "high" });
+      expect(result.ok, model).toBe(true);
+    }
     expect(
       upscaleGenerative.safe({ source_url: PHOTO, model: "Wonder 3.5", enhancementStrength: "medium" }).ok,
     ).toBe(true);
@@ -207,6 +219,19 @@ describe("the dials the 2026-11-12 pages document on rostered models", () => {
     expect(result.ok, JSON.stringify(result.ok ? [] : result.errors)).toBe(true);
     if (result.ok) expect(result.warnings).toEqual([]);
     expect(upscaleGenerative.safe({ source_url: PHOTO, model: "Redefine", detailLevel: 6 }).ok).toBe(false);
+  });
+
+  test("`creativity` is 1–6 at `Redefine` and 1–9 at `Bloom 2` / `Bloom`", () => {
+    // “| `creativity`      | `integer` | … | `1` to `6`      |” — redefine.md.
+    expect(upscaleGenerative.safe({ source_url: PHOTO, model: "Redefine", creativity: 6 }).ok).toBe(true);
+    const over = upscaleGenerative.safe({ source_url: PHOTO, model: "Redefine", creativity: 7 });
+    expect(over.ok).toBe(false);
+    if (!over.ok) {
+      expect(over.errors.map((issue) => issue.path.join("."))).toEqual(["creativity"]);
+    }
+    for (const model of ["Bloom 2", "Bloom"]) {
+      expect(upscaleGenerative.safe({ source_url: PHOTO, model, creativity: 9 }).ok, model).toBe(true);
+    }
   });
 
   test("the classic strength dials and `opacity` are silent where their pages list them", () => {
@@ -308,17 +333,32 @@ describe("the per-model settings table", () => {
     }
   });
 
-  test("`prompt` is never a classic dial, and `Wonder 4` and `Detail` lack it too", () => {
+  test("`prompt` is never a classic dial, and only three generative pages list it", () => {
     for (const model of TOPAZ_ENHANCE_MODELS) {
       expect(TOPAZ_SETTINGS_BY_MODEL[model], model).not.toContain("prompt");
     }
+    // The `| `prompt` |` row is on redefine.md, bloom-2.md and
+    // bloom-1-creative.md and on no other model page.
     const prompted = TOPAZ_ENHANCE_GEN_MODELS.filter((model) =>
       TOPAZ_SETTINGS_BY_MODEL[model]?.includes("prompt"),
     );
-    expect(TOPAZ_ENHANCE_GEN_MODELS.filter((model) => !prompted.includes(model))).toEqual([
-      "Wonder 4",
-      "Detail",
-    ]);
+    expect(prompted).toEqual(["Redefine", "Bloom 2", "Bloom"]);
+    const autoprompted = TOPAZ_ENHANCE_GEN_MODELS.filter((model) =>
+      TOPAZ_SETTINGS_BY_MODEL[model]?.includes("autoprompt"),
+    );
+    expect(autoprompted).toEqual(["Redefine", "Bloom 2"]);
+  });
+
+  test("…so `prompt` at a model whose page lacks it warns, naming the three", () => {
+    // “Wonder 1 has no model-specific parameters.” — wonder-1.md.
+    for (const model of ["Wonder", "Standard MAX", "Recover 3", "Bloom Realism"]) {
+      const result = upscaleGenerative.safe({ source_url: PHOTO, model, prompt: "a sailing boat" });
+      expect(result.ok, model).toBe(true);
+      if (!result.ok) continue;
+      const issue = result.warnings.find((warning) => warning.path.join(".") === "prompt");
+      expect(issue?.code, model).toBe("unknown_param");
+      expect(issue?.message, model).toContain('"Bloom", "Bloom 2", "Redefine" read it.');
+    }
   });
 });
 
@@ -449,14 +489,34 @@ describe("the output ceiling, which moves with the model", () => {
     expect(issue?.message).toContain("256 MP");
   });
 
-  test("the same size at a classic model is fine — the ceilings differ four-fold", () => {
-    const result = upscale.safe({
+  test("a classic model caps at 256 MP too", () => {
+    // “This model accepts up to 256 MP input and output.” — Standard 2's page.
+    const at = upscale.safe({
+      source_url: PHOTO,
+      model: "Standard V2",
+      output_width: 16000,
+      output_height: 16000,
+    });
+    expect(at.ok, JSON.stringify(at.ok ? [] : at.errors)).toBe(true);
+    const over = upscale.safe({
       source_url: PHOTO,
       model: "Standard V2",
       output_width: 17000,
       output_height: 16000,
     });
-    expect(result.ok, JSON.stringify(result.ok ? [] : result.errors)).toBe(true);
+    expect(over.ok).toBe(false);
+    if (over.ok) return;
+    const issue = over.errors.find((error) => error.path.join(".") === "output_width");
+    expect(issue?.code).toBe("media_dimensions_exceeded");
+    expect(issue?.message).toContain("256 MP");
+  });
+
+  test("`Standard MAX` and `Recover 3` reach 384 MP where the rest stop at 256", () => {
+    // “This model accepts up to 24 MP input and returns up to 384 MP output.”
+    const size = { source_url: PHOTO, output_width: 19000, output_height: 19000 } as const;
+    expect(upscaleGenerative.safe({ ...size, model: "Standard MAX" }).ok).toBe(true);
+    expect(upscaleGenerative.safe({ ...size, model: "Recover 3" }).ok).toBe(true);
+    expect(upscale.safe({ ...size, model: "Upscale High Fidelity V3" }).ok).toBe(false);
   });
 
   test("the envelope's own 1–32000 bound still applies", () => {
@@ -513,16 +573,17 @@ describe("the credit arithmetic", () => {
   test("every rostered model has a rate, and no other id does", () => {
     expect(Object.keys(MP_PER_CREDIT).sort()).toEqual([...TOPAZ_MODELS].sort());
     for (const model of TOPAZ_ENHANCE_MODELS) expect(MP_PER_CREDIT[model], model).toBe(24);
-    expect(CREDIT_USD).toBe(0.12);
+    // “$0.10 / credit” on the Developer plan — https://www.topazlabs.com/api.
+    expect(CREDIT_USD).toBe(0.1);
   });
 
-  test("USD is credits times the pay-as-you-go rate", () => {
+  test("USD is credits times the Developer plan's rate", () => {
     expect(topazCostUSD({ model: "Standard V2", outputWidth: 4096, outputHeight: 4096 })).toBeCloseTo(
-      0.12,
+      0.1,
       10,
     );
     expect(topazCostUSD({ model: "Redefine", outputWidth: 4096, outputHeight: 4096 })).toBeCloseTo(
-      0.6,
+      0.5,
       10,
     );
   });
@@ -545,7 +606,7 @@ describe("the credit arithmetic", () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.estimate?.costUSD).toBeCloseTo(0.12, 10);
+    expect(result.estimate?.costUSD).toBeCloseTo(0.1, 10);
     // …and the budget gate reads the same number, which is what makes an exact
     // estimate worth having: `maxCostUSD` here is a real ceiling rather than a
     // guess about a guess.

@@ -1282,8 +1282,16 @@ const AVATAR_PACK_PROVIDERS: string[] = ["fal", "heygen", "sync", "veed"];
  * transcription is the entire reason to have a native Topaz provider rather
  * than only fal's resale of three of its endpoints, so the kilobytes are the
  * feature.
+ *
+ * **Bumped 375 → 415 at the 2026-11 Topaz review fixes**, measured 378.2 KiB
+ * on macOS against 374.7 before them, which had left 0.3 KiB of headroom. The
+ * +3.5 is provenance: a dated page quote beside every megapixel ceiling and
+ * every generative settings row, the `Recover 3` strength check and the
+ * `Redefine` creativity narrowing. 415 is measured × ~1.1, the usual slack.
+ * Flagged for CI confirmation; JS pins in this file have proven
+ * platform-stable, and if the Linux figure differs, re-pin from it.
  */
-const UPSCALE_PACK_BUDGET_KIB = 375;
+const UPSCALE_PACK_BUDGET_KIB = 415;
 
 /** The two providers `unmodel/upscale`'s ready-made pack is allowed to reach. */
 const UPSCALE_PACK_PROVIDERS: string[] = ["fal", "topaz"];

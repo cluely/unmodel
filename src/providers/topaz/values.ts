@@ -22,8 +22,8 @@
  *   IGNORES a dial a model does not take rather than refusing it, so greying
  *   one out is the only way a user finds out before they are billed.
  * - `TOPAZ_MEGAPIXEL_LIMITS` — the input and output ceilings; the output ones
- *   differ four-fold across the roster (256 MP at `Wonder`, 1024 at
- *   `Standard V2`).
+ *   are 256 MP at nearly every model and 384 at `Standard MAX` and
+ *   `Recover 3`, a 1.5-fold spread.
  * - `MP_PER_CREDIT` (per model) + `CREDIT_USD` — enough to show a live price as
  *   the user drags an output-size slider, since Topaz's price is a pure
  *   function of the output's pixel count.

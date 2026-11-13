@@ -2,12 +2,13 @@
  * Shared wire pieces for Topaz Labs' Image API
  * (`https://api.topazlabs.com/image/v1/...`), transcribed from the published
  * OpenAPI 3.1.2 document
- * (https://openapi.gitbook.com/o/HctdcUHRfIWXBVA1egPp/spec/image-yaml-feb-2026.yaml,
+ * (https://openapi.gitbook.com/o/HctdcUHRfIWXBVA1egPp/spec/image-yaml.yaml,
  * `Image API` v1.2.0, linked from
- * https://developer.topazlabs.com/reference/openapi-specs/readme) and from the
- * per-model reference pages under https://developer.topazlabs.com/image-models/
- * — verified 2026-08-25. Every docs route also serves raw Markdown at
- * `<route>.md`, which is what was read.
+ * https://developer.topazlabs.com/reference/openapi-specs/readme.md) and from
+ * the per-model reference pages under
+ * https://developer.topazlabs.com/image-models/upscaling-and-enhancement/
+ * — verified 2026-08-25, these URLs re-checked 2026-11-13. Every docs route
+ * also serves raw Markdown at `<route>.md`, which is what was read.
  *
  * ## The spec gives the envelope; the docs give the dials
  *
@@ -139,11 +140,12 @@ export const PROMPT_MAX_CHARS = 1024;
  * The `/enhance/async` model enum — the Gigapixel family.
  *
  * ⚠️ A UNION OF TWO SOURCES, and they disagree by addition. The published
- * OpenAPI document (dated `image-yaml-feb-2026`) enumerates five:
+ * OpenAPI document (`image-yaml.yaml`, Image API 1.2.0) enumerates five:
  * `["Standard V2", "Low Resolution V2", "CGI", "High Fidelity V2", "Text Refine"]`.
- * The live per-model pages under /image-models/gigapixel/ document those five
- * AND `"Upscale High Fidelity V3"` (the High Fidelity 3 page), each naming this
- * endpoint and its own `model` string. The spec is a dated snapshot and the
+ * The live per-model pages under
+ * /image-models/upscaling-and-enhancement/precision/ document those five AND
+ * `"Upscale High Fidelity V3"` (the High Fidelity 3 page), each naming this
+ * endpoint and its own `model` string. The spec lags the docs and the
  * model pages are the per-route reference, so the pages win where they add —
  * the same call `unmodel/tripo3d` makes when Tripo's endpoint pages disagree
  * with its model index. Nothing is typed that was not read on a page.
@@ -233,10 +235,17 @@ export type TopazGrainModel = (typeof TOPAZ_GRAIN_MODELS)[number];
  * The dials both routes share, as every model page's "Endpoint-Specific
  * Parameters" block documented them on 2026-08-25.
  *
- * They are ENDPOINT-specific by their own heading, so they belong to the route
- * rather than to the model — which is what settled two of those pages
- * (`Wonder 3.5` and `Bloom 2`) omitting the block entirely: an omission on a
- * terser page is not a statement that the endpoint stopped taking them.
+ * No current page carries that block. The family pages now name the
+ * route-wide request parameters as the envelope alone — “Request parameters
+ * (`image`, `source_id`, `source_url`, `model`, `output_format`,
+ * `webhook_url`, `output_width`, `output_height`, `crop_to_fill`) are the same
+ * for every generative upscaling model … Model settings are listed on each
+ * model's page.”
+ * (https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative.md,
+ * verified 2026-11-12) — and of these four only `faceEnhancement` and
+ * `faceEnhancementStrength` are on a current page, Wonder 2's. They stay typed
+ * because Topaz ignores rather than refuses a setting a model does not read;
+ * which models take them is {@link TOPAZ_SETTINGS_BY_MODEL}'s call.
  */
 export interface TopazFaceSettings {
   /** Run the face-recovery model over detected faces. */
@@ -272,7 +281,10 @@ export interface TopazEnhanceGenSettings extends TopazFaceSettings {
   prompt?: string;
   /** Generate the prompt automatically. Ignores whatever `prompt` said. */
   autoprompt?: boolean;
-  /** Integer 1–9 (1–4 on `Bloom Realism`, default 2 there), default 3. How far it may stray. */
+  /**
+   * Integer, default 3. How far it may stray: 1–9 at `Bloom 2` / `Bloom`, 1–6
+   * at `Redefine`, 1–4 at `Bloom Realism` (default 2 there).
+   */
   creativity?: number;
   /** Integer 1–5. 1 at low creativity, 3 at high, per Topaz's recommendation. */
   texture?: number;
@@ -354,14 +366,15 @@ const ENHANCE_COMMON = [
   "strength",
 ] as const;
 
-/** The settings the generative route documents for every model on it. */
+/**
+ * The settings the generative route documented for every model on it on
+ * 2026-08-25, less `prompt` and `autoprompt` — see {@link PROMPT_SETTINGS}.
+ */
 const ENHANCE_GEN_COMMON = [
   "faceEnhancement",
   "faceEnhancementStrength",
   "faceEnhancementCreativity",
   "subjectDetection",
-  "prompt",
-  "autoprompt",
   "creativity",
   "texture",
   "sharpen",
@@ -369,6 +382,12 @@ const ENHANCE_GEN_COMMON = [
   "detail",
   "detailStrength",
 ] as const;
+
+/**
+ * The prompt pair, only on a row whose current page lists it — `Redefine` and
+ * `Bloom 2` (`Bloom` lists `prompt` alone).
+ */
+const PROMPT_SETTINGS = ["prompt", "autoprompt"] as const;
 
 /** The strength dials four classic pages document, camelCased. */
 const STRENGTHS = ["deblurStrength", "decompressionStrength", "denoiseStrength"] as const;
@@ -402,8 +421,15 @@ const DIMENSIONS = ["inputWidth", "inputHeight", "outputWidth", "outputHeight"] 
  * (https://developer.topazlabs.com/getting-started/request-parameters/image.md).
  *
  * Every other row is its page's 2026-08-25 endpoint-wide block plus the dials
- * its page documents on 2026-11-12, each quoted beside the row. A dial absent
- * from a page is not evidence that the model ignores it.
+ * its page documents on 2026-11-12, each quoted beside the row — except
+ * `prompt` and `autoprompt`, which sit only where the current page lists them
+ * (`Redefine`, `Bloom 2`, `Bloom`). The family pages say a model's page is its
+ * whole list (see {@link TopazFaceSettings}), and `prompt` is the one setting
+ * `unmodel/upscale` compiles from its canonical vocabulary, so this table is
+ * what decides whether a caller's prompt is sent or refused: a stale entry
+ * there is a prompt dropped without a word. The rest of the 2026-08-25 block
+ * stays on the older rows; {@link checkModelSettings} only warns, so an entry
+ * kept here can fail to warn but can never refuse a request.
  */
 export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>> = {
   // --- /enhance/async ------------------------------------------------------
@@ -435,13 +461,21 @@ export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>
   // Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/redefine.md:
   // “| `creativityBoost` | `boolean` | <p>Optional<br>Default: <code>true</code></p> |”,
   // “| `detailLevel`     | `integer` | <p>Optional<br>Default: <code>1</code></p>    | `1` to `5`      |”
-  // and “| `seed`            | `integer` | <p>Optional<br>Default: <code>1</code></p>    |”.
-  Redefine: [...ENHANCE_GEN_COMMON, "creativityBoost", "detailLevel", "seed"],
+  // and “| `seed`            | `integer` | <p>Optional<br>Default: <code>1</code></p>    |”,
+  // beside “| `prompt`          | `string`  | <p>Optional<br>Default: <code>""</code></p>   |”
+  // and “| `autoprompt`      | `boolean` | <p>Optional<br>Default: <code>true</code></p> |”.
+  Redefine: [...ENHANCE_GEN_COMMON, ...PROMPT_SETTINGS, "creativityBoost", "detailLevel", "seed"],
+  // No `prompt`: “Wonder 1 has no model-specific parameters.” — verified
+  // 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-1.md.
   Wonder: ENHANCE_GEN_COMMON,
   // Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-2.md:
   // “| `colorCorrection`         | `boolean` | <p>Optional<br>Default: <code>true</code></p>  |”
-  // and “| `preDownscale`            | `integer` | <p>Optional<br>Default: <code>1</code></p>     | `1` to `4`      |”.
+  // and “| `preDownscale`            | `integer` | <p>Optional<br>Default: <code>1</code></p>     | `1` to `4`      |”,
+  // and no `prompt` row in that table.
   "Wonder 2": [...ENHANCE_GEN_COMMON, "colorCorrection", "preDownscale"],
+  // No `prompt`: the tables on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-3.md
+  // and wonder-3.5.md are `model` and `enhancementStrength` alone, verified 2026-11-12.
   "Wonder 3": [...ENHANCE_GEN_COMMON, "enhancementStrength"],
   "Wonder 3.5": [...ENHANCE_GEN_COMMON, "enhancementStrength", ...GRAIN, ...DIMENSIONS],
   // No setting at all. Verified 2026-11-12: the parameter table on
@@ -451,17 +485,36 @@ export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>
   // says it outright: “**No settings.** Wonder 3.5 offered Low, Medium and High
   // strength. Wonder 4 gets there automatically.”
   "Wonder 4": [],
+  // No `prompt`: “Standard Max has no model-specific parameters.” — verified
+  // 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/standard-max.md.
   "Standard MAX": ENHANCE_GEN_COMMON,
   // A decimal here, where Wonder 3 and 3.5 take a word. Verified 2026-11-12 on
   // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/recover-3.md:
-  // “| `enhancementStrength` | `decimal` | <p>Optional<br>Default: <code>5.0</code></p> | `0.0` to `10.0` |”.
+  // “| `enhancementStrength` | `decimal` | <p>Optional<br>Default: <code>5.0</code></p> | `0.0` to `10.0` |”,
+  // the table's one row beside `model` — so no `prompt`.
   "Recover 3": [...ENHANCE_GEN_COMMON, "enhancementStrength"],
   // One setting, with no `detail` switch beside it. Verified 2026-11-12 on
   // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/detail-faces.md:
   // “| `detailStrength` | `decimal` | Optional           | `0.0` to `10.0` | How
   // much detail is added to faces. |”
   Detail: ["detailStrength"],
-  "Bloom 2": [...ENHANCE_GEN_COMMON, "colorPreservation", "seed", ...GRAIN, ...DIMENSIONS],
+  // Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative/bloom-2.md:
+  // “| `prompt`            | `string`  | <p>Optional<br>Default: <code>""</code></p>   |” and
+  // “| `autoprompt`        | `boolean` | <p>Optional<br>Default: <code>true</code></p> |”.
+  "Bloom 2": [
+    ...ENHANCE_GEN_COMMON,
+    ...PROMPT_SETTINGS,
+    "colorPreservation",
+    "seed",
+    ...GRAIN,
+    ...DIMENSIONS,
+  ],
+  // No `prompt`: the table on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative/bloom-1-realism.md
+  // is `model`, `creativity` and `seed`, verified 2026-11-12. The creative
+  // family page's “**Prompt-guided direction.** Steer the enhancement with a
+  // text prompt.” (creative.md) is a family-wide bullet, and Bloom 2 and Bloom
+  // are the members whose pages carry the field.
   "Bloom Realism": [...ENHANCE_GEN_COMMON, "seed"],
   // The six settings rows of
   // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative/bloom-1-creative.md,
@@ -475,9 +528,9 @@ export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>
  * The published input and output ceilings, in megapixels, where a model page
  * states them.
  *
- * `Redefine`, `Wonder`, `Wonder 4` and `Bloom` at 256 MP in and out,
- * `Standard MAX` and `Recover 3` at 24 in / 384 out, the classic upscalers at
- * 512 in / 1024 out.
+ * Nearly every model is 256 MP in and out — the classic upscalers, `Redefine`,
+ * `Wonder`, `Wonder 4` and `Bloom` among them — and `Standard MAX` and
+ * `Recover 3` are 24 in / 384 out.
  * A request states its OUTPUT size directly, so the output ceiling is checkable
  * — {@link checkOutputMegapixels} does it — while the input's is a property of
  * a file behind a URL and is not.
@@ -485,11 +538,24 @@ export const TOPAZ_SETTINGS_BY_MODEL: Readonly<Record<string, readonly string[]>
 export const TOPAZ_MEGAPIXEL_LIMITS: Readonly<
   Record<string, { readonly input?: number; readonly output: number }>
 > = {
-  "Standard V2": { input: 512, output: 1024 },
-  "High Fidelity V2": { input: 512, output: 1024 },
-  "Low Resolution V2": { input: 512, output: 1024 },
-  CGI: { input: 512, output: 1024 },
-  "Text Refine": { input: 512, output: 1024 },
+  // “This model accepts up to 256 MP input and output.” —
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/standard-2.md, verified 2026-11-12.
+  "Standard V2": { input: 256, output: 256 },
+  // The same sentence on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/high-fidelity-2.md, verified 2026-11-12.
+  "High Fidelity V2": { input: 256, output: 256 },
+  // The same sentence on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/high-fidelity-3.md, verified 2026-11-12.
+  "Upscale High Fidelity V3": { input: 256, output: 256 },
+  // The same sentence on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/low-resolution-2.md, verified 2026-11-12.
+  "Low Resolution V2": { input: 256, output: 256 },
+  // The same sentence on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/art-and-cgi.md, verified 2026-11-12.
+  CGI: { input: 256, output: 256 },
+  // The same sentence on
+  // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/text-and-shapes.md, verified 2026-11-12.
+  "Text Refine": { input: 256, output: 256 },
   Redefine: { input: 256, output: 256 },
   // “This model accepts up to 256 MP input and output.” —
   // https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-1.md, verified 2026-11-12.
@@ -677,9 +743,9 @@ export function checkOutputMegapixels(source: string) {
       model,
       message:
         `${width}×${height} is ${megapixels.toFixed(1)} MP and "${model}" caps its output at ` +
-        `${limit.output} MP. The ceilings differ sharply between models — the classic upscalers reach ` +
-        "1024 MP where the generative ones stop at 256 or 384 — so this is a model choice rather than " +
-        "a size to round down.",
+        `${limit.output} MP. Most Topaz models stop at 256 MP and only "Standard MAX" and "Recover 3" ` +
+        "reach 384, so switching model helps only between 256 and 384 MP; above that, the output size " +
+        "has to come down.",
       meta: { source, megapixels, max: limit.output },
     });
   };

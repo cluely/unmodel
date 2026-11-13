@@ -1,17 +1,17 @@
 // Hand-maintained — Topaz Labs is not in models.dev; refresh from
-//   https://openapi.gitbook.com/o/HctdcUHRfIWXBVA1egPp/spec/image-yaml-feb-2026.yaml  (Image API 1.2.0, OpenAPI 3.1.2)
-//   https://developer.topazlabs.com/reference/openapi-specs/readme                    (re-resolve that URL from here — the slug is dated)
+//   https://openapi.gitbook.com/o/HctdcUHRfIWXBVA1egPp/spec/image-yaml.yaml           (Image API 1.2.0, OpenAPI 3.1.2)
+//   https://developer.topazlabs.com/reference/openapi-specs/readme.md                 (re-resolve the spec URL from here — it links the current one)
 //   https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision  (the classic upscalers and Detail, one page per model)
 //   https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative (the generative upscalers)
 //   https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative   (the creative upscalers)
 //   https://developer.topazlabs.com/getting-started/model-pricing/image-models        (the formula; each model page states its own MP per credit)
 //   https://developer.topazlabs.com/resources/model-deprecations                      (lifecycle status per `model` string)
-//   https://developer.topazlabs.com/getting-started/api-key-setup                     (X-API-Key, self-serve)
-//   https://developer.topazlabs.com/resources/api-limits                              (500 MB request cap; rate limits are load-dependent)
-//   https://www.topazlabs.com/enhance-api                                             (USD per credit)
-// Verified 2026-08-25; rows added 2026-11-12 carry their own dated quotes. Every
-// developer.topazlabs.com route also serves raw Markdown at `<route>.md`, which
-// is what was read.
+//   https://developer.topazlabs.com/getting-started/api-key                           (X-API-Key, self-serve)
+//   https://developer.topazlabs.com/getting-started/image-quickstart                  (500 MB request cap; rate limits are load-dependent)
+//   https://www.topazlabs.com/api                                                     (USD per credit, per plan)
+// Verified 2026-08-25, these URLs re-checked 2026-11-13; rows added 2026-11-12
+// carry their own dated quotes. Every developer.topazlabs.com route also serves
+// raw Markdown at `<route>.md`, which is what was read.
 //
 // THE MODEL IDS HAVE SPACES IN THEM, AND THAT IS DELIBERATE.
 // Topaz's `model` field takes product names — "Standard V2", "Upscale High
@@ -33,9 +33,9 @@
 // MODEL COVERAGE, AND THE ONE PLACE THE SPEC AND THE DOCS DISAGREE.
 // The published OpenAPI document enumerates five models on /enhance/async and
 // four on /enhance-gen/async. The live per-model pages document six and twelve
-// respectively — the spec is a dated snapshot (`image-yaml-feb-2026`) and the
-// model pages are the per-route reference, each naming its endpoint and its own
-// `model` string, so the pages win where they ADD. The one value that goes the
+// respectively — the spec lags the docs and the model pages are the per-route
+// reference, each naming its endpoint and its own `model` string, so the pages
+// win where they ADD. The one value that goes the
 // other way is `"Recovery V2"` — Recover 2, on its own page, deprecated — and
 // it is out for the same reason as the deprecated first generation
 // (`"Standard"`, `"Low Resolution"`, `"High Fidelity"`, `"Recover"`): each was
@@ -85,12 +85,14 @@ import type { ModelInfo, ProviderInfo } from "../../core/catalog-types";
 export const provider = {
   id: "topaz",
   name: "Topaz Labs",
-  // `X-API-Key: <TOPAZ_API_KEY>` — https://developer.topazlabs.com/getting-started/api-key-setup.
+  // `X-API-Key: <TOPAZ_API_KEY>` — https://developer.topazlabs.com/getting-started/api-key
+  // (verified 2026-11-13): “Every request is authenticated with an API key
+  // sent in the `X-API-Key` header.”
   // The spec's security scheme spells the header `X-API-Key`; the quickstart's
   // Python sample writes `X-API-KEY`. HTTP header names are case-insensitive,
   // so both work and unmodel states the spec's.
   env: ["TOPAZ_API_KEY"],
-  doc: "https://developer.topazlabs.com/reference/api-endpoints/image",
+  doc: "https://developer.topazlabs.com/reference/image/enhance",
 } as const satisfies ProviderInfo;
 
 /** A picture in, a bigger picture out, and no field that takes text. */
@@ -101,8 +103,8 @@ const enhanceModality = { input: ["image"], output: ["image"] } as const;
  *
  * `text` is on the INPUT side exactly where `TOPAZ_SETTINGS_BY_MODEL` lists
  * `prompt` — it is the second witness that made `prompt` canonical in
- * `unmodel/upscale`. `Wonder 4` and `Detail` ride the same route with no
- * `prompt` on their pages, so they take {@link enhanceModality}.
+ * `unmodel/upscale`. Only `Redefine`, `Bloom 2` and `Bloom` list it on their
+ * pages; every other model on the same route takes {@link enhanceModality}.
  */
 const enhanceGenModality = { input: ["image", "text"], output: ["image"] } as const;
 
@@ -116,10 +118,11 @@ const enhanceGenModality = { input: ["image", "text"], output: ["image"] } as co
 export const models = {
   // --- POST /image/v1/enhance/async — the Gigapixel family, 24 MP/credit ----
   /**
-   * 24 MP of output per credit.
+   * 24 MP of output per credit; every model's rate is in ./pricing.ts
+   * `MP_PER_CREDIT`, quoted from its own page.
    *
-   * Source: https://developer.topazlabs.com/getting-started/model-pricing — verified 2026-08-25.
-   * Quote: “| Precision Upscale | `Gigapixel` | 24 |”
+   * Source: https://developer.topazlabs.com/image-models/upscaling-and-enhancement/precision/standard-2.md — verified 2026-11-12.
+   * Quote: “**Standard 2** costs 1 credit per every 24 MP of generated output.”
    */
   "Standard V2": {
     id: "Standard V2",
@@ -133,7 +136,7 @@ export const models = {
     limit: { context: 0 },
     // The default (the spec's own `default: Standard V2`) and the one to reach
     // for first: "the general-purpose image upscaling model recommended for
-    // most photos and graphics". 512 MP in, 1024 MP out. The one page that
+    // most photos and graphics". 256 MP in and out. The one page that
     // spells its strength dials snake_case; see ./shared.ts on the casing.
   },
   "High Fidelity V2": {
@@ -208,10 +211,11 @@ export const models = {
 
   // --- POST /image/v1/enhance-gen/async — the generative upscalers ----------
   /**
-   * 4 MP of output per credit.
+   * 4 MP of output per credit. The rate does not follow this section: every
+   * model's is in ./pricing.ts `MP_PER_CREDIT`, quoted from its own page.
    *
-   * Source: https://developer.topazlabs.com/getting-started/model-pricing — verified 2026-08-25.
-   * Quote: “| Generative Upscale | `Wonder` | 4 |”
+   * Source: https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/redefine.md — verified 2026-11-12.
+   * Quote: “**Redefine** costs 1 credit per every 4 MP of generated output.”
    */
   Redefine: {
     id: "Redefine",
@@ -234,7 +238,7 @@ export const models = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    modalities: enhanceGenModality,
+    modalities: enhanceModality,
     limit: { context: 0 },
     // One-click repair of low-to-medium resolution images. 256 MP in and out.
     // Deprecated, still served. Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-1.md:
@@ -250,7 +254,7 @@ export const models = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    modalities: enhanceGenModality,
+    modalities: enhanceModality,
     limit: { context: 0 },
     // Deprecated, still served. Verified 2026-11-12 on https://developer.topazlabs.com/image-models/upscaling-and-enhancement/generative/wonder-2.md:
     // “**Wonder 2 is deprecated** and will be retired no sooner than January 1,
@@ -265,7 +269,7 @@ export const models = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    modalities: enhanceGenModality,
+    modalities: enhanceModality,
     limit: { context: 0 },
     // Adds `enhancementStrength` — high, medium or low — which is a coarser
     // dial than `creativity` and moves the whole result rather than the detail.
@@ -282,7 +286,7 @@ export const models = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    modalities: enhanceGenModality,
+    modalities: enhanceModality,
     limit: { context: 0 },
     // The generative upscaler with the film-grain block.
     // Its page lists a camelCased `outputWidth`/`outputHeight` alongside the
@@ -319,7 +323,7 @@ export const models = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    modalities: enhanceGenModality,
+    modalities: enhanceModality,
     limit: { context: 0 },
     // Precision upscaling on the generative route: 24 MP in, 384 MP out — the
     // widest ratio in the catalog.
@@ -332,7 +336,7 @@ export const models = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    modalities: enhanceGenModality,
+    modalities: enhanceModality,
     limit: { context: 0 },
     // Takes `enhancementStrength` as a 0–10 decimal, where Wonder 3 and 3.5
     // take a word. 24 MP in, 384 MP out.
@@ -366,8 +370,8 @@ export const models = {
    * 2 MP of output per credit — twelve times the price of a Gigapixel model
    * for the same picture.
    *
-   * Source: https://developer.topazlabs.com/getting-started/model-pricing — verified 2026-08-25.
-   * Quote: “| Creative Upscale | `Bloom` | 2 |”
+   * Source: https://developer.topazlabs.com/image-models/upscaling-and-enhancement/creative/bloom-2.md — verified 2026-11-12.
+   * Quote: “**Bloom 2** costs 1 credit per every 2 MP of generated output.”
    */
   "Bloom 2": {
     id: "Bloom 2",
@@ -391,11 +395,11 @@ export const models = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    modalities: enhanceGenModality,
+    modalities: enhanceModality,
     limit: { context: 0 },
     // The realism half of the first Bloom generation. Its `creativity` runs
-    // 1–4 where the endpoint's own block says 1–9 — a per-model narrowing of a
-    // shared dial, and the sharpest one in this catalog.
+    // 1–4, where Bloom 2's and Bloom's pages say 1–9 and Redefine's 1–6 — the
+    // sharpest per-model narrowing of that dial in this catalog.
   },
   /**
    * The creative half of the first Bloom generation, prompt-guided, with

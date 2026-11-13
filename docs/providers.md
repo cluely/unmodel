@@ -568,8 +568,8 @@ reads `"topaz/Standard V2"`.
 Pricing is credits, per output megapixel, `credits = ceil(outputMP / mpPerCredit)` at the rate
 each model's page states (`MP_PER_CREDIT`, per model) — 24 MP per credit for the classic six and
 `Detail`, 8 for `Wonder 3`, `Wonder 3.5` and `Wonder 4`, 4 for `Redefine`, `Wonder`, `Wonder 2`,
-`Standard MAX` and `Recover 3`, 2 for the Bloom models — at $0.12 a credit pay-as-you-go
-($0.10 on Developer, $0.08 on Scale). Topaz bills the OUTPUT's pixel count and the request states
+`Standard MAX` and `Recover 3`, 2 for the Bloom models — at $0.10 a credit, the highest published
+plan rate (Developer; Scale is $0.08). Topaz bills the OUTPUT's pixel count and the request states
 it, which makes this one of the few media providers whose estimate is EXACT; the other half of
 the same fact is that `output_width` and `output_height` are both optional, so a request that
 names neither (or only one) gets `undefined` rather than a guess.
@@ -578,7 +578,8 @@ Topaz has **no `factor`** — it states an absolute output size rather than a mu
 category's one cross-vendor word types as `never` at every Topaz ref. That is a DIFFERENT reason
 from `fal-ai/recraft/upscale/crisp`'s `never`, which has no multiplier because it chooses its own
 size, and the two therefore carry different messages. What Topaz did bring the category is a
-second witness for the canonical `prompt`: ten of its eighteen models steer on one.
+second witness for the canonical `prompt`: three of its eighteen models (`Redefine`, `Bloom 2`,
+`Bloom`) steer on one.
 
 The per-model tuning dials — `faceEnhancement`, `creativity`, `texture`, `denoise`, `strength`
 and the rest — are not in Topaz's published OpenAPI document, which types the whole space as

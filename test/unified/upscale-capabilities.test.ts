@@ -217,9 +217,11 @@ const TABLE: Readonly<Record<string, Capability>> = {
     inline: "unsupported",
     source: { at: "source_url", kind: "image" },
     factor: "unsupported",
-    prompt: "native",
-    // Same word as its siblings, narrower range: 1–4 where the endpoint's own
-    // block says 1–9. The one per-model narrowing of a SHARED dial at Topaz.
+    // Its page lists `creativity` and `seed` and no `prompt` — Bloom 2 and
+    // Bloom are the creative models that steer on one.
+    prompt: "unsupported",
+    // Same word as its siblings, narrower range: 1–4 where Bloom 2's and
+    // Bloom's pages say 1–9 (Redefine's says 1–6).
     creativity: "creativity",
   },
 };

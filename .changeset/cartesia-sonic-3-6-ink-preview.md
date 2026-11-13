@@ -24,8 +24,9 @@ cartesia: Sonic 3.6, `ink-preview`, the `ink-whisper` snapshot and two deprecate
   `"en-GB"` or `"pt-BR"` failed with `invalid_enum_value`. The list is now per
   model (`CARTESIA_TTS_LANGUAGES_BY_MODEL`): the two Sonic 3.6 ids take
   their 44 base codes (`CARTESIA_TTS_3_6_LANGUAGES`) plus the 56 regional
-  locales of the advanced-capabilities table (`CARTESIA_TTS_LOCALES`); every
-  other id keeps the 42 (`CARTESIA_TTS_LANGUAGES`). Refusing a Sonic 3.6 value
+  locales of the advanced-capabilities table (`CARTESIA_TTS_LOCALES`);
+  sonic-3.5, sonic-3 and their dated snapshots keep the 42
+  (`CARTESIA_TTS_LANGUAGES`). Refusing a Sonic 3.6 value
   on an earlier model now names `sonic-3.6`, and for a locale also the bare
   code to send instead.
 - New `locale` field on `TtsBytesBody` and `TtsWebsocketMessage`, taking the

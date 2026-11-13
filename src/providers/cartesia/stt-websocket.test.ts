@@ -9,7 +9,7 @@ import {
 } from "./stt-websocket";
 import { CARTESIA_VERSION } from "./tts";
 import { stt } from "./stt";
-import { models } from "./models";
+import { CARTESIA_STT_LANGUAGES, models } from "./models";
 import { UnmodelValidationError } from "../../core/issues";
 import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
@@ -165,14 +165,35 @@ describe("cartesia.sttWebsocket checks and constraints", () => {
     }
   });
 
-  test("language is the single-value enum this socket publishes", () => {
-    expect(sttWebsocket.safe({ ...BASE, language: "en" }).ok).toBe(true);
-    const r = safeUnchecked({ ...BASE, language: "es" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      const issue = r.errors.find((e) => e.code === "invalid_enum_value");
-      expect(issue?.path).toEqual(["language"]);
-      expect(issue?.meta?.allowed).toEqual(["en"]);
+  test("language never errors: en is clean everywhere, an ink-whisper code is clean on ink-whisper", () => {
+    // 2026-03-01 publishes enum [en] with no refusal sentence; the 2026-08-14
+    // reference and the troubleshooting page both say the socket takes more.
+    for (const model of ["ink-2", "ink-whisper", "ink-preview"] as const) {
+      const r = sttWebsocket.safe({ ...BASE, model, language: "en" });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.filter((w) => w.path[0] === "language")).toEqual([]);
+    }
+    for (const model of ["ink-whisper", "ink-whisper-2025-06-04"] as const) {
+      const r = sttWebsocket.safe({ ...BASE, model, language: "es" });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.warnings.filter((w) => w.path[0] === "language")).toEqual([]);
+    }
+  });
+
+  test("off-list language codes are warnings, never errors", () => {
+    const cases = [
+      ["ink-preview", "fr", ["en"]],
+      ["ink-2", "fr", ["en"]],
+      ["ink-whisper", "xx", [...CARTESIA_STT_LANGUAGES]],
+    ] as const;
+    for (const [model, language, allowed] of cases) {
+      const r = sttWebsocket.safe({ ...BASE, model, language });
+      expect(r.ok).toBe(true);
+      if (!r.ok) continue;
+      const issue = r.warnings.find((w) => w.path[0] === "language");
+      expect(issue?.code).toBe("invalid_enum_value");
+      expect(issue?.severity).toBe("warning");
+      expect(issue?.meta?.allowed).toEqual(allowed);
     }
   });
 

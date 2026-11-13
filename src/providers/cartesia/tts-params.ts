@@ -21,7 +21,7 @@ import { CARTESIA_TTS_3_6_LANGUAGES, CARTESIA_TTS_LANGUAGES } from "./models";
  */
 export const MODELS = ["sonic-3.6", "sonic-3.5", "sonic-3", "sonic-preview", "sonic-latest"] as const;
 
-export const TTS_BYTES_DOCS = "https://docs.cartesia.ai/api-reference/tts/bytes";
+export const TTS_BYTES_DOCS = "https://docs.cartesia.ai/2026-03-01/api-reference/tts/bytes";
 
 export const SAMPLE_RATES = [8000, 16000, 22050, 24000, 44100, 48000] as const;
 
@@ -67,11 +67,15 @@ export const FORMAT: AudioFormatSpec = {
  * and `ttsConstraints` denies nothing on any of them. What differs is the
  * language list ("Supported languages
  * are model-specific."): `sonic-3.6` speaks the 44 codes of
- * {@link CARTESIA_TTS_3_6_LANGUAGES}, the other four the 42 of
- * {@link CARTESIA_TTS_LANGUAGES}. Each row holds its array by reference, so the
- * list an editor offers and the list `checkEnums` refuses against are the same
- * array, and cannot drift. (Sonic 3.6's regional locales are not a row value:
- * the unified `language` compiles to a primary subtag.)
+ * {@link CARTESIA_TTS_3_6_LANGUAGES}, and so do the two aliases whose backing
+ * model no page names (`sonic-preview` points at the Sonic 3.6 page; on
+ * `sonic-latest` `checkEnums` warns, never refuses, past the 42 — see
+ * CARTESIA_TTS_ALIAS_LANGUAGES in ./models); sonic-3.5 and sonic-3 speak the 42
+ * of {@link CARTESIA_TTS_LANGUAGES}. Each row holds its array by reference, so
+ * the list an editor offers and the list `checkEnums` checks against are the
+ * same array, and cannot drift. (Sonic 3.6's regional locales are not a row
+ * value: the unified `language` is open, and the adapter sends a listed
+ * regional tag as `locale` on the Sonic 3.6 ids.)
  *
  * `generation_config`'s two non-canonical members ride in through
  * {@link GENERATION_CONFIG_NESTING}, beside the `speed` the adapter compiles
@@ -99,14 +103,15 @@ export const CARTESIA_TTS_MODEL_PARAMS = {
   "sonic-3.6": ROW_3_6,
   "sonic-3.5": ROW,
   "sonic-3": ROW,
-  "sonic-preview": ROW,
-  "sonic-latest": ROW,
+  "sonic-preview": ROW_3_6,
+  "sonic-latest": ROW_3_6,
 } as const satisfies TtsModelParamTable;
 
 /**
  * Raw audio bytes — POST /tts/bytes is named after its answer: "The response is
  * raw audio bytes, so there is no response checker for this endpoint"
- * (./tts.ts). The SSE and WebSocket variants are separate routes and unmodel
- * does not validate them, so nothing here flips.
+ * (./tts.ts). The SSE and WebSocket variants are separate routes (SSE is not
+ * validated; the WebSocket generation message is ./tts-websocket's), so nothing
+ * here flips.
  */
 export const CARTESIA_TTS_DELIVERY = { kind: "bytes" } as const satisfies TtsDeliverySpec;

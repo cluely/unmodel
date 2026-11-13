@@ -1699,6 +1699,27 @@ tts({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: "v" },
     }
   });
 
+  test("on an alias or an uncataloged id, language completes every documented value", () => {
+    // `sonic-preview` / `sonic-latest` (no page names their backing model) and
+    // an uncataloged id are OPEN — the check only warns on them — yet the open
+    // tail must not swallow the 100 documented values, nor the unlisted-locale
+    // template the 56 listed locales.
+    for (const id of ["sonic-preview", "sonic-latest", "sonic-3.7"]) {
+      const entries = completionsAt(`${BYTES.replace('"sonic-3.5"', `"${id}"`)}language: "¦" });`);
+      expect(entries.length).toBe(100);
+      expect(entries).toContain("ur");
+      expect(entries).toContain("en-GB");
+    }
+  });
+
+  test("normalization completes auto, off and every documented value on every model", () => {
+    const entries = completionsAt(`${BYTES}normalization: "¦" });`);
+    expect(entries.length).toBe(102);
+    expect(entries).toContain("auto");
+    expect(entries).toContain("off");
+    expect(entries).toContain("en-IN");
+  });
+
   test("the socket message publishes the same two lists", () => {
     const SOCKET = `import { ttsWebsocket } from "./src/providers/cartesia";
 ttsWebsocket({ model_id: "sonic-3.5", transcript: "x", voice: { mode: "id", id: "v" },
@@ -1758,6 +1779,19 @@ tts({ model: "cartesia/sonic-3.5", text: "x", language: "¦" });`);
     // keeps normalizing "pt-BR" to "pt" for callers who type the regional tag.
     expect(entries).toContain("pt");
     expect(entries).toContain("en");
+    expect(entries).not.toContain("ur");
+  });
+
+  test("the unified alias rows complete Sonic 3.6's 44 languages", () => {
+    // `sonic-preview` / `sonic-latest` ride ROW_3_6: the wire never refuses a
+    // 3.6 value on them (sonic-latest warns), so the editor offers Odia and Urdu.
+    for (const ref of ["cartesia/sonic-3.6", "cartesia/sonic-preview", "cartesia/sonic-latest"]) {
+      const entries = completionsAt(`import { tts } from "./src/unified/tts";
+tts({ model: "${ref}", text: "x", language: "¦" });`);
+      expect(entries.length).toBe(44);
+      expect(entries).toContain("or");
+      expect(entries).toContain("ur");
+    }
   });
 });
 

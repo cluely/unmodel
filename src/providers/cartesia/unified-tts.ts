@@ -40,6 +40,7 @@ import type { TtsAdapterFor, TtsParams } from "../../core/unified/vocabulary/tts
 import {
   tts as validator,
   CARTESIA_TTS_LANGUAGES,
+  CARTESIA_TTS_LANGUAGES_BY_MODEL,
   type CartesiaEncoding,
   type CartesiaMp3BitRate,
   type CartesiaOutputFormat,
@@ -74,6 +75,33 @@ const TTS_LANGUAGE_SET = new Set<string>(CARTESIA_TTS_LANGUAGES);
  */
 function isTtsLanguage(language: string): language is CartesiaTtsLanguage {
   return TTS_LANGUAGE_SET.has(language);
+}
+
+type Sonic36Value =
+  (typeof CARTESIA_TTS_LANGUAGES_BY_MODEL)[keyof typeof CARTESIA_TTS_LANGUAGES_BY_MODEL][number];
+
+const SONIC_3_6_SETS = new Map<string, ReadonlySet<string>>(
+  Object.entries(CARTESIA_TTS_LANGUAGES_BY_MODEL).map(([id, values]) => [id, new Set<string>(values)]),
+);
+
+/** A primary subtag and an optional region (`pt-BR`, `pt_br`, `es-419`), any case. */
+const SIMPLE_TAG = /^([A-Za-z]{2})(?:[-_]([A-Za-z]{2}|\d{3}))?$/;
+
+/**
+ * On a Sonic 3.6 id the wire takes the regional tag itself — "Deprecated — use
+ * `locale` instead on Sonic 3.6 and later." (POST /tts/bytes, 2026-03-01) — so
+ * a tag on that model's list is sent as `locale`, exactly. BCP-47 is
+ * case-insensitive and Cartesia is not ("Locale codes are case-sensitive."),
+ * so `pt-br` / `pt_BR` are folded to `pt-BR` first. Undefined for every other
+ * model and every tag off the list, which keep the primary-subtag path.
+ */
+function toSonic36Locale(language: string, model: string): Sonic36Value | undefined {
+  const own = SONIC_3_6_SETS.get(model);
+  const match = own === undefined ? null : SIMPLE_TAG.exec(language.trim());
+  if (own === undefined || match === null) return undefined;
+  const primary = (match[1] as string).toLowerCase();
+  const tag = match[2] === undefined ? primary : `${primary}-${match[2].toUpperCase()}`;
+  return own.has(tag) ? (tag as Sonic36Value) : undefined;
 }
 
 /** The two attribute controls that live under `generation_config`. */
@@ -175,7 +203,11 @@ export const tts = {
       if (speed !== undefined) body.generation_config = { speed };
     }
 
-    if (input.language !== undefined) {
+    const locale = input.language === undefined ? undefined : toSonic36Locale(input.language, ctx.model);
+    if (locale !== undefined) {
+      ctx.from(["locale"], "language");
+      body.locale = locale;
+    } else if (input.language !== undefined) {
       const language = ctx.take(
         toPrimaryLanguage(
           input.language,

@@ -21,9 +21,11 @@
  * - `access` defaults to "private" (unlike Fish Audio's public default).
  * - The response is `VoiceMetadata`; its `id` is the created voice —
  *   the value `voice.id` takes on POST /tts/bytes.
- * - PRICING: Cartesia bills cloned-voice USAGE in credits (Pro Voice Clone
- *   ~1.5 credits/character, see ./models); no rate is published for the
- *   clone call itself, so there is no estimate.
+ * - PRICING: speech from a cloned voice bills at the TTS rate, 1 credit per
+ *   character ("Speech from a clone costs 1 credit per character, unless your
+ *   Enterprise plan says otherwise." — https://www.cartesia.ai/pricing,
+ *   2026-11-12; see ./models); no rate is published for the clone call
+ *   itself, so there is no estimate.
  * - Auth is an `Authorization: Bearer <api_key>` header ("Include
  *   `Authorization: Bearer <api_key>` in the headers of your requests." —
  *   https://docs.cartesia.ai/use-the-api/api-conventions) — unmodel never

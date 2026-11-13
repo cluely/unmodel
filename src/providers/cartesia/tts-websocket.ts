@@ -72,7 +72,7 @@ import {
 
 export const TTS_WEBSOCKET_URL = "wss://api.cartesia.ai/tts/websocket";
 
-const TTS_WEBSOCKET_DOCS = "https://docs.cartesia.ai/api-reference/tts/websocket";
+const TTS_WEBSOCKET_DOCS = "https://docs.cartesia.ai/2026-03-01/api-reference/tts/websocket";
 
 /** "Values between [0, 5000]ms are supported." (TTS_WEBSOCKET_DOCS) */
 export const TTS_WEBSOCKET_MAX_BUFFER_DELAY_MS_MIN = 0;
@@ -127,8 +127,9 @@ export interface TtsWebsocketMessage<M extends CartesiaTtsModelInput = CartesiaT
   /** REQUIRED. "A unique identifier for the context", e.g. a UUID. */
   context_id: string;
   /**
-   * "The transcript's language." Keep identical across one context. Closed:
-   * the same per-model list as POST /tts/bytes, refused at *error* severity.
+   * "The transcript's language." Keep identical across one context. The same
+   * per-model list as POST /tts/bytes, with the same severities (closed where
+   * the model's list is documented — see the open-tail rule in ./tts).
    * "Interchangeable with `locale` — set one or the other, never both; setting
    * both returns an error even if the values match."
    */
@@ -139,6 +140,15 @@ export interface TtsWebsocketMessage<M extends CartesiaTtsModelInput = CartesiaT
    * passing one to an earlier model returns a 400 error."
    */
   locale?: CartesiaTtsLanguageFor<M>;
+  /**
+   * "Controls how written forms (dates, times, numbers) are converted to
+   * spoken forms, independently of the voice's accent. One of `auto`
+   * (default), `off`, or a locale code from the supported locales (e.g.
+   * `en-IN`)." / "Locale codes require Sonic 3.6 or later." The same
+   * model-independent union and checks as POST /tts/bytes. Not nullable here:
+   * the socket's schema types it a plain `string`, unlike the REST body's.
+   */
+  normalization?: "auto" | "off" | CartesiaTtsLanguageFor<string>;
   /**
    * `true` while more transcript chunks will follow on this context; `false`
    * on the last one (the default) to minimize latency.
@@ -186,6 +196,7 @@ const schema = z.looseObject({
   context_id: z.string().min(1, "context_id is required on the TTS socket"),
   language: z.string().optional(),
   locale: z.string().optional(),
+  normalization: z.string().optional(),
   continue: z.boolean().optional(),
   max_buffer_delay_ms: z
     .number()
@@ -216,17 +227,18 @@ const EMOTION_SET = new Set<string>(CARTESIA_EMOTIONS);
 const TTS_MODEL_ID_SET = new Set<string>(TTS_MODEL_IDS);
 
 /**
- * `language` / `locale` take the per-model list POST /tts/bytes checks (the
- * shared `checkLanguageFields`); `generation_config.emotion` is the complete
- * 58-label list the capability guide publishes (the AsyncAPI shows only the
- * primary labels inline and links to that list).
+ * `language` / `locale` / `normalization` take the per-model rules POST
+ * /tts/bytes checks (the shared `checkLanguageFields`);
+ * `generation_config.emotion` is the complete 58-label list the capability
+ * guide publishes (the AsyncAPI shows only the primary labels inline and links
+ * to that list).
  */
 function checkEnums(
   params: TtsWebsocketMessage,
-  _info: ModelInfo | undefined,
+  info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
-  checkLanguageFields(params, TTS_WEBSOCKET_DOCS, ctx);
+  checkLanguageFields(params, info, TTS_WEBSOCKET_DOCS, ctx);
   const emotion = params.generation_config?.emotion;
   if (typeof emotion === "string" && !EMOTION_SET.has(emotion)) {
     ctx.report({

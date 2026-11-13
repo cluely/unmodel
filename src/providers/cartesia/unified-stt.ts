@@ -29,7 +29,7 @@ import {
 } from "./stt";
 import { CARTESIA_STT_MODEL_PARAMS, MODELS } from "./stt-params";
 
-const STT_DOCS = "https://docs.cartesia.ai/api-reference/stt/transcribe";
+const STT_DOCS = "https://docs.cartesia.ai/2026-03-01/api-reference/stt/transcribe";
 
 /** The wire params this adapter compiles to (form fields + query params). */
 export type CartesiaSttWire = SttTranscribeParams;

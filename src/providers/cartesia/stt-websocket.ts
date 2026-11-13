@@ -35,8 +35,23 @@
  *   boost one multi-word phrase, join the words with `%20`." The params object
  *   takes a string or an array; {@link sttWebsocketUrl} repeats the key (and
  *   `URLSearchParams` percent-encodes the spaces for you).
- * - `language` publishes a single-value enum (`en`, the default) on this
- *   endpoint — a far smaller set than the ~100 codes batch /stt accepts.
+ * - `language` publishes a single-value enum (`en`, the default) on the
+ *   2026-03-01 reference, with no sentence saying the socket refuses other
+ *   codes — and every other source says it takes more: the 2026-08-14
+ *   reference of the same socket says "Used by `ink-whisper` models only." and
+ *   "See [Older models](/build-with-cartesia/stt/older-models#ink-whisper) for
+ *   all options." (the 100 codes batch /stt takes), and the troubleshooting
+ *   page for this endpoint says "Be sure to include `?language=xx` (replace
+ *   `xx` with an ISO 639-1 language code) as a query param when establishing
+ *   your WebSocket connection. This endpoint does not support language
+ *   detection yet."
+ *   (https://docs.cartesia.ai/use-the-api/stt/troubleshooting/manual). So an
+ *   off-list code is only ever a warning: on `ink-whisper`, one outside the 100;
+ *   on `ink-2` / `ink-preview`, anything but `en`, since "`ink-2` and
+ *   `ink-preview` support English, French, Hindi, Japanese, and Spanish, and
+ *   detect the language automatically."
+ *   (https://docs.cartesia.ai/use-the-api/stt/compare-endpoints). All read
+ *   2026-11-12.
  * - The sibling turn-detection socket (`wss /stt/turns/websocket`, "Realtime
  *   Speech-to-Text (Auto)", with its own `turn_*` thresholds) is a separate
  *   documented surface and is NOT validated here.
@@ -52,13 +67,16 @@ import type { ValidateOptions } from "../../core/options";
 import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
-import { models, type CartesiaSttModelId } from "./models";
+import { CARTESIA_STT_LANGUAGES, models, type CartesiaSttModelId } from "./models";
 import { CARTESIA_VERSION } from "./tts";
-import type { CartesiaSttEncoding } from "./stt";
+import type { CartesiaSttEncoding, CartesiaSttLanguage } from "./stt";
 
 export const STT_WEBSOCKET_URL = "wss://api.cartesia.ai/stt/websocket";
 
-const STT_WEBSOCKET_DOCS = "https://docs.cartesia.ai/api-reference/stt/websocket";
+const STT_WEBSOCKET_DOCS = "https://docs.cartesia.ai/2026-03-01/api-reference/stt/websocket";
+/** The 2026-08-14 reference — the only one that names `ink-preview`. */
+const STT_WEBSOCKET_LATEST_DOCS = "https://docs.cartesia.ai/api-reference/stt/websocket";
+const INK_WHISPER_LANGUAGES_DOCS = "https://docs.cartesia.ai/build-with-cartesia/stt/older-models";
 
 /**
  * The `model` enum wss /stt/websocket publishes for Cartesia-Version
@@ -79,8 +97,12 @@ export const STT_WEBSOCKET_KEYTERM_TOTAL_CHARACTERS_MAX = 1200;
 // Wire types — the query params of the realtime STT socket.
 // ---------------------------------------------------------------------------
 
-/** The only language code this socket publishes; it is also the default. */
-export type CartesiaSttWebsocketLanguage = "en";
+/**
+ * `en` (the 2026-03-01 enum and the default) and the 100 `ink-whisper` codes,
+ * open-tailed: an off-list code is a warning here, never an error (see the
+ * module JSDoc and the open-tail rule in ./tts).
+ */
+export type CartesiaSttWebsocketLanguage = CartesiaSttLanguage | (string & {});
 
 export interface SttWebsocketParams {
   /** REQUIRED. `ink-2` (realtime-only) or `ink-whisper`. */
@@ -89,7 +111,11 @@ export interface SttWebsocketParams {
   encoding: CartesiaSttEncoding;
   /** REQUIRED. Sample rate of the audio in Hz. */
   sample_rate: number;
-  /** ISO-639-1 code; `en` is the only published value and the default. */
+  /**
+   * "The language of the input audio in ISO-639-1 format. Defaults to `en`."
+   * The 2026-03-01 enum is `en` alone; the 2026-08-14 reference scopes the
+   * field to `ink-whisper` with its 100 codes. Off-list values warn.
+   */
   language?: CartesiaSttWebsocketLanguage;
   /**
    * `ink-whisper` only. "Controls what is considered silence for automatic
@@ -160,7 +186,7 @@ const KEYTERM_MODELS_ONLY: EndpointConstraints = {
   deny: {
     keyterm: {
       reason: "keyterm prompting is used by `ink-2` and `ink-preview` only",
-      source: STT_WEBSOCKET_DOCS,
+      source: STT_WEBSOCKET_LATEST_DOCS,
       ignored: true,
     },
   },
@@ -212,20 +238,44 @@ function checkRealtimeSttModel(
   });
 }
 
-/** `language` is a single-value enum on this endpoint (`en`, also the default). */
+const STT_LANGUAGE_SET = new Set<string>(CARTESIA_STT_LANGUAGES);
+
+/**
+ * `language` never errors here (see the module JSDoc): the 2026-03-01 enum is
+ * `en` alone, but no page says the socket refuses another code and every other
+ * source says it takes more. `en` (or no value) passes on every model. An
+ * `ink-whisper` id — or one the catalog does not know — warns only outside the
+ * 100 `ink-whisper` codes; `ink-2` / `ink-preview` warn on anything else, since
+ * the field is "Used by `ink-whisper` models only." and they detect the
+ * language themselves.
+ */
 function checkLanguage(
   params: SttWebsocketParams,
-  _info: ModelInfo | undefined,
+  info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
   const language = params.language;
+  const model = params.model;
   if (language === undefined || language === "en") return;
+  if (info === undefined || model === "ink-whisper" || model.startsWith("ink-whisper-")) {
+    if (STT_LANGUAGE_SET.has(language)) return;
+    ctx.report({
+      code: "invalid_enum_value",
+      severity: "warning",
+      path: ["language"],
+      model,
+      message: `\`language\` ${JSON.stringify(language)} is not one of the ${CARTESIA_STT_LANGUAGES.length} \`ink-whisper\` codes; it may be refused. (The 2026-03-01 socket reference publishes only "en", while its troubleshooting page says to pass \`?language=xx\` with any ISO 639-1 code.)`,
+      meta: { allowed: [...CARTESIA_STT_LANGUAGES], value: language, source: INK_WHISPER_LANGUAGES_DOCS },
+    });
+    return;
+  }
   ctx.report({
     code: "invalid_enum_value",
+    severity: "warning",
     path: ["language"],
-    model: params.model,
-    message: `\`language\` must be "en" on wss /stt/websocket (the only code it publishes, and its default); got ${JSON.stringify(language)}. Batch POST /stt accepts the long multilingual list.`,
-    meta: { allowed: ["en"], value: language, source: STT_WEBSOCKET_DOCS },
+    model,
+    message: `\`language\` is "Used by \`ink-whisper\` models only." on wss /stt/websocket; "${model}" may ignore ${JSON.stringify(language)} — \`ink-2\` and \`ink-preview\` detect English, French, Hindi, Japanese and Spanish automatically.`,
+    meta: { allowed: ["en"], value: language, source: STT_WEBSOCKET_LATEST_DOCS },
   });
 }
 

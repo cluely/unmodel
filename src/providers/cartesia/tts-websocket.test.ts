@@ -233,6 +233,49 @@ describe("cartesia.ttsWebsocket checks", () => {
     }
   });
 
+  test("the socket shares the alias, uncataloged and 56-vs-61 severities", () => {
+    // sonic-preview takes the Sonic 3.6 values quietly.
+    const preview = ttsWebsocket.safe({ ...BASE, model_id: "sonic-preview", locale: "en-GB" });
+    expect(preview.ok && preview.warnings).toEqual([]);
+    // A Sonic 3.6 value on sonic-latest or an uncataloged id, and an unlisted
+    // regional code on a 3.6 base, warn.
+    for (const r of [
+      ttsWebsocket.safe({ ...BASE, model_id: "sonic-latest", language: "ur" }),
+      ttsWebsocket.safe({ ...BASE, model_id: "sonic-3.7", language: "ur" }),
+      ttsWebsocket.safe({ ...BASE, model_id: "sonic-3.6", locale: "ar-SA" }),
+    ]) {
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        const issue = r.warnings.find((w) => w.path[0] === "language" || w.path[0] === "locale");
+        expect(issue?.code).toBe("invalid_enum_value");
+        expect(issue?.severity).toBe("warning");
+      }
+    }
+    // An id whose list is documented still refuses.
+    for (const [model_id, locale] of [
+      ["sonic-3.5", "en-GB"],
+      ["sonic-3.6", "en-gb"],
+    ] as const) {
+      const r = safeUnchecked({ ...BASE, model_id, locale });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors.find((e) => e.path[0] === "locale")?.code).toBe("invalid_enum_value");
+    }
+  });
+
+  test("normalization is typed and shares the REST check", () => {
+    for (const normalization of ["auto", "off", "en"] as const) {
+      const r = ttsWebsocket.safe({ ...BASE, normalization });
+      expect(r.ok && r.warnings).toEqual([]);
+    }
+    const sonic36 = ttsWebsocket.safe({ ...BASE, model_id: "sonic-3.6", normalization: "en-IN" });
+    expect(sonic36.ok && sonic36.warnings.map((w) => w.path[0])).toEqual(["model_id"]);
+    const earlier = ttsWebsocket.safe({ ...BASE, normalization: "en-IN" });
+    expect(earlier.ok && earlier.warnings.map((w) => w.path[0])).toEqual(["normalization"]);
+    const bad = safeUnchecked({ ...BASE, normalization: "shouty" });
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) expect(bad.errors.find((e) => e.path[0] === "normalization")?.code).toBe("invalid_enum_value");
+  });
+
   test("the socket shares the REST per-model table, which denies nothing on a cataloged id", () => {
     expect(ttsWebsocket.safe({ ...BASE, pronunciation_dict_id: "dict_123" }).ok).toBe(true);
     expect(ttsWebsocket.safe({ ...BASE, model_id: "sonic-3.6", pronunciation_dict_id: "dict_123" }).ok).toBe(

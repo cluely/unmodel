@@ -7,10 +7,13 @@
 // https://docs.cartesia.ai/build-with-cartesia/stt/{latest,older-models},
 // and https://docs.cartesia.ai/pricing (last checked 2026-11-12).
 //
-// PRICING: Cartesia bills in credits, not USD — standard TTS is ~1 credit per
-// character (Pro Voice Clone ~1.5), batch STT with ink-whisper is 1 credit per
-// 2 seconds of audio, realtime ink-2 is 3 credits per second, and realtime
-// ink-whisper is 1 credit per second ("/stt/websocket | 3 credits per second
+// PRICING: Cartesia bills in credits, not USD — TTS is ~1 credit per
+// character, cloned voices included ("Speech from a clone costs 1 credit per
+// character, unless your Enterprise plan says otherwise." / "Training a
+// Professional Voice Clone is free." — cartesia.ai/pricing, 2026-11-12), batch
+// STT with ink-whisper is 1 credit per 2 seconds of audio, realtime ink-2 is 3
+// credits per second, and realtime ink-whisper is 1 credit per second
+// ("/stt/websocket | 3 credits per second
 // of audio | 1 credit per second of audio", the same on /stt/turns/websocket —
 // docs.cartesia.ai/pricing, 2026-11-12). The USD value of a credit depends on
 // the plan (Free $0/20K, Pro $5/100K, Startup $49/1.25M, Scale $299/8M credits
@@ -22,11 +25,12 @@
 // conversion; `cost` is deliberately omitted rather than guessed. Cost
 // estimation therefore returns no `costUSD` for Cartesia models.
 //
-// NOT LISTED (deliberate): `sonic-english` and `sonic-multilingual` appear on
-// third-party leaderboards but are absent from every reachable Cartesia doc
-// page — including the now-public older-models page, which enumerates only
-// dated sonic-3/sonic-2/sonic-turbo/sonic snapshots — so no id, status or
-// pricing can be sourced for them. Also not listed: snapshots the
+// NOT LISTED (deliberate): `sonic-english` and `sonic-multilingual`, still
+// named on third-party leaderboards, are on the "Sunsetted models" table of
+// https://docs.cartesia.ai/build-with-cartesia/tts-models/api-changes —
+// "| `sonic-english` | — | All | June 1, 2026 |" and
+// "| `sonic-multilingual` | — | All | June 1, 2026 |" (2026-11-12) — so they
+// fall under the passed-sunset rule below. Also not listed: snapshots the
 // older-models page marks "Sunsetted" (sonic-2-2025-03-07,
 // sonic-turbo-2025-03-07, sonic-2024-12-12, sonic-2024-10-19 and the bare
 // `sonic` alias), and every id whose sunset date on
@@ -247,8 +251,8 @@ export const models = {
     modalities: { input: ["audio"], output: ["text"] },
     limit: { context: 0 },
   },
-  // Realtime-only: served over wss://api.cartesia.ai/stt/websocket, which
-  // unmodel does not validate; the batch validator rejects this id.
+  // Realtime-only: served over wss://api.cartesia.ai/stt/websocket (validated
+  // by ./stt-websocket); the batch validator rejects this id.
   "ink-2": {
     id: "ink-2",
     name: "Ink 2",
@@ -281,9 +285,9 @@ export const models = {
   },
   // Voice cloning — POST /voices/clone, validated by ./voice-clone. The wire
   // has no model field: this is a SYNTHETIC route-noun id so the validator
-  // has a catalog address. Usage of the resulting voice is billed in credits
-  // (Pro Voice Clone ~1.5/character — see the PRICING note above); the clone
-  // call itself publishes no rate, so `cost` is omitted.
+  // has a catalog address. Usage of the resulting voice is billed at the TTS
+  // rate, 1 credit per character (see the PRICING note above); the clone call
+  // itself publishes no rate, so `cost` is omitted.
   "voice-clone": {
     id: "voice-clone",
     name: "Cartesia Voice Cloning",
@@ -323,9 +327,10 @@ export type CartesiaSttModelId = Extract<CartesiaModelId, `ink${string}`>;
 /**
  * The 42 language codes of Sonic 3.5 and Sonic 3 — "native support for 42
  * languages." (https://docs.cartesia.ai/build-with-cartesia/tts-models/sonic-3-5,
- * 2026-11-12) — and the list every TTS id outside
- * {@link CARTESIA_TTS_LANGUAGES_BY_MODEL} is checked against. "Supported
- * languages are model-specific." (POST /tts/bytes, Cartesia-Version 2026-03-01).
+ * 2026-11-12) — and the list every cataloged TTS id outside
+ * {@link CARTESIA_TTS_LANGUAGES_BY_MODEL} and {@link CARTESIA_TTS_ALIAS_LANGUAGES}
+ * is checked against. "Supported languages are model-specific." (POST
+ * /tts/bytes, Cartesia-Version 2026-03-01).
  */
 export const CARTESIA_TTS_LANGUAGES = [
   "en", "fr", "de", "es", "pt", "zh", "ja", "hi", "it", "ko",
@@ -352,8 +357,11 @@ export const CARTESIA_TTS_3_6_LANGUAGES = [...CARTESIA_TTS_LANGUAGES, "or", "ur"
  * transcribed in table order 2026-11-12). "Locale codes are case-sensitive."
  * and "Locale codes such as `en-GB` require Sonic 3.6 or later; passing one to
  * an earlier model returns a 400 error." (POST /tts/bytes, 2026-03-01). The
- * 2026 changelog counts "44 languages / 61 locales", but no page names the
- * other five, so this list is the 56 the table spells out.
+ * 2026 changelog counts "44 languages / 61 locales" and "`en-GB`, `es-MX`,
+ * `hi-IN`, and 58 more" (https://docs.cartesia.ai/changelog/2026, 2026-11-12),
+ * but no page names the other five, so this list is the 56 the table spells
+ * out — and ./tts reports a well-formed regional code on a Sonic 3.6 base that
+ * is not among them (`ar-SA`) at *warning* severity, not as an error.
  */
 export const CARTESIA_TTS_LOCALES = [
   "en-GB", "en-US", "en-IN", "en-IE", "en-ZA", "en-NZ", "en-SG", "en-AU", "en-CA",
@@ -368,15 +376,42 @@ export const CARTESIA_TTS_LOCALES = [
 const SONIC_3_6_LANGUAGE_VALUES = [...CARTESIA_TTS_3_6_LANGUAGES, ...CARTESIA_TTS_LOCALES] as const;
 
 /**
- * The `language` / `locale` values of the TTS ids whose list is not
+ * The `language` / `locale` values of the TTS ids whose documented list is not
  * {@link CARTESIA_TTS_LANGUAGES}: the two Sonic 3.6 ids take their 44 base
- * codes plus the 56 regional locales. Every other id — including
- * `sonic-preview` and `sonic-latest`, whose backing model the docs do not
- * name — takes the 42.
+ * codes plus the 56 regional locales. The other cataloged ids with a
+ * documented list (sonic-3.5, sonic-3 and their dated snapshots) take the 42.
+ * The aliases whose backing model no page names are in
+ * {@link CARTESIA_TTS_ALIAS_LANGUAGES} instead.
  */
 export const CARTESIA_TTS_LANGUAGES_BY_MODEL = {
   "sonic-3.6": SONIC_3_6_LANGUAGE_VALUES,
   "sonic-3.6-2026-08-27": SONIC_3_6_LANGUAGE_VALUES,
+} as const satisfies Partial<Record<CartesiaTtsModelId, readonly string[]>>;
+
+// The TTS aliases whose backing model no page names, each mapped to the
+// `language` / `locale` values it takes without a warning. ./tts reports
+// anything else on these ids at *warning* severity, never as an error: a beta
+// or aliased model may serve values no page lists for it.
+// - `sonic-preview` takes the Sonic 3.6 values. The api-changes "Stable
+//   offerings" row is "| `sonic-preview` | Beta, changes without notice | See
+//   [continuous updates](/build-with-cartesia/tts-models/latest#continuous-updates-recommended) |"
+//   (https://docs.cartesia.ai/build-with-cartesia/tts-models/api-changes), so
+//   its "Supported Languages" cell points at the Sonic 3.6 page. That page
+//   lists it as "Beta model, will always be updated with upcoming changes"
+//   (https://docs.cartesia.ai/build-with-cartesia/tts-models/latest). Step 3 of
+//   the changelog's Sonic 3.6 "How to try it" is "Try it in the [TTS
+//   Playground](https://play.cartesia.ai/text-to-speech?modelId=sonic-preview)."
+//   (https://docs.cartesia.ai/changelog/2026). All read 2026-11-12.
+// - `sonic-latest` and `sonic-3-latest` take the 42 every Sonic 3 model
+//   shares. They are deprecated pointers at `sonic-preview` — "| `sonic-latest`
+//   | `sonic-preview` |" and "| `sonic-3-latest` | `sonic-preview` |"
+//   (https://docs.cartesia.ai/build-with-cartesia/tts-models/older-models,
+//   2026-11-12) — and no page lists their languages, so a Sonic 3.6 value on
+//   them is a warning ("may be refused").
+export const CARTESIA_TTS_ALIAS_LANGUAGES = {
+  "sonic-preview": SONIC_3_6_LANGUAGE_VALUES,
+  "sonic-latest": CARTESIA_TTS_LANGUAGES,
+  "sonic-3-latest": CARTESIA_TTS_LANGUAGES,
 } as const satisfies Partial<Record<CartesiaTtsModelId, readonly string[]>>;
 
 /**

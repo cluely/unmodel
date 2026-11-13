@@ -15,9 +15,10 @@
  * params object uses the bracket-less key `timestamp_granularities` and
  * `toFormData` appends each element under the bracketed name.
  *
- * The realtime STT WebSocket endpoints (wss:///stt/websocket and the
- * turn-detection variant), which are the only route to the `ink-2` model,
- * are not validated by unmodel.
+ * The realtime STT WebSocket (wss:///stt/websocket), the only route to the
+ * `ink-2` model, is validated by ./stt-websocket (`sttWebsocket`, the session
+ * config). Its turn-detection sibling (wss:///stt/turns/websocket) is not
+ * validated by unmodel.
  *
  * BREAKING (type-level only): `SttTranscribeParams.language` is closed to
  * {@link CartesiaSttLanguage} — it is re-exported from ../cartesia and no
@@ -44,7 +45,7 @@ export { CARTESIA_STT_LANGUAGES } from "./models";
 
 export const STT_TRANSCRIBE_URL = "https://api.cartesia.ai/stt";
 
-const STT_TRANSCRIBE_DOCS = "https://docs.cartesia.ai/api-reference/stt/transcribe";
+const STT_TRANSCRIBE_DOCS = "https://docs.cartesia.ai/2026-03-01/api-reference/stt/transcribe";
 
 // ---------------------------------------------------------------------------
 // Params — multipart form fields of POST /stt.
@@ -119,7 +120,7 @@ function checkBatchModel(
     code: "invalid_enum_value",
     path: ["model"],
     model,
-    message: `\`model\` must be "ink-whisper" for batch transcription (POST /stt); got ${JSON.stringify(model)}. Realtime-only models such as "ink-2" require the STT WebSocket endpoint, which unmodel does not validate.`,
+    message: `\`model\` must be "ink-whisper" for batch transcription (POST /stt); got ${JSON.stringify(model)}. Realtime-only models such as "ink-2" are served on wss://api.cartesia.ai/stt/websocket; validate that WebSocket session config with \`cartesia.sttWebsocket\`.`,
     meta: { allowed: ["ink-whisper"], value: model, source: STT_TRANSCRIBE_DOCS },
   });
 }

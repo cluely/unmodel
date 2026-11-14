@@ -287,7 +287,7 @@ export const availability = {
     "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
     "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-    "mistral": { id: "deepseek-v4-1-flash-1017", narrows: { drops: ["image"] } },
+    "mistral": "deepseek-v4-1-flash-1017",
     "nebius": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "novita-ai": "deepseek/deepseek-v4.1-flash-1017",
     "openrouter": "deepseek/deepseek-v4.1-flash-1017",
@@ -428,7 +428,7 @@ export const availability = {
     "google": "gemini-4-hydrogen",
     "google-vertex": "gemini-4-hydrogen",
     "openrouter": "google/gemini-4-hydrogen",
-    "vercel": { id: "google/gemini-4-hydrogen", narrows: { context: 1000000, drops: ["audio", "video"] } },
+    "vercel": { id: "google/gemini-4-hydrogen", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
   "google/gemini-nano-banana-2.1": {
     "google-vertex": "gemini-nano-banana-2.1",
@@ -524,12 +524,6 @@ export const availability = {
   },
   "kt/midm-k-3.0-pro": {
     "openrouter": "kt/midm-k-3.0-pro",
-  },
-  "liquid/lfm-2.5-2.6b": {
-    "openrouter": "liquid/lfm-2.5-2.6b",
-  },
-  "liquid/lfm-2.5-2.6b:free": {
-    "openrouter": "liquid/lfm-2.5-2.6b:free",
   },
   "liquid/lfm-2.5-24b-a2b": {
     "openrouter": "liquid/lfm-2.5-24b-a2b",
@@ -1194,6 +1188,10 @@ export const availability = {
     "openrouter": "particle-ai/particle-1",
     "vercel": "particle/particle-1",
   },
+  "particle-ai/particle-1:free": {
+    "openrouter": "particle-ai/particle-1:free",
+    "vercel": "particle/particle-1",
+  },
   "perceptron/perceptron-mk1": {
     "openrouter": "perceptron/perceptron-mk1",
   },
@@ -1557,8 +1555,15 @@ export const availability = {
     "togetherai": "thinkingmachines/Inkling",
     "vercel": { id: "thinkingmachines/inkling", narrows: { context: 256000, drops: ["audio"] } },
   },
+  "thinkingmachines/inkling-2-small": {
+    "cloudflare-workers-ai": "@cf/thinkingmachines/inkling-2-small",
+    "openrouter": "thinkingmachines/inkling-2-small",
+    "vercel": "thinkingmachines/inkling-2-small",
+  },
   "thinkingmachines/inkling-2-small:free": {
+    "cloudflare-workers-ai": "@cf/thinkingmachines/inkling-2-small",
     "openrouter": "thinkingmachines/inkling-2-small:free",
+    "vercel": "thinkingmachines/inkling-2-small",
   },
   "thinkingmachines/inkling-small": {
     "deepinfra": "thinkingmachines/Inkling-Small",

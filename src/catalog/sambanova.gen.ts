@@ -13,37 +13,21 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
-  "DeepSeek-V3.1": {
-    id: "DeepSeek-V3.1",
-    name: "DeepSeek-V3.1",
-    family: "deepseek",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2025-08-21",
-    lastUpdated: "2025-08-21",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 7168 },
-    cost: { input: 3, output: 4.5 },
-  },
-  "DeepSeek-V3.2": {
-    id: "DeepSeek-V3.2",
-    name: "DeepSeek V3.2",
-    family: "deepseek",
+  "GLM-5.3": {
+    id: "GLM-5.3",
+    name: "GLM-5.3",
+    family: "glm",
     attachment: false,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
     temperature: true,
     openWeights: true,
-    knowledge: "2024-07",
-    releaseDate: "2025-12-01",
-    lastUpdated: "2025-12-01",
+    releaseDate: "2026-08-14",
+    lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 32768, output: 7168 },
-    cost: { input: 3, output: 4.5 },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 2.8, output: 8.8, cacheRead: 0.14 },
   },
   "Meta-Llama-3.3-70B-Instruct": {
     id: "Meta-Llama-3.3-70B-Instruct",
@@ -61,20 +45,22 @@ export const models = {
     limit: { context: 131072, output: 3072 },
     cost: { input: 0.6, output: 1.2 },
   },
-  "MiniMax-M3": {
-    id: "MiniMax-M3",
-    name: "MiniMax-M3",
+  "MiniMax-M3.1-Flash": {
+    id: "MiniMax-M3.1-Flash",
+    name: "MiniMax-M3.1-Flash",
     family: "minimax",
-    attachment: false,
+    attachment: true,
     reasoning: true,
     toolCall: true,
+    structuredOutput: true,
     temperature: true,
     openWeights: true,
-    releaseDate: "2026-06-01",
-    lastUpdated: "2026-06-01",
-    modalities: { input: ["text"], output: ["text"] },
+    releaseDate: "2026-10-19",
+    lastUpdated: "2026-10-19",
+    status: "beta",
+    modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 1048576 },
-    cost: { input: 0.6, output: 2.4, cacheRead: 0.06 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.03 },
   },
   "gemma-4-31B-it": {
     id: "gemma-4-31B-it",
@@ -113,7 +99,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type SambanovaModelId = keyof typeof models;
-export type SambanovaTextModelId = "DeepSeek-V3.1" | "DeepSeek-V3.2" | "Meta-Llama-3.3-70B-Instruct" | "MiniMax-M3" | "gemma-4-31B-it" | "gpt-oss-120b";
+export type SambanovaTextModelId = "GLM-5.3" | "Meta-Llama-3.3-70B-Instruct" | "MiniMax-M3.1-Flash" | "gemma-4-31B-it" | "gpt-oss-120b";
 export type SambanovaImageModelId = never;
 export type SambanovaAudioModelId = never;
 export type SambanovaVideoModelId = never;

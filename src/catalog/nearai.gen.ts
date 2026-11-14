@@ -139,6 +139,22 @@ export const models = {
     limit: { context: 1000000, output: 128000 },
     cost: { input: 10, output: 50, cacheRead: 0.25 },
   },
+  "anthropic/claude-fable-5-2": {
+    id: "anthropic/claude-fable-5-2",
+    name: "Claude Fable 5.2",
+    family: "claude-fable",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06",
+    releaseDate: "2026-11-09",
+    lastUpdated: "2026-11-09",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 8, output: 40, cacheRead: 0.2 },
+  },
   "anthropic/claude-haiku-4-5": {
     id: "anthropic/claude-haiku-4-5",
     name: "Claude Haiku 4.5 (latest)",
@@ -722,7 +738,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -739,7 +755,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -756,7 +772,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -790,7 +806,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-05-18",
     releaseDate: "2026-09-22",
@@ -807,7 +823,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-04-20",
     releaseDate: "2026-09-22",
@@ -983,7 +999,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type NearaiModelId = keyof typeof models;
-export type NearaiTextModelId = "Qwen/Qwen3-Embedding-0.6B" | "Qwen/Qwen3-Reranker-0.6B" | "Qwen/Qwen3-VL-30B-A3B-Instruct" | "Qwen/Qwen3.6-35B-A3B-FP8" | "Qwen/Qwen3.8-27B" | "Qwen/Qwen3.8-27B-abliterated" | "anthropic/claude-fable-5" | "anthropic/claude-fable-5-1" | "anthropic/claude-haiku-4-5" | "anthropic/claude-haiku-5-5" | "anthropic/claude-opus-4-6" | "anthropic/claude-opus-4-7" | "anthropic/claude-opus-4-8" | "anthropic/claude-opus-5" | "anthropic/claude-opus-5-5" | "anthropic/claude-sonnet-4-5" | "anthropic/claude-sonnet-4-6" | "anthropic/claude-sonnet-5" | "anthropic/claude-sonnet-5-5" | "deepseek-ai/DeepSeek-V4.1-Flash-1017" | "deepseek-ai/DeepSeek-V4.1-Flash-1017-abliterated" | "deepseek/deepseek-v3.2" | "deepseek/deepseek-v4.1-flash-1017" | "google/gemini-2.5-flash" | "google/gemini-2.5-flash-lite" | "google/gemini-2.5-pro" | "google/gemini-3.1-flash-lite" | "google/gemini-3.5-flash" | "google/gemini-3.8-flash" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k3" | "moonshotai/kimi-k3.1-pro" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-5" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5.1" | "openai/gpt-5.2" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.5" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-6-astra" | "openai/gpt-6-luna" | "openai/gpt-6-sol" | "openai/gpt-6.1-sol" | "openai/o3" | "openai/o3-mini" | "openai/o4-mini" | "openai/whisper-large-v3" | "qwen/qwen3.7-max" | "x-ai/grok-4.6" | "x-ai/grok-4.7" | "z-ai/glm-5.3" | "z-ai/glm-5.3-flash";
+export type NearaiTextModelId = "Qwen/Qwen3-Embedding-0.6B" | "Qwen/Qwen3-Reranker-0.6B" | "Qwen/Qwen3-VL-30B-A3B-Instruct" | "Qwen/Qwen3.6-35B-A3B-FP8" | "Qwen/Qwen3.8-27B" | "Qwen/Qwen3.8-27B-abliterated" | "anthropic/claude-fable-5" | "anthropic/claude-fable-5-1" | "anthropic/claude-fable-5-2" | "anthropic/claude-haiku-4-5" | "anthropic/claude-haiku-5-5" | "anthropic/claude-opus-4-6" | "anthropic/claude-opus-4-7" | "anthropic/claude-opus-4-8" | "anthropic/claude-opus-5" | "anthropic/claude-opus-5-5" | "anthropic/claude-sonnet-4-5" | "anthropic/claude-sonnet-4-6" | "anthropic/claude-sonnet-5" | "anthropic/claude-sonnet-5-5" | "deepseek-ai/DeepSeek-V4.1-Flash-1017" | "deepseek-ai/DeepSeek-V4.1-Flash-1017-abliterated" | "deepseek/deepseek-v3.2" | "deepseek/deepseek-v4.1-flash-1017" | "google/gemini-2.5-flash" | "google/gemini-2.5-flash-lite" | "google/gemini-2.5-pro" | "google/gemini-3.1-flash-lite" | "google/gemini-3.5-flash" | "google/gemini-3.8-flash" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k3" | "moonshotai/kimi-k3.1-pro" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-5" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5.1" | "openai/gpt-5.2" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.5" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-6-astra" | "openai/gpt-6-luna" | "openai/gpt-6-sol" | "openai/gpt-6.1-sol" | "openai/o3" | "openai/o3-mini" | "openai/o4-mini" | "openai/whisper-large-v3" | "qwen/qwen3.7-max" | "x-ai/grok-4.6" | "x-ai/grok-4.7" | "z-ai/glm-5.3" | "z-ai/glm-5.3-flash";
 export type NearaiImageModelId = "black-forest-labs/FLUX.2-klein-4B";
 export type NearaiAudioModelId = never;
 export type NearaiVideoModelId = never;

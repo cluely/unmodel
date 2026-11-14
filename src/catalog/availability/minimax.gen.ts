@@ -37,7 +37,7 @@ export const availability = {
     "huggingface": "MiniMaxAI/MiniMax-M2.5",
     "minimax": "MiniMax-M2.5",
     "novita-ai": "minimax/minimax-m2.5",
-    "openrouter": { id: "minimax/minimax-m2.5", narrows: { context: 200000 } },
+    "openrouter": { id: "minimax/minimax-m2.5", narrows: { context: 198000 } },
     "togetherai": "MiniMaxAI/MiniMax-M2.5",
     "vercel": "minimax/minimax-m2.5",
   },

@@ -82,7 +82,7 @@ export const availability = {
     "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
     "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-    "mistral": { id: "deepseek-v4-1-flash-1017", narrows: { drops: ["image"] } },
+    "mistral": "deepseek-v4-1-flash-1017",
     "nebius": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "novita-ai": "deepseek/deepseek-v4.1-flash-1017",
     "openrouter": "deepseek/deepseek-v4.1-flash-1017",

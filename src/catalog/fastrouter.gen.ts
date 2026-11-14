@@ -447,7 +447,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",

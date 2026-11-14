@@ -8,7 +8,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1530 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1531 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -695,8 +695,6 @@ export const CHAT_MODEL_REFS = [
   "openrouter/inference-net/schematron-v2-small",
   "openrouter/inference-net/schematron-v2-turbo",
   "openrouter/kt/midm-k-3.0-pro",
-  "openrouter/liquid/lfm-2.5-2.6b",
-  "openrouter/liquid/lfm-2.5-2.6b:free",
   "openrouter/liquid/lfm-2.5-24b-a2b",
   "openrouter/liquid/lfm-3-1.7b",
   "openrouter/liquid/lfm-3-1.7b:free",
@@ -834,6 +832,7 @@ export const CHAT_MODEL_REFS = [
   "openrouter/openrouter/fusion",
   "openrouter/openrouter/pareto-code",
   "openrouter/particle-ai/particle-1",
+  "openrouter/particle-ai/particle-1:free",
   "openrouter/perceptron/perceptron-mk1",
   "openrouter/perceptron/perceptron-mk1.5",
   "openrouter/perplexity/sonar",
@@ -913,6 +912,7 @@ export const CHAT_MODEL_REFS = [
   "openrouter/thedrummer/skyfall-36b-v2",
   "openrouter/thedrummer/unslopnemo-12b",
   "openrouter/thinkingmachines/inkling",
+  "openrouter/thinkingmachines/inkling-2-small",
   "openrouter/thinkingmachines/inkling-2-small:free",
   "openrouter/thinkingmachines/inkling-small",
   "openrouter/unbiased/pareto-26.10",
@@ -1449,11 +1449,11 @@ export const CHAT_MODEL_REFS = [
   "vercel/openai/text-embedding-3-small",
   "vercel/openai/text-embedding-ada-002",
   "vercel/openai/whisper-1",
+  "vercel/paperinstruments/ultramarine-1-flash",
   "vercel/particle/particle-1",
   "vercel/perplexity/pplx-embed-v1-0.6b",
   "vercel/perplexity/pplx-embed-v1-4b",
   "vercel/perplexity/sonar",
-  "vercel/poolside/laguna-s-2.1",
   "vercel/quiverai/arrow-2",
   "vercel/quiverai/arrow-2-telos",
   "vercel/reflection/beam",
@@ -1486,6 +1486,7 @@ export const CHAT_MODEL_REFS = [
   "vercel/tencent/hy4",
   "vercel/tencent/hy4-preview",
   "vercel/thinkingmachines/inkling",
+  "vercel/thinkingmachines/inkling-2-small",
   "vercel/thinkingmachines/inkling-small",
   "vercel/voyage/rerank-2.5",
   "vercel/voyage/rerank-2.5-lite",

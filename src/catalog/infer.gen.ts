@@ -21,7 +21,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",

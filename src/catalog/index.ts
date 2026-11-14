@@ -48,6 +48,7 @@ export type ProviderId =
   | "blueclaw"
   | "bothub"
   | "boundless"
+  | "byteplus"
   | "cerebras"
   | "chutes"
   | "clarifai"
@@ -252,7 +253,7 @@ export type ProviderId =
  *
  * The widening is a BUNDLE decision, not a taste one, and it is the reason
  * `unmodel/catalog/typed` exists next to this entry. The annotation erases all
- * 235 `.gen` namespaces from this module's declaration —
+ * 236 `.gen` namespaces from this module's declaration —
  * `dist/catalog/index.d.ts` imports nothing but `catalog-types` and stays a
  * few KiB. Dropping it in favour of `satisfies` pulls every generated
  * namespace into the bundled declaration and takes that file to ~3.6 MB, which

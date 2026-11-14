@@ -46,6 +46,19 @@ export const models = {
     limit: { context: 1000000, output: 262144 },
     cost: { input: 0.33, output: 1.31, cacheRead: 0.03 },
   },
+  "deepseek-v4.1-flash-1017-economy": {
+    id: "deepseek-v4.1-flash-1017-economy",
+    name: "DeepSeek V4.1 Flash 1017 (Economy)",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    openWeights: false,
+    releaseDate: "1970-01-01",
+    lastUpdated: "2026-11-14",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0.2, output: 0.6, cacheRead: 0.01 },
+  },
   "gemma-4-26b-a4b-it": {
     id: "gemma-4-26b-a4b-it",
     name: "Gemma 4 26B A4B IT",
@@ -293,7 +306,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type HyperModelId = keyof typeof models;
-export type HyperTextModelId = "deepseek-v4-pro-0813" | "deepseek-v4.1-flash-1017" | "gemma-4-26b-a4b-it" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss-120b" | "inkling" | "kimi-k3" | "kimi-k3.1-pro" | "minimax-m3" | "muse-spark-open" | "prism" | "prism-core" | "prism-flash" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-flash" | "qwen3.8-max";
+export type HyperTextModelId = "deepseek-v4-pro-0813" | "deepseek-v4.1-flash-1017" | "deepseek-v4.1-flash-1017-economy" | "gemma-4-26b-a4b-it" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss-120b" | "inkling" | "kimi-k3" | "kimi-k3.1-pro" | "minimax-m3" | "muse-spark-open" | "prism" | "prism-core" | "prism-flash" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-flash" | "qwen3.8-max";
 export type HyperImageModelId = never;
 export type HyperAudioModelId = never;
 export type HyperVideoModelId = never;

@@ -409,15 +409,15 @@ export const availability = {
     "vercel": "deepseek/deepseek-v4.1-flash",
   },
   "deepseek/deepseek-v4.1-flash-1017": {
-    "baseten": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-    "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
-    "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-    "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-    "mistral": { id: "deepseek-v4-1-flash-1017", narrows: { drops: ["image"] } },
-    "nebius": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-    "novita-ai": "deepseek/deepseek-v4.1-flash-1017",
-    "openrouter": "deepseek/deepseek-v4.1-flash-1017",
-    "scaleway": { id: "deepseek-v4.1-flash-1017", narrows: { context: 256000 } },
+    "baseten": { id: "deepseek-ai/DeepSeek-V4.1-Flash-1017", narrows: { drops: ["pdf"] } },
+    "cloudflare-workers-ai": { id: "@cf/deepseek-ai/deepseek-v4.1-flash-1017", narrows: { drops: ["pdf"] } },
+    "deepinfra": { id: "deepseek-ai/DeepSeek-V4.1-Flash-1017", narrows: { drops: ["pdf"] } },
+    "huggingface": { id: "deepseek-ai/DeepSeek-V4.1-Flash-1017", narrows: { drops: ["pdf"] } },
+    "mistral": { id: "deepseek-v4-1-flash-1017", narrows: { drops: ["pdf"] } },
+    "nebius": { id: "deepseek-ai/DeepSeek-V4.1-Flash-1017", narrows: { drops: ["pdf"] } },
+    "novita-ai": { id: "deepseek/deepseek-v4.1-flash-1017", narrows: { drops: ["pdf"] } },
+    "openrouter": { id: "deepseek/deepseek-v4.1-flash-1017", narrows: { drops: ["pdf"] } },
+    "scaleway": { id: "deepseek-v4.1-flash-1017", narrows: { context: 256000, drops: ["pdf"] } },
     "vercel": "deepseek/deepseek-v4.1-flash-1017",
   },
   "deepseek/deepseek-v4.1-flash-1017-fast": {
@@ -742,7 +742,7 @@ export const availability = {
     "huggingface": "MiniMaxAI/MiniMax-M2.5",
     "minimax": "MiniMax-M2.5",
     "novita-ai": "minimax/minimax-m2.5",
-    "openrouter": { id: "minimax/minimax-m2.5", narrows: { context: 200000 } },
+    "openrouter": { id: "minimax/minimax-m2.5", narrows: { context: 198000 } },
     "togetherai": "MiniMaxAI/MiniMax-M2.5",
     "vercel": "minimax/minimax-m2.5",
   },
@@ -1287,6 +1287,9 @@ export const availability = {
   "openai/whisper-1": {
     "vercel": "openai/whisper-1",
   },
+  "paperinstruments/ultramarine-1-flash": {
+    "vercel": "paperinstruments/ultramarine-1-flash",
+  },
   "particle/particle-1": {
     "openrouter": "particle-ai/particle-1",
     "vercel": "particle/particle-1",
@@ -1301,9 +1304,6 @@ export const availability = {
     "openrouter": "perplexity/sonar",
     "perplexity": { id: "sonar", narrows: { drops: ["image"] } },
     "vercel": "perplexity/sonar",
-  },
-  "poolside/laguna-s-2.1": {
-    "vercel": "poolside/laguna-s-2.1",
   },
   "quiverai/arrow-2": {
     "vercel": "quiverai/arrow-2",
@@ -1435,6 +1435,11 @@ export const availability = {
     "openrouter": { id: "thinkingmachines/inkling", narrows: { drops: ["pdf"] } },
     "togetherai": { id: "thinkingmachines/Inkling", narrows: { drops: ["pdf"] } },
     "vercel": "thinkingmachines/inkling",
+  },
+  "thinkingmachines/inkling-2-small": {
+    "cloudflare-workers-ai": "@cf/thinkingmachines/inkling-2-small",
+    "openrouter": "thinkingmachines/inkling-2-small",
+    "vercel": "thinkingmachines/inkling-2-small",
   },
   "thinkingmachines/inkling-small": {
     "deepinfra": { id: "thinkingmachines/Inkling-Small", narrows: { context: 524288, drops: ["pdf"] } },

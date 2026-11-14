@@ -98,22 +98,6 @@ export const models = {
     limit: { context: 131072, output: 32768 },
     cost: { input: 0.15, output: 0.6 },
   },
-  "kimi-k3": {
-    id: "kimi-k3",
-    name: "Kimi K3",
-    family: "kimi-k3",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: false,
-    openWeights: true,
-    releaseDate: "2026-07-16",
-    lastUpdated: "2026-07-16",
-    modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 262144, output: 131072 },
-    cost: { input: 4, output: 20, cacheRead: 0.6 },
-  },
   "kimi-k3-1-pro": {
     id: "kimi-k3-1-pro",
     name: "Kimi K3.1 Pro",
@@ -164,7 +148,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type TinfoilModelId = keyof typeof models;
-export type TinfoilTextModelId = "deepseek-v4-1-flash" | "gemma4-31b" | "glm-5-3" | "gpt-oss-120b" | "gpt-oss-safeguard-120b" | "kimi-k3" | "kimi-k3-1-pro" | "llama3-3-70b" | "nomic-embed-text";
+export type TinfoilTextModelId = "deepseek-v4-1-flash" | "gemma4-31b" | "glm-5-3" | "gpt-oss-120b" | "gpt-oss-safeguard-120b" | "kimi-k3-1-pro" | "llama3-3-70b" | "nomic-embed-text";
 export type TinfoilImageModelId = never;
 export type TinfoilAudioModelId = never;
 export type TinfoilVideoModelId = never;

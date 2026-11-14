@@ -545,21 +545,6 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 0.3, output: 2.5, cacheRead: 0.03 },
   },
-  "gemini-omni-flash-preview": {
-    id: "gemini-omni-flash-preview",
-    name: "Gemini Omni Flash Preview",
-    family: "gemini",
-    attachment: true,
-    reasoning: true,
-    toolCall: false,
-    temperature: true,
-    openWeights: false,
-    releaseDate: "2026-06-30",
-    lastUpdated: "2026-06-30",
-    modalities: { input: ["text", "image", "video"], output: ["video"] },
-    limit: { context: 131072, output: 65536 },
-    cost: { input: 1.5, output: 17.5 },
-  },
   "gemini-pro-latest": {
     id: "gemini-pro-latest",
     name: "Gemini Pro Latest",
@@ -591,6 +576,7 @@ export const models = {
     lastUpdated: "2026-04-02",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
+    cost: { input: 0, output: 0 },
   },
   "gemma-4-31b-it": {
     id: "gemma-4-31b-it",
@@ -606,6 +592,7 @@ export const models = {
     lastUpdated: "2026-04-02",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
+    cost: { input: 0, output: 0 },
   },
   "lyria-3-clip-preview": {
     id: "lyria-3-clip-preview",
@@ -645,4 +632,4 @@ export type GoogleModelId = keyof typeof models;
 export type GoogleTextModelId = "deep-research-max-preview-04-2026" | "deep-research-preview-04-2026" | "gemini-2.5-computer-use-preview-10-2025" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-image" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-flash-live-preview" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.5-live-translate-preview" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-4-argon" | "gemini-4-carbon" | "gemini-4-hydrogen" | "gemini-embedding-001" | "gemini-embedding-2" | "gemini-flash-latest" | "gemini-flash-lite-latest" | "gemini-pro-latest" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "lyria-3-clip-preview" | "lyria-3-pro-preview";
 export type GoogleImageModelId = "deep-research-max-preview-04-2026" | "deep-research-preview-04-2026" | "gemini-2.5-flash-image" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite-image";
 export type GoogleAudioModelId = "gemini-2.5-flash-preview-tts" | "gemini-2.5-pro-preview-tts" | "gemini-3.1-flash-live-preview" | "gemini-3.1-flash-tts-preview" | "gemini-3.5-live-translate-preview" | "lyria-3-clip-preview" | "lyria-3-pro-preview";
-export type GoogleVideoModelId = "gemini-omni-flash-preview";
+export type GoogleVideoModelId = never;

@@ -728,6 +728,22 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 0.375 },
   },
+  "gemini-4-hydrogen": {
+    id: "gemini-4-hydrogen",
+    name: "Gemini 4 Hydrogen",
+    family: "gemini",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-03",
+    releaseDate: "2026-11-12",
+    lastUpdated: "2026-11-12",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 1.5, output: 7.5, cacheRead: 0.075 },
+  },
   "gemini-pro-latest": {
     id: "gemini-pro-latest",
     name: "Gemini Pro Latest",
@@ -1484,7 +1500,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -1518,7 +1534,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1535,7 +1551,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1552,7 +1568,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1586,7 +1602,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-05-18",
     releaseDate: "2026-09-22",
@@ -1603,7 +1619,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-04-20",
     releaseDate: "2026-09-22",
@@ -1636,7 +1652,7 @@ export const models = {
     attachment: true,
     reasoning: true,
     toolCall: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-06-01",
     releaseDate: "2026-10-26",
@@ -3316,7 +3332,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type LlmgatewayModelId = keyof typeof models;
-export type LlmgatewayTextModelId = "auto" | "claude-fable-5" | "claude-fable-5-1" | "claude-fable-5-2" | "claude-haiku-4-5" | "claude-haiku-4-5-20251001" | "claude-haiku-5-5" | "claude-opus-4-5-20251101" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-opus-5-5" | "claude-sonnet-4-5" | "claude-sonnet-4-5-20250929" | "claude-sonnet-4-6" | "claude-sonnet-5" | "claude-sonnet-5-5" | "codestral-2508" | "custom" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4.1-flash" | "deepseek-v4.1-flash-1017" | "deepseek-v4.1-flash-cyber" | "deepseek-v4.1-flash-latest" | "deepseek-v4.1-flash-uncensored" | "devstral-2512" | "fugu-max" | "fugu-ultra" | "fugu-ultra-v2.0" | "gemini-3-flash-preview" | "gemini-3.1-flash-lite" | "gemini-3.1-pro-preview" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-4-argon" | "gemini-4-carbon" | "gemini-pro-latest" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "glm-4-32b-0414-128k" | "glm-4.5" | "glm-4.5-air" | "glm-4.5-airx" | "glm-4.5-x" | "glm-4.5v" | "glm-4.6" | "glm-4.6v" | "glm-4.6v-flashx" | "glm-4.7" | "glm-4.7-flashx" | "glm-5" | "glm-5-turbo" | "glm-5.1" | "glm-5.2" | "glm-5.2-fast" | "glm-5.3" | "glm-5.3-fast" | "glm-5.3-flash" | "glm-5.3-flashx" | "glm-5v-turbo" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4o" | "gpt-4o-mini" | "gpt-4o-mini-transcribe" | "gpt-4o-transcribe" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.2-pro" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-6-luna" | "gpt-6-sol" | "gpt-6.1-sol" | "gpt-6.1-terra" | "gpt-live-transcribe" | "gpt-oss-120b" | "gpt-oss-20b" | "gpt-transcribe" | "granite-4.2-8b" | "grok-4" | "grok-4-1-fast-reasoning" | "grok-4-20-beta-0309-non-reasoning" | "grok-4-20-beta-0309-reasoning" | "grok-4-20-non-reasoning" | "grok-4-20-reasoning" | "grok-4-3" | "grok-4-5" | "grok-4-6" | "grok-4-7" | "grok-build-0-1" | "hy-mt2-plus" | "hy3" | "hy4-preview" | "kimi-k2" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k2.7-code-highspeed" | "kimi-k2.8-preview" | "kimi-k3" | "kimi-k3-fast" | "kimi-k3.1-pro" | "kimi-k3.1-pro-highspeed" | "ling-3.0-flash" | "ling-3.0-flash-vl" | "llama-3.1-70b-instruct" | "llama-3.2-11b-instruct" | "llama-3.3-70b-instruct" | "llama-4-maverick-17b-instruct" | "llama-4-scout-17b-instruct" | "mimo-v2.6-flash" | "mimo-v2.6-pro" | "minimax-m2" | "minimax-m2.1" | "minimax-m2.1-lightning" | "minimax-m2.5" | "minimax-m2.5-highspeed" | "minimax-m2.7" | "minimax-m2.7-highspeed" | "minimax-m3" | "minimax-m3.1-flash" | "minimax-text-01" | "ministral-14b-2512" | "ministral-3b-2512" | "ministral-8b-2512" | "mistral-large-2512" | "mistral-large-4" | "mistral-large-latest" | "mistral-medium-3-5" | "mistral-small-2506" | "mistral-small-2603" | "muse-ember-1.0" | "muse-glimmer-30b" | "muse-spark-1.1" | "muse-spark-1.2" | "muse-spark-1.2-contributor" | "muse-spark-1.3" | "muse-spark-1.3-contributor" | "muse-wonder-1.0" | "nemotron-3-ultra-550b" | "o3" | "qwen-flash" | "qwen-max" | "qwen-plus" | "qwen-plus-latest" | "qwen3-14b" | "qwen3-30b-a3b" | "qwen3-32b" | "qwen3-coder-flash" | "qwen3-vl-235b-a22b-instruct" | "qwen3-vl-30b-a3b-instruct" | "qwen3-vl-plus" | "qwen3.5-122b-a10b" | "qwen3.5-27b" | "qwen3.5-35b-a3b" | "qwen3.5-9b" | "qwen3.6-27b" | "qwen3.6-35b-a3b" | "qwen3.6-flash" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-flash" | "qwen3.8-max" | "qwen3.8-omni-flash" | "qwen35-397b-a17b" | "reka-edge-2603" | "seed-2-0-code-preview-260328" | "seed-2-0-lite-260428" | "seed-2-0-mini-260428" | "seed-2-0-pro-260328" | "sonar" | "step-3.7-flash" | "step-5-preview";
+export type LlmgatewayTextModelId = "auto" | "claude-fable-5" | "claude-fable-5-1" | "claude-fable-5-2" | "claude-haiku-4-5" | "claude-haiku-4-5-20251001" | "claude-haiku-5-5" | "claude-opus-4-5-20251101" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-opus-5-5" | "claude-sonnet-4-5" | "claude-sonnet-4-5-20250929" | "claude-sonnet-4-6" | "claude-sonnet-5" | "claude-sonnet-5-5" | "codestral-2508" | "custom" | "deepseek-v3.2" | "deepseek-v4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4.1-flash" | "deepseek-v4.1-flash-1017" | "deepseek-v4.1-flash-cyber" | "deepseek-v4.1-flash-latest" | "deepseek-v4.1-flash-uncensored" | "devstral-2512" | "fugu-max" | "fugu-ultra" | "fugu-ultra-v2.0" | "gemini-3-flash-preview" | "gemini-3.1-flash-lite" | "gemini-3.1-pro-preview" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-4-argon" | "gemini-4-carbon" | "gemini-4-hydrogen" | "gemini-pro-latest" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "glm-4-32b-0414-128k" | "glm-4.5" | "glm-4.5-air" | "glm-4.5-airx" | "glm-4.5-x" | "glm-4.5v" | "glm-4.6" | "glm-4.6v" | "glm-4.6v-flashx" | "glm-4.7" | "glm-4.7-flashx" | "glm-5" | "glm-5-turbo" | "glm-5.1" | "glm-5.2" | "glm-5.2-fast" | "glm-5.3" | "glm-5.3-fast" | "glm-5.3-flash" | "glm-5.3-flashx" | "glm-5v-turbo" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4o" | "gpt-4o-mini" | "gpt-4o-mini-transcribe" | "gpt-4o-transcribe" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.2-pro" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-6-luna" | "gpt-6-sol" | "gpt-6.1-sol" | "gpt-6.1-terra" | "gpt-live-transcribe" | "gpt-oss-120b" | "gpt-oss-20b" | "gpt-transcribe" | "granite-4.2-8b" | "grok-4" | "grok-4-1-fast-reasoning" | "grok-4-20-beta-0309-non-reasoning" | "grok-4-20-beta-0309-reasoning" | "grok-4-20-non-reasoning" | "grok-4-20-reasoning" | "grok-4-3" | "grok-4-5" | "grok-4-6" | "grok-4-7" | "grok-build-0-1" | "hy-mt2-plus" | "hy3" | "hy4-preview" | "kimi-k2" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k2.7-code-highspeed" | "kimi-k2.8-preview" | "kimi-k3" | "kimi-k3-fast" | "kimi-k3.1-pro" | "kimi-k3.1-pro-highspeed" | "ling-3.0-flash" | "ling-3.0-flash-vl" | "llama-3.1-70b-instruct" | "llama-3.2-11b-instruct" | "llama-3.3-70b-instruct" | "llama-4-maverick-17b-instruct" | "llama-4-scout-17b-instruct" | "mimo-v2.6-flash" | "mimo-v2.6-pro" | "minimax-m2" | "minimax-m2.1" | "minimax-m2.1-lightning" | "minimax-m2.5" | "minimax-m2.5-highspeed" | "minimax-m2.7" | "minimax-m2.7-highspeed" | "minimax-m3" | "minimax-m3.1-flash" | "minimax-text-01" | "ministral-14b-2512" | "ministral-3b-2512" | "ministral-8b-2512" | "mistral-large-2512" | "mistral-large-4" | "mistral-large-latest" | "mistral-medium-3-5" | "mistral-small-2506" | "mistral-small-2603" | "muse-ember-1.0" | "muse-glimmer-30b" | "muse-spark-1.1" | "muse-spark-1.2" | "muse-spark-1.2-contributor" | "muse-spark-1.3" | "muse-spark-1.3-contributor" | "muse-wonder-1.0" | "nemotron-3-ultra-550b" | "o3" | "qwen-flash" | "qwen-max" | "qwen-plus" | "qwen-plus-latest" | "qwen3-14b" | "qwen3-30b-a3b" | "qwen3-32b" | "qwen3-coder-flash" | "qwen3-vl-235b-a22b-instruct" | "qwen3-vl-30b-a3b-instruct" | "qwen3-vl-plus" | "qwen3.5-122b-a10b" | "qwen3.5-27b" | "qwen3.5-35b-a3b" | "qwen3.5-9b" | "qwen3.6-27b" | "qwen3.6-35b-a3b" | "qwen3.6-flash" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-flash" | "qwen3.8-max" | "qwen3.8-omni-flash" | "qwen35-397b-a17b" | "reka-edge-2603" | "seed-2-0-code-preview-260328" | "seed-2-0-lite-260428" | "seed-2-0-mini-260428" | "seed-2-0-pro-260328" | "sonar" | "step-3.7-flash" | "step-5-preview";
 export type LlmgatewayImageModelId = never;
 export type LlmgatewayAudioModelId = never;
 export type LlmgatewayVideoModelId = never;

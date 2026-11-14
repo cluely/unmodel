@@ -2621,7 +2621,7 @@ export const models = {
     lastUpdated: "2025-12-01",
     modalities: { input: ["text", "pdf"], output: ["text"] },
     limit: { context: 163000, output: 65536, input: 163000 },
-    cost: { input: 0.286, output: 0.418, cacheRead: 0.143 },
+    cost: { input: 0.26, output: 0.38, cacheRead: 0.13 },
   },
   "deepseek/deepseek-v3.2:thinking": {
     id: "deepseek/deepseek-v3.2:thinking",
@@ -2638,7 +2638,7 @@ export const models = {
     lastUpdated: "2025-12-01",
     modalities: { input: ["text", "pdf"], output: ["text"] },
     limit: { context: 163000, output: 65536, input: 163000 },
-    cost: { input: 0.286, output: 0.418, cacheRead: 0.143 },
+    cost: { input: 0.26, output: 0.38, cacheRead: 0.13 },
   },
   "deepseek/deepseek-v4-flash": {
     id: "deepseek/deepseek-v4-flash",
@@ -3802,6 +3802,23 @@ export const models = {
     limit: { context: 1048576, output: 32768, input: 1048576 },
     cost: { input: 2, output: 10, cacheRead: 0.1 },
   },
+  "google/gemini-4-hydrogen": {
+    id: "google/gemini-4-hydrogen",
+    name: "Gemini 4 Hydrogen",
+    family: "gemini",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-03",
+    releaseDate: "2026-11-12",
+    lastUpdated: "2026-11-12",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 65536, input: 1048576 },
+    cost: { input: 1.5, output: 7.5, cacheRead: 0.075 },
+  },
   "google/gemini-flash-latest": {
     id: "google/gemini-flash-latest",
     name: "Gemini Flash Latest",
@@ -4527,7 +4544,7 @@ export const models = {
     lastUpdated: "2024-09-25",
     modalities: { input: ["text", "pdf"], output: ["text"] },
     limit: { context: 131072, output: 8192, input: 131072 },
-    cost: { input: 0.0306, output: 0.0493, cacheRead: 0.0153 },
+    cost: { input: 0.05, output: 0.33, cacheRead: 0.025 },
   },
   "meta-llama/llama-3.3-70b-instruct": {
     id: "meta-llama/llama-3.3-70b-instruct",
@@ -4561,7 +4578,7 @@ export const models = {
     lastUpdated: "2025-04-05",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 65536, input: 1048576 },
-    cost: { input: 0.4059, output: 1.1416, cacheRead: 0.2157 },
+    cost: { input: 0.35, output: 1, cacheRead: 0.17 },
   },
   "meta-llama/llama-4-scout": {
     id: "meta-llama/llama-4-scout",
@@ -4765,7 +4782,7 @@ export const models = {
     lastUpdated: "2026-05-03",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 512000, output: 80000, input: 512000 },
-    cost: { input: 0.2719, output: 1.0676, cacheRead: 0.0544 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.06 },
   },
   "minimax/minimax-m2": {
     id: "minimax/minimax-m2",
@@ -4813,7 +4830,7 @@ export const models = {
     lastUpdated: "2026-02-12",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 204800, output: 131072, input: 204800 },
-    cost: { input: 0.27, output: 1.08, cacheRead: 0.027 },
+    cost: { input: 0.295, output: 1.2, cacheRead: 0.06 },
   },
   "minimax/minimax-m2.7": {
     id: "minimax/minimax-m2.7",
@@ -4860,7 +4877,7 @@ export const models = {
     lastUpdated: "2026-06-01",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 512000, output: 80000, input: 512000 },
-    cost: { input: 0.2719, output: 1.0676, cacheRead: 0.0544 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.06 },
   },
   "minimax/minimax-m3.1-flash": {
     id: "minimax/minimax-m3.1-flash",
@@ -4892,7 +4909,7 @@ export const models = {
     lastUpdated: "2026-06-01",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 512000, output: 80000, input: 512000 },
-    cost: { input: 0.2719, output: 1.0676, cacheRead: 0.0544 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.06 },
   },
   "mistral-code-agent-latest": {
     id: "mistral-code-agent-latest",
@@ -4986,7 +5003,7 @@ export const models = {
     lastUpdated: "2025-12-02",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 32768, input: 262144 },
-    cost: { input: 0.2, output: 0.2, cacheRead: 0.1 },
+    cost: { input: 0.2, output: 0.2, cacheRead: 0.02 },
   },
   "mistralai/ministral-14b-instruct-2512": {
     id: "mistralai/ministral-14b-instruct-2512",
@@ -5002,7 +5019,7 @@ export const models = {
     lastUpdated: "2025-12-02",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 32768, input: 262144 },
-    cost: { input: 0.1, output: 0.4, cacheRead: 0.05 },
+    cost: { input: 0.2, output: 0.2, cacheRead: 0.02 },
   },
   "mistralai/ministral-3b-2512": {
     id: "mistralai/ministral-3b-2512",
@@ -5018,7 +5035,7 @@ export const models = {
     lastUpdated: "2025-12-02",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131072, output: 32768, input: 131072 },
-    cost: { input: 0.1, output: 0.1, cacheRead: 0.05 },
+    cost: { input: 0.1, output: 0.1, cacheRead: 0.01 },
   },
   "mistralai/ministral-8b-2512": {
     id: "mistralai/ministral-8b-2512",
@@ -5034,7 +5051,7 @@ export const models = {
     lastUpdated: "2025-12-02",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 32768, input: 262144 },
-    cost: { input: 0.15, output: 0.15, cacheRead: 0.075 },
+    cost: { input: 0.15, output: 0.15, cacheRead: 0.015 },
   },
   "mistralai/mistral-large": {
     id: "mistralai/mistral-large",
@@ -5426,7 +5443,7 @@ export const models = {
     lastUpdated: "2026-04-20",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 65536, input: 262144 },
-    cost: { input: 0.3895, output: 1.64, cacheRead: 0.0656 },
+    cost: { input: 0.5, output: 2.6, cacheRead: 0.125 },
   },
   "moonshotai/kimi-k2.6:thinking": {
     id: "moonshotai/kimi-k2.6:thinking",
@@ -5460,7 +5477,7 @@ export const models = {
     lastUpdated: "2026-06-12",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 65536, input: 262144 },
-    cost: { input: 0.7076, output: 3.5379, cacheRead: 0.1414 },
+    cost: { input: 0.95, output: 4, cacheRead: 0.19 },
   },
   "moonshotai/kimi-k2.7-code-highspeed": {
     id: "moonshotai/kimi-k2.7-code-highspeed",
@@ -5733,7 +5750,7 @@ export const models = {
     lastUpdated: "2025-12-15",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 235929, input: 262144 },
-    cost: { input: 0.17, output: 0.68, cacheRead: 0.085 },
+    cost: { input: 0.05, output: 0.2, cacheRead: 0.025 },
   },
   "nvidia/nemotron-3-super-120b-a12b": {
     id: "nvidia/nemotron-3-super-120b-a12b",
@@ -6251,7 +6268,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -6268,7 +6285,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -6285,7 +6302,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -6302,7 +6319,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -6319,7 +6336,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -6336,7 +6353,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -6353,7 +6370,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -6402,7 +6419,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-05-18",
     releaseDate: "2026-09-22",
@@ -6434,7 +6451,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-04-20",
     releaseDate: "2026-09-22",
@@ -6498,7 +6515,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-06-01",
     releaseDate: "2026-10-26",
@@ -6597,7 +6614,7 @@ export const models = {
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 128000, output: 16384, input: 128000 },
-    cost: { input: 0.03, output: 0.15, cacheRead: 0.015 },
+    cost: { input: 0.03, output: 0.15, cacheRead: 0.03 },
   },
   "openai/gpt-oss-20b": {
     id: "openai/gpt-oss-20b",
@@ -7198,7 +7215,7 @@ export const models = {
     lastUpdated: "2025-04-28",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 41000, output: 32768, input: 41000 },
-    cost: { input: 0.1266, output: 0.5275, cacheRead: 0.0633 },
+    cost: { input: 0.12, output: 0.5, cacheRead: 0.12 },
   },
   "qwen/qwen3-30b-a3b-instruct-2507": {
     id: "qwen/qwen3-30b-a3b-instruct-2507",
@@ -7231,7 +7248,7 @@ export const models = {
     lastUpdated: "2025-04-28",
     modalities: { input: ["text", "pdf"], output: ["text"] },
     limit: { context: 41000, output: 32768, input: 41000 },
-    cost: { input: 0.0925, output: 0.3236, cacheRead: 0.04625 },
+    cost: { input: 0.08, output: 0.28, cacheRead: 0.08 },
   },
   "qwen/qwen3-8b": {
     id: "qwen/qwen3-8b",
@@ -7495,7 +7512,7 @@ export const models = {
     lastUpdated: "2026-02-15",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 65536, input: 262144 },
-    cost: { input: 0.495, output: 3.3, cacheRead: 0.242 },
+    cost: { input: 0.45, output: 3, cacheRead: 0.22 },
   },
   "qwen/qwen3.5-397b-a17b:thinking": {
     id: "qwen/qwen3.5-397b-a17b:thinking",
@@ -7511,7 +7528,7 @@ export const models = {
     lastUpdated: "2026-02-15",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 65536, input: 262144 },
-    cost: { input: 0.495, output: 3.3, cacheRead: 0.242 },
+    cost: { input: 0.45, output: 3, cacheRead: 0.22 },
   },
   "qwen/qwen3.5-9b": {
     id: "qwen/qwen3.5-9b",
@@ -8091,7 +8108,7 @@ export const models = {
     lastUpdated: "2026-08-26",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 1000000, output: 131072, input: 1000000 },
-    cost: { input: 0.1687, output: 0.5286, cacheRead: 0.018, cacheWrite: 0.2 },
+    cost: { input: 0.15, output: 0.47, cacheRead: 0.016, cacheWrite: 0.2 },
   },
   "qwen/qwen3.8-max": {
     id: "qwen/qwen3.8-max",
@@ -8420,23 +8437,6 @@ export const models = {
     limit: { context: 262144, output: 65536, input: 262144 },
     cost: { input: 0.1, output: 0.3, cacheRead: 0.05 },
   },
-  "stepfun-ai/step-3.5-flash-2603": {
-    id: "stepfun-ai/step-3.5-flash-2603",
-    name: "Step 3.5 Flash 2603",
-    family: "step",
-    attachment: false,
-    reasoning: true,
-    toolCall: false,
-    structuredOutput: false,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2025-01",
-    releaseDate: "2026-04-02",
-    lastUpdated: "2026-04-02",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 65536, input: 262144 },
-    cost: { input: 0.1, output: 0.3, cacheRead: 0.05 },
-  },
   "stepfun/step-3.7-flash:thinking": {
     id: "stepfun/step-3.7-flash:thinking",
     name: "Step 3.7 Flash Thinking",
@@ -8526,7 +8526,7 @@ export const models = {
     lastUpdated: "2026-11-04",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 65536, input: 1048576 },
-    cost: { input: 0.462, output: 1.386, cacheRead: 0.0233 },
+    cost: { input: 0.417, output: 1.2505, cacheRead: 0.021 },
   },
   "tencent/hy4-preview": {
     id: "tencent/hy4-preview",
@@ -8976,7 +8976,7 @@ export const models = {
     lastUpdated: "2026-04-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072, input: 1048576 },
-    cost: { input: 0.5051, output: 0.9999, cacheRead: 0.0042, cacheWrite: 0 },
+    cost: { input: 0.435, output: 0.87, cacheRead: 0.0036, cacheWrite: 0 },
   },
   "xiaomi/mimo-v2.5-pro:thinking": {
     id: "xiaomi/mimo-v2.5-pro:thinking",
@@ -8993,7 +8993,7 @@ export const models = {
     lastUpdated: "2026-04-22",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072, input: 1048576 },
-    cost: { input: 0.5051, output: 0.9999, cacheRead: 0.0042, cacheWrite: 0 },
+    cost: { input: 0.435, output: 0.87, cacheRead: 0.0036, cacheWrite: 0 },
   },
   "xiaomi/mimo-v2.5:thinking": {
     id: "xiaomi/mimo-v2.5:thinking",
@@ -9184,7 +9184,7 @@ export const models = {
     lastUpdated: "2025-07-28",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 128000, output: 65536, input: 128000 },
-    cost: { input: 0.3, output: 1.3, cacheRead: 0.15 },
+    cost: { input: 0.6, output: 2.2, cacheRead: 0.11 },
   },
   "z-ai/GLM-4.6-turbo": {
     id: "z-ai/GLM-4.6-turbo",
@@ -9231,7 +9231,7 @@ export const models = {
     lastUpdated: "2025-07-28",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 128000, output: 65536, input: 128000 },
-    cost: { input: 0.3, output: 1.3, cacheRead: 0.15 },
+    cost: { input: 0.6, output: 2.2, cacheRead: 0.11 },
   },
   "z-ai/glm-4.5v": {
     id: "z-ai/glm-4.5v",
@@ -9248,7 +9248,7 @@ export const models = {
     lastUpdated: "2025-08-11",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 65536, output: 16384, input: 65536 },
-    cost: { input: 0.6, output: 1.8, cacheRead: 0.3 },
+    cost: { input: 0.6, output: 1.8, cacheRead: 0.11 },
   },
   "z-ai/glm-4.5v:thinking": {
     id: "z-ai/glm-4.5v:thinking",
@@ -9265,7 +9265,7 @@ export const models = {
     lastUpdated: "2025-08-11",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 65536, output: 16384, input: 65536 },
-    cost: { input: 0.6, output: 1.8, cacheRead: 0.3 },
+    cost: { input: 0.6, output: 1.8, cacheRead: 0.11 },
   },
   "z-ai/glm-4.6": {
     id: "z-ai/glm-4.6",
@@ -9333,7 +9333,7 @@ export const models = {
     lastUpdated: "2025-12-08",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 128000, output: 24000, input: 128000 },
-    cost: { input: 0.3, output: 0.9, cacheRead: 0.15 },
+    cost: { input: 0.3, output: 0.9, cacheRead: 0.055 },
   },
   "z-ai/glm-4.6v-original": {
     id: "z-ai/glm-4.6v-original",
@@ -9350,7 +9350,7 @@ export const models = {
     lastUpdated: "2025-12-08",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 128000, output: 24000, input: 128000 },
-    cost: { input: 0.6, output: 0.9, cacheRead: 0.3 },
+    cost: { input: 0.3, output: 0.9, cacheRead: 0.055 },
   },
   "z-ai/glm-4.7": {
     id: "z-ai/glm-4.7",
@@ -9532,7 +9532,7 @@ export const models = {
     lastUpdated: "2026-04-07",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 200000, output: 131072, input: 200000 },
-    cost: { input: 0.8083, output: 3.2526, cacheRead: 0.18 },
+    cost: { input: 0.966, output: 3.036, cacheRead: 0.1794 },
   },
   "z-ai/glm-5.1:thinking": {
     id: "z-ai/glm-5.1:thinking",
@@ -9548,7 +9548,7 @@ export const models = {
     lastUpdated: "2026-04-07",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 200000, output: 131072, input: 200000 },
-    cost: { input: 0.7614, output: 2.7204, cacheRead: 0.1964 },
+    cost: { input: 0.966, output: 3.036, cacheRead: 0.1794 },
   },
   "z-ai/glm-5.2": {
     id: "z-ai/glm-5.2",
@@ -9564,7 +9564,7 @@ export const models = {
     lastUpdated: "2026-06-13",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072, input: 1048576 },
-    cost: { input: 0.42, output: 1.32, cacheRead: 0.078 },
+    cost: { input: 0.189, output: 0.594, cacheRead: 0.0351 },
   },
   "z-ai/glm-5.2:thinking": {
     id: "z-ai/glm-5.2:thinking",
@@ -9580,7 +9580,7 @@ export const models = {
     lastUpdated: "2026-06-13",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072, input: 1048576 },
-    cost: { input: 0.42, output: 1.32, cacheRead: 0.078 },
+    cost: { input: 0.189, output: 0.594, cacheRead: 0.0351 },
   },
   "z-ai/glm-5.3": {
     id: "z-ai/glm-5.3",
@@ -9786,7 +9786,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type NanoGptModelId = keyof typeof models;
-export type NanoGptTextModelId = "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond" | "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0" | "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.1" | "EVA-UNIT-01/EVA-Qwen2.5-32B-v0.2" | "EVA-UNIT-01/EVA-Qwen2.5-72B-v0.2" | "Envoid/Llama-3.05-NT-Storybreaker-Ministral-70B" | "Envoid/Llama-3.05-Nemotron-Tenyxchat-Storybreaker-70B" | "GLM-4.6-Derestricted-v5" | "GalrionSoftworks/MN-LooseCannon-12B-v1" | "Gemma-4-26B-A4B-MeroMero" | "Gemma-4-26B-A4B-MeroMero:thinking" | "Gemma-4-31B-Agares-v1" | "Gemma-4-31B-Animus-V14.1" | "Gemma-4-31B-AssGuard" | "Gemma-4-31B-Claude-4.6-Opus-Reasoning-Distilled" | "Gemma-4-31B-Cognitive-Unshackled" | "Gemma-4-31B-Dark-Gemistry" | "Gemma-4-31B-DarkIdol" | "Gemma-4-31B-Fabled" | "Gemma-4-31B-GarnetV2" | "Gemma-4-31B-Gembrain-X-Core" | "Gemma-4-31B-Gembrain-uncensored-heretic" | "Gemma-4-31B-Isometry-RP" | "Gemma-4-31B-K1-v5" | "Gemma-4-31B-MeroMero" | "Gemma-4-31B-MeroMero-v2" | "Gemma-4-31B-MeroMero-v2:thinking" | "Gemma-4-31B-Novelist" | "Gemma-4-31B-Queen" | "Gemma-4-31B-SDFT-Heretic-RP" | "Gemma-4-31B-StyleTune" | "Gryphe/MythoMax-L2-13b" | "LLM360/K2-Think" | "LatitudeGames/Wayfarer-Large-70B-Llama-3.3" | "Meta-Llama-3-1-8B-Instruct-FP8" | "NeverSleep/Lumimaid-v0.2-70B" | "Qwen3.5-27B-Blossom-V6.4-Derestricted" | "Qwen3.5-27B-BlueStar-v3-Derestricted" | "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-Derestricted" | "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-Derestricted-Lite" | "Qwen3.5-27B-Queen-Derestricted" | "ReadyArt/MS3.2-The-Omega-Directive-24B-Unslop-v2.0" | "Salesforce/Llama-xLAM-2-70b-fc-r" | "Sao10K/L3-8B-Stheno-v3.2" | "Sao10K/L3.1-70B-Euryale-v2.2" | "Sao10K/L3.1-70B-Hanami-x1" | "Sao10K/L3.3-70B-Euryale-v2.3" | "Steelskull/L3.3-Cu-Mai-R1-70b" | "Steelskull/L3.3-Electra-R1-70b" | "Steelskull/L3.3-MS-Nevoria-70b" | "Steelskull/L3.3-Nevoria-R1-70b" | "TEE/deepseek-v3.2" | "TEE/deepseek-v4.1-flash" | "TEE/gemma-4-26b-a4b-uncensored" | "TEE/gemma-4-31b-it" | "TEE/gemma4-31b" | "TEE/gemma4-31b:thinking" | "TEE/glm-5.1" | "TEE/glm-5.1-thinking" | "TEE/glm-5.2" | "TEE/glm-5.2:thinking" | "TEE/glm-5.3" | "TEE/glm-5.3-flash" | "TEE/gpt-oss-120b" | "TEE/kimi-k2.6" | "TEE/kimi-k3" | "TEE/kimi-k3.1-pro" | "TEE/llama3-3-70b" | "TEE/qwen3.6-27b" | "TEE/qwen3.6-35b-a3b" | "TEE/qwen3.8-27b" | "TheDrummer/Anubis-70B-v1" | "TheDrummer/Anubis-70B-v1.1" | "TheDrummer/Artemis-v1.1" | "TheDrummer/Cydonia-24B-v2" | "TheDrummer/Cydonia-24B-v4" | "TheDrummer/Cydonia-24B-v4.1" | "TheDrummer/Cydonia-24B-v4.3" | "TheDrummer/Magidonia-24B-v4.3" | "TheDrummer/Rocinante-12B-v1.1" | "TheDrummer/UnslopNemo-12B-v4.1" | "TheDrummer/artemis-31b-v1.2" | "TheDrummer/skyfall-36b-v2" | "VongolaChouko/Starcannon-Unleashed-12B-v1.0" | "abacusai/Dracarys-72B-Instruct" | "abliteration-ai/abliterated-model" | "abliteration-ai/abliterated-model-large" | "abliteration-ai/abliterated-model-large-flash" | "abliteration-ai/abliterated-model-large-v2" | "aion-labs/aion-2.0" | "aion-labs/aion-3.0" | "aion-labs/aion-3.0-mini" | "aion-labs/aion-3.5" | "aion-labs/aion-3.5-mini" | "aion-labs/aion-rp-llama-3.1-8b" | "aisingapore/gemma-sea-lion-v4-27b-it" | "aisingapore/qwen-sea-lion-v4-32b-it" | "aleph-alpha/kolibri-1" | "amazon/nova-2-lite-v1" | "amazon/nova-lite-v1" | "amazon/nova-pro-v1" | "anthracite-org/magnum-v2-72b" | "anthracite-org/magnum-v4-72b" | "anthropic/claude-fable-5" | "anthropic/claude-fable-5.1" | "anthropic/claude-fable-5.2" | "anthropic/claude-fable-latest" | "anthropic/claude-haiku-4.5" | "anthropic/claude-haiku-4.5:thinking" | "anthropic/claude-haiku-5.5" | "anthropic/claude-haiku-latest" | "anthropic/claude-opus-4.1" | "anthropic/claude-opus-4.1:thinking" | "anthropic/claude-opus-4.1:thinking:1024" | "anthropic/claude-opus-4.1:thinking:32768" | "anthropic/claude-opus-4.1:thinking:8192" | "anthropic/claude-opus-4.5" | "anthropic/claude-opus-4.5:thinking" | "anthropic/claude-opus-4.6" | "anthropic/claude-opus-4.6:thinking" | "anthropic/claude-opus-4.6:thinking:low" | "anthropic/claude-opus-4.6:thinking:max" | "anthropic/claude-opus-4.6:thinking:medium" | "anthropic/claude-opus-4.7" | "anthropic/claude-opus-4.7:thinking" | "anthropic/claude-opus-4.8" | "anthropic/claude-opus-4.8:thinking" | "anthropic/claude-opus-5" | "anthropic/claude-opus-5.5" | "anthropic/claude-opus-latest" | "anthropic/claude-sonnet-4.5" | "anthropic/claude-sonnet-4.5:thinking" | "anthropic/claude-sonnet-4.6" | "anthropic/claude-sonnet-4.6:thinking" | "anthropic/claude-sonnet-5" | "anthropic/claude-sonnet-5.5" | "anthropic/claude-sonnet-5.5:thinking" | "anthropic/claude-sonnet-5:thinking" | "anthropic/claude-sonnet-latest" | "auto-model" | "auto-model-basic" | "auto-model-premium" | "auto-model-standard" | "baidu/ernie-light-dt-1.0-intl" | "baseten/Kimi-K2-Instruct-FP4" | "bytedance-seed/seed-2-1-turbo" | "bytedance-seed/seed-2.0-code" | "bytedance-seed/seed-2.0-lite" | "bytedance/doubao-seed-character" | "celeris-1" | "claw-high" | "claw-low" | "claw-medium" | "cohere/command-r-plus-08-2024" | "command-a-reasoning-08-2025" | "deepcogito/cogito-v1-preview-qwen-32B" | "deepseek-ai/DeepSeek-R1-0528" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V3.1-Terminus" | "deepseek-ai/DeepSeek-V3.1-Terminus:thinking" | "deepseek-ai/DeepSeek-V3.1:thinking" | "deepseek-ai/deepseek-v3.2-exp" | "deepseek-ai/deepseek-v3.2-exp-thinking" | "deepseek-chat" | "deepseek-v3-0324" | "deepseek/deepseek-latest" | "deepseek/deepseek-v3.2" | "deepseek/deepseek-v3.2:thinking" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-0423" | "deepseek/deepseek-v4-flash-0423:thinking" | "deepseek/deepseek-v4-flash-0731" | "deepseek/deepseek-v4-flash-0731:thinking" | "deepseek/deepseek-v4-flash-latest" | "deepseek/deepseek-v4-flash-vision-exp" | "deepseek/deepseek-v4-flash:thinking" | "deepseek/deepseek-v4-pro-0813" | "deepseek/deepseek-v4-pro-0813:thinking" | "deepseek/deepseek-v4-pro-20260423" | "deepseek/deepseek-v4-pro-20260423:thinking" | "deepseek/deepseek-v4.1-flash" | "deepseek/deepseek-v4.1-flash-0910-uncensored" | "deepseek/deepseek-v4.1-flash-0910-uncensored:thinking" | "deepseek/deepseek-v4.1-flash-1017" | "deepseek/deepseek-v4.1-flash-1017-uncensored" | "deepseek/deepseek-v4.1-flash-1017-uncensored:thinking" | "deepseek/deepseek-v4.1-flash-1017:thinking" | "deepseek/deepseek-v4.1-flash-uncensored" | "deepseek/deepseek-v4.1-flash-uncensored:thinking" | "deepseek/deepseek-v4.1-flash:thinking" | "doubao-seed-2-0-code-preview-260215" | "doubao-seed-2-0-lite-260215" | "doubao-seed-2-0-mini-260215" | "doubao-seed-2-0-pro-260215" | "elorian/glimpse" | "failspy/Meta-Llama-3-70B-Instruct-abliterated-v3.5" | "fastgpt" | "featherless-ai/Qwerky-72B" | "fireworks/ember-1" | "gemini-2.5-flash" | "gemini-2.5-flash-lite" | "gemini-2.5-flash-nothinking" | "gemini-2.5-pro" | "gemini-2.5-pro-preview-06-05" | "gemini-3-pro-image-preview" | "gemma-4-12b-it" | "gemma-4-12b-it-semancer" | "gemma-4-12b-it-starry-ocean" | "gemma-4-12b-it-station-keeper" | "gemma-4-26b-a4b-it-chimerax" | "gemma-4-26b-a4b-it-chimeraxheretic" | "gemma-4-26b-a4b-it-darksoul" | "gemma-4-26b-a4b-it-luminous" | "gemma-4-26b-a4b-it-moonlight" | "gemma-4-26b-a4b-it-musica" | "gemma-4-26b-a4b-it-opusdistill" | "gemma-4-26b-a4b-it-shadowsiren" | "gemma-4-31b-it-darkidol" | "gemma-4-31b-it-fabled" | "gemma-4-31b-it-garnet" | "gemma-4-31b-it-gembrain" | "gemma-4-31b-it-gemsicle" | "gemma-4-31b-it-isometry" | "gemma-4-31b-it-novelist" | "gemma-4-31b-it-scarlet" | "google/diffusiongemma" | "google/gemini-3-flash-preview" | "google/gemini-3-flash-preview-thinking" | "google/gemini-3.1-flash-lite" | "google/gemini-3.1-pro-preview" | "google/gemini-3.1-pro-preview-customtools" | "google/gemini-3.1-pro-preview-high" | "google/gemini-3.1-pro-preview-low" | "google/gemini-3.5-flash" | "google/gemini-3.5-flash-lite" | "google/gemini-3.5-flash-thinking" | "google/gemini-3.6-flash" | "google/gemini-3.7-flash" | "google/gemini-3.8-flash" | "google/gemini-4-argon" | "google/gemini-4-carbon" | "google/gemini-flash-latest" | "google/gemini-flash-lite-latest" | "google/gemini-pro-latest" | "google/gemma-4-26b-a4b-it" | "google/gemma-4-26b-a4b-it-cybersecurity" | "google/gemma-4-26b-a4b-it:thinking" | "google/gemma-4-31b-it" | "google/gemma-4-31b-it:thinking" | "google/gemma4-31b-splituntied" | "heabsy/cyberheabsy" | "heabsy/qwen3.8-27b-uncensored-fast" | "hermes-high" | "hermes-low" | "hermes-medium" | "holo3-35b-a3b" | "holo3-35b-a3b:thinking" | "huihui-ai/DeepSeek-R1-Distill-Llama-70B-abliterated" | "huihui-ai/DeepSeek-R1-Distill-Qwen-32B-abliterated" | "huihui-ai/Llama-3.3-70B-Instruct-abliterated" | "huihui-ai/Qwen2.5-32B-Instruct-abliterated" | "ibm-granite/granite-4.2-8b" | "inception/mercury-2.5-preview" | "inception/mercury-3" | "inclusionai/ling-3.0-flash" | "inclusionai/ling-3.0-flash-vl" | "inclusionai/ling-3.0-flash:thinking" | "inclusionai/ling-3.0-tiny" | "inclusionai/ling-3.0-tiny:thinking" | "inclusionai/ling-3.1-flash" | "inference-net/schematron-v2-small" | "inference-net/schematron-v2-turbo" | "inflatebot/MN-12B-Mag-Mell-R1" | "kimi-k2-instruct-fast" | "lightonai/LightOnOCR-2-1B" | "liquid/lfm-2.5-2.6b" | "liquid/lfm-2.5-24b-a2b" | "liquid/lfm-3-1.7b" | "longcat-2.0" | "longcat-2.0:thinking" | "meganova-ai/manta-flash-1.0" | "meganova-ai/manta-mini-1.0" | "meganova-ai/manta-pro-1.0" | "meituan/longcat-2.5-preview" | "mercury-2" | "mercury-coder-small" | "meta-llama/llama-3.1-8b-instruct" | "meta-llama/llama-3.2-3b-instruct" | "meta-llama/llama-3.3-70b-instruct" | "meta-llama/llama-4-maverick" | "meta-llama/llama-4-scout" | "meta/muse-ember" | "meta/muse-glimmer-30b" | "meta/muse-spark-1.1" | "meta/muse-spark-1.2" | "meta/muse-spark-1.2-contributor" | "meta/muse-spark-1.3" | "meta/muse-spark-1.3-contributor" | "meta/muse-spark-open" | "meta/muse-wonder" | "microsoft/wizardlm-2-8x22b" | "minimax/minimax-01" | "minimax/minimax-latest" | "minimax/minimax-m2" | "minimax/minimax-m2.1" | "minimax/minimax-m2.5" | "minimax/minimax-m2.7" | "minimax/minimax-m2.7-turbo" | "minimax/minimax-m3" | "minimax/minimax-m3.1-flash" | "minimax/minimax-m3:thinking" | "mistral-code-agent-latest" | "mistral-code-latest" | "mistralai/codestral-2508" | "mistralai/devstral-2-123b-instruct-2512" | "mistralai/devstral-small-2505" | "mistralai/ministral-14b-2512" | "mistralai/ministral-14b-instruct-2512" | "mistralai/ministral-3b-2512" | "mistralai/ministral-8b-2512" | "mistralai/mistral-large" | "mistralai/mistral-large-4" | "mistralai/mistral-medium-3" | "mistralai/mistral-medium-3.1" | "mistralai/mistral-medium-3.5" | "mistralai/mistral-medium-3.5:thinking" | "mistralai/mistral-nemo-instruct-2407" | "mistralai/mistral-saba" | "mistralai/mistral-small-24b-instruct-2501" | "mistralai/mistral-small-3.1-24b-instruct" | "mistralai/mistral-small-3.2-24b-instruct" | "mistralai/mistral-small-4-119b-2603" | "mistralai/mistral-small-4-119b-2603:thinking" | "mistralai/mixtral-8x22b-instruct-v0.1" | "mlabonne/NeuralDaredevil-8B-abliterated" | "moondream/moondream3-preview" | "moondream/moondream3.1-9b-a2b" | "moonshotai/Kimi-K2-Instruct-0905" | "moonshotai/kimi-k2-instruct" | "moonshotai/kimi-k2-instruct-0711" | "moonshotai/kimi-k2-thinking" | "moonshotai/kimi-k2.5" | "moonshotai/kimi-k2.5:thinking" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k2.6:thinking" | "moonshotai/kimi-k2.7-code" | "moonshotai/kimi-k2.7-code-highspeed" | "moonshotai/kimi-k3" | "moonshotai/kimi-k3.1-pro" | "moonshotai/kimi-k3.1-pro-highspeed" | "moonshotai/kimi-latest" | "nano-gpt-help" | "nanogpt/coding-router" | "nanogpt/coding-router:high" | "nanogpt/coding-router:low" | "nanogpt/coding-router:max" | "nanogpt/coding-router:medium" | "nex-agi/nex-n2.5-mini" | "nex-agi/nex-n2.5-pro" | "nex-agi/nex-n2.6" | "nothingiisreal/L3.1-70B-Celeste-V0.1-BF16" | "nvidia/Llama-3.1-Nemotron-70B-Instruct-HF" | "nvidia/Llama-3.3-Nemotron-Super-49B-v1" | "nvidia/nemotron-3-nano-30b-a3b" | "nvidia/nemotron-3-super-120b-a12b" | "nvidia/nemotron-3-super-120b-a12b:thinking" | "nvidia/nemotron-3-ultra-550b-a55b" | "nvidia/nemotron-3-ultra-550b-a55b:thinking" | "nvidia/nemotron-3.5-content-safety" | "nvidia/nemotron-3.5-lightning" | "nvidia/nemotron-3.5-lightning:thinking" | "nvidia/nemotron-3.5-super-vl" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-4o" | "openai/gpt-4o-2024-08-06" | "openai/gpt-4o-2024-11-20" | "openai/gpt-4o-mini" | "openai/gpt-5" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5-pro" | "openai/gpt-5.1" | "openai/gpt-5.1-2025-11-13" | "openai/gpt-5.1-codex" | "openai/gpt-5.1-codex-max" | "openai/gpt-5.1-codex-mini" | "openai/gpt-5.2" | "openai/gpt-5.2-codex" | "openai/gpt-5.3-codex" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.5" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-luna-pro" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-sol-pro" | "openai/gpt-5.6-terra" | "openai/gpt-5.6-terra-pro" | "openai/gpt-6-astra" | "openai/gpt-6-astra-pro" | "openai/gpt-6-luna" | "openai/gpt-6-luna-pro" | "openai/gpt-6-sol" | "openai/gpt-6-sol-pro" | "openai/gpt-6.1-sol" | "openai/gpt-6.1-sol-pro" | "openai/gpt-6.1-terra" | "openai/gpt-6.1-terra-pro" | "openai/gpt-astra-latest" | "openai/gpt-chat-latest" | "openai/gpt-latest" | "openai/gpt-luna-latest" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "openai/gpt-oss-safeguard-20b" | "openai/gpt-sol-latest" | "openai/gpt-terra-latest" | "openai/o1" | "openai/o3" | "openai/o3-pro-2025-06-10" | "orca/orcacyber-flash-1.0" | "orca/orcacyber-flash-1.0:thinking" | "orca/orcacyber-glm-5.3-flash" | "orca/orcacyber-k3.1-pro" | "orca/orcacyber-mimo-flash" | "orca/orcacyber-minimax-m3.1-flash" | "orca/orcacyber-qwen3.8-flash-next" | "orca/orcacyber-zero-1.5" | "ornith-ai/ornith-1.5-122b" | "ornith-ai/ornith-1.5-35b-a3b" | "ornith-ai/ornith-1.5-35b-a3b:thinking" | "pamanseau/OpenReasoning-Nemotron-32B" | "particle-ai/particle-1" | "perceptron/perceptron-mk1" | "perceptron/perceptron-mk1.5" | "phi-4-mini-instruct" | "phi-4-multimodal-instruct" | "pokee-isaac" | "pqhaz/DeepSeek-V4.1-Flash-1017-heretic" | "pqhaz/DeepSeek-V4.1-Flash-1017-heretic:thinking" | "prism-ml/ternary-bonsai-2-27b" | "prism-ml/ternary-bonsai-2-9b" | "qwen/qwen-2.5-72b-instruct" | "qwen/qwen-max" | "qwen/qwen-plus" | "qwen/qwen-turbo" | "qwen/qwen2.5-coder-32b-instruct" | "qwen/qwen2.5-vl-72b-instruct" | "qwen/qwen3-14b" | "qwen/qwen3-235b-a22b-instruct-2507" | "qwen/qwen3-235b-a22b-thinking-2507" | "qwen/qwen3-30b-a3b" | "qwen/qwen3-30b-a3b-instruct-2507" | "qwen/qwen3-32b" | "qwen/qwen3-8b" | "qwen/qwen3-coder" | "qwen/qwen3-coder-30b-a3b-instruct" | "qwen/qwen3-coder-flash" | "qwen/qwen3-coder-next" | "qwen/qwen3-next-80b-a3b-instruct" | "qwen/qwen3-next-80b-a3b-thinking" | "qwen/qwen3-vl-235b-a22b-instruct" | "qwen/qwen3-vl-235b-a22b-thinking" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-122b-a10b:thinking" | "qwen/qwen3.5-27b" | "qwen/qwen3.5-27b:thinking" | "qwen/qwen3.5-35b-a3b" | "qwen/qwen3.5-35b-a3b:thinking" | "qwen/qwen3.5-397b-a17b" | "qwen/qwen3.5-397b-a17b:thinking" | "qwen/qwen3.5-9b" | "qwen/qwen3.5-flash" | "qwen/qwen3.5-flash:thinking" | "qwen/qwen3.5-omni-flash" | "qwen/qwen3.5-omni-plus" | "qwen/qwen3.5-plus" | "qwen/qwen3.5-plus:thinking" | "qwen/qwen3.6-27b" | "qwen/qwen3.6-27b:thinking" | "qwen/qwen3.6-35b-a3b" | "qwen/qwen3.6-35b-a3b:thinking" | "qwen/qwen3.6-flash" | "qwen/qwen3.6-max-preview" | "qwen/qwen3.6-plus" | "qwen/qwen3.7-flash" | "qwen/qwen3.7-flash:thinking" | "qwen/qwen3.7-max" | "qwen/qwen3.7-max:thinking" | "qwen/qwen3.7-plus" | "qwen/qwen3.7-plus:thinking" | "qwen/qwen3.8-27b" | "qwen/qwen3.8-27b-antislop" | "qwen/qwen3.8-27b-cybersecurity" | "qwen/qwen3.8-27b-darkidol" | "qwen/qwen3.8-27b-fable" | "qwen/qwen3.8-27b-fimi" | "qwen/qwen3.8-27b-hemmingway" | "qwen/qwen3.8-27b-kimiko" | "qwen/qwen3.8-27b-kiwen" | "qwen/qwen3.8-27b-novelist" | "qwen/qwen3.8-27b-queen" | "qwen/qwen3.8-27b-swift" | "qwen/qwen3.8-27b-synthia" | "qwen/qwen3.8-27b-uncensored" | "qwen/qwen3.8-27b-uncensored:thinking" | "qwen/qwen3.8-27b:thinking" | "qwen/qwen3.8-flash" | "qwen/qwen3.8-max" | "qwen/qwen3.8-max-0902" | "qwen/qwen3.8-max-prime" | "qwen/qwen3.8-max:thinking" | "qwen/qwen3.8-omni-flash" | "qwen3-vl-235b-a22b-instruct-original" | "reflection/beam-1.0" | "reka/reka-edge-2603" | "reka/reka-flash-3" | "ricursiveai/ripple-65b-preview" | "sakana/fugu-max" | "sakana/fugu-ultra" | "sakana/fugu-ultra-v1.1" | "sarvam-105b" | "shisa-ai/shisa-v2-llama3.3-70b" | "shisa-ai/shisa-v2.1-llama3.3-70b" | "sicariussicariistuff/assistant-pepe-32b" | "soob3123/GrayLine-Qwen3-8B" | "soob3123/Veiled-Calla-12B" | "speakleash/bielik-11b-v3.0-instruct" | "stepfun-ai/step-3.5-flash" | "stepfun-ai/step-3.5-flash-2603" | "stepfun/step-3.7-flash:thinking" | "stepfun/step-5-preview" | "synth-2.5-flash" | "synth-2.5-pro" | "tencent/hy3" | "tencent/hy4" | "tencent/hy4-preview" | "thinkingmachines/Inkling-Small" | "thinkingmachines/Inkling-Small:thinking" | "thinkingmachines/inkling" | "thinkingmachines/inkling:thinking" | "unbiased/pareto-26.10" | "unbiased/pareto-26.9" | "undi95/remm-slerp-l2-13b" | "universal-summarizer" | "unsloth/gemma-3-12b-it" | "unsloth/gemma-3-27b-it" | "unsloth/gemma-3-4b-it" | "upstage/solar-mini4" | "upstage/solar-mini4:thinking" | "upstage/solar-pro-3" | "upstage/solar-pro4" | "upstage/solar-pro4:thinking" | "venice-uncensored" | "x-ai/grok-4.20" | "x-ai/grok-4.20-multi-agent" | "x-ai/grok-4.3" | "x-ai/grok-4.5" | "x-ai/grok-4.6" | "x-ai/grok-4.7" | "x-ai/grok-build-0.1" | "x-ai/grok-latest" | "xiaomi/mimo-v2.5" | "xiaomi/mimo-v2.5-pro" | "xiaomi/mimo-v2.5-pro:thinking" | "xiaomi/mimo-v2.5:thinking" | "xiaomi/mimo-v2.6-flash" | "xiaomi/mimo-v2.6-flash-abliterated" | "xiaomi/mimo-v2.6-flash-uncensored" | "xiaomi/mimo-v2.6-flash-uncensored:thinking" | "xiaomi/mimo-v2.6-pro" | "xiaomi/mimo-v2.6-pro-ultraspeed" | "xingchen-agi/xing4.0-29b-a4b" | "xtools-at/deepseek-v4-pro-qwen3.5-9b-uncensored-heretic" | "z-ai/GLM-4.5-Air" | "z-ai/GLM-4.5-Air:thinking" | "z-ai/GLM-4.5:thinking" | "z-ai/GLM-4.6-turbo" | "z-ai/GLM-4.6-turbo:thinking" | "z-ai/glm-4.5" | "z-ai/glm-4.5v" | "z-ai/glm-4.5v:thinking" | "z-ai/glm-4.6" | "z-ai/glm-4.6-original" | "z-ai/glm-4.6:thinking" | "z-ai/glm-4.6v" | "z-ai/glm-4.6v-original" | "z-ai/glm-4.7" | "z-ai/glm-4.7-flash" | "z-ai/glm-4.7-flash:thinking" | "z-ai/glm-4.7-original" | "z-ai/glm-4.7-original:thinking" | "z-ai/glm-4.7:thinking" | "z-ai/glm-5" | "z-ai/glm-5-original" | "z-ai/glm-5-original:thinking" | "z-ai/glm-5-turbo" | "z-ai/glm-5.1" | "z-ai/glm-5.1:thinking" | "z-ai/glm-5.2" | "z-ai/glm-5.2:thinking" | "z-ai/glm-5.3" | "z-ai/glm-5.3-flash" | "z-ai/glm-5.3-flash-apex" | "z-ai/glm-5.3-flash-apex-abliterated" | "z-ai/glm-5.3-flash-cybersecurity" | "z-ai/glm-5.3-flash-uncensored" | "z-ai/glm-5.3-flashx-legal" | "z-ai/glm-5.3-uncensored" | "z-ai/glm-5.3:thinking" | "z-ai/glm-5:thinking" | "z-ai/glm-5v-turbo" | "z-ai/glm-5v-turbo:thinking" | "z-ai/glm-latest";
+export type NanoGptTextModelId = "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond" | "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0" | "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.1" | "EVA-UNIT-01/EVA-Qwen2.5-32B-v0.2" | "EVA-UNIT-01/EVA-Qwen2.5-72B-v0.2" | "Envoid/Llama-3.05-NT-Storybreaker-Ministral-70B" | "Envoid/Llama-3.05-Nemotron-Tenyxchat-Storybreaker-70B" | "GLM-4.6-Derestricted-v5" | "GalrionSoftworks/MN-LooseCannon-12B-v1" | "Gemma-4-26B-A4B-MeroMero" | "Gemma-4-26B-A4B-MeroMero:thinking" | "Gemma-4-31B-Agares-v1" | "Gemma-4-31B-Animus-V14.1" | "Gemma-4-31B-AssGuard" | "Gemma-4-31B-Claude-4.6-Opus-Reasoning-Distilled" | "Gemma-4-31B-Cognitive-Unshackled" | "Gemma-4-31B-Dark-Gemistry" | "Gemma-4-31B-DarkIdol" | "Gemma-4-31B-Fabled" | "Gemma-4-31B-GarnetV2" | "Gemma-4-31B-Gembrain-X-Core" | "Gemma-4-31B-Gembrain-uncensored-heretic" | "Gemma-4-31B-Isometry-RP" | "Gemma-4-31B-K1-v5" | "Gemma-4-31B-MeroMero" | "Gemma-4-31B-MeroMero-v2" | "Gemma-4-31B-MeroMero-v2:thinking" | "Gemma-4-31B-Novelist" | "Gemma-4-31B-Queen" | "Gemma-4-31B-SDFT-Heretic-RP" | "Gemma-4-31B-StyleTune" | "Gryphe/MythoMax-L2-13b" | "LLM360/K2-Think" | "LatitudeGames/Wayfarer-Large-70B-Llama-3.3" | "Meta-Llama-3-1-8B-Instruct-FP8" | "NeverSleep/Lumimaid-v0.2-70B" | "Qwen3.5-27B-Blossom-V6.4-Derestricted" | "Qwen3.5-27B-BlueStar-v3-Derestricted" | "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-Derestricted" | "Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-Derestricted-Lite" | "Qwen3.5-27B-Queen-Derestricted" | "ReadyArt/MS3.2-The-Omega-Directive-24B-Unslop-v2.0" | "Salesforce/Llama-xLAM-2-70b-fc-r" | "Sao10K/L3-8B-Stheno-v3.2" | "Sao10K/L3.1-70B-Euryale-v2.2" | "Sao10K/L3.1-70B-Hanami-x1" | "Sao10K/L3.3-70B-Euryale-v2.3" | "Steelskull/L3.3-Cu-Mai-R1-70b" | "Steelskull/L3.3-Electra-R1-70b" | "Steelskull/L3.3-MS-Nevoria-70b" | "Steelskull/L3.3-Nevoria-R1-70b" | "TEE/deepseek-v3.2" | "TEE/deepseek-v4.1-flash" | "TEE/gemma-4-26b-a4b-uncensored" | "TEE/gemma-4-31b-it" | "TEE/gemma4-31b" | "TEE/gemma4-31b:thinking" | "TEE/glm-5.1" | "TEE/glm-5.1-thinking" | "TEE/glm-5.2" | "TEE/glm-5.2:thinking" | "TEE/glm-5.3" | "TEE/glm-5.3-flash" | "TEE/gpt-oss-120b" | "TEE/kimi-k2.6" | "TEE/kimi-k3" | "TEE/kimi-k3.1-pro" | "TEE/llama3-3-70b" | "TEE/qwen3.6-27b" | "TEE/qwen3.6-35b-a3b" | "TEE/qwen3.8-27b" | "TheDrummer/Anubis-70B-v1" | "TheDrummer/Anubis-70B-v1.1" | "TheDrummer/Artemis-v1.1" | "TheDrummer/Cydonia-24B-v2" | "TheDrummer/Cydonia-24B-v4" | "TheDrummer/Cydonia-24B-v4.1" | "TheDrummer/Cydonia-24B-v4.3" | "TheDrummer/Magidonia-24B-v4.3" | "TheDrummer/Rocinante-12B-v1.1" | "TheDrummer/UnslopNemo-12B-v4.1" | "TheDrummer/artemis-31b-v1.2" | "TheDrummer/skyfall-36b-v2" | "VongolaChouko/Starcannon-Unleashed-12B-v1.0" | "abacusai/Dracarys-72B-Instruct" | "abliteration-ai/abliterated-model" | "abliteration-ai/abliterated-model-large" | "abliteration-ai/abliterated-model-large-flash" | "abliteration-ai/abliterated-model-large-v2" | "aion-labs/aion-2.0" | "aion-labs/aion-3.0" | "aion-labs/aion-3.0-mini" | "aion-labs/aion-3.5" | "aion-labs/aion-3.5-mini" | "aion-labs/aion-rp-llama-3.1-8b" | "aisingapore/gemma-sea-lion-v4-27b-it" | "aisingapore/qwen-sea-lion-v4-32b-it" | "aleph-alpha/kolibri-1" | "amazon/nova-2-lite-v1" | "amazon/nova-lite-v1" | "amazon/nova-pro-v1" | "anthracite-org/magnum-v2-72b" | "anthracite-org/magnum-v4-72b" | "anthropic/claude-fable-5" | "anthropic/claude-fable-5.1" | "anthropic/claude-fable-5.2" | "anthropic/claude-fable-latest" | "anthropic/claude-haiku-4.5" | "anthropic/claude-haiku-4.5:thinking" | "anthropic/claude-haiku-5.5" | "anthropic/claude-haiku-latest" | "anthropic/claude-opus-4.1" | "anthropic/claude-opus-4.1:thinking" | "anthropic/claude-opus-4.1:thinking:1024" | "anthropic/claude-opus-4.1:thinking:32768" | "anthropic/claude-opus-4.1:thinking:8192" | "anthropic/claude-opus-4.5" | "anthropic/claude-opus-4.5:thinking" | "anthropic/claude-opus-4.6" | "anthropic/claude-opus-4.6:thinking" | "anthropic/claude-opus-4.6:thinking:low" | "anthropic/claude-opus-4.6:thinking:max" | "anthropic/claude-opus-4.6:thinking:medium" | "anthropic/claude-opus-4.7" | "anthropic/claude-opus-4.7:thinking" | "anthropic/claude-opus-4.8" | "anthropic/claude-opus-4.8:thinking" | "anthropic/claude-opus-5" | "anthropic/claude-opus-5.5" | "anthropic/claude-opus-latest" | "anthropic/claude-sonnet-4.5" | "anthropic/claude-sonnet-4.5:thinking" | "anthropic/claude-sonnet-4.6" | "anthropic/claude-sonnet-4.6:thinking" | "anthropic/claude-sonnet-5" | "anthropic/claude-sonnet-5.5" | "anthropic/claude-sonnet-5.5:thinking" | "anthropic/claude-sonnet-5:thinking" | "anthropic/claude-sonnet-latest" | "auto-model" | "auto-model-basic" | "auto-model-premium" | "auto-model-standard" | "baidu/ernie-light-dt-1.0-intl" | "baseten/Kimi-K2-Instruct-FP4" | "bytedance-seed/seed-2-1-turbo" | "bytedance-seed/seed-2.0-code" | "bytedance-seed/seed-2.0-lite" | "bytedance/doubao-seed-character" | "celeris-1" | "claw-high" | "claw-low" | "claw-medium" | "cohere/command-r-plus-08-2024" | "command-a-reasoning-08-2025" | "deepcogito/cogito-v1-preview-qwen-32B" | "deepseek-ai/DeepSeek-R1-0528" | "deepseek-ai/DeepSeek-V3.1" | "deepseek-ai/DeepSeek-V3.1-Terminus" | "deepseek-ai/DeepSeek-V3.1-Terminus:thinking" | "deepseek-ai/DeepSeek-V3.1:thinking" | "deepseek-ai/deepseek-v3.2-exp" | "deepseek-ai/deepseek-v3.2-exp-thinking" | "deepseek-chat" | "deepseek-v3-0324" | "deepseek/deepseek-latest" | "deepseek/deepseek-v3.2" | "deepseek/deepseek-v3.2:thinking" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-0423" | "deepseek/deepseek-v4-flash-0423:thinking" | "deepseek/deepseek-v4-flash-0731" | "deepseek/deepseek-v4-flash-0731:thinking" | "deepseek/deepseek-v4-flash-latest" | "deepseek/deepseek-v4-flash-vision-exp" | "deepseek/deepseek-v4-flash:thinking" | "deepseek/deepseek-v4-pro-0813" | "deepseek/deepseek-v4-pro-0813:thinking" | "deepseek/deepseek-v4-pro-20260423" | "deepseek/deepseek-v4-pro-20260423:thinking" | "deepseek/deepseek-v4.1-flash" | "deepseek/deepseek-v4.1-flash-0910-uncensored" | "deepseek/deepseek-v4.1-flash-0910-uncensored:thinking" | "deepseek/deepseek-v4.1-flash-1017" | "deepseek/deepseek-v4.1-flash-1017-uncensored" | "deepseek/deepseek-v4.1-flash-1017-uncensored:thinking" | "deepseek/deepseek-v4.1-flash-1017:thinking" | "deepseek/deepseek-v4.1-flash-uncensored" | "deepseek/deepseek-v4.1-flash-uncensored:thinking" | "deepseek/deepseek-v4.1-flash:thinking" | "doubao-seed-2-0-code-preview-260215" | "doubao-seed-2-0-lite-260215" | "doubao-seed-2-0-mini-260215" | "doubao-seed-2-0-pro-260215" | "elorian/glimpse" | "failspy/Meta-Llama-3-70B-Instruct-abliterated-v3.5" | "fastgpt" | "featherless-ai/Qwerky-72B" | "fireworks/ember-1" | "gemini-2.5-flash" | "gemini-2.5-flash-lite" | "gemini-2.5-flash-nothinking" | "gemini-2.5-pro" | "gemini-2.5-pro-preview-06-05" | "gemini-3-pro-image-preview" | "gemma-4-12b-it" | "gemma-4-12b-it-semancer" | "gemma-4-12b-it-starry-ocean" | "gemma-4-12b-it-station-keeper" | "gemma-4-26b-a4b-it-chimerax" | "gemma-4-26b-a4b-it-chimeraxheretic" | "gemma-4-26b-a4b-it-darksoul" | "gemma-4-26b-a4b-it-luminous" | "gemma-4-26b-a4b-it-moonlight" | "gemma-4-26b-a4b-it-musica" | "gemma-4-26b-a4b-it-opusdistill" | "gemma-4-26b-a4b-it-shadowsiren" | "gemma-4-31b-it-darkidol" | "gemma-4-31b-it-fabled" | "gemma-4-31b-it-garnet" | "gemma-4-31b-it-gembrain" | "gemma-4-31b-it-gemsicle" | "gemma-4-31b-it-isometry" | "gemma-4-31b-it-novelist" | "gemma-4-31b-it-scarlet" | "google/diffusiongemma" | "google/gemini-3-flash-preview" | "google/gemini-3-flash-preview-thinking" | "google/gemini-3.1-flash-lite" | "google/gemini-3.1-pro-preview" | "google/gemini-3.1-pro-preview-customtools" | "google/gemini-3.1-pro-preview-high" | "google/gemini-3.1-pro-preview-low" | "google/gemini-3.5-flash" | "google/gemini-3.5-flash-lite" | "google/gemini-3.5-flash-thinking" | "google/gemini-3.6-flash" | "google/gemini-3.7-flash" | "google/gemini-3.8-flash" | "google/gemini-4-argon" | "google/gemini-4-carbon" | "google/gemini-4-hydrogen" | "google/gemini-flash-latest" | "google/gemini-flash-lite-latest" | "google/gemini-pro-latest" | "google/gemma-4-26b-a4b-it" | "google/gemma-4-26b-a4b-it-cybersecurity" | "google/gemma-4-26b-a4b-it:thinking" | "google/gemma-4-31b-it" | "google/gemma-4-31b-it:thinking" | "google/gemma4-31b-splituntied" | "heabsy/cyberheabsy" | "heabsy/qwen3.8-27b-uncensored-fast" | "hermes-high" | "hermes-low" | "hermes-medium" | "holo3-35b-a3b" | "holo3-35b-a3b:thinking" | "huihui-ai/DeepSeek-R1-Distill-Llama-70B-abliterated" | "huihui-ai/DeepSeek-R1-Distill-Qwen-32B-abliterated" | "huihui-ai/Llama-3.3-70B-Instruct-abliterated" | "huihui-ai/Qwen2.5-32B-Instruct-abliterated" | "ibm-granite/granite-4.2-8b" | "inception/mercury-2.5-preview" | "inception/mercury-3" | "inclusionai/ling-3.0-flash" | "inclusionai/ling-3.0-flash-vl" | "inclusionai/ling-3.0-flash:thinking" | "inclusionai/ling-3.0-tiny" | "inclusionai/ling-3.0-tiny:thinking" | "inclusionai/ling-3.1-flash" | "inference-net/schematron-v2-small" | "inference-net/schematron-v2-turbo" | "inflatebot/MN-12B-Mag-Mell-R1" | "kimi-k2-instruct-fast" | "lightonai/LightOnOCR-2-1B" | "liquid/lfm-2.5-2.6b" | "liquid/lfm-2.5-24b-a2b" | "liquid/lfm-3-1.7b" | "longcat-2.0" | "longcat-2.0:thinking" | "meganova-ai/manta-flash-1.0" | "meganova-ai/manta-mini-1.0" | "meganova-ai/manta-pro-1.0" | "meituan/longcat-2.5-preview" | "mercury-2" | "mercury-coder-small" | "meta-llama/llama-3.1-8b-instruct" | "meta-llama/llama-3.2-3b-instruct" | "meta-llama/llama-3.3-70b-instruct" | "meta-llama/llama-4-maverick" | "meta-llama/llama-4-scout" | "meta/muse-ember" | "meta/muse-glimmer-30b" | "meta/muse-spark-1.1" | "meta/muse-spark-1.2" | "meta/muse-spark-1.2-contributor" | "meta/muse-spark-1.3" | "meta/muse-spark-1.3-contributor" | "meta/muse-spark-open" | "meta/muse-wonder" | "microsoft/wizardlm-2-8x22b" | "minimax/minimax-01" | "minimax/minimax-latest" | "minimax/minimax-m2" | "minimax/minimax-m2.1" | "minimax/minimax-m2.5" | "minimax/minimax-m2.7" | "minimax/minimax-m2.7-turbo" | "minimax/minimax-m3" | "minimax/minimax-m3.1-flash" | "minimax/minimax-m3:thinking" | "mistral-code-agent-latest" | "mistral-code-latest" | "mistralai/codestral-2508" | "mistralai/devstral-2-123b-instruct-2512" | "mistralai/devstral-small-2505" | "mistralai/ministral-14b-2512" | "mistralai/ministral-14b-instruct-2512" | "mistralai/ministral-3b-2512" | "mistralai/ministral-8b-2512" | "mistralai/mistral-large" | "mistralai/mistral-large-4" | "mistralai/mistral-medium-3" | "mistralai/mistral-medium-3.1" | "mistralai/mistral-medium-3.5" | "mistralai/mistral-medium-3.5:thinking" | "mistralai/mistral-nemo-instruct-2407" | "mistralai/mistral-saba" | "mistralai/mistral-small-24b-instruct-2501" | "mistralai/mistral-small-3.1-24b-instruct" | "mistralai/mistral-small-3.2-24b-instruct" | "mistralai/mistral-small-4-119b-2603" | "mistralai/mistral-small-4-119b-2603:thinking" | "mistralai/mixtral-8x22b-instruct-v0.1" | "mlabonne/NeuralDaredevil-8B-abliterated" | "moondream/moondream3-preview" | "moondream/moondream3.1-9b-a2b" | "moonshotai/Kimi-K2-Instruct-0905" | "moonshotai/kimi-k2-instruct" | "moonshotai/kimi-k2-instruct-0711" | "moonshotai/kimi-k2-thinking" | "moonshotai/kimi-k2.5" | "moonshotai/kimi-k2.5:thinking" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k2.6:thinking" | "moonshotai/kimi-k2.7-code" | "moonshotai/kimi-k2.7-code-highspeed" | "moonshotai/kimi-k3" | "moonshotai/kimi-k3.1-pro" | "moonshotai/kimi-k3.1-pro-highspeed" | "moonshotai/kimi-latest" | "nano-gpt-help" | "nanogpt/coding-router" | "nanogpt/coding-router:high" | "nanogpt/coding-router:low" | "nanogpt/coding-router:max" | "nanogpt/coding-router:medium" | "nex-agi/nex-n2.5-mini" | "nex-agi/nex-n2.5-pro" | "nex-agi/nex-n2.6" | "nothingiisreal/L3.1-70B-Celeste-V0.1-BF16" | "nvidia/Llama-3.1-Nemotron-70B-Instruct-HF" | "nvidia/Llama-3.3-Nemotron-Super-49B-v1" | "nvidia/nemotron-3-nano-30b-a3b" | "nvidia/nemotron-3-super-120b-a12b" | "nvidia/nemotron-3-super-120b-a12b:thinking" | "nvidia/nemotron-3-ultra-550b-a55b" | "nvidia/nemotron-3-ultra-550b-a55b:thinking" | "nvidia/nemotron-3.5-content-safety" | "nvidia/nemotron-3.5-lightning" | "nvidia/nemotron-3.5-lightning:thinking" | "nvidia/nemotron-3.5-super-vl" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-4o" | "openai/gpt-4o-2024-08-06" | "openai/gpt-4o-2024-11-20" | "openai/gpt-4o-mini" | "openai/gpt-5" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5-pro" | "openai/gpt-5.1" | "openai/gpt-5.1-2025-11-13" | "openai/gpt-5.1-codex" | "openai/gpt-5.1-codex-max" | "openai/gpt-5.1-codex-mini" | "openai/gpt-5.2" | "openai/gpt-5.2-codex" | "openai/gpt-5.3-codex" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.5" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-luna-pro" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-sol-pro" | "openai/gpt-5.6-terra" | "openai/gpt-5.6-terra-pro" | "openai/gpt-6-astra" | "openai/gpt-6-astra-pro" | "openai/gpt-6-luna" | "openai/gpt-6-luna-pro" | "openai/gpt-6-sol" | "openai/gpt-6-sol-pro" | "openai/gpt-6.1-sol" | "openai/gpt-6.1-sol-pro" | "openai/gpt-6.1-terra" | "openai/gpt-6.1-terra-pro" | "openai/gpt-astra-latest" | "openai/gpt-chat-latest" | "openai/gpt-latest" | "openai/gpt-luna-latest" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "openai/gpt-oss-safeguard-20b" | "openai/gpt-sol-latest" | "openai/gpt-terra-latest" | "openai/o1" | "openai/o3" | "openai/o3-pro-2025-06-10" | "orca/orcacyber-flash-1.0" | "orca/orcacyber-flash-1.0:thinking" | "orca/orcacyber-glm-5.3-flash" | "orca/orcacyber-k3.1-pro" | "orca/orcacyber-mimo-flash" | "orca/orcacyber-minimax-m3.1-flash" | "orca/orcacyber-qwen3.8-flash-next" | "orca/orcacyber-zero-1.5" | "ornith-ai/ornith-1.5-122b" | "ornith-ai/ornith-1.5-35b-a3b" | "ornith-ai/ornith-1.5-35b-a3b:thinking" | "pamanseau/OpenReasoning-Nemotron-32B" | "particle-ai/particle-1" | "perceptron/perceptron-mk1" | "perceptron/perceptron-mk1.5" | "phi-4-mini-instruct" | "phi-4-multimodal-instruct" | "pokee-isaac" | "pqhaz/DeepSeek-V4.1-Flash-1017-heretic" | "pqhaz/DeepSeek-V4.1-Flash-1017-heretic:thinking" | "prism-ml/ternary-bonsai-2-27b" | "prism-ml/ternary-bonsai-2-9b" | "qwen/qwen-2.5-72b-instruct" | "qwen/qwen-max" | "qwen/qwen-plus" | "qwen/qwen-turbo" | "qwen/qwen2.5-coder-32b-instruct" | "qwen/qwen2.5-vl-72b-instruct" | "qwen/qwen3-14b" | "qwen/qwen3-235b-a22b-instruct-2507" | "qwen/qwen3-235b-a22b-thinking-2507" | "qwen/qwen3-30b-a3b" | "qwen/qwen3-30b-a3b-instruct-2507" | "qwen/qwen3-32b" | "qwen/qwen3-8b" | "qwen/qwen3-coder" | "qwen/qwen3-coder-30b-a3b-instruct" | "qwen/qwen3-coder-flash" | "qwen/qwen3-coder-next" | "qwen/qwen3-next-80b-a3b-instruct" | "qwen/qwen3-next-80b-a3b-thinking" | "qwen/qwen3-vl-235b-a22b-instruct" | "qwen/qwen3-vl-235b-a22b-thinking" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-122b-a10b:thinking" | "qwen/qwen3.5-27b" | "qwen/qwen3.5-27b:thinking" | "qwen/qwen3.5-35b-a3b" | "qwen/qwen3.5-35b-a3b:thinking" | "qwen/qwen3.5-397b-a17b" | "qwen/qwen3.5-397b-a17b:thinking" | "qwen/qwen3.5-9b" | "qwen/qwen3.5-flash" | "qwen/qwen3.5-flash:thinking" | "qwen/qwen3.5-omni-flash" | "qwen/qwen3.5-omni-plus" | "qwen/qwen3.5-plus" | "qwen/qwen3.5-plus:thinking" | "qwen/qwen3.6-27b" | "qwen/qwen3.6-27b:thinking" | "qwen/qwen3.6-35b-a3b" | "qwen/qwen3.6-35b-a3b:thinking" | "qwen/qwen3.6-flash" | "qwen/qwen3.6-max-preview" | "qwen/qwen3.6-plus" | "qwen/qwen3.7-flash" | "qwen/qwen3.7-flash:thinking" | "qwen/qwen3.7-max" | "qwen/qwen3.7-max:thinking" | "qwen/qwen3.7-plus" | "qwen/qwen3.7-plus:thinking" | "qwen/qwen3.8-27b" | "qwen/qwen3.8-27b-antislop" | "qwen/qwen3.8-27b-cybersecurity" | "qwen/qwen3.8-27b-darkidol" | "qwen/qwen3.8-27b-fable" | "qwen/qwen3.8-27b-fimi" | "qwen/qwen3.8-27b-hemmingway" | "qwen/qwen3.8-27b-kimiko" | "qwen/qwen3.8-27b-kiwen" | "qwen/qwen3.8-27b-novelist" | "qwen/qwen3.8-27b-queen" | "qwen/qwen3.8-27b-swift" | "qwen/qwen3.8-27b-synthia" | "qwen/qwen3.8-27b-uncensored" | "qwen/qwen3.8-27b-uncensored:thinking" | "qwen/qwen3.8-27b:thinking" | "qwen/qwen3.8-flash" | "qwen/qwen3.8-max" | "qwen/qwen3.8-max-0902" | "qwen/qwen3.8-max-prime" | "qwen/qwen3.8-max:thinking" | "qwen/qwen3.8-omni-flash" | "qwen3-vl-235b-a22b-instruct-original" | "reflection/beam-1.0" | "reka/reka-edge-2603" | "reka/reka-flash-3" | "ricursiveai/ripple-65b-preview" | "sakana/fugu-max" | "sakana/fugu-ultra" | "sakana/fugu-ultra-v1.1" | "sarvam-105b" | "shisa-ai/shisa-v2-llama3.3-70b" | "shisa-ai/shisa-v2.1-llama3.3-70b" | "sicariussicariistuff/assistant-pepe-32b" | "soob3123/GrayLine-Qwen3-8B" | "soob3123/Veiled-Calla-12B" | "speakleash/bielik-11b-v3.0-instruct" | "stepfun-ai/step-3.5-flash" | "stepfun/step-3.7-flash:thinking" | "stepfun/step-5-preview" | "synth-2.5-flash" | "synth-2.5-pro" | "tencent/hy3" | "tencent/hy4" | "tencent/hy4-preview" | "thinkingmachines/Inkling-Small" | "thinkingmachines/Inkling-Small:thinking" | "thinkingmachines/inkling" | "thinkingmachines/inkling:thinking" | "unbiased/pareto-26.10" | "unbiased/pareto-26.9" | "undi95/remm-slerp-l2-13b" | "universal-summarizer" | "unsloth/gemma-3-12b-it" | "unsloth/gemma-3-27b-it" | "unsloth/gemma-3-4b-it" | "upstage/solar-mini4" | "upstage/solar-mini4:thinking" | "upstage/solar-pro-3" | "upstage/solar-pro4" | "upstage/solar-pro4:thinking" | "venice-uncensored" | "x-ai/grok-4.20" | "x-ai/grok-4.20-multi-agent" | "x-ai/grok-4.3" | "x-ai/grok-4.5" | "x-ai/grok-4.6" | "x-ai/grok-4.7" | "x-ai/grok-build-0.1" | "x-ai/grok-latest" | "xiaomi/mimo-v2.5" | "xiaomi/mimo-v2.5-pro" | "xiaomi/mimo-v2.5-pro:thinking" | "xiaomi/mimo-v2.5:thinking" | "xiaomi/mimo-v2.6-flash" | "xiaomi/mimo-v2.6-flash-abliterated" | "xiaomi/mimo-v2.6-flash-uncensored" | "xiaomi/mimo-v2.6-flash-uncensored:thinking" | "xiaomi/mimo-v2.6-pro" | "xiaomi/mimo-v2.6-pro-ultraspeed" | "xingchen-agi/xing4.0-29b-a4b" | "xtools-at/deepseek-v4-pro-qwen3.5-9b-uncensored-heretic" | "z-ai/GLM-4.5-Air" | "z-ai/GLM-4.5-Air:thinking" | "z-ai/GLM-4.5:thinking" | "z-ai/GLM-4.6-turbo" | "z-ai/GLM-4.6-turbo:thinking" | "z-ai/glm-4.5" | "z-ai/glm-4.5v" | "z-ai/glm-4.5v:thinking" | "z-ai/glm-4.6" | "z-ai/glm-4.6-original" | "z-ai/glm-4.6:thinking" | "z-ai/glm-4.6v" | "z-ai/glm-4.6v-original" | "z-ai/glm-4.7" | "z-ai/glm-4.7-flash" | "z-ai/glm-4.7-flash:thinking" | "z-ai/glm-4.7-original" | "z-ai/glm-4.7-original:thinking" | "z-ai/glm-4.7:thinking" | "z-ai/glm-5" | "z-ai/glm-5-original" | "z-ai/glm-5-original:thinking" | "z-ai/glm-5-turbo" | "z-ai/glm-5.1" | "z-ai/glm-5.1:thinking" | "z-ai/glm-5.2" | "z-ai/glm-5.2:thinking" | "z-ai/glm-5.3" | "z-ai/glm-5.3-flash" | "z-ai/glm-5.3-flash-apex" | "z-ai/glm-5.3-flash-apex-abliterated" | "z-ai/glm-5.3-flash-cybersecurity" | "z-ai/glm-5.3-flash-uncensored" | "z-ai/glm-5.3-flashx-legal" | "z-ai/glm-5.3-uncensored" | "z-ai/glm-5.3:thinking" | "z-ai/glm-5:thinking" | "z-ai/glm-5v-turbo" | "z-ai/glm-5v-turbo:thinking" | "z-ai/glm-latest";
 export type NanoGptImageModelId = never;
 export type NanoGptAudioModelId = never;
 export type NanoGptVideoModelId = never;

@@ -425,6 +425,21 @@ export const models = {
     limit: { context: 24000, output: 24000 },
     cost: { input: 0.66, output: 1 },
   },
+  "@cf/thinkingmachines/inkling-2-small": {
+    id: "@cf/thinkingmachines/inkling-2-small",
+    name: "Inkling 2 Small",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-11-09",
+    lastUpdated: "2026-11-09",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.3, output: 1, cacheRead: 0.1 },
+  },
   "@cf/zai-org/glm-4.7-flash": {
     id: "@cf/zai-org/glm-4.7-flash",
     name: "GLM-4.7-Flash",
@@ -495,7 +510,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type CloudflareWorkersAiModelId = keyof typeof models;
-export type CloudflareWorkersAiTextModelId = "@cf/aisingapore/gemma-sea-lion-v4-27b-it" | "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b" | "@cf/deepseek-ai/deepseek-v4-flash-0731" | "@cf/deepseek-ai/deepseek-v4-pro-0813" | "@cf/deepseek-ai/deepseek-v4.1-flash-1017" | "@cf/google/gemma-4-26b-a4b-it" | "@cf/ibm-granite/granite-4.0-h-micro" | "@cf/meta/llama-3.1-8b-instruct-fp8" | "@cf/meta/llama-3.2-11b-vision-instruct" | "@cf/meta/llama-3.2-1b-instruct" | "@cf/meta/llama-3.2-3b-instruct" | "@cf/meta/llama-3.3-70b-instruct-fp8-fast" | "@cf/meta/llama-4-scout-17b-16e-instruct" | "@cf/meta/llama-guard-3-8b" | "@cf/mistralai/mistral-small-3.1-24b-instruct" | "@cf/moonshotai/kimi-k2.6" | "@cf/moonshotai/kimi-k2.7-code" | "@cf/nvidia/nemotron-3-120b-a12b" | "@cf/openai/gpt-oss-120b" | "@cf/openai/gpt-oss-20b" | "@cf/qwen/qwen2.5-coder-32b-instruct" | "@cf/qwen/qwen3-30b-a3b-fp8" | "@cf/qwen/qwen3.8-27b" | "@cf/qwen/qwq-32b" | "@cf/zai-org/glm-4.7-flash" | "@cf/zai-org/glm-5.2" | "@cf/zai-org/glm-5.3" | "@cf/zai-org/glm-5.3-flash";
+export type CloudflareWorkersAiTextModelId = "@cf/aisingapore/gemma-sea-lion-v4-27b-it" | "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b" | "@cf/deepseek-ai/deepseek-v4-flash-0731" | "@cf/deepseek-ai/deepseek-v4-pro-0813" | "@cf/deepseek-ai/deepseek-v4.1-flash-1017" | "@cf/google/gemma-4-26b-a4b-it" | "@cf/ibm-granite/granite-4.0-h-micro" | "@cf/meta/llama-3.1-8b-instruct-fp8" | "@cf/meta/llama-3.2-11b-vision-instruct" | "@cf/meta/llama-3.2-1b-instruct" | "@cf/meta/llama-3.2-3b-instruct" | "@cf/meta/llama-3.3-70b-instruct-fp8-fast" | "@cf/meta/llama-4-scout-17b-16e-instruct" | "@cf/meta/llama-guard-3-8b" | "@cf/mistralai/mistral-small-3.1-24b-instruct" | "@cf/moonshotai/kimi-k2.6" | "@cf/moonshotai/kimi-k2.7-code" | "@cf/nvidia/nemotron-3-120b-a12b" | "@cf/openai/gpt-oss-120b" | "@cf/openai/gpt-oss-20b" | "@cf/qwen/qwen2.5-coder-32b-instruct" | "@cf/qwen/qwen3-30b-a3b-fp8" | "@cf/qwen/qwen3.8-27b" | "@cf/qwen/qwq-32b" | "@cf/thinkingmachines/inkling-2-small" | "@cf/zai-org/glm-4.7-flash" | "@cf/zai-org/glm-5.2" | "@cf/zai-org/glm-5.3" | "@cf/zai-org/glm-5.3-flash";
 export type CloudflareWorkersAiImageModelId = never;
 export type CloudflareWorkersAiAudioModelId = never;
 export type CloudflareWorkersAiVideoModelId = never;

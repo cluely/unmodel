@@ -40,6 +40,7 @@ import * as bergetGen from "./berget.gen";
 import * as blueclawGen from "./blueclaw.gen";
 import * as bothubGen from "./bothub.gen";
 import * as boundlessGen from "./boundless.gen";
+import * as byteplusGen from "./byteplus.gen";
 import * as cerebrasGen from "./cerebras.gen";
 import * as chutesGen from "./chutes.gen";
 import * as clarifaiGen from "./clarifai.gen";
@@ -282,6 +283,7 @@ export type ProviderId =
   | "blueclaw"
   | "bothub"
   | "boundless"
+  | "byteplus"
   | "cerebras"
   | "chutes"
   | "clarifai"
@@ -532,6 +534,7 @@ export const catalogTyped = {
   "blueclaw": blueclawGen,
   "bothub": bothubGen,
   "boundless": boundlessGen,
+  "byteplus": byteplusGen,
   "cerebras": cerebrasGen,
   "chutes": chutesGen,
   "clarifai": clarifaiGen,

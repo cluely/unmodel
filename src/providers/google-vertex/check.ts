@@ -2,6 +2,7 @@ import type { ResponseReport } from "../../core/report";
 import { resolveModelInfo } from "../../core/catalog-lookup";
 import { computeCostUSD } from "../../core/cost";
 import {
+  audioPromptTokens,
   checkChat as checkGoogleChat,
   type ChatResponseLike,
   type GoogleFinishReason,
@@ -32,8 +33,9 @@ export function checkChat(response: ChatResponseLike): ResponseReport<GoogleFini
 
   // Same billing conventions as google/check.ts (duplicated — the folding is
   // private there): thoughts are billed at the output rate, tool-use prompt
-  // tokens at the input rate, and cachedContentTokenCount (already included
-  // in promptTokenCount) is re-rated by computeCostUSD.
+  // tokens at the input rate, and cachedContentTokenCount and the AUDIO slice
+  // of promptTokensDetails (both already included in promptTokenCount) are
+  // re-rated by computeCostUSD.
   const billedInput =
     meta.promptTokenCount === undefined
       ? undefined
@@ -42,12 +44,14 @@ export function checkChat(response: ChatResponseLike): ResponseReport<GoogleFini
     meta.candidatesTokenCount === undefined && meta.thoughtsTokenCount === undefined
       ? undefined
       : (meta.candidatesTokenCount ?? 0) + (meta.thoughtsTokenCount ?? 0);
+  const audioTokens = audioPromptTokens(meta);
   const costUSD = computeCostUSD(info.cost, {
     ...(billedInput !== undefined && { inputTokens: billedInput }),
     ...(billedOutput !== undefined && { outputTokens: billedOutput }),
     ...(meta.cachedContentTokenCount !== undefined && {
       cachedInputTokens: meta.cachedContentTokenCount,
     }),
+    ...(audioTokens !== undefined && { audioInputTokens: audioTokens }),
   });
   return costUSD === undefined ? report : { ...report, costUSD };
 }

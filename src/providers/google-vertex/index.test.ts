@@ -609,6 +609,23 @@ describe("google-vertex checkChat", () => {
     expect(report.costUSD).toBeCloseTo((1000 * 2.5) / 1e6, 12);
     expect(report.usage.reasoningTokens).toBe(900);
   });
+
+  test("the AUDIO slice of promptTokensDetails is billed at the vertex inputAudio rate", () => {
+    const report = checkChat({
+      modelVersion: "gemini-2.5-flash",
+      usageMetadata: {
+        promptTokenCount: 1_000_000,
+        candidatesTokenCount: 0,
+        promptTokensDetails: [
+          { modality: "TEXT", tokenCount: 200_000 },
+          { modality: "AUDIO", tokenCount: 800_000 },
+        ],
+      },
+    });
+    // 200k text at $0.30/M + 800k audio at $1.00/M, the same split the
+    // google checker prices with.
+    expect(report.costUSD).toBeCloseTo((200_000 * 0.3 + 800_000 * 1) / 1e6, 12);
+  });
 });
 
 describe("google-vertex.chat toApi", () => {

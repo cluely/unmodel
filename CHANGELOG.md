@@ -1,5 +1,18 @@
 # unmodel
 
+## 0.6.1
+
+### Patch Changes
+
+- 890a411: google-vertex: `checkChat` prices the audio part of a prompt at the audio rate
+
+  `google.checkChat` re-rates the AUDIO entry of `usageMetadata.promptTokensDetails`
+  at the model's `inputAudio` rate, but the Vertex checker, which recomputes
+  `costUSD` from google-vertex catalog rates, left that step out and billed every
+  prompt token at the text rate. A Vertex `gemini-2.5-flash` response with 800k
+  audio and 200k text prompt tokens priced at $0.30 instead of $0.86. It now
+  passes `audioPromptTokens(usageMetadata)` to `computeCostUSD` the same way.
+
 ## 0.6.0
 
 ### Minor Changes
@@ -2525,16 +2538,12 @@ fps?, max_long_side_pixel? } }` user part, and `image_url.detail: "default"`
 
   VIDEO (`minimax.videoV2`, `unmodel/video` as `minimax/…`)
   - `MiniMax-H3-Highspeed`, `MiniMax-H3-Lite` and `MiniMax-H3-Max` join
-    `MiniMax-H3` on POST /v2/video_generation, with per-model rules:
-    - resolution: `MiniMax-H3` renders `768P`/`2K`; the other three `480P`/`768P`
-      (`480P` is new to the route, and canonical `480p` maps to it exactly);
-    - duration: 4–15 seconds, except `MiniMax-H3-Max` at 5–15;
-    - `MiniMax-H3-Lite` refuses an `"adaptive"` (or omitted) `ratio` for
-      reference-to-video;
-    - `MiniMax-H3-Max` takes the new `extra: { prompt_expansion_mode:
+    `MiniMax-H3` on POST /v2/video_generation, with per-model rules: - resolution: `MiniMax-H3` renders `768P`/`2K`; the other three `480P`/`768P`
+    (`480P` is new to the route, and canonical `480p` maps to it exactly); - duration: 4–15 seconds, except `MiniMax-H3-Max` at 5–15; - `MiniMax-H3-Lite` refuses an `"adaptive"` (or omitted) `ratio` for
+    reference-to-video; - `MiniMax-H3-Max` takes the new `extra: { prompt_expansion_mode:
 "disabled" | "balanced" | "quality" }`; undeclared fields inside `extra` are
-      refused, and `extra` on the other three is flagged as undocumented (a
-      warning).
+    refused, and `extra` on the other three is flagged as undocumented (a
+    warning).
   - Pricing is per model and resolution, per second of output: H3 $0.08 (768P) /
     $0.13 (2K); Highspeed $0.06 / $0.04 (480P); Lite $0.04 / $0.025 (480P); Max
     $0.08 / $0.05 (480P). Input images beyond the free quota add $0.04 / $0.03 /

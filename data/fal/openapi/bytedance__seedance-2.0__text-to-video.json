@@ -168,6 +168,22 @@
               "title": "Bitrate Mode",
               "type": "string"
             },
+            "codec": {
+              "default": "auto",
+              "description": "'auto' retains default video codec behaviour; 'H264' uses H.264; 'H265' uses H.265.",
+              "enum": [
+                "auto",
+                "H264",
+                "H265"
+              ],
+              "examples": [
+                "auto",
+                "H264",
+                "H265"
+              ],
+              "title": "Codec",
+              "type": "string"
+            },
             "duration": {
               "default": "auto",
               "description": "Duration of the video in seconds. Supports 4 to 15 seconds, or auto to let the model decide based on the prompt.",
@@ -240,6 +256,7 @@
             "aspect_ratio",
             "generate_audio",
             "bitrate_mode",
+            "codec",
             "end_user_id"
           ]
         },

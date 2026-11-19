@@ -207,6 +207,22 @@
               "title": "Enable Safety Checker",
               "type": "boolean"
             },
+            "geometry_resolution": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "standard",
+                    "2k"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Geometry resolution. Meshy-7 supports standard and 2k.",
+              "title": "Geometry Resolution"
+            },
             "image_url": {
               "description": "Image URL or base64 data URI for 3D model creation. Supports .jpg, .jpeg, and .png formats. Also supports AVIF and HEIF formats which will be automatically converted.",
               "examples": [
@@ -326,7 +342,8 @@
             },
             "ultra_mode": {
               "default": false,
-              "description": "Enable higher-fidelity geometry with finer surface detail. Only available for standard generation (ultra requires Meshy-7; it cannot be combined with smart topology or lowpoly).",
+              "deprecated": true,
+              "description": "Deprecated: use geometry_resolution='2k'. If both fields are provided, geometry_resolution takes precedence.",
               "title": "Ultra Mode",
               "type": "boolean"
             }
@@ -354,6 +371,7 @@
             "enable_animation",
             "animation_action_id",
             "enable_safety_checker",
+            "geometry_resolution",
             "ultra_mode"
           ]
         },
@@ -742,7 +760,7 @@
       "title": "Queue OpenAPI for fal-ai/meshy/v7/image-to-3d",
       "version": "1.0.0",
       "x-fal-metadata": {
-        "about": "Convert an image to a 3D model using Meshy-7.",
+        "about": "Deprecated: convert an image with Meshy-7. Use the v7.1 endpoint.",
         "documentationUrl": "https://fal.ai/models/fal-ai/meshy/v7/image-to-3d/api",
         "endpointId": "fal-ai/meshy/v7/image-to-3d",
         "playgroundUrl": "https://fal.ai/models/fal-ai/meshy/v7/image-to-3d"

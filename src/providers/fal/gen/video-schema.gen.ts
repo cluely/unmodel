@@ -99,6 +99,8 @@ export const falVideoInputSchema = z.looseObject({
   camera_motion: z.enum(["dolly_in", "dolly_out", "dolly_left", "dolly_right", "jib_up", "jib_down", "static", "focus_shift"]).nullable().optional(),
   cfg_scale: z.number().optional(),
   character_orientation: z.enum(["image", "video"]).optional(),
+  codec: z.enum(["auto", "H264", "H265"]).optional(),
+  draft: z.boolean().optional(),
   /**
    * `duration` means different things at different endpoints — string at
    * bytedance/seedance-2.0/image-to-video, string at bytedance/seedance-2.0/text-to-video,
@@ -234,6 +236,8 @@ export const falVideoInputSchema = z.looseObject({
   style: z.enum(["anime", "3d_animation", "clay", "comic", "cyberpunk"]).nullable().optional(),
   sync_mode: z.boolean().optional(),
   tail_image_url: z.string().nullable().optional(),
+  target_audio_url: z.string().nullable().optional(),
+  task: z.enum(["reference", "editing", "extension"]).optional(),
   thinking_type: z.enum(["enabled", "disabled", "auto"]).nullable().optional(),
   video_quality: z.enum(["low", "medium", "high", "maximum"]).optional(),
   video_url: z.string().nullable().optional(),

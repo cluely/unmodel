@@ -35,7 +35,6 @@ const E_06c7bf = ["png", "jpg", "webp"] as const;
 const E_1f1675 = [4] as const;
 const E_2b2d04 = ["RealESRGAN_x4plus", "RealESRGAN_x2plus", "RealESRGAN_x4plus_anime_6B", "RealESRGAN_x4_v3", "RealESRGAN_x4_wdn_v3", "RealESRGAN_x4_anime_v3"] as const;
 const E_3d4094 = ["low", "medium", "high", "maximum"] as const;
-const E_3f5672 = ["Standard V2", "High Fidelity V3", "High Fidelity V2", "Low Resolution V2", "CGI", "Text Refine"] as const;
 const E_564443 = ["X264 (.mp4)", "VP9 (.webm)", "PRORES4444 (.mov)", "GIF (.gif)"] as const;
 const E_57686e = ["Wonder 3.5", "Wonder 3", "Wonder 2", "Wonder", "Recover 3", "Standard MAX", "Redefine", "Recovery V2", "Recovery"] as const;
 const E_59ffb9 = ["target", "factor"] as const;
@@ -49,6 +48,7 @@ const E_9f102a = ["low", "medium", "high"] as const;
 const E_be1dd4 = ["fast", "balanced", "small"] as const;
 const E_cce0e8 = [0, 1] as const;
 const E_e742f6 = ["Starlight Precise 2.6", "Starlight HQ", "Starlight Mini", "Starlight Sharp", "Starlight Fast 2"] as const;
+const E_fc5200 = ["Standard V2", "High Fidelity V3", "High Fidelity V2", "Low Resolution V2", "CGI", "Text Refine", "Faces"] as const;
 
 export const FAL_UPSCALE_SHAPES = {
   "blackforestlabs/flux-video-upscale": {
@@ -158,7 +158,7 @@ export const FAL_UPSCALE_SHAPES = {
     order: ["image_url", "model", "upscale_factor", "crop_to_fill", "output_format", "subject_detection", "face_enhancement", "face_enhancement_creativity", "face_enhancement_strength", "sharpen", "denoise", "fix_compression", "strength"],
     props: {
       image_url: { t: "string", req: true, minLen: 1, media: "image" },
-      model: { t: "string", def: true, enum: E_3f5672 },
+      model: { t: "string", def: true, enum: E_fc5200 },
       upscale_factor: { t: "number", def: true, min: 1, max: 4 },
       crop_to_fill: { t: "boolean", def: true },
       output_format: { t: "string", def: true, enum: E_7c0554 },
@@ -240,7 +240,7 @@ export const FAL_UPSCALE_CONSTRAINTS = {
     enhancement_strength: E_9f102a,
   },
   "topaz/upscale/image/precision": {
-    model: E_3f5672,
+    model: E_fc5200,
     output_format: E_7c0554,
     subject_detection: E_7dddd1,
   },

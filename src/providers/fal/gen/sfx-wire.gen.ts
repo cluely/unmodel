@@ -20,6 +20,7 @@
 import type {
   FalAudio,
   FalFile,
+  FalWatermarkInfo,
 } from "./shared.gen";
 
 /**
@@ -274,6 +275,7 @@ export interface MireloAiSfx16TextToAudioInput {
  * not the body of the submit response itself, which is the queue envelope.
  */
 export interface MireloAiSfx16TextToAudioOutput {
+  model: string;
   /** Generated SFX audio from a text prompt. */
   audio: FalAudio[];
 }
@@ -295,7 +297,7 @@ export interface MireloAiSfx16TextToAudioOutput {
 export interface SoniloV11TextToSoundEffectsInput {
   /** Describe the sound you want to create. */
   prompt: string;
-  /** How long the audio should be, in seconds. Default: `8`. */
+  /** How long the audio should be, in seconds (0.5 to 180). Default: `8`. */
   duration?: number;
   /** Audio file format: aac (default), mp3, wav, or flac. Default: `"aac"`. */
   audio_format?: "wav" | "mp3" | "aac" | "flac";
@@ -312,6 +314,8 @@ export interface SoniloV11TextToSoundEffectsOutput {
   audio: FalAudio;
   /** All generated sounds, one per sample. */
   audios: FalAudio[];
+  /** Present when the audio carries the inaudible provenance watermark. */
+  watermark?: FalWatermarkInfo | null;
 }
 
 /**

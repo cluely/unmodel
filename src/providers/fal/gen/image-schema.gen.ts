@@ -58,7 +58,7 @@ import { z } from "zod";
 const falRGBColorSchema = z.looseObject({ r: z.number().optional(), g: z.number().optional(), b: z.number().optional() });
 const falColorPaletteMemberSchema = z.looseObject({ rgb: falRGBColorSchema, color_weight: z.number().nullable().optional() });
 const falColorPaletteSchema = z.looseObject({ members: z.array(falColorPaletteMemberSchema).nullable().optional(), name: z.enum(["EMBER", "FRESH", "JUNGLE", "MAGIC", "MELON", "MOSAIC", "PASTEL", "ULTRAMARINE"]).nullable().optional() });
-const falControlLoraWeightSchema = z.looseObject({ path: z.string(), scale: z.union([z.record(z.string(), z.unknown()), z.number()]).optional(), control_image_url: z.string(), preprocess: z.enum(["canny", "depth", "None"]).optional() });
+const falControlLoraWeightSchema = z.looseObject({ path: z.string(), scale: z.union([z.record(z.string(), z.number()), z.number()]).optional(), control_image_url: z.string(), preprocess: z.enum(["canny", "depth", "None"]).optional() });
 const falControlNetUnionInputSchema = z.looseObject({ control_image_url: z.string(), mask_image_url: z.string().optional(), control_mode: z.enum(["canny", "tile", "depth", "blur", "pose", "gray", "low-quality"]), conditioning_scale: z.number().optional(), mask_threshold: z.number().optional(), start_percentage: z.number().optional(), end_percentage: z.number().optional() });
 const falControlNetUnionSchema = z.looseObject({ path: z.string(), config_url: z.string().nullable().optional(), variant: z.string().nullable().optional(), controls: z.array(falControlNetUnionInputSchema) });
 const falControlNet_097ad1Schema = z.looseObject({ path: z.string(), config_url: z.string().nullable().optional(), variant: z.string().nullable().optional(), control_image_url: z.string(), mask_image_url: z.string().optional(), mask_threshold: z.number().optional(), conditioning_scale: z.number().optional(), start_percentage: z.number().optional(), end_percentage: z.number().optional() });
@@ -69,7 +69,7 @@ const falIPAdapterSchema = z.looseObject({ path: z.string(), subfolder: z.string
 const falImageFillInputSchema = z.looseObject({ fill_image_url: z.union([z.string(), z.array(z.string())]).optional() });
 const falImageSizeSchema = z.looseObject({ width: z.number().optional(), height: z.number().optional() });
 const falImageStyleReferenceSchema = z.looseObject({ image_url: z.string(), strength: z.number().optional() });
-const falLoraWeight_7426f5Schema = z.looseObject({ path: z.string(), scale: z.union([z.record(z.string(), z.unknown()), z.number()]).optional() });
+const falLoraWeight_6fc7f4Schema = z.looseObject({ path: z.string(), scale: z.union([z.record(z.string(), z.number()), z.number()]).optional() });
 const falLoraWeight_cc944cSchema = z.looseObject({ path: z.string(), scale: z.number().optional() });
 const falMoodboardSchema = z.looseObject({ id: z.string(), strength: z.number().optional() });
 const falStyleSchema = z.looseObject({ id: z.string(), strength: z.number().optional() });

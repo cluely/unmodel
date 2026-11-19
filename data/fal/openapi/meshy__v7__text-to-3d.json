@@ -213,6 +213,22 @@
               "title": "Enable Safety Checker",
               "type": "boolean"
             },
+            "geometry_resolution": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "standard",
+                    "2k"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Geometry resolution. Meshy-7 supports standard and 2k.",
+              "title": "Geometry Resolution"
+            },
             "is_a_t_pose": {
               "default": false,
               "deprecated": true,
@@ -348,7 +364,8 @@
             },
             "ultra_mode": {
               "default": false,
-              "description": "Enable higher-fidelity geometry with finer surface detail on the preview (geometry) step. Only available for standard generation (ultra requires Meshy-7; it cannot be combined with smart topology or lowpoly).",
+              "deprecated": true,
+              "description": "Deprecated: use geometry_resolution='2k'. If both fields are provided, geometry_resolution takes precedence.",
               "title": "Ultra Mode",
               "type": "boolean"
             }
@@ -378,6 +395,7 @@
             "enable_animation",
             "animation_action_id",
             "enable_safety_checker",
+            "geometry_resolution",
             "ultra_mode"
           ]
         },
@@ -789,7 +807,7 @@
       "title": "Queue OpenAPI for fal-ai/meshy/v7/text-to-3d",
       "version": "1.0.0",
       "x-fal-metadata": {
-        "about": "Generate a 3D model from text using Meshy-7.\n\nSupports two modes:\n- preview: Returns untextured geometry only\n- full: Returns fully textured model (preview + refine)\n\nAlso supports smart topology (model_type='smart-topology') for the\ngeometry step and ultra_mode for higher-fidelity standard geometry.",
+        "about": "Deprecated: generate a 3D model from text using Meshy-7.\n\nSupports two modes:\n- preview: Returns untextured geometry only\n- full: Returns fully textured model (preview + refine)\n\nUse the v7.1 endpoint for the latest model.",
         "documentationUrl": "https://fal.ai/models/fal-ai/meshy/v7/text-to-3d/api",
         "endpointId": "fal-ai/meshy/v7/text-to-3d",
         "playgroundUrl": "https://fal.ai/models/fal-ai/meshy/v7/text-to-3d"

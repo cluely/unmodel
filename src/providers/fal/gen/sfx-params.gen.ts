@@ -81,6 +81,21 @@ const ROW_2bf141 = {
   extras: {},
 } as const;
 
+/** sonilo/v1.1/text-to-sound-effects. */
+const ROW_3270c9 = {
+  classes: ["durationNumber"],
+  keys: ["prompt", "duration", "audio_format"],
+  textWire: "prompt",
+  formatWire: "audio_format",
+  codecs: ["aac", "flac", "mp3", "pcm_s16le"],
+  codecValues: { aac: "aac", flac: "flac", mp3: "mp3", pcm_s16le: "wav" },
+  lengthWire: "duration",
+  durationRange: [0.5, 180],
+  durationDefault: 8,
+  bounds: { duration: { min: 0.5, max: 180 } },
+  extras: {},
+} as const;
+
 /**
  * mirelo-ai/sfx1.6/text-to-audio.
  *
@@ -104,22 +119,6 @@ const ROW_342834 = {
     num_samples: EXTRA as MireloAiSfx16TextToAudioInput["num_samples"],
     seed: EXTRA as MireloAiSfx16TextToAudioInput["seed"],
   },
-} as const;
-
-/** sonilo/v1.1/text-to-sound-effects. */
-const ROW_798636 = {
-  classes: ["durationNumber"],
-  keys: ["prompt", "duration", "audio_format"],
-  textWire: "prompt",
-  formatWire: "audio_format",
-  codecs: ["aac", "flac", "mp3", "pcm_s16le"],
-  codecValues: { aac: "aac", flac: "flac", mp3: "mp3", pcm_s16le: "wav" },
-  lengthWire: "duration",
-  durationRange: [1, 180],
-  durationInt: true,
-  durationDefault: 8,
-  bounds: { duration: { min: 1, max: 180 } },
-  extras: {},
 } as const;
 
 /**
@@ -159,7 +158,7 @@ export const FAL_SFX_PARAM_SHAPES = {
   "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": ROW_96408f,
   "fal-ai/stable-audio-3/small/sfx/text-to-audio": ROW_96408f,
   "mirelo-ai/sfx1.6/text-to-audio": ROW_342834,
-  "sonilo/v1.1/text-to-sound-effects": ROW_798636,
+  "sonilo/v1.1/text-to-sound-effects": ROW_3270c9,
 } as const satisfies Record<string, FalParamShape>;
 
 /**

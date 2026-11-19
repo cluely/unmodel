@@ -132,7 +132,9 @@ export interface BriaFiboEditRelightOutput {
   image: FalImage_28cfa5;
   /** Generated images. Default: `[]`. */
   images?: FalImage_28cfa5[];
-  /** Current instruction. */
+  /** The VGL document the image was generated from. */
+  vgl: Record<string, unknown>;
+  /** Deprecated, use `vgl`. The same document under the old name. */
   structured_instruction: Record<string, unknown>;
 }
 

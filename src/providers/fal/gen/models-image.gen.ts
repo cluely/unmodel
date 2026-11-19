@@ -729,12 +729,11 @@ export const imageModels = {
    */
   "reve/2.1/text-to-image": {
     id: "reve/2.1/text-to-image",
-    name: "Reve 2.1",
+    name: "reve/2.1/text-to-image",
     attachment: false,
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    lastUpdated: "2026-07-17",
     modalities: { input: ["image", "text"], output: ["image"] },
     limit: { context: 0 },
     cost: { perImage: 0.25 },

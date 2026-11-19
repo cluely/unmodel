@@ -183,6 +183,7 @@ export type FalThreeDSchemaChecks = [
   AssertExtends<wire.MeshyV7ImageTo3dInput["enable_animation"], Gate["enable_animation"]>,
   AssertExtends<wire.MeshyV7ImageTo3dInput["animation_action_id"], Gate["animation_action_id"]>,
   AssertExtends<wire.MeshyV7ImageTo3dInput["enable_safety_checker"], Gate["enable_safety_checker"]>,
+  AssertExtends<wire.MeshyV7ImageTo3dInput["geometry_resolution"], Gate["geometry_resolution"]>,
   AssertExtends<wire.MeshyV7ImageTo3dInput["ultra_mode"], Gate["ultra_mode"]>,
   // meshy/v7/text-to-3d
   AssertExtends<wire.MeshyV7TextTo3dInput["prompt"], Gate["prompt"]>,
@@ -204,6 +205,7 @@ export type FalThreeDSchemaChecks = [
   AssertExtends<wire.MeshyV7TextTo3dInput["enable_animation"], Gate["enable_animation"]>,
   AssertExtends<wire.MeshyV7TextTo3dInput["animation_action_id"], Gate["animation_action_id"]>,
   AssertExtends<wire.MeshyV7TextTo3dInput["enable_safety_checker"], Gate["enable_safety_checker"]>,
+  AssertExtends<wire.MeshyV7TextTo3dInput["geometry_resolution"], Gate["geometry_resolution"]>,
   AssertExtends<wire.MeshyV7TextTo3dInput["ultra_mode"], Gate["ultra_mode"]>,
   // tripo3d/h3.1/image-to-3d
   AssertExtends<wire.Tripo3dH31ImageTo3dInput["image_url"], Gate["image_url"]>,

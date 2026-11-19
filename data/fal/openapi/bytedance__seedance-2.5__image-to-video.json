@@ -160,6 +160,28 @@
               "title": "Bitrate Mode",
               "type": "string"
             },
+            "codec": {
+              "default": "auto",
+              "description": "'auto' retains default video codec behaviour; 'H264' uses H.264; 'H265' uses H.265.",
+              "enum": [
+                "auto",
+                "H264",
+                "H265"
+              ],
+              "examples": [
+                "auto",
+                "H264",
+                "H265"
+              ],
+              "title": "Codec",
+              "type": "string"
+            },
+            "draft": {
+              "default": false,
+              "description": "Generate a draft preview at 480p, overriding resolution. Returns a draft_id for completing the draft at 1080p within seven days.",
+              "title": "Draft",
+              "type": "boolean"
+            },
             "duration": {
               "default": "auto",
               "description": "Duration of the video in seconds. Supports 4 to 30 seconds, or auto to let the model decide based on the prompt.",
@@ -265,15 +287,29 @@
             "image_url",
             "end_image_url",
             "resolution",
+            "draft",
             "duration",
             "aspect_ratio",
             "generate_audio",
             "bitrate_mode",
+            "codec",
             "end_user_id"
           ]
         },
         "Seedance25ImageToVideoOutput": {
           "properties": {
+            "draft_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The draft ID, or null when draft mode is disabled. Complete this draft within seven days using the same account.",
+              "title": "Draft Id"
+            },
             "seed": {
               "description": "The seed used for generation.",
               "examples": [
@@ -300,7 +336,8 @@
           "type": "object",
           "x-fal-order-properties": [
             "video",
-            "seed"
+            "seed",
+            "draft_id"
           ]
         }
       },

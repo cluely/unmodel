@@ -284,7 +284,7 @@ export const threeDModels = {
     reasoning: false,
     toolCall: false,
     openWeights: false,
-    lastUpdated: "2026-08-19",
+    lastUpdated: "2026-09-09",
     modalities: { input: ["image"], output: ["3d"] },
     limit: { context: 0 },
   },

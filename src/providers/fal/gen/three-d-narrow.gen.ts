@@ -54,6 +54,7 @@ const E_7a56de = ["glb", "usdz", "fbx", "obj", "stl"] as const;
 const E_7e0117 = ["glb", "obj"] as const;
 const E_802e11 = ["Auto", "4K Quad", "8K Quad", "18K Quad", "50K Quad", "100K Quad", "200K Quad", "2K Triangle", "20K Triangle", "50K Triangle", "150K Triangle", "500K Triangle", "1M Triangle", "2M Triangle"] as const;
 const E_85a0b8 = [512, 1024, 2048] as const;
+const E_8ff4a9 = ["standard", "2k"] as const;
 const E_98acaa = ["standard", "detailed"] as const;
 const E_b8dc83 = ["PBR", "Shaded", "All", "None"] as const;
 const E_b9fec6 = ["glb", "obj", "stl", "fbx", "usdz"] as const;
@@ -233,7 +234,7 @@ export const FAL_THREE_D_SHAPES = {
     },
   },
   "meshy/v7/image-to-3d": {
-    order: ["image_url", "model_type", "topology", "target_polycount", "symmetry_mode", "should_remesh", "should_texture", "enable_pbr", "is_a_t_pose", "pose_mode", "texture_prompt", "texture_image_url", "enable_rigging", "rigging_height_meters", "enable_animation", "animation_action_id", "enable_safety_checker", "ultra_mode"],
+    order: ["image_url", "model_type", "topology", "target_polycount", "symmetry_mode", "should_remesh", "should_texture", "enable_pbr", "is_a_t_pose", "pose_mode", "texture_prompt", "texture_image_url", "enable_rigging", "rigging_height_meters", "enable_animation", "animation_action_id", "enable_safety_checker", "geometry_resolution", "ultra_mode"],
     props: {
       image_url: { t: "string", req: true, media: "image" },
       model_type: { t: "string", def: true, enum: E_2acaa3 },
@@ -252,11 +253,12 @@ export const FAL_THREE_D_SHAPES = {
       enable_animation: { t: "boolean", def: true },
       animation_action_id: { t: "integer", def: true },
       enable_safety_checker: { t: "boolean", def: true },
+      geometry_resolution: { t: "string", nul: true, enum: E_8ff4a9 },
       ultra_mode: { t: "boolean", def: true },
     },
   },
   "meshy/v7/text-to-3d": {
-    order: ["prompt", "mode", "seed", "model_type", "topology", "target_polycount", "should_remesh", "symmetry_mode", "enable_pbr", "is_a_t_pose", "pose_mode", "enable_prompt_expansion", "texture_prompt", "texture_image_url", "enable_rigging", "rigging_height_meters", "enable_animation", "animation_action_id", "enable_safety_checker", "ultra_mode"],
+    order: ["prompt", "mode", "seed", "model_type", "topology", "target_polycount", "should_remesh", "symmetry_mode", "enable_pbr", "is_a_t_pose", "pose_mode", "enable_prompt_expansion", "texture_prompt", "texture_image_url", "enable_rigging", "rigging_height_meters", "enable_animation", "animation_action_id", "enable_safety_checker", "geometry_resolution", "ultra_mode"],
     props: {
       prompt: { t: "string", req: true, maxLen: 600 },
       mode: { t: "string", def: true, enum: E_27df78 },
@@ -277,6 +279,7 @@ export const FAL_THREE_D_SHAPES = {
       enable_animation: { t: "boolean", def: true },
       animation_action_id: { t: "integer", def: true },
       enable_safety_checker: { t: "boolean", def: true },
+      geometry_resolution: { t: "string", nul: true, enum: E_8ff4a9 },
       ultra_mode: { t: "boolean", def: true },
     },
   },
@@ -420,6 +423,7 @@ export const FAL_THREE_D_CONSTRAINTS = {
     topology: E_0df93c,
     symmetry_mode: E_03be48,
     pose_mode: E_f3ec08,
+    geometry_resolution: E_8ff4a9,
   },
   "meshy/v7/text-to-3d": {
     mode: E_27df78,
@@ -427,6 +431,7 @@ export const FAL_THREE_D_CONSTRAINTS = {
     topology: E_0df93c,
     symmetry_mode: E_03be48,
     pose_mode: E_f3ec08,
+    geometry_resolution: E_8ff4a9,
   },
   "tripo3d/h3.1/image-to-3d": {
     texture_quality: E_98acaa,

@@ -140,7 +140,7 @@
           "type": "object"
         },
         "SfxV10TextToAudioInput": {
-          "description": "sfx-v1.0 /text-to-audio schema: plain-language field help for the product\nPlayground. Duration is an advanced integer; flash and seed are hidden.",
+          "description": "sfx-v1.0 /text-to-audio schema: plain-language field help for the product\nPlayground. Duration accepts fractional seconds; flash and seed are hidden.",
           "properties": {
             "audio_format": {
               "default": "aac",
@@ -156,11 +156,11 @@
             },
             "duration": {
               "default": 8,
-              "description": "How long the audio should be, in seconds.",
+              "description": "How long the audio should be, in seconds (0.5 to 180).",
               "maximum": 180,
-              "minimum": 1,
+              "minimum": 0.5,
               "title": "Duration",
-              "type": "integer"
+              "type": "number"
             },
             "prompt": {
               "description": "Describe the sound you want to create.",
@@ -195,6 +195,17 @@
               },
               "title": "Audios",
               "type": "array"
+            },
+            "watermark": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WatermarkInfo"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Present when the audio carries the inaudible provenance watermark."
             }
           },
           "required": [
@@ -205,7 +216,32 @@
           "type": "object",
           "x-fal-order-properties": [
             "audio",
-            "audios"
+            "audios",
+            "watermark"
+          ]
+        },
+        "WatermarkInfo": {
+          "properties": {
+            "message_hex": {
+              "description": "The 40-bit message embedded in the audio, hex.",
+              "title": "Message Hex",
+              "type": "string"
+            },
+            "scheme": {
+              "default": "sc44k-1",
+              "description": "Watermark scheme identifier.",
+              "title": "Scheme",
+              "type": "string"
+            }
+          },
+          "required": [
+            "message_hex"
+          ],
+          "title": "WatermarkInfo",
+          "type": "object",
+          "x-fal-order-properties": [
+            "scheme",
+            "message_hex"
           ]
         }
       },

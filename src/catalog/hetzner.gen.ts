@@ -9,7 +9,7 @@ export const provider = {
   name: "Hetzner",
   env: ["HETZNER_API_KEY"],
   doc: "https://experiments.hetzner.com/docs/inference",
-  api: "https://inference.hetzner.com/api/v1",
+  api: "https://inference.hetzner.com/v1",
 } as const satisfies ProviderInfo;
 
 export const models = {

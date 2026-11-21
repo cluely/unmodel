@@ -16,7 +16,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M2.7": {
     id: "MiniMaxAI/MiniMax-M2.7",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -31,7 +31,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M3": {
     id: "MiniMaxAI/MiniMax-M3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -46,7 +46,7 @@ export const models = {
   "Qwen/QwQ-32B": {
     id: "Qwen/QwQ-32B",
     name: "QwQ 32B",
-    family: "qwen",
+    family: "qwq",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -111,7 +111,7 @@ export const models = {
   "Qwen/Qwen3-Coder-480B-A35B-Instruct": {
     id: "Qwen/Qwen3-Coder-480B-A35B-Instruct",
     name: "Qwen3-Coder 480B-A35B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -371,7 +371,7 @@ export const models = {
   "deepseek-ai/DeepSeek-R1": {
     id: "deepseek-ai/DeepSeek-R1",
     name: "DeepSeek R1",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -439,7 +439,7 @@ export const models = {
   "deepseek-ai/DeepSeek-V4-Pro": {
     id: "deepseek-ai/DeepSeek-V4-Pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -490,7 +490,7 @@ export const models = {
   "gemini-2.5-flash-image": {
     id: "gemini-2.5-flash-image",
     name: "Nano Banana",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -501,7 +501,7 @@ export const models = {
     lastUpdated: "2025-08-26",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
     limit: { context: 32768, output: 32768 },
-    cost: { input: 0.3, output: 30 },
+    cost: { input: 0.3, output: 2.5 },
   },
   "gemini-2.5-pro": {
     id: "gemini-2.5-pro",
@@ -540,7 +540,7 @@ export const models = {
   "gemini-3-pro-image": {
     id: "gemini-3-pro-image",
     name: "Nano Banana Pro",
-    family: "gemini-pro",
+    family: "nano-banana-pro",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -556,7 +556,7 @@ export const models = {
   "gemini-3-pro-image-preview": {
     id: "gemini-3-pro-image-preview",
     name: "Nano Banana Pro Preview",
-    family: "gemini-pro",
+    family: "nano-banana-pro",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -573,7 +573,7 @@ export const models = {
   "gemini-3.1-flash-image": {
     id: "gemini-3.1-flash-image",
     name: "Nano Banana 2",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -590,7 +590,7 @@ export const models = {
   "gemini-3.1-flash-image-preview": {
     id: "gemini-3.1-flash-image-preview",
     name: "Nano Banana 2 Preview",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -1145,7 +1145,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -1162,7 +1162,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1179,7 +1179,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1196,7 +1196,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1305,7 +1305,7 @@ export const models = {
   "grok-code-fast-1": {
     id: "grok-code-fast-1",
     name: "Grok Code Fast 1",
-    family: "grok",
+    family: "grok-code",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -1321,7 +1321,7 @@ export const models = {
   "kimi-k2-turbo-preview": {
     id: "kimi-k2-turbo-preview",
     name: "Kimi K2 Turbo Preview",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -1337,7 +1337,7 @@ export const models = {
   "kimi-k2.5": {
     id: "kimi-k2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1439,7 +1439,7 @@ export const models = {
   "mimo-v2-pro": {
     id: "mimo-v2-pro",
     name: "MiMo-V2-Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1455,7 +1455,7 @@ export const models = {
   "moonshotai/Kimi-K2.6": {
     id: "moonshotai/Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1472,7 +1472,7 @@ export const models = {
   "moonshotai/Kimi-K2.7-Code": {
     id: "moonshotai/Kimi-K2.7-Code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1489,7 +1489,7 @@ export const models = {
   "moonshotai/Kimi-K3": {
     id: "moonshotai/Kimi-K3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1499,13 +1499,13 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
   "muse-spark-1.1": {
     id: "muse-spark-1.1",
     name: "Muse Spark 1.1",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1521,7 +1521,7 @@ export const models = {
   "muse-spark-1.2": {
     id: "muse-spark-1.2",
     name: "Muse Spark 1.2",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1622,7 +1622,7 @@ export const models = {
   "qwen-2.5-coder-32b": {
     id: "qwen-2.5-coder-32b",
     name: "Qwen 2.5 Coder 32B",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -1638,7 +1638,7 @@ export const models = {
   "qwen3-max": {
     id: "qwen3-max",
     name: "Qwen3 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1655,7 +1655,7 @@ export const models = {
   "qwen3.7-max": {
     id: "qwen3.7-max",
     name: "Qwen3.7 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1670,7 +1670,7 @@ export const models = {
   "qwen3.8-max": {
     id: "qwen3.8-max",
     name: "Qwen3.8 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1685,7 +1685,7 @@ export const models = {
   "route-llm": {
     id: "route-llm",
     name: "RouteLLM",
-    family: "gpt",
+    family: "model-router",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -1700,7 +1700,7 @@ export const models = {
   "thinkingmachines/Inkling": {
     id: "thinkingmachines/Inkling",
     name: "Inkling",
-    family: "ling",
+    family: "inkling",
     attachment: true,
     reasoning: true,
     toolCall: true,

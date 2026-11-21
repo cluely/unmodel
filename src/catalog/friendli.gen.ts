@@ -30,22 +30,6 @@ export const models = {
     limit: { context: 262144, output: 32768 },
     cost: { input: 0.14, output: 0.4 },
   },
-  "zai-org/GLM-5.1": {
-    id: "zai-org/GLM-5.1",
-    name: "GLM-5.1",
-    family: "glm",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-04-07",
-    lastUpdated: "2026-04-07",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 202752, output: 131072 },
-    cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
-  },
   "zai-org/GLM-5.2": {
     id: "zai-org/GLM-5.2",
     name: "GLM-5.2",
@@ -97,7 +81,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type FriendliModelId = keyof typeof models;
-export type FriendliTextModelId = "google/gemma-4-31B-it" | "zai-org/GLM-5.1" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
+export type FriendliTextModelId = "google/gemma-4-31B-it" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
 export type FriendliImageModelId = never;
 export type FriendliAudioModelId = never;
 export type FriendliVideoModelId = never;

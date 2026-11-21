@@ -16,6 +16,7 @@ export const models = {
   "vispark/vision-large": {
     id: "vispark/vision-large",
     name: "Vision Large",
+    family: "vispark-vision-large",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -31,6 +32,7 @@ export const models = {
   "vispark/vision-medium": {
     id: "vispark/vision-medium",
     name: "Vision Medium",
+    family: "vispark-vision-medium",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -46,6 +48,7 @@ export const models = {
   "vispark/vision-small": {
     id: "vispark/vision-small",
     name: "Vision Small",
+    family: "vispark-vision-small",
     attachment: true,
     reasoning: true,
     toolCall: true,

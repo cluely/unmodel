@@ -16,7 +16,7 @@ export const models = {
   "hy3": {
     id: "hy3",
     name: "Hy3",
-    family: "Hy",
+    family: "hy",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -31,7 +31,7 @@ export const models = {
   "hy3-preview": {
     id: "hy3-preview",
     name: "Hy3 preview",
-    family: "Hy",
+    family: "hy",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -46,7 +46,7 @@ export const models = {
   "hy4": {
     id: "hy4",
     name: "Hy4",
-    family: "Hy",
+    family: "hy",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -61,7 +61,7 @@ export const models = {
   "hy4-preview": {
     id: "hy4-preview",
     name: "Hy4 preview",
-    family: "Hy",
+    family: "hy",
     attachment: false,
     reasoning: true,
     toolCall: true,

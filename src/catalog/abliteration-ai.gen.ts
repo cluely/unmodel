@@ -43,6 +43,21 @@ export const models = {
     limit: { context: 1000000, output: 999990, input: 1000000 },
     cost: { input: 5, output: 5, cacheRead: 0.5 },
   },
+  "abliterated-model-large-flash": {
+    id: "abliterated-model-large-flash",
+    name: "Abliterated Model Large Flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-10-23",
+    lastUpdated: "2026-10-24",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 262144, input: 1048576 },
+    cost: { input: 1, output: 2, cacheRead: 0.1 },
+  },
   "abliterated-model-large-v2": {
     id: "abliterated-model-large-v2",
     name: "Abliterated Model Large V2",
@@ -61,7 +76,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AbliterationAiModelId = keyof typeof models;
-export type AbliterationAiTextModelId = "abliterated-model" | "abliterated-model-large" | "abliterated-model-large-v2";
+export type AbliterationAiTextModelId = "abliterated-model" | "abliterated-model-large" | "abliterated-model-large-flash" | "abliterated-model-large-v2";
 export type AbliterationAiImageModelId = never;
 export type AbliterationAiAudioModelId = never;
 export type AbliterationAiVideoModelId = never;

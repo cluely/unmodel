@@ -16,7 +16,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M2.7": {
     id: "MiniMaxAI/MiniMax-M2.7",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -31,7 +31,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M3": {
     id: "MiniMaxAI/MiniMax-M3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -46,7 +46,7 @@ export const models = {
   "Qwen/Qwen3.7-Max": {
     id: "Qwen/Qwen3.7-Max",
     name: "Qwen3.7 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -61,7 +61,7 @@ export const models = {
   "Qwen/Qwen3.8-Flash": {
     id: "Qwen/Qwen3.8-Flash",
     name: "Qwen3.8 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -77,7 +77,7 @@ export const models = {
   "Qwen/Qwen3.8-Max": {
     id: "Qwen/Qwen3.8-Max",
     name: "Qwen3.8 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -173,7 +173,7 @@ export const models = {
   "deepseek-ai/DeepSeek-V4-Pro": {
     id: "deepseek-ai/DeepSeek-V4-Pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -190,7 +190,7 @@ export const models = {
   "moonshotai/Kimi-K2.6": {
     id: "moonshotai/Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -207,7 +207,7 @@ export const models = {
   "moonshotai/kimi-k2.7-code-highspeed": {
     id: "moonshotai/kimi-k2.7-code-highspeed",
     name: "Kimi K2.7 Code Highspeed",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -229,7 +229,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",

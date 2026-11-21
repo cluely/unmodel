@@ -91,7 +91,7 @@ export const models = {
   "cohere/command-r-plus-08-2024": {
     id: "cohere/command-r-plus-08-2024",
     name: "Command R+",
-    family: "command-r",
+    family: "command-r-plus",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -121,7 +121,7 @@ export const models = {
   "deepseek/deepseek-r1": {
     id: "deepseek/deepseek-r1",
     name: "DeepSeek Reasoner",
-    family: "deepseek-thinking",
+    family: "deepseek",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -152,7 +152,7 @@ export const models = {
   "deepseek/deepseek-v4-pro": {
     id: "deepseek/deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -454,7 +454,7 @@ export const models = {
   "perplexity/sonar-reasoning-pro": {
     id: "perplexity/sonar-reasoning-pro",
     name: "Sonar Reasoning Pro",
-    family: "sonar-reasoning",
+    family: "sonar-reasoning-pro",
     attachment: true,
     reasoning: true,
     toolCall: false,

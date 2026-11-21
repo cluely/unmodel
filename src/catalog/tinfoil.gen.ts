@@ -78,13 +78,13 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.15, output: 0.6 },
   },
   "gpt-oss-safeguard-120b": {
     id: "gpt-oss-safeguard-120b",
     name: "gpt-oss-safeguard-120b",
-    family: "gpt-oss",
+    family: "gpt-oss-safeguard",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -95,29 +95,29 @@ export const models = {
     releaseDate: "2025-10-29",
     lastUpdated: "2025-10-29",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.15, output: 0.6 },
   },
-  "kimi-k3": {
-    id: "kimi-k3",
-    name: "Kimi K3",
-    family: "kimi-k3",
+  "inkling-2-small": {
+    id: "inkling-2-small",
+    name: "Inkling 2 Small",
+    family: "inkling-small",
     attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: true,
-    releaseDate: "2026-07-16",
-    lastUpdated: "2026-07-16",
-    modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 262144, output: 131072 },
-    cost: { input: 4, output: 20, cacheRead: 0.6 },
+    releaseDate: "2026-11-05",
+    lastUpdated: "2026-11-12",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 524288, output: 131072 },
+    cost: { input: 0.3, output: 1, cacheRead: 0.03 },
   },
   "kimi-k3-1-pro": {
     id: "kimi-k3-1-pro",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -127,7 +127,7 @@ export const models = {
     releaseDate: "2026-10-23",
     lastUpdated: "2026-10-23",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262144, output: 131072 },
+    limit: { context: 262144, output: 262144 },
     cost: { input: 4, output: 20, cacheRead: 0.4 },
   },
   "llama3-3-70b": {
@@ -164,7 +164,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type TinfoilModelId = keyof typeof models;
-export type TinfoilTextModelId = "deepseek-v4-1-flash" | "gemma4-31b" | "glm-5-3" | "gpt-oss-120b" | "gpt-oss-safeguard-120b" | "kimi-k3" | "kimi-k3-1-pro" | "llama3-3-70b" | "nomic-embed-text";
+export type TinfoilTextModelId = "deepseek-v4-1-flash" | "gemma4-31b" | "glm-5-3" | "gpt-oss-120b" | "gpt-oss-safeguard-120b" | "inkling-2-small" | "kimi-k3-1-pro" | "llama3-3-70b" | "nomic-embed-text";
 export type TinfoilImageModelId = never;
 export type TinfoilAudioModelId = never;
 export type TinfoilVideoModelId = never;

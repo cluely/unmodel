@@ -630,7 +630,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -664,7 +664,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -681,7 +681,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -698,7 +698,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -783,7 +783,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-05-18",
     releaseDate: "2026-09-22",
@@ -800,7 +800,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-04-20",
     releaseDate: "2026-09-22",
@@ -857,7 +857,7 @@ export const models = {
     releaseDate: "2026-08-12",
     lastUpdated: "2026-08-12",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 500000, output: 524288 },
+    limit: { context: 500000, output: 500000 },
     cost: { input: 2, output: 6, cacheRead: 0.5 },
   },
   "grok-4-7": {
@@ -877,27 +877,10 @@ export const models = {
     limit: { context: 500000, output: 500000 },
     cost: { input: 2.5, output: 7.5, cacheRead: 0.5 },
   },
-  "inkling": {
-    id: "inkling",
-    name: "Inkling",
-    family: "ling",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: false,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-07-15",
-    lastUpdated: "2026-07-15",
-    status: "deprecated",
-    modalities: { input: ["text", "image", "audio"], output: ["text"] },
-    limit: { context: 1048576, output: 65536 },
-    cost: { input: 1, output: 4.05, cacheRead: 0.17 },
-  },
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -997,7 +980,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type NeonModelId = keyof typeof models;
-export type NeonTextModelId = "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-haiku-5-5" | "claude-opus-4-1" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-opus-5-5" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "claude-sonnet-5-5" | "deepseek-v4-1-flash" | "gemini-3-1-flash-lite" | "gemini-3-1-pro" | "gemini-3-5-flash" | "gemini-3-5-flash-lite" | "gemini-3-6-flash" | "gemini-3-7-flash" | "gemini-3-8-flash" | "gemini-3-flash" | "gemini-4-argon" | "gemma-3-12b" | "glm-5-2" | "glm-5-3" | "glm-5-3-flash" | "gpt-5" | "gpt-5-1" | "gpt-5-2" | "gpt-5-3-codex" | "gpt-5-4" | "gpt-5-4-mini" | "gpt-5-4-nano" | "gpt-5-5" | "gpt-5-5-pro" | "gpt-5-6-luna" | "gpt-5-6-sol" | "gpt-5-6-terra" | "gpt-5-mini" | "gpt-5-nano" | "gpt-6-1-sol" | "gpt-6-astra" | "gpt-6-luna" | "gpt-6-sol" | "gpt-oss-120b" | "gpt-oss-20b" | "grok-4-6" | "grok-4-7" | "inkling" | "kimi-k3" | "llama-4-maverick" | "meta-llama-3-1-8b-instruct" | "meta-llama-3-3-70b-instruct" | "qwen3-next-80b-a3b-instruct" | "qwen35-122b-a10b";
+export type NeonTextModelId = "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-haiku-5-5" | "claude-opus-4-1" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-opus-5-5" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "claude-sonnet-5-5" | "deepseek-v4-1-flash" | "gemini-3-1-flash-lite" | "gemini-3-1-pro" | "gemini-3-5-flash" | "gemini-3-5-flash-lite" | "gemini-3-6-flash" | "gemini-3-7-flash" | "gemini-3-8-flash" | "gemini-3-flash" | "gemini-4-argon" | "gemma-3-12b" | "glm-5-2" | "glm-5-3" | "glm-5-3-flash" | "gpt-5" | "gpt-5-1" | "gpt-5-2" | "gpt-5-3-codex" | "gpt-5-4" | "gpt-5-4-mini" | "gpt-5-4-nano" | "gpt-5-5" | "gpt-5-5-pro" | "gpt-5-6-luna" | "gpt-5-6-sol" | "gpt-5-6-terra" | "gpt-5-mini" | "gpt-5-nano" | "gpt-6-1-sol" | "gpt-6-astra" | "gpt-6-luna" | "gpt-6-sol" | "gpt-oss-120b" | "gpt-oss-20b" | "grok-4-6" | "grok-4-7" | "kimi-k3" | "llama-4-maverick" | "meta-llama-3-1-8b-instruct" | "meta-llama-3-3-70b-instruct" | "qwen3-next-80b-a3b-instruct" | "qwen35-122b-a10b";
 export type NeonImageModelId = never;
 export type NeonAudioModelId = never;
 export type NeonVideoModelId = never;

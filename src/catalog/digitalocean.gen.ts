@@ -16,6 +16,7 @@ export const models = {
   "all-mini-lm-l6-v2": {
     id: "all-mini-lm-l6-v2",
     name: "All-MiniLM-L6-v2",
+    family: "minilm",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -271,7 +272,7 @@ export const models = {
   "arcee-trinity-large-thinking": {
     id: "arcee-trinity-large-thinking",
     name: "Arcee Trinity Large Thinking (Public Preview)",
-    family: "trinity",
+    family: "trinity-large",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -279,6 +280,7 @@ export const models = {
     openWeights: true,
     releaseDate: "2026-04-01",
     lastUpdated: "2026-05-28",
+    status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 128000, output: 32000 },
     cost: { input: 0.25, output: 0.9, cacheRead: 0.06 },
@@ -301,7 +303,7 @@ export const models = {
   "bge-reranker-v2-m3": {
     id: "bge-reranker-v2-m3",
     name: "BGE Reranker v2 M3",
-    family: "bge",
+    family: "bge-reranker",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -365,7 +367,7 @@ export const models = {
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "Deepseek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -382,7 +384,7 @@ export const models = {
   "deepseek-v4-pro-0813": {
     id: "deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -431,6 +433,7 @@ export const models = {
   "e5-large-v2": {
     id: "e5-large-v2",
     name: "E5 Large v2",
+    family: "e5-large",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -445,7 +448,7 @@ export const models = {
   "fal-ai/elevenlabs/tts/multilingual-v2": {
     id: "fal-ai/elevenlabs/tts/multilingual-v2",
     name: "ElevenLabs Multilingual TTS v2",
-    family: "elevenlabs",
+    family: "elevenlabs-multilingual",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -473,7 +476,7 @@ export const models = {
   "fal-ai/flux/schnell": {
     id: "fal-ai/flux/schnell",
     name: "FLUX.1 [schnell]",
-    family: "flux",
+    family: "flux-schnell",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -580,7 +583,7 @@ export const models = {
   "kimi-k2.6": {
     id: "kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -597,7 +600,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -607,13 +610,13 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
   "kimi-k3.1-pro": {
     id: "kimi-k3.1-pro",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -645,7 +648,7 @@ export const models = {
   "mimo-v2.5-pro": {
     id: "mimo-v2.5-pro",
     name: "MiMo V2.5 Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -661,7 +664,7 @@ export const models = {
   "minimax-m2.5": {
     id: "minimax-m2.5",
     name: "MiniMax M2.5 (Public Preview)",
-    family: "minimax-m2.5",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -677,7 +680,7 @@ export const models = {
   "minimax-m3.1-flash": {
     id: "minimax-m3.1-flash",
     name: "MiniMax M3.1-Flash (Public Preview)",
-    family: "minimax",
+    family: "minimax-m-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -708,6 +711,7 @@ export const models = {
   "multi-qa-mpnet-base-dot-v1": {
     id: "multi-qa-mpnet-base-dot-v1",
     name: "Multi-QA-mpnet-base-dot-v1",
+    family: "mpnet",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -722,7 +726,7 @@ export const models = {
   "nemotron-3-nano-omni": {
     id: "nemotron-3-nano-omni",
     name: "Nemotron 3 Nano Omni",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -738,7 +742,7 @@ export const models = {
   "nemotron-3-ultra-550b": {
     id: "nemotron-3-ultra-550b",
     name: "Nemotron 3 Ultra",
-    family: "nemotron",
+    family: "nemotron-ultra",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -754,7 +758,7 @@ export const models = {
   "nemotron-3.5-super-vl": {
     id: "nemotron-3.5-super-vl",
     name: "NVIDIA Nemotron 3.5 Super VL",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -769,7 +773,7 @@ export const models = {
   "nemotron-nano-12b-v2-vl": {
     id: "nemotron-nano-12b-v2-vl",
     name: "Nemotron-nano 12b v2-vl",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1008,7 +1012,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -1025,7 +1029,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1042,7 +1046,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1059,7 +1063,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1110,7 +1114,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-05-18",
     releaseDate: "2026-09-22",
@@ -1127,7 +1131,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-04-20",
     releaseDate: "2026-09-22",
@@ -1143,7 +1147,7 @@ export const models = {
     attachment: true,
     reasoning: true,
     toolCall: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-06-01",
     releaseDate: "2026-10-26",
@@ -1151,6 +1155,38 @@ export const models = {
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 1, output: 5, cacheRead: 0.05 },
+  },
+  "openai-gpt-6.2-astra": {
+    id: "openai-gpt-6.2-astra",
+    name: "OpenAI GPT-6.2 Astra",
+    family: "gpt-astra",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-05-18",
+    releaseDate: "2026-11-17",
+    lastUpdated: "2026-11-17",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 8, output: 40, cacheRead: 0.4 },
+  },
+  "openai-gpt-6.2-sol": {
+    id: "openai-gpt-6.2-sol",
+    name: "OpenAI GPT-6.2 Sol",
+    family: "gpt-sol",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06-01",
+    releaseDate: "2026-11-17",
+    lastUpdated: "2026-11-17",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 2, output: 10, cacheRead: 0.1 },
   },
   "openai-gpt-image-1": {
     id: "openai-gpt-image-1",
@@ -1165,7 +1201,6 @@ export const models = {
     lastUpdated: "2025-04-24",
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0, output: 0 },
-    cost: { input: 5, output: 40, cacheRead: 1.25 },
   },
   "openai-gpt-image-1.5": {
     id: "openai-gpt-image-1.5",
@@ -1195,7 +1230,7 @@ export const models = {
     lastUpdated: "2026-04-21",
     modalities: { input: ["text", "image"], output: ["image", "text"] },
     limit: { context: 0, output: 16384 },
-    cost: { input: 8, output: 30 },
+    cost: { input: 5, output: 0, cacheRead: 1.25 },
   },
   "openai-gpt-oss-120b": {
     id: "openai-gpt-oss-120b",
@@ -1301,7 +1336,7 @@ export const models = {
   "qwen3-tts-voicedesign": {
     id: "qwen3-tts-voicedesign",
     name: "Qwen3 TTS VoiceDesign",
-    family: "qwen",
+    family: "qwen-tts",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -1331,7 +1366,7 @@ export const models = {
   "qwen3.8-max": {
     id: "qwen3.8-max",
     name: "Qwen3.8-Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1388,7 +1423,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type DigitaloceanModelId = keyof typeof models;
-export type DigitaloceanTextModelId = "all-mini-lm-l6-v2" | "anthropic-claude-4.5-sonnet" | "anthropic-claude-4.6-sonnet" | "anthropic-claude-5-sonnet" | "anthropic-claude-5.5-haiku" | "anthropic-claude-fable-5" | "anthropic-claude-fable-5.1" | "anthropic-claude-fable-5.2" | "anthropic-claude-haiku-4.5" | "anthropic-claude-opus-4.5" | "anthropic-claude-opus-4.6" | "anthropic-claude-opus-4.7" | "anthropic-claude-opus-4.8" | "anthropic-claude-opus-5" | "anthropic-claude-opus-5.5" | "anthropic-claude-sonnet-5.5" | "arcee-trinity-large-thinking" | "bge-m3" | "bge-reranker-v2-m3" | "deepseek-3.2" | "deepseek-4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "deepseek-v4.1-flash" | "deepseek-v4.1-flash-1017" | "e5-large-v2" | "gemma-4-31B-it" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gte-large-en-v1.5" | "kimi-k2.6" | "kimi-k3" | "kimi-k3.1-pro" | "llama-4-maverick" | "mimo-v2.5-pro" | "minimax-m2.5" | "minimax-m3.1-flash" | "mistral-3-14B" | "multi-qa-mpnet-base-dot-v1" | "nemotron-3-nano-omni" | "nemotron-3-ultra-550b" | "nemotron-3.5-super-vl" | "nemotron-nano-12b-v2-vl" | "openai-gpt-4.1" | "openai-gpt-4o" | "openai-gpt-4o-mini" | "openai-gpt-5" | "openai-gpt-5-mini" | "openai-gpt-5-nano" | "openai-gpt-5.2" | "openai-gpt-5.2-pro" | "openai-gpt-5.3-codex" | "openai-gpt-5.4" | "openai-gpt-5.4-mini" | "openai-gpt-5.4-nano" | "openai-gpt-5.4-pro" | "openai-gpt-5.5" | "openai-gpt-5.6-luna" | "openai-gpt-5.6-sol" | "openai-gpt-5.6-terra" | "openai-gpt-6-1-sol" | "openai-gpt-6-astra" | "openai-gpt-6-luna" | "openai-gpt-6-sol" | "openai-gpt-6.1-terra" | "openai-gpt-image-1.5" | "openai-gpt-image-2" | "openai-gpt-oss-120b" | "openai-gpt-oss-20b" | "openai-o1" | "openai-o3" | "openai-o3-mini" | "qwen3-embedding-0.6b" | "qwen3.5-397b-a17b" | "qwen3.8-max" | "reflection-beam";
+export type DigitaloceanTextModelId = "all-mini-lm-l6-v2" | "anthropic-claude-4.5-sonnet" | "anthropic-claude-4.6-sonnet" | "anthropic-claude-5-sonnet" | "anthropic-claude-5.5-haiku" | "anthropic-claude-fable-5" | "anthropic-claude-fable-5.1" | "anthropic-claude-fable-5.2" | "anthropic-claude-haiku-4.5" | "anthropic-claude-opus-4.5" | "anthropic-claude-opus-4.6" | "anthropic-claude-opus-4.7" | "anthropic-claude-opus-4.8" | "anthropic-claude-opus-5" | "anthropic-claude-opus-5.5" | "anthropic-claude-sonnet-5.5" | "arcee-trinity-large-thinking" | "bge-m3" | "bge-reranker-v2-m3" | "deepseek-3.2" | "deepseek-4-flash" | "deepseek-v4-flash-0731" | "deepseek-v4-pro" | "deepseek-v4-pro-0813" | "deepseek-v4.1-flash" | "deepseek-v4.1-flash-1017" | "e5-large-v2" | "gemma-4-31B-it" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gte-large-en-v1.5" | "kimi-k2.6" | "kimi-k3" | "kimi-k3.1-pro" | "llama-4-maverick" | "mimo-v2.5-pro" | "minimax-m2.5" | "minimax-m3.1-flash" | "mistral-3-14B" | "multi-qa-mpnet-base-dot-v1" | "nemotron-3-nano-omni" | "nemotron-3-ultra-550b" | "nemotron-3.5-super-vl" | "nemotron-nano-12b-v2-vl" | "openai-gpt-4.1" | "openai-gpt-4o" | "openai-gpt-4o-mini" | "openai-gpt-5" | "openai-gpt-5-mini" | "openai-gpt-5-nano" | "openai-gpt-5.2" | "openai-gpt-5.2-pro" | "openai-gpt-5.3-codex" | "openai-gpt-5.4" | "openai-gpt-5.4-mini" | "openai-gpt-5.4-nano" | "openai-gpt-5.4-pro" | "openai-gpt-5.5" | "openai-gpt-5.6-luna" | "openai-gpt-5.6-sol" | "openai-gpt-5.6-terra" | "openai-gpt-6-1-sol" | "openai-gpt-6-astra" | "openai-gpt-6-luna" | "openai-gpt-6-sol" | "openai-gpt-6.1-terra" | "openai-gpt-6.2-astra" | "openai-gpt-6.2-sol" | "openai-gpt-image-1.5" | "openai-gpt-image-2" | "openai-gpt-oss-120b" | "openai-gpt-oss-20b" | "openai-o1" | "openai-o3" | "openai-o3-mini" | "qwen3-embedding-0.6b" | "qwen3.5-397b-a17b" | "qwen3.8-max" | "reflection-beam";
 export type DigitaloceanImageModelId = "fal-ai/fast-sdxl" | "fal-ai/flux/schnell" | "openai-gpt-image-1" | "openai-gpt-image-1.5" | "openai-gpt-image-2" | "stable-diffusion-3.5-large";
 export type DigitaloceanAudioModelId = "fal-ai/elevenlabs/tts/multilingual-v2" | "fal-ai/stable-audio-25/text-to-audio" | "qwen3-tts-voicedesign";
 export type DigitaloceanVideoModelId = "wan2-2-t2v-a14b";

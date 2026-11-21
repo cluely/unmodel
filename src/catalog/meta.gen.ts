@@ -16,7 +16,7 @@ export const models = {
   "muse-ember-1.0": {
     id: "muse-ember-1.0",
     name: "Muse Ember",
-    family: "muse",
+    family: "muse-ember",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -32,7 +32,7 @@ export const models = {
   "muse-spark-1.1": {
     id: "muse-spark-1.1",
     name: "Muse Spark 1.1",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -48,7 +48,7 @@ export const models = {
   "muse-spark-1.2": {
     id: "muse-spark-1.2",
     name: "Muse Spark 1.2",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -64,7 +64,7 @@ export const models = {
   "muse-spark-1.2-contributor": {
     id: "muse-spark-1.2-contributor",
     name: "Muse Spark 1.2 Contributor",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -80,7 +80,7 @@ export const models = {
   "muse-spark-1.3": {
     id: "muse-spark-1.3",
     name: "Muse Spark 1.3",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -96,7 +96,7 @@ export const models = {
   "muse-spark-1.3-contributor": {
     id: "muse-spark-1.3-contributor",
     name: "Muse Spark 1.3 Contributor",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -112,7 +112,7 @@ export const models = {
   "muse-wonder-1.0": {
     id: "muse-wonder-1.0",
     name: "Muse Wonder",
-    family: "muse",
+    family: "muse-wonder",
     attachment: true,
     reasoning: true,
     toolCall: true,

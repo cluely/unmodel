@@ -5,16 +5,22 @@
 import type { ModelInfo, ProviderInfo } from "../core/catalog-types";
 import * as _302aiGen from "./302ai.gen";
 import * as abacusGen from "./abacus.gen";
+import * as abliteratedllmGen from "./abliteratedllm.gen";
 import * as abliterationAiGen from "./abliteration-ai.gen";
 import * as aboveGen from "./above.gen";
+import * as adaptionGen from "./adaption.gen";
+import * as adzukiGen from "./adzuki.gen";
 import * as agentrouterGen from "./agentrouter.gen";
 import * as agnesGen from "./agnes.gen";
 import * as aiRouterGen from "./ai-router.gen";
 import * as ai21Gen from "./ai21.gen";
 import * as aiandGen from "./aiand.gen";
+import * as aigrowGen from "./aigrow.gen";
 import * as aihubmixGen from "./aihubmix.gen";
 import * as aimlapiGen from "./aimlapi.gen";
 import * as ainetcafeGen from "./ainetcafe.gen";
+import * as aipgGen from "./aipg.gen";
+import * as aistupidlevelGen from "./aistupidlevel.gen";
 import * as aixyGen from "./aixy.gen";
 import * as akiIoGen from "./aki-io.gen";
 import * as alibabaGen from "./alibaba.gen";
@@ -26,11 +32,15 @@ import * as alibabaTokenPlanCnGen from "./alibaba-token-plan-cn.gen";
 import * as amazonBedrockGen from "./amazon-bedrock.gen";
 import * as ambientGen from "./ambient.gen";
 import * as amdGen from "./amd.gen";
+import * as anonrouterGen from "./anonrouter.gen";
 import * as anthropicGen from "./anthropic.gen";
 import * as anyapiGen from "./anyapi.gen";
+import * as apikoGen from "./apiko.gen";
 import * as arceeGen from "./arcee.gen";
 import * as atomicChatGen from "./atomic-chat.gen";
+import * as augureGen from "./augure.gen";
 import * as aurikoGen from "./auriko.gen";
+import * as autarchoGen from "./autarcho.gen";
 import * as azureGen from "./azure.gen";
 import * as azureCognitiveServicesGen from "./azure-cognitive-services.gen";
 import * as bailingGen from "./bailing.gen";
@@ -40,16 +50,24 @@ import * as bergetGen from "./berget.gen";
 import * as blueclawGen from "./blueclaw.gen";
 import * as bothubGen from "./bothub.gen";
 import * as boundlessGen from "./boundless.gen";
+import * as bumoGen from "./bumo.gen";
+import * as byteplusGen from "./byteplus.gen";
+import * as cedarllmGen from "./cedarllm.gen";
 import * as cerebrasGen from "./cerebras.gen";
+import * as cheapaimodelGen from "./cheapaimodel.gen";
+import * as cheapestTokenGen from "./cheapest-token.gen";
+import * as cheapllmGen from "./cheapllm.gen";
 import * as chutesGen from "./chutes.gen";
 import * as clarifaiGen from "./clarifai.gen";
 import * as claudinioGen from "./claudinio.gen";
 import * as clinePassGen from "./cline-pass.gen";
+import * as cloudcodeGen from "./cloudcode.gen";
 import * as cloudferroSherlockGen from "./cloudferro-sherlock.gen";
 import * as cloudflareAiGatewayGen from "./cloudflare-ai-gateway.gen";
 import * as cloudflareWorkersAiGen from "./cloudflare-workers-ai.gen";
 import * as cohereGen from "./cohere.gen";
 import * as commandcodeGen from "./commandcode.gen";
+import * as confidentialAiGen from "./confidential-ai.gen";
 import * as coralbricksGen from "./coralbricks.gen";
 import * as cortecsGen from "./cortecs.gen";
 import * as crossmodelGen from "./crossmodel.gen";
@@ -60,64 +78,95 @@ import * as deepinfraGen from "./deepinfra.gen";
 import * as deepseekGen from "./deepseek.gen";
 import * as digitaloceanGen from "./digitalocean.gen";
 import * as dinferenceGen from "./dinference.gen";
+import * as dothooshGen from "./dothoosh.gen";
+import * as doublewordGen from "./doubleword.gen";
 import * as drunGen from "./drun.gen";
 import * as ebcloudGen from "./ebcloud.gen";
 import * as echoGen from "./echo.gen";
 import * as edenaiGen from "./edenai.gen";
 import * as empiriolabsGen from "./empiriolabs.gen";
 import * as engyGen from "./engy.gen";
+import * as entrimGen from "./entrim.gen";
 import * as evrocGen from "./evroc.gen";
+import * as ezkielynaGen from "./ezkielyna.gen";
 import * as fastrouterGen from "./fastrouter.gen";
+import * as fiftyxGen from "./fiftyx.gen";
 import * as fireworksAiGen from "./fireworks-ai.gen";
+import * as fortytwoGen from "./fortytwo.gen";
 import * as freemodelGen from "./freemodel.gen";
+import * as frequencyGen from "./frequency.gen";
 import * as friendliGen from "./friendli.gen";
 import * as frogbotGen from "./frogbot.gen";
+import * as gisooGen from "./gisoo.gen";
 import * as githubCopilotGen from "./github-copilot.gen";
 import * as gitlabGen from "./gitlab.gen";
 import * as gmicloudGen from "./gmicloud.gen";
 import * as googleGen from "./google.gen";
 import * as googleVertexGen from "./google-vertex.gen";
 import * as googleVertexAnthropicGen from "./google-vertex-anthropic.gen";
+import * as graphnGen from "./graphn.gen";
 import * as greenptGen from "./greenpt.gen";
 import * as groqGen from "./groq.gen";
 import * as heliconeGen from "./helicone.gen";
 import * as hetznerGen from "./hetzner.gen";
 import * as hopperGen from "./hopper.gen";
+import * as hostingerRouterGen from "./hostinger-router.gen";
 import * as hpcAiGen from "./hpc-ai.gen";
+import * as huaweiMaasGen from "./huawei-maas.gen";
+import * as hubrisGen from "./hubris.gen";
 import * as huggingfaceGen from "./huggingface.gen";
+import * as humainGen from "./humain.gen";
 import * as hyperGen from "./hyper.gen";
 import * as impossiblGen from "./impossibl.gen";
 import * as inceptionGen from "./inception.gen";
 import * as inceptronGen from "./inceptron.gen";
 import * as incoGen from "./inco.gen";
 import * as inferGen from "./infer.gen";
+import * as inferallGen from "./inferall.gen";
 import * as inferenceGen from "./inference.gen";
+import * as inferenceCoopGen from "./inference-coop.gen";
+import * as inferenceapisGen from "./inferenceapis.gen";
+import * as inferrisGen from "./inferris.gen";
+import * as infersiaGen from "./infersia.gen";
 import * as inferxGen from "./inferx.gen";
 import * as infomaniakGen from "./infomaniak.gen";
 import * as ioNetGen from "./io-net.gen";
+import * as isoquantGen from "./isoquant.gen";
 import * as iteracomputeGen from "./iteracompute.gen";
+import * as jadAiGen from "./jad-ai.gen";
 import * as jalapenoGen from "./jalapeno.gen";
 import * as jiekouGen from "./jiekou.gen";
+import * as joingonkaGen from "./joingonka.gen";
+import * as jzstokenGen from "./jzstoken.gen";
+import * as kelnGen from "./keln.gen";
 import * as kenariGen from "./kenari.gen";
 import * as kiloGen from "./kilo.gen";
 import * as kimiCodePlanCnGen from "./kimi-code-plan-cn.gen";
 import * as kimiCodePlanGlobalGen from "./kimi-code-plan-global.gen";
+import * as kitaniGen from "./kitani.gen";
+import * as klavoGen from "./klavo.gen";
 import * as klokintegrationGen from "./klokintegration.gen";
+import * as korouterGen from "./korouter.gen";
 import * as kosmikGen from "./kosmik.gen";
 import * as kuaeCloudCodingPlanGen from "./kuae-cloud-coding-plan.gen";
-import * as lilacGen from "./lilac.gen";
+import * as kunavoGen from "./kunavo.gen";
 import * as liquidGen from "./liquid.gen";
+import * as lithosaiGen from "./lithosai.gen";
 import * as llmgatewayGen from "./llmgateway.gen";
 import * as llmgatewayProvidersGen from "./llmgateway-providers.gen";
 import * as llmtechGen from "./llmtech.gen";
 import * as llmtrGen from "./llmtr.gen";
 import * as lmstudioGen from "./lmstudio.gen";
+import * as logitsGen from "./logits.gen";
 import * as longcatGen from "./longcat.gen";
 import * as lowrouterGen from "./lowrouter.gen";
 import * as lucidqueryGen from "./lucidquery.gen";
+import * as lyceumGen from "./lyceum.gen";
 import * as lynkrGen from "./lynkr.gen";
+import * as mallardGen from "./mallard.gen";
 import * as meganovaGen from "./meganova.gen";
 import * as meliousGen from "./melious.gen";
+import * as meragptGen from "./meragpt.gen";
 import * as mergeGatewayGen from "./merge-gateway.gen";
 import * as metaGen from "./meta.gen";
 import * as minimaxGen from "./minimax.gen";
@@ -132,6 +181,7 @@ import * as modelOracleAiGen from "./model-oracle-ai.gen";
 import * as modelisGen from "./modelis.gen";
 import * as modelscopeGen from "./modelscope.gen";
 import * as modularGen from "./modular.gen";
+import * as moneoGen from "./moneo.gen";
 import * as moonshotaiGen from "./moonshotai.gen";
 import * as moonshotaiCnGen from "./moonshotai-cn.gen";
 import * as morphGen from "./morph.gen";
@@ -144,9 +194,13 @@ import * as nebiusGen from "./nebius.gen";
 import * as neonGen from "./neon.gen";
 import * as neosmithGen from "./neosmith.gen";
 import * as neuralwattGen from "./neuralwatt.gen";
+import * as nodecodeGen from "./nodecode.gen";
+import * as nokeepGen from "./nokeep.gen";
 import * as novaGen from "./nova.gen";
 import * as novitaAiGen from "./novita-ai.gen";
 import * as nvidiaGen from "./nvidia.gen";
+import * as oathbreakerGen from "./oathbreaker.gen";
+import * as obscurifyGen from "./obscurify.gen";
 import * as ociGen from "./oci.gen";
 import * as ofoxGen from "./ofox.gen";
 import * as ollamaCloudGen from "./ollama-cloud.gen";
@@ -157,27 +211,39 @@ import * as openreasonGen from "./openreason.gen";
 import * as openrouterGen from "./openrouter.gen";
 import * as opperGen from "./opper.gen";
 import * as orcarouterGen from "./orcarouter.gen";
+import * as outerlabsGen from "./outerlabs.gen";
 import * as ovhcloudGen from "./ovhcloud.gen";
+import * as paraloncloudGen from "./paraloncloud.gen";
 import * as paretoGen from "./pareto.gen";
 import * as pendraGen from "./pendra.gen";
 import * as perplexityGen from "./perplexity.gen";
 import * as perplexityAgentGen from "./perplexity-agent.gen";
+import * as phalaGen from "./phala.gen";
+import * as phaseGen from "./phase.gen";
 import * as pioneerGen from "./pioneer.gen";
 import * as poeGen from "./poe.gen";
 import * as poolsideGen from "./poolside.gen";
+import * as powerspringGen from "./powerspring.gen";
 import * as primeGen from "./prime.gen";
 import * as privatemodeAiGen from "./privatemode-ai.gen";
+import * as proxystacksGen from "./proxystacks.gen";
 import * as qihangAiGen from "./qihang-ai.gen";
 import * as qiniuAiGen from "./qiniu-ai.gen";
 import * as qvacGen from "./qvac.gen";
+import * as raylineGen from "./rayline.gen";
 import * as reflectionGen from "./reflection.gen";
+import * as refuselessGen from "./refuseless.gen";
 import * as regoloAiGen from "./regolo-ai.gen";
 import * as requestyGen from "./requesty.gen";
 import * as routingRunGen from "./routing-run.gen";
+import * as ruapiGen from "./ruapi.gen";
+import * as runcrateGen from "./runcrate.gen";
 import * as runinfraGen from "./runinfra.gen";
+import * as saggGen from "./sagg.gen";
 import * as sakanaGen from "./sakana.gen";
 import * as saladCloudGen from "./salad-cloud.gen";
 import * as sambanovaGen from "./sambanova.gen";
+import * as sandbaseGen from "./sandbase.gen";
 import * as sapAiCoreGen from "./sap-ai-core.gen";
 import * as sarvamGen from "./sarvam.gen";
 import * as scalewayGen from "./scaleway.gen";
@@ -187,34 +253,53 @@ import * as sensenovaGen from "./sensenova.gen";
 import * as siliconflowGen from "./siliconflow.gen";
 import * as siliconflowCnGen from "./siliconflow-cn.gen";
 import * as snowflakeCortexGen from "./snowflake-cortex.gen";
+import * as sokkanGen from "./sokkan.gen";
+import * as sparrowcodesGen from "./sparrowcodes.gen";
 import * as stackitGen from "./stackit.gen";
 import * as standardcomputeGen from "./standardcompute.gen";
+import * as steadyrouterGen from "./steadyrouter.gen";
 import * as stepfunGen from "./stepfun.gen";
 import * as stepfunAiGen from "./stepfun-ai.gen";
 import * as stepfunAiStepPlanGen from "./stepfun-ai-step-plan.gen";
 import * as stepfunStepPlanGen from "./stepfun-step-plan.gen";
+import * as steppingStoneGen from "./stepping-stone.gen";
 import * as subconsciousGen from "./subconscious.gen";
 import * as submodelGen from "./submodel.gen";
+import * as superbotGgGen from "./superbot-gg.gen";
 import * as syntheticGen from "./synthetic.gen";
-import * as temprGen from "./tempr.gen";
+import * as synthoraiGen from "./synthorai.gen";
+import * as teamorouterGen from "./teamorouter.gen";
+import * as teapotRouterGen from "./teapot-router.gen";
 import * as tencentCodingPlanGen from "./tencent-coding-plan.gen";
 import * as tencentTokenPlanGen from "./tencent-token-plan.gen";
 import * as tencentTokenhubGen from "./tencent-tokenhub.gen";
 import * as tensorxGen from "./tensorx.gen";
+import * as tenstorrentGen from "./tenstorrent.gen";
 import * as theGridAiGen from "./the-grid-ai.gen";
+import * as therouterGen from "./therouter.gen";
 import * as thinkingmachinesGen from "./thinkingmachines.gen";
 import * as tinfoilGen from "./tinfoil.gen";
+import * as toapisGen from "./toapis.gen";
 import * as togetheraiGen from "./togetherai.gen";
 import * as tokengoGen from "./tokengo.gen";
+import * as tokenifyGen from "./tokenify.gen";
+import * as tokenlabGen from "./tokenlab.gen";
 import * as tokenrouterGen from "./tokenrouter.gen";
+import * as tokenwattGen from "./tokenwatt.gen";
 import * as trustedrouterGen from "./trustedrouter.gen";
+import * as trustedtokensGen from "./trustedtokens.gen";
 import * as umansAiGen from "./umans-ai.gen";
 import * as umansAiCodingPlanGen from "./umans-ai-coding-plan.gen";
+import * as unbiasedGen from "./unbiased.gen";
+import * as uncensuredaiGen from "./uncensuredai.gen";
 import * as unorouterGen from "./unorouter.gen";
+import * as unrestrictedGen from "./unrestricted.gen";
+import * as uplinkswitchGen from "./uplinkswitch.gen";
 import * as upstageGen from "./upstage.gen";
 import * as vancineGen from "./vancine.gen";
 import * as veniceGen from "./venice.gen";
 import * as vercelGen from "./vercel.gen";
+import * as verdaGen from "./verda.gen";
 import * as visparkGen from "./vispark.gen";
 import * as vivgridGen from "./vivgrid.gen";
 import * as volcengineGen from "./volcengine.gen";
@@ -225,19 +310,23 @@ import * as wallabyGen from "./wallaby.gen";
 import * as wallyGen from "./wally.gen";
 import * as wandbGen from "./wandb.gen";
 import * as watsonxGen from "./watsonx.gen";
+import * as wattGen from "./watt.gen";
 import * as xaiGen from "./xai.gen";
 import * as xiaomiGen from "./xiaomi.gen";
 import * as xiaomiTokenPlanAmsGen from "./xiaomi-token-plan-ams.gen";
 import * as xiaomiTokenPlanCnGen from "./xiaomi-token-plan-cn.gen";
 import * as xiaomiTokenPlanSgpGen from "./xiaomi-token-plan-sgp.gen";
 import * as xpersonaGen from "./xpersona.gen";
+import * as xxapiGen from "./xxapi.gen";
 import * as zaiGen from "./zai.gen";
 import * as zaiCodingPlanGen from "./zai-coding-plan.gen";
 import * as zeldocGen from "./zeldoc.gen";
 import * as zenifraGen from "./zenifra.gen";
 import * as zenmuxGen from "./zenmux.gen";
+import * as zerogpuGen from "./zerogpu.gen";
 import * as zhipuaiGen from "./zhipuai.gen";
 import * as zhipuaiCodingPlanGen from "./zhipuai-coding-plan.gen";
+import * as zroGen from "./zro.gen";
 
 export interface ProviderCatalog {
   provider: ProviderInfo;
@@ -247,16 +336,22 @@ export interface ProviderCatalog {
 export type ProviderId =
   | "302ai"
   | "abacus"
+  | "abliteratedllm"
   | "abliteration-ai"
   | "above"
+  | "adaption"
+  | "adzuki"
   | "agentrouter"
   | "agnes"
   | "ai-router"
   | "ai21"
   | "aiand"
+  | "aigrow"
   | "aihubmix"
   | "aimlapi"
   | "ainetcafe"
+  | "aipg"
+  | "aistupidlevel"
   | "aixy"
   | "aki-io"
   | "alibaba"
@@ -268,11 +363,15 @@ export type ProviderId =
   | "amazon-bedrock"
   | "ambient"
   | "amd"
+  | "anonrouter"
   | "anthropic"
   | "anyapi"
+  | "apiko"
   | "arcee"
   | "atomic-chat"
+  | "augure"
   | "auriko"
+  | "autarcho"
   | "azure"
   | "azure-cognitive-services"
   | "bailing"
@@ -282,16 +381,24 @@ export type ProviderId =
   | "blueclaw"
   | "bothub"
   | "boundless"
+  | "bumo"
+  | "byteplus"
+  | "cedarllm"
   | "cerebras"
+  | "cheapaimodel"
+  | "cheapest-token"
+  | "cheapllm"
   | "chutes"
   | "clarifai"
   | "claudinio"
   | "cline-pass"
+  | "cloudcode"
   | "cloudferro-sherlock"
   | "cloudflare-ai-gateway"
   | "cloudflare-workers-ai"
   | "cohere"
   | "commandcode"
+  | "confidential-ai"
   | "coralbricks"
   | "cortecs"
   | "crossmodel"
@@ -302,64 +409,95 @@ export type ProviderId =
   | "deepseek"
   | "digitalocean"
   | "dinference"
+  | "dothoosh"
+  | "doubleword"
   | "drun"
   | "ebcloud"
   | "echo"
   | "edenai"
   | "empiriolabs"
   | "engy"
+  | "entrim"
   | "evroc"
+  | "ezkielyna"
   | "fastrouter"
+  | "fiftyx"
   | "fireworks-ai"
+  | "fortytwo"
   | "freemodel"
+  | "frequency"
   | "friendli"
   | "frogbot"
+  | "gisoo"
   | "github-copilot"
   | "gitlab"
   | "gmicloud"
   | "google"
   | "google-vertex"
   | "google-vertex-anthropic"
+  | "graphn"
   | "greenpt"
   | "groq"
   | "helicone"
   | "hetzner"
   | "hopper"
+  | "hostinger-router"
   | "hpc-ai"
+  | "huawei-maas"
+  | "hubris"
   | "huggingface"
+  | "humain"
   | "hyper"
   | "impossibl"
   | "inception"
   | "inceptron"
   | "inco"
   | "infer"
+  | "inferall"
   | "inference"
+  | "inference-coop"
+  | "inferenceapis"
+  | "inferris"
+  | "infersia"
   | "inferx"
   | "infomaniak"
   | "io-net"
+  | "isoquant"
   | "iteracompute"
+  | "jad-ai"
   | "jalapeno"
   | "jiekou"
+  | "joingonka"
+  | "jzstoken"
+  | "keln"
   | "kenari"
   | "kilo"
   | "kimi-code-plan-cn"
   | "kimi-code-plan-global"
+  | "kitani"
+  | "klavo"
   | "klokintegration"
+  | "korouter"
   | "kosmik"
   | "kuae-cloud-coding-plan"
-  | "lilac"
+  | "kunavo"
   | "liquid"
+  | "lithosai"
   | "llmgateway"
   | "llmgateway-providers"
   | "llmtech"
   | "llmtr"
   | "lmstudio"
+  | "logits"
   | "longcat"
   | "lowrouter"
   | "lucidquery"
+  | "lyceum"
   | "lynkr"
+  | "mallard"
   | "meganova"
   | "melious"
+  | "meragpt"
   | "merge-gateway"
   | "meta"
   | "minimax"
@@ -374,6 +512,7 @@ export type ProviderId =
   | "modelis"
   | "modelscope"
   | "modular"
+  | "moneo"
   | "moonshotai"
   | "moonshotai-cn"
   | "morph"
@@ -386,9 +525,13 @@ export type ProviderId =
   | "neon"
   | "neosmith"
   | "neuralwatt"
+  | "nodecode"
+  | "nokeep"
   | "nova"
   | "novita-ai"
   | "nvidia"
+  | "oathbreaker"
+  | "obscurify"
   | "oci"
   | "ofox"
   | "ollama-cloud"
@@ -399,27 +542,39 @@ export type ProviderId =
   | "openrouter"
   | "opper"
   | "orcarouter"
+  | "outerlabs"
   | "ovhcloud"
+  | "paraloncloud"
   | "pareto"
   | "pendra"
   | "perplexity"
   | "perplexity-agent"
+  | "phala"
+  | "phase"
   | "pioneer"
   | "poe"
   | "poolside"
+  | "powerspring"
   | "prime"
   | "privatemode-ai"
+  | "proxystacks"
   | "qihang-ai"
   | "qiniu-ai"
   | "qvac"
+  | "rayline"
   | "reflection"
+  | "refuseless"
   | "regolo-ai"
   | "requesty"
   | "routing-run"
+  | "ruapi"
+  | "runcrate"
   | "runinfra"
+  | "sagg"
   | "sakana"
   | "salad-cloud"
   | "sambanova"
+  | "sandbase"
   | "sap-ai-core"
   | "sarvam"
   | "scaleway"
@@ -429,34 +584,53 @@ export type ProviderId =
   | "siliconflow"
   | "siliconflow-cn"
   | "snowflake-cortex"
+  | "sokkan"
+  | "sparrowcodes"
   | "stackit"
   | "standardcompute"
+  | "steadyrouter"
   | "stepfun"
   | "stepfun-ai"
   | "stepfun-ai-step-plan"
   | "stepfun-step-plan"
+  | "stepping-stone"
   | "subconscious"
   | "submodel"
+  | "superbot-gg"
   | "synthetic"
-  | "tempr"
+  | "synthorai"
+  | "teamorouter"
+  | "teapot-router"
   | "tencent-coding-plan"
   | "tencent-token-plan"
   | "tencent-tokenhub"
   | "tensorx"
+  | "tenstorrent"
   | "the-grid-ai"
+  | "therouter"
   | "thinkingmachines"
   | "tinfoil"
+  | "toapis"
   | "togetherai"
   | "tokengo"
+  | "tokenify"
+  | "tokenlab"
   | "tokenrouter"
+  | "tokenwatt"
   | "trustedrouter"
+  | "trustedtokens"
   | "umans-ai"
   | "umans-ai-coding-plan"
+  | "unbiased"
+  | "uncensuredai"
   | "unorouter"
+  | "unrestricted"
+  | "uplinkswitch"
   | "upstage"
   | "vancine"
   | "venice"
   | "vercel"
+  | "verda"
   | "vispark"
   | "vivgrid"
   | "volcengine"
@@ -467,19 +641,23 @@ export type ProviderId =
   | "wally"
   | "wandb"
   | "watsonx"
+  | "watt"
   | "xai"
   | "xiaomi"
   | "xiaomi-token-plan-ams"
   | "xiaomi-token-plan-cn"
   | "xiaomi-token-plan-sgp"
   | "xpersona"
+  | "xxapi"
   | "zai"
   | "zai-coding-plan"
   | "zeldoc"
   | "zenifra"
   | "zenmux"
+  | "zerogpu"
   | "zhipuai"
-  | "zhipuai-coding-plan";
+  | "zhipuai-coding-plan"
+  | "zro";
 
 /**
  * The full registry with every literal the `.gen` files already computed.
@@ -497,16 +675,22 @@ export type ProviderId =
 export const catalogTyped = {
   "302ai": _302aiGen,
   "abacus": abacusGen,
+  "abliteratedllm": abliteratedllmGen,
   "abliteration-ai": abliterationAiGen,
   "above": aboveGen,
+  "adaption": adaptionGen,
+  "adzuki": adzukiGen,
   "agentrouter": agentrouterGen,
   "agnes": agnesGen,
   "ai-router": aiRouterGen,
   "ai21": ai21Gen,
   "aiand": aiandGen,
+  "aigrow": aigrowGen,
   "aihubmix": aihubmixGen,
   "aimlapi": aimlapiGen,
   "ainetcafe": ainetcafeGen,
+  "aipg": aipgGen,
+  "aistupidlevel": aistupidlevelGen,
   "aixy": aixyGen,
   "aki-io": akiIoGen,
   "alibaba": alibabaGen,
@@ -518,11 +702,15 @@ export const catalogTyped = {
   "amazon-bedrock": amazonBedrockGen,
   "ambient": ambientGen,
   "amd": amdGen,
+  "anonrouter": anonrouterGen,
   "anthropic": anthropicGen,
   "anyapi": anyapiGen,
+  "apiko": apikoGen,
   "arcee": arceeGen,
   "atomic-chat": atomicChatGen,
+  "augure": augureGen,
   "auriko": aurikoGen,
+  "autarcho": autarchoGen,
   "azure": azureGen,
   "azure-cognitive-services": azureCognitiveServicesGen,
   "bailing": bailingGen,
@@ -532,16 +720,24 @@ export const catalogTyped = {
   "blueclaw": blueclawGen,
   "bothub": bothubGen,
   "boundless": boundlessGen,
+  "bumo": bumoGen,
+  "byteplus": byteplusGen,
+  "cedarllm": cedarllmGen,
   "cerebras": cerebrasGen,
+  "cheapaimodel": cheapaimodelGen,
+  "cheapest-token": cheapestTokenGen,
+  "cheapllm": cheapllmGen,
   "chutes": chutesGen,
   "clarifai": clarifaiGen,
   "claudinio": claudinioGen,
   "cline-pass": clinePassGen,
+  "cloudcode": cloudcodeGen,
   "cloudferro-sherlock": cloudferroSherlockGen,
   "cloudflare-ai-gateway": cloudflareAiGatewayGen,
   "cloudflare-workers-ai": cloudflareWorkersAiGen,
   "cohere": cohereGen,
   "commandcode": commandcodeGen,
+  "confidential-ai": confidentialAiGen,
   "coralbricks": coralbricksGen,
   "cortecs": cortecsGen,
   "crossmodel": crossmodelGen,
@@ -552,64 +748,95 @@ export const catalogTyped = {
   "deepseek": deepseekGen,
   "digitalocean": digitaloceanGen,
   "dinference": dinferenceGen,
+  "dothoosh": dothooshGen,
+  "doubleword": doublewordGen,
   "drun": drunGen,
   "ebcloud": ebcloudGen,
   "echo": echoGen,
   "edenai": edenaiGen,
   "empiriolabs": empiriolabsGen,
   "engy": engyGen,
+  "entrim": entrimGen,
   "evroc": evrocGen,
+  "ezkielyna": ezkielynaGen,
   "fastrouter": fastrouterGen,
+  "fiftyx": fiftyxGen,
   "fireworks-ai": fireworksAiGen,
+  "fortytwo": fortytwoGen,
   "freemodel": freemodelGen,
+  "frequency": frequencyGen,
   "friendli": friendliGen,
   "frogbot": frogbotGen,
+  "gisoo": gisooGen,
   "github-copilot": githubCopilotGen,
   "gitlab": gitlabGen,
   "gmicloud": gmicloudGen,
   "google": googleGen,
   "google-vertex": googleVertexGen,
   "google-vertex-anthropic": googleVertexAnthropicGen,
+  "graphn": graphnGen,
   "greenpt": greenptGen,
   "groq": groqGen,
   "helicone": heliconeGen,
   "hetzner": hetznerGen,
   "hopper": hopperGen,
+  "hostinger-router": hostingerRouterGen,
   "hpc-ai": hpcAiGen,
+  "huawei-maas": huaweiMaasGen,
+  "hubris": hubrisGen,
   "huggingface": huggingfaceGen,
+  "humain": humainGen,
   "hyper": hyperGen,
   "impossibl": impossiblGen,
   "inception": inceptionGen,
   "inceptron": inceptronGen,
   "inco": incoGen,
   "infer": inferGen,
+  "inferall": inferallGen,
   "inference": inferenceGen,
+  "inference-coop": inferenceCoopGen,
+  "inferenceapis": inferenceapisGen,
+  "inferris": inferrisGen,
+  "infersia": infersiaGen,
   "inferx": inferxGen,
   "infomaniak": infomaniakGen,
   "io-net": ioNetGen,
+  "isoquant": isoquantGen,
   "iteracompute": iteracomputeGen,
+  "jad-ai": jadAiGen,
   "jalapeno": jalapenoGen,
   "jiekou": jiekouGen,
+  "joingonka": joingonkaGen,
+  "jzstoken": jzstokenGen,
+  "keln": kelnGen,
   "kenari": kenariGen,
   "kilo": kiloGen,
   "kimi-code-plan-cn": kimiCodePlanCnGen,
   "kimi-code-plan-global": kimiCodePlanGlobalGen,
+  "kitani": kitaniGen,
+  "klavo": klavoGen,
   "klokintegration": klokintegrationGen,
+  "korouter": korouterGen,
   "kosmik": kosmikGen,
   "kuae-cloud-coding-plan": kuaeCloudCodingPlanGen,
-  "lilac": lilacGen,
+  "kunavo": kunavoGen,
   "liquid": liquidGen,
+  "lithosai": lithosaiGen,
   "llmgateway": llmgatewayGen,
   "llmgateway-providers": llmgatewayProvidersGen,
   "llmtech": llmtechGen,
   "llmtr": llmtrGen,
   "lmstudio": lmstudioGen,
+  "logits": logitsGen,
   "longcat": longcatGen,
   "lowrouter": lowrouterGen,
   "lucidquery": lucidqueryGen,
+  "lyceum": lyceumGen,
   "lynkr": lynkrGen,
+  "mallard": mallardGen,
   "meganova": meganovaGen,
   "melious": meliousGen,
+  "meragpt": meragptGen,
   "merge-gateway": mergeGatewayGen,
   "meta": metaGen,
   "minimax": minimaxGen,
@@ -624,6 +851,7 @@ export const catalogTyped = {
   "modelis": modelisGen,
   "modelscope": modelscopeGen,
   "modular": modularGen,
+  "moneo": moneoGen,
   "moonshotai": moonshotaiGen,
   "moonshotai-cn": moonshotaiCnGen,
   "morph": morphGen,
@@ -636,9 +864,13 @@ export const catalogTyped = {
   "neon": neonGen,
   "neosmith": neosmithGen,
   "neuralwatt": neuralwattGen,
+  "nodecode": nodecodeGen,
+  "nokeep": nokeepGen,
   "nova": novaGen,
   "novita-ai": novitaAiGen,
   "nvidia": nvidiaGen,
+  "oathbreaker": oathbreakerGen,
+  "obscurify": obscurifyGen,
   "oci": ociGen,
   "ofox": ofoxGen,
   "ollama-cloud": ollamaCloudGen,
@@ -649,27 +881,39 @@ export const catalogTyped = {
   "openrouter": openrouterGen,
   "opper": opperGen,
   "orcarouter": orcarouterGen,
+  "outerlabs": outerlabsGen,
   "ovhcloud": ovhcloudGen,
+  "paraloncloud": paraloncloudGen,
   "pareto": paretoGen,
   "pendra": pendraGen,
   "perplexity": perplexityGen,
   "perplexity-agent": perplexityAgentGen,
+  "phala": phalaGen,
+  "phase": phaseGen,
   "pioneer": pioneerGen,
   "poe": poeGen,
   "poolside": poolsideGen,
+  "powerspring": powerspringGen,
   "prime": primeGen,
   "privatemode-ai": privatemodeAiGen,
+  "proxystacks": proxystacksGen,
   "qihang-ai": qihangAiGen,
   "qiniu-ai": qiniuAiGen,
   "qvac": qvacGen,
+  "rayline": raylineGen,
   "reflection": reflectionGen,
+  "refuseless": refuselessGen,
   "regolo-ai": regoloAiGen,
   "requesty": requestyGen,
   "routing-run": routingRunGen,
+  "ruapi": ruapiGen,
+  "runcrate": runcrateGen,
   "runinfra": runinfraGen,
+  "sagg": saggGen,
   "sakana": sakanaGen,
   "salad-cloud": saladCloudGen,
   "sambanova": sambanovaGen,
+  "sandbase": sandbaseGen,
   "sap-ai-core": sapAiCoreGen,
   "sarvam": sarvamGen,
   "scaleway": scalewayGen,
@@ -679,34 +923,53 @@ export const catalogTyped = {
   "siliconflow": siliconflowGen,
   "siliconflow-cn": siliconflowCnGen,
   "snowflake-cortex": snowflakeCortexGen,
+  "sokkan": sokkanGen,
+  "sparrowcodes": sparrowcodesGen,
   "stackit": stackitGen,
   "standardcompute": standardcomputeGen,
+  "steadyrouter": steadyrouterGen,
   "stepfun": stepfunGen,
   "stepfun-ai": stepfunAiGen,
   "stepfun-ai-step-plan": stepfunAiStepPlanGen,
   "stepfun-step-plan": stepfunStepPlanGen,
+  "stepping-stone": steppingStoneGen,
   "subconscious": subconsciousGen,
   "submodel": submodelGen,
+  "superbot-gg": superbotGgGen,
   "synthetic": syntheticGen,
-  "tempr": temprGen,
+  "synthorai": synthoraiGen,
+  "teamorouter": teamorouterGen,
+  "teapot-router": teapotRouterGen,
   "tencent-coding-plan": tencentCodingPlanGen,
   "tencent-token-plan": tencentTokenPlanGen,
   "tencent-tokenhub": tencentTokenhubGen,
   "tensorx": tensorxGen,
+  "tenstorrent": tenstorrentGen,
   "the-grid-ai": theGridAiGen,
+  "therouter": therouterGen,
   "thinkingmachines": thinkingmachinesGen,
   "tinfoil": tinfoilGen,
+  "toapis": toapisGen,
   "togetherai": togetheraiGen,
   "tokengo": tokengoGen,
+  "tokenify": tokenifyGen,
+  "tokenlab": tokenlabGen,
   "tokenrouter": tokenrouterGen,
+  "tokenwatt": tokenwattGen,
   "trustedrouter": trustedrouterGen,
+  "trustedtokens": trustedtokensGen,
   "umans-ai": umansAiGen,
   "umans-ai-coding-plan": umansAiCodingPlanGen,
+  "unbiased": unbiasedGen,
+  "uncensuredai": uncensuredaiGen,
   "unorouter": unorouterGen,
+  "unrestricted": unrestrictedGen,
+  "uplinkswitch": uplinkswitchGen,
   "upstage": upstageGen,
   "vancine": vancineGen,
   "venice": veniceGen,
   "vercel": vercelGen,
+  "verda": verdaGen,
   "vispark": visparkGen,
   "vivgrid": vivgridGen,
   "volcengine": volcengineGen,
@@ -717,19 +980,23 @@ export const catalogTyped = {
   "wally": wallyGen,
   "wandb": wandbGen,
   "watsonx": watsonxGen,
+  "watt": wattGen,
   "xai": xaiGen,
   "xiaomi": xiaomiGen,
   "xiaomi-token-plan-ams": xiaomiTokenPlanAmsGen,
   "xiaomi-token-plan-cn": xiaomiTokenPlanCnGen,
   "xiaomi-token-plan-sgp": xiaomiTokenPlanSgpGen,
   "xpersona": xpersonaGen,
+  "xxapi": xxapiGen,
   "zai": zaiGen,
   "zai-coding-plan": zaiCodingPlanGen,
   "zeldoc": zeldocGen,
   "zenifra": zenifraGen,
   "zenmux": zenmuxGen,
+  "zerogpu": zerogpuGen,
   "zhipuai": zhipuaiGen,
   "zhipuai-coding-plan": zhipuaiCodingPlanGen,
+  "zro": zroGen,
 } satisfies Record<ProviderId, ProviderCatalog>;
 
 /** The typed registry's own type — `Catalog["anthropic"]["models"]` and so on. */

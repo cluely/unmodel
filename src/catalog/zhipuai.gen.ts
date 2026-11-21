@@ -64,7 +64,7 @@ export const models = {
   "glm-4.5v": {
     id: "glm-4.5v",
     name: "GLM-4.5V",
-    family: "glm",
+    family: "glmv",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -96,7 +96,7 @@ export const models = {
   "glm-4.6v": {
     id: "glm-4.6v",
     name: "GLM-4.6V",
-    family: "glm",
+    family: "glmv",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -112,7 +112,7 @@ export const models = {
   "glm-4.6v-flash": {
     id: "glm-4.6v-flash",
     name: "GLM-4.6V-Flash",
-    family: "glm-flash",
+    family: "glmv-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -270,7 +270,7 @@ export const models = {
   "glm-5v-turbo": {
     id: "glm-5v-turbo",
     name: "GLM-5V-Turbo",
-    family: "glm",
+    family: "glmv-turbo",
     attachment: true,
     reasoning: true,
     toolCall: true,

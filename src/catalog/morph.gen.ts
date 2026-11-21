@@ -130,7 +130,7 @@ export const models = {
   "morph-kimik3": {
     id: "morph-kimik3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -146,7 +146,7 @@ export const models = {
   "morph-kimik3-fast": {
     id: "morph-kimik3-fast",
     name: "Kimi K3 Fast",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -162,7 +162,7 @@ export const models = {
   "morph-kimik31": {
     id: "morph-kimik31",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -178,7 +178,7 @@ export const models = {
   "morph-v3-fast": {
     id: "morph-v3-fast",
     name: "Morph V3 Fast",
-    family: "morph",
+    family: "morph-fast",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -193,7 +193,7 @@ export const models = {
   "morph-v3-large": {
     id: "morph-v3-large",
     name: "Morph V3 Large",
-    family: "morph",
+    family: "morph-large",
     attachment: false,
     reasoning: false,
     toolCall: false,

@@ -80,7 +80,7 @@ export const models = {
   "meta/muse-spark-1.2-contributor": {
     id: "meta/muse-spark-1.2-contributor",
     name: "Muse Spark 1.2 Contributor",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -113,7 +113,7 @@ export const models = {
   "mimo/mimo-v2.5-pro": {
     id: "mimo/mimo-v2.5-pro",
     name: "MiMo-V2.5-Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -130,7 +130,7 @@ export const models = {
   "mistral/voxtral-small-latest": {
     id: "mistral/voxtral-small-latest",
     name: "Voxtral Small (latest)",
-    family: "voxtral",
+    family: "voxtral-small",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -145,7 +145,7 @@ export const models = {
   "muse-glimmer-30b-tr": {
     id: "muse-glimmer-30b-tr",
     name: "Muse Glimmer 30B (TR)",
-    family: "muse",
+    family: "muse-glimmer",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -162,7 +162,7 @@ export const models = {
   "perplexity/sonar-deep-research": {
     id: "perplexity/sonar-deep-research",
     name: "Sonar Deep Research",
-    family: "sonar",
+    family: "sonar-deep-research",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -178,7 +178,7 @@ export const models = {
   "poolside/laguna-xs-2.1": {
     id: "poolside/laguna-xs-2.1",
     name: "Laguna XS 2.1",
-    family: "laguna",
+    family: "laguna-xs",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -194,6 +194,7 @@ export const models = {
   "publicai/apertus-70b-instruct": {
     id: "publicai/apertus-70b-instruct",
     name: "Apertus 70B Instruct",
+    family: "apertus",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -209,6 +210,7 @@ export const models = {
   "publicai/apertus-8b-instruct": {
     id: "publicai/apertus-8b-instruct",
     name: "Apertus 8B Instruct",
+    family: "apertus",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -224,7 +226,7 @@ export const models = {
   "qwen/qwen-flash": {
     id: "qwen/qwen-flash",
     name: "Qwen Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -240,7 +242,7 @@ export const models = {
   "qwen/qwen-plus": {
     id: "qwen/qwen-plus",
     name: "Qwen Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -256,7 +258,7 @@ export const models = {
   "qwen/qwen3-coder-flash": {
     id: "qwen/qwen3-coder-flash",
     name: "Qwen3 Coder Flash",
-    family: "qwen",
+    family: "qwen-coder-flash",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -272,7 +274,7 @@ export const models = {
   "qwen/qwen3-coder-plus": {
     id: "qwen/qwen3-coder-plus",
     name: "Qwen3 Coder Plus",
-    family: "qwen",
+    family: "qwen-coder-plus",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -289,7 +291,7 @@ export const models = {
   "qwen/qwen3-max": {
     id: "qwen/qwen3-max",
     name: "Qwen3 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -306,7 +308,7 @@ export const models = {
   "qwen/qwen3-vl-plus": {
     id: "qwen/qwen3-vl-plus",
     name: "Qwen3-VL Plus",
-    family: "qwen",
+    family: "qwen-vl-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -315,7 +317,7 @@ export const models = {
     knowledge: "2025-04",
     releaseDate: "2025-09-23",
     lastUpdated: "2025-09-23",
-    modalities: { input: ["text", "image"], output: ["text"] },
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 256000, output: 32768 },
     cost: { input: 0.2, output: 1.6, cacheRead: 0.04 },
   },
@@ -338,7 +340,7 @@ export const models = {
   "qwen/qwen3.5-plus": {
     id: "qwen/qwen3.5-plus",
     name: "Qwen3.5 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -354,7 +356,7 @@ export const models = {
   "qwen/qwen3.6-flash": {
     id: "qwen/qwen3.6-flash",
     name: "Qwen3.6 Flash",
-    family: "qwen3.6",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -370,7 +372,7 @@ export const models = {
   "qwen/qwen3.6-plus": {
     id: "qwen/qwen3.6-plus",
     name: "Qwen3.6 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -386,7 +388,7 @@ export const models = {
   "qwen/qwen3.7-plus": {
     id: "qwen/qwen3.7-plus",
     name: "Qwen3.7 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -418,7 +420,7 @@ export const models = {
   "sakana/fugu-ultra": {
     id: "sakana/fugu-ultra",
     name: "Fugu Ultra",
-    family: "fugu",
+    family: "fugu-ultra",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -434,7 +436,7 @@ export const models = {
   "thinkingmachines/inkling": {
     id: "thinkingmachines/inkling",
     name: "Inkling",
-    family: "ling",
+    family: "inkling",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -449,7 +451,7 @@ export const models = {
   "thinkingmachines/inkling-small": {
     id: "thinkingmachines/inkling-small",
     name: "Inkling Small",
-    family: "ling",
+    family: "inkling-small",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -464,7 +466,7 @@ export const models = {
   "trendyol-asure-12b": {
     id: "trendyol-asure-12b",
     name: "Trendyol Asure 12B",
-    family: "gemma",
+    family: "asure",
     attachment: true,
     reasoning: false,
     toolCall: false,

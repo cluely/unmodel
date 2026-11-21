@@ -80,7 +80,7 @@ export const models = {
   "Qwen/Qwen3-Coder-30B-A3B-Instruct": {
     id: "Qwen/Qwen3-Coder-30B-A3B-Instruct",
     name: "Qwen3 Coder 30B A3B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,

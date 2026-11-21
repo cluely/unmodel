@@ -60,7 +60,7 @@ export const models = {
   "Qwen3-Coder-Next-FP8": {
     id: "Qwen3-Coder-Next-FP8",
     name: "Qwen3 Coder Next FP8",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -77,7 +77,7 @@ export const models = {
   "Qwen3-Coder-Next-FP8-no-thinking": {
     id: "Qwen3-Coder-Next-FP8-no-thinking",
     name: "Qwen3-Coder-Next-FP8-no-thinking",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -94,7 +94,7 @@ export const models = {
   "Qwen3-Embedding-8B": {
     id: "Qwen3-Embedding-8B",
     name: "Qwen3-Embedding-8B",
-    family: "qwen",
+    family: "qwen-embedding",
     attachment: false,
     reasoning: false,
     toolCall: false,

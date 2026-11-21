@@ -16,6 +16,7 @@ export const models = {
   "apodex/apodex-1.1-mini": {
     id: "apodex/apodex-1.1-mini",
     name: "Apodex 1.1 Mini",
+    family: "apodex-mini",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -46,7 +47,7 @@ export const models = {
   "baai/bge-reranker-v2-m3": {
     id: "baai/bge-reranker-v2-m3",
     name: "BGE Reranker V2 M3",
-    family: "bge",
+    family: "bge-reranker",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -61,7 +62,7 @@ export const models = {
   "baichuan/baichuan-m2-32b": {
     id: "baichuan/baichuan-m2-32b",
     name: "Baichuan M2 32B",
-    family: "baichuan",
+    family: "baichuan-m",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -76,6 +77,7 @@ export const models = {
   "baidu/cobuddy": {
     id: "baidu/cobuddy",
     name: "CoBuddy",
+    family: "cobuddy",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -105,6 +107,7 @@ export const models = {
   "deepseek/deepseek-ocr-2": {
     id: "deepseek/deepseek-ocr-2",
     name: "DeepSeek OCR 2",
+    family: "deepseek-ocr",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -119,7 +122,7 @@ export const models = {
   "deepseek/deepseek-r1-0528": {
     id: "deepseek/deepseek-r1-0528",
     name: "DeepSeek R1 0528",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -135,7 +138,7 @@ export const models = {
   "deepseek/deepseek-r1-0528-qwen3-8b": {
     id: "deepseek/deepseek-r1-0528-qwen3-8b",
     name: "DeepSeek R1 0528 Qwen3 8B",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -150,7 +153,7 @@ export const models = {
   "deepseek/deepseek-r1-turbo": {
     id: "deepseek/deepseek-r1-turbo",
     name: "DeepSeek R1 (Turbo)",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -184,7 +187,7 @@ export const models = {
   "deepseek/deepseek-v4-pro": {
     id: "deepseek/deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -201,7 +204,7 @@ export const models = {
   "deepseek/deepseek-v4-pro-0813": {
     id: "deepseek/deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -331,6 +334,7 @@ export const models = {
   "gryphe/mythomax-l2-13b": {
     id: "gryphe/mythomax-l2-13b",
     name: "MythoMax L2 13B",
+    family: "mythomax",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -345,7 +349,7 @@ export const models = {
   "inclusionai/ling-3.0-flash": {
     id: "inclusionai/ling-3.0-flash",
     name: "Ling 3.0 Flash",
-    family: "ling",
+    family: "ling-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -360,7 +364,7 @@ export const models = {
   "inclusionai/ling-3.0-flash-fin": {
     id: "inclusionai/ling-3.0-flash-fin",
     name: "Ling 3.0 Flash Fin",
-    family: "ling",
+    family: "ling-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -375,7 +379,7 @@ export const models = {
   "inclusionai/ling-3.0-flash-sante": {
     id: "inclusionai/ling-3.0-flash-sante",
     name: "Ling 3.0 Flash Sante",
-    family: "ling",
+    family: "ling-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -390,7 +394,7 @@ export const models = {
   "inclusionai/ling-3.0-flash-vl": {
     id: "inclusionai/ling-3.0-flash-vl",
     name: "Ling 3.0 Flash VL",
-    family: "ling",
+    family: "ling-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -405,7 +409,7 @@ export const models = {
   "inclusionai/ling-3.1-flash": {
     id: "inclusionai/ling-3.1-flash",
     name: "Ling 3.1 Flash",
-    family: "ling",
+    family: "ling-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -504,6 +508,7 @@ export const models = {
   "microsoft/wizardlm-2-8x22b": {
     id: "microsoft/wizardlm-2-8x22b",
     name: "WizardLM 2 8x22B",
+    family: "wizardlm",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -519,6 +524,7 @@ export const models = {
   "mindai/macaron-v1-tall": {
     id: "mindai/macaron-v1-tall",
     name: "Macaron V1 Tall",
+    family: "macaron-tall",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -533,6 +539,7 @@ export const models = {
   "mindai/macaron-v1-venti": {
     id: "mindai/macaron-v1-venti",
     name: "Macaron V1 Venti",
+    family: "macaron-venti",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -547,7 +554,7 @@ export const models = {
   "minimax/minimax-m2.5": {
     id: "minimax/minimax-m2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -563,7 +570,7 @@ export const models = {
   "minimax/minimax-m2.7": {
     id: "minimax/minimax-m2.7",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -579,7 +586,7 @@ export const models = {
   "minimax/minimax-m2.7-highspeed": {
     id: "minimax/minimax-m2.7-highspeed",
     name: "MiniMax-M2.7-highspeed",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -595,7 +602,7 @@ export const models = {
   "minimax/minimax-m3": {
     id: "minimax/minimax-m3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -611,7 +618,7 @@ export const models = {
   "minimax/minimax-m3.1-flash": {
     id: "minimax/minimax-m3.1-flash",
     name: "MiniMax-M3.1-Flash",
-    family: "minimax",
+    family: "minimax-m-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -627,7 +634,7 @@ export const models = {
   "minimaxai/minimax-m1-80k": {
     id: "minimaxai/minimax-m1-80k",
     name: "MiniMax M1 80K",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -643,7 +650,7 @@ export const models = {
   "moonshotai/kimi-k2-0905": {
     id: "moonshotai/kimi-k2-0905",
     name: "Kimi K2 Instruct 0905",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -659,7 +666,7 @@ export const models = {
   "moonshotai/kimi-k2-instruct": {
     id: "moonshotai/kimi-k2-instruct",
     name: "Kimi K2 Instruct",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -674,7 +681,7 @@ export const models = {
   "moonshotai/kimi-k2-thinking": {
     id: "moonshotai/kimi-k2-thinking",
     name: "Kimi K2 Thinking",
-    family: "kimi-thinking",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -691,7 +698,7 @@ export const models = {
   "moonshotai/kimi-k2.5": {
     id: "moonshotai/kimi-k2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -708,7 +715,7 @@ export const models = {
   "moonshotai/kimi-k2.6": {
     id: "moonshotai/kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -725,7 +732,7 @@ export const models = {
   "moonshotai/kimi-k2.7-code": {
     id: "moonshotai/kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -742,7 +749,7 @@ export const models = {
   "moonshotai/kimi-k3": {
     id: "moonshotai/kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -758,7 +765,7 @@ export const models = {
   "moonshotai/kimi-k3.1-pro": {
     id: "moonshotai/kimi-k3.1-pro",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -774,7 +781,7 @@ export const models = {
   "moonshotai/kimi-k3.1-pro-highspeed": {
     id: "moonshotai/kimi-k3.1-pro-highspeed",
     name: "Kimi K3.1 Pro Highspeed",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -806,7 +813,7 @@ export const models = {
   "nvidia/nemotron-3-nano-30b-a3b": {
     id: "nvidia/nemotron-3-nano-30b-a3b",
     name: "Nemotron 3 Nano 30B A3B",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -819,6 +826,57 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
     cost: { input: 0.05, output: 0.2 },
+  },
+  "openai/gpt-6.1-terra": {
+    id: "openai/gpt-6.1-terra",
+    name: "GPT-6.1 Terra",
+    family: "gpt-terra",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2026-06-01",
+    releaseDate: "2026-10-26",
+    lastUpdated: "2026-10-26",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 1, output: 5, cacheRead: 0.05 },
+  },
+  "openai/gpt-6.2-astra": {
+    id: "openai/gpt-6.2-astra",
+    name: "GPT-6.2 Astra",
+    family: "gpt-astra",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-05-18",
+    releaseDate: "2026-11-17",
+    lastUpdated: "2026-11-17",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 8, output: 40, cacheRead: 0.4 },
+  },
+  "openai/gpt-6.2-sol": {
+    id: "openai/gpt-6.2-sol",
+    name: "GPT-6.2 Sol",
+    family: "gpt-sol",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06-01",
+    releaseDate: "2026-11-17",
+    lastUpdated: "2026-11-17",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 2, output: 10, cacheRead: 0.1 },
   },
   "openai/gpt-oss-120b": {
     id: "openai/gpt-oss-120b",
@@ -840,6 +898,7 @@ export const models = {
   "paddlepaddle/paddleocr-vl": {
     id: "paddlepaddle/paddleocr-vl",
     name: "PaddleOCR VL",
+    family: "paddleocr",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -854,7 +913,7 @@ export const models = {
   "qwen/qwen-mt-plus": {
     id: "qwen/qwen-mt-plus",
     name: "Qwen MT Plus",
-    family: "qwen",
+    family: "qwen-mt-plus",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -869,7 +928,7 @@ export const models = {
   "qwen/qwen3-embedding-8b": {
     id: "qwen/qwen3-embedding-8b",
     name: "Qwen3 Embedding 8B",
-    family: "qwen",
+    family: "qwen-embedding",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -884,7 +943,7 @@ export const models = {
   "qwen/qwen3-omni-30b-a3b-thinking": {
     id: "qwen/qwen3-omni-30b-a3b-thinking",
     name: "Qwen3 Omni 30B A3B Thinking",
-    family: "qwen",
+    family: "qwen-omni",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -900,7 +959,7 @@ export const models = {
   "qwen/qwen3-reranker-8b": {
     id: "qwen/qwen3-reranker-8b",
     name: "Qwen3 Reranker 8B",
-    family: "qwen",
+    family: "qwen-reranker",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -915,7 +974,7 @@ export const models = {
   "qwen/qwen3-vl-30b-a3b-instruct": {
     id: "qwen/qwen3-vl-30b-a3b-instruct",
     name: "Qwen3 VL 30B A3B Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -927,6 +986,23 @@ export const models = {
     modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 131072, output: 32768 },
     cost: { input: 0.2, output: 0.7 },
+  },
+  "qwen/qwen3-vl-plus": {
+    id: "qwen/qwen3-vl-plus",
+    name: "Qwen3-VL Plus",
+    family: "qwen-vl-plus",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2025-04",
+    releaseDate: "2025-09-23",
+    lastUpdated: "2025-09-23",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 262000, output: 32000 },
+    cost: { input: 0.144, output: 1.434, cacheRead: 0.014, cacheWrite: 0.18 },
   },
   "qwen/qwen3.5-122b-a10b": {
     id: "qwen/qwen3.5-122b-a10b",
@@ -1027,7 +1103,7 @@ export const models = {
   "qwen/qwen3.7-max": {
     id: "qwen/qwen3.7-max",
     name: "Qwen3.7 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1075,7 +1151,7 @@ export const models = {
   "qwen/qwen3.8-flash": {
     id: "qwen/qwen3.8-flash",
     name: "Qwen3.8 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1091,7 +1167,7 @@ export const models = {
   "qwen/qwen3.8-max": {
     id: "qwen/qwen3.8-max",
     name: "Qwen3.8 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1104,9 +1180,26 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 2, output: 6, cacheRead: 0.25, cacheWrite: 2.5 },
   },
+  "qwen/qwen4-max": {
+    id: "qwen/qwen4-max",
+    name: "Qwen4 Max",
+    family: "qwen-max",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-11-16",
+    lastUpdated: "2026-11-16",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1000000, output: 131000 },
+    cost: { input: 1.413, output: 4.24, cacheRead: 0.071, cacheWrite: 1.767 },
+  },
   "stepfun/step-3.7-flash": {
     id: "stepfun/step-3.7-flash",
     name: "Step 3.7 Flash",
+    family: "step-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1123,6 +1216,7 @@ export const models = {
   "stepfun/step-5-preview": {
     id: "stepfun/step-5-preview",
     name: "Step 5 Preview",
+    family: "step",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1138,7 +1232,7 @@ export const models = {
   "tencent/hy3": {
     id: "tencent/hy3",
     name: "Hy3",
-    family: "Hy",
+    family: "hy",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1154,7 +1248,7 @@ export const models = {
   "tencent/hy4": {
     id: "tencent/hy4",
     name: "Hy4",
-    family: "Hy",
+    family: "hy",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1167,10 +1261,26 @@ export const models = {
     limit: { context: 1000000, output: 64000, input: 983010 },
     cost: { input: 0.417, output: 1.2505, cacheRead: 0.021 },
   },
+  "tencent/hy4-flash": {
+    id: "tencent/hy4-flash",
+    name: "Hy4 flash",
+    family: "hy-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-11-16",
+    lastUpdated: "2026-11-16",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 64000, input: 983040 },
+    cost: { input: 0.035, output: 0.1405, cacheRead: 0.0015 },
+  },
   "tencent/hy4-preview": {
     id: "tencent/hy4-preview",
     name: "Hy4 preview",
-    family: "Hy",
+    family: "hy",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1203,7 +1313,7 @@ export const models = {
   "xiaomimimo/mimo-v2.5-pro": {
     id: "xiaomimimo/mimo-v2.5-pro",
     name: "MiMo-V2.5-Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1220,7 +1330,7 @@ export const models = {
   "xiaomimimo/mimo-v2.6-flash": {
     id: "xiaomimimo/mimo-v2.6-flash",
     name: "MiMo-V2.6-Flash",
-    family: "mimo",
+    family: "mimo-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1236,7 +1346,7 @@ export const models = {
   "xiaomimimo/mimo-v2.6-pro": {
     id: "xiaomimimo/mimo-v2.6-pro",
     name: "MiMo-V2.6-Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1252,7 +1362,7 @@ export const models = {
   "zai-org/autoglm-phone-9b-multilingual": {
     id: "zai-org/autoglm-phone-9b-multilingual",
     name: "AutoGLM Phone 9B Multilingual",
-    family: "glm",
+    family: "autoglm",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -1283,7 +1393,7 @@ export const models = {
   "zai-org/glm-4.5v": {
     id: "zai-org/glm-4.5v",
     name: "GLM-4.5V",
-    family: "glm",
+    family: "glmv",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1317,7 +1427,7 @@ export const models = {
   "zai-org/glm-4.6v": {
     id: "zai-org/glm-4.6v",
     name: "GLM-4.6V",
-    family: "glm",
+    family: "glmv",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1464,7 +1574,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type NovitaAiModelId = keyof typeof models;
-export type NovitaAiTextModelId = "apodex/apodex-1.1-mini" | "baai/bge-m3" | "baai/bge-reranker-v2-m3" | "baichuan/baichuan-m2-32b" | "baidu/cobuddy" | "baidu/ernie-4.5-21B-a3b" | "deepseek/deepseek-ocr-2" | "deepseek/deepseek-r1-0528" | "deepseek/deepseek-r1-0528-qwen3-8b" | "deepseek/deepseek-r1-turbo" | "deepseek/deepseek-v4-flash-0731" | "deepseek/deepseek-v4-pro" | "deepseek/deepseek-v4-pro-0813" | "deepseek/deepseek-v4.1-flash" | "deepseek/deepseek-v4.1-flash-1017" | "deepseek/deepseek_v3" | "google/gemma-3-12b-it" | "google/gemma-3-27b-it" | "google/gemma-4-26b-a4b-it" | "google/gemma-4-31b-it" | "gryphe/mythomax-l2-13b" | "inclusionai/ling-3.0-flash" | "inclusionai/ling-3.0-flash-fin" | "inclusionai/ling-3.0-flash-sante" | "inclusionai/ling-3.0-flash-vl" | "inclusionai/ling-3.1-flash" | "meta-llama/llama-3.1-8b-instruct" | "meta-llama/llama-3.2-1b-instruct" | "meta-llama/llama-3.3-70b-instruct" | "meta-llama/llama-4-maverick-17b-128e-instruct-fp8" | "meta-llama/llama-4-scout-17b-16e-instruct" | "microsoft/wizardlm-2-8x22b" | "mindai/macaron-v1-tall" | "mindai/macaron-v1-venti" | "minimax/minimax-m2.5" | "minimax/minimax-m2.7" | "minimax/minimax-m2.7-highspeed" | "minimax/minimax-m3" | "minimax/minimax-m3.1-flash" | "minimaxai/minimax-m1-80k" | "moonshotai/kimi-k2-0905" | "moonshotai/kimi-k2-instruct" | "moonshotai/kimi-k2-thinking" | "moonshotai/kimi-k2.5" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k2.7-code" | "moonshotai/kimi-k3" | "moonshotai/kimi-k3.1-pro" | "moonshotai/kimi-k3.1-pro-highspeed" | "nousresearch/hermes-2-pro-llama-3-8b" | "nvidia/nemotron-3-nano-30b-a3b" | "openai/gpt-oss-120b" | "paddlepaddle/paddleocr-vl" | "qwen/qwen-mt-plus" | "qwen/qwen3-embedding-8b" | "qwen/qwen3-omni-30b-a3b-thinking" | "qwen/qwen3-reranker-8b" | "qwen/qwen3-vl-30b-a3b-instruct" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-27b" | "qwen/qwen3.5-35b-a3b" | "qwen/qwen3.5-397b-a17b" | "qwen/qwen3.6-27b" | "qwen/qwen3.6-35b-a3b" | "qwen/qwen3.7-max" | "qwen/qwen3.8-2.4t-a95b" | "qwen/qwen3.8-27b" | "qwen/qwen3.8-flash" | "qwen/qwen3.8-max" | "stepfun/step-3.7-flash" | "stepfun/step-5-preview" | "tencent/hy3" | "tencent/hy4" | "tencent/hy4-preview" | "xiaomimimo/mimo-v2.5" | "xiaomimimo/mimo-v2.5-pro" | "xiaomimimo/mimo-v2.6-flash" | "xiaomimimo/mimo-v2.6-pro" | "zai-org/autoglm-phone-9b-multilingual" | "zai-org/glm-4.5-air" | "zai-org/glm-4.5v" | "zai-org/glm-4.6" | "zai-org/glm-4.6v" | "zai-org/glm-4.7" | "zai-org/glm-4.7-flash" | "zai-org/glm-5" | "zai-org/glm-5.1" | "zai-org/glm-5.2" | "zai-org/glm-5.3" | "zai-org/glm-5.3-flash" | "zai-org/glm-5.3-flashX";
+export type NovitaAiTextModelId = "apodex/apodex-1.1-mini" | "baai/bge-m3" | "baai/bge-reranker-v2-m3" | "baichuan/baichuan-m2-32b" | "baidu/cobuddy" | "baidu/ernie-4.5-21B-a3b" | "deepseek/deepseek-ocr-2" | "deepseek/deepseek-r1-0528" | "deepseek/deepseek-r1-0528-qwen3-8b" | "deepseek/deepseek-r1-turbo" | "deepseek/deepseek-v4-flash-0731" | "deepseek/deepseek-v4-pro" | "deepseek/deepseek-v4-pro-0813" | "deepseek/deepseek-v4.1-flash" | "deepseek/deepseek-v4.1-flash-1017" | "deepseek/deepseek_v3" | "google/gemma-3-12b-it" | "google/gemma-3-27b-it" | "google/gemma-4-26b-a4b-it" | "google/gemma-4-31b-it" | "gryphe/mythomax-l2-13b" | "inclusionai/ling-3.0-flash" | "inclusionai/ling-3.0-flash-fin" | "inclusionai/ling-3.0-flash-sante" | "inclusionai/ling-3.0-flash-vl" | "inclusionai/ling-3.1-flash" | "meta-llama/llama-3.1-8b-instruct" | "meta-llama/llama-3.2-1b-instruct" | "meta-llama/llama-3.3-70b-instruct" | "meta-llama/llama-4-maverick-17b-128e-instruct-fp8" | "meta-llama/llama-4-scout-17b-16e-instruct" | "microsoft/wizardlm-2-8x22b" | "mindai/macaron-v1-tall" | "mindai/macaron-v1-venti" | "minimax/minimax-m2.5" | "minimax/minimax-m2.7" | "minimax/minimax-m2.7-highspeed" | "minimax/minimax-m3" | "minimax/minimax-m3.1-flash" | "minimaxai/minimax-m1-80k" | "moonshotai/kimi-k2-0905" | "moonshotai/kimi-k2-instruct" | "moonshotai/kimi-k2-thinking" | "moonshotai/kimi-k2.5" | "moonshotai/kimi-k2.6" | "moonshotai/kimi-k2.7-code" | "moonshotai/kimi-k3" | "moonshotai/kimi-k3.1-pro" | "moonshotai/kimi-k3.1-pro-highspeed" | "nousresearch/hermes-2-pro-llama-3-8b" | "nvidia/nemotron-3-nano-30b-a3b" | "openai/gpt-6.1-terra" | "openai/gpt-6.2-astra" | "openai/gpt-6.2-sol" | "openai/gpt-oss-120b" | "paddlepaddle/paddleocr-vl" | "qwen/qwen-mt-plus" | "qwen/qwen3-embedding-8b" | "qwen/qwen3-omni-30b-a3b-thinking" | "qwen/qwen3-reranker-8b" | "qwen/qwen3-vl-30b-a3b-instruct" | "qwen/qwen3-vl-plus" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-27b" | "qwen/qwen3.5-35b-a3b" | "qwen/qwen3.5-397b-a17b" | "qwen/qwen3.6-27b" | "qwen/qwen3.6-35b-a3b" | "qwen/qwen3.7-max" | "qwen/qwen3.8-2.4t-a95b" | "qwen/qwen3.8-27b" | "qwen/qwen3.8-flash" | "qwen/qwen3.8-max" | "qwen/qwen4-max" | "stepfun/step-3.7-flash" | "stepfun/step-5-preview" | "tencent/hy3" | "tencent/hy4" | "tencent/hy4-flash" | "tencent/hy4-preview" | "xiaomimimo/mimo-v2.5" | "xiaomimimo/mimo-v2.5-pro" | "xiaomimimo/mimo-v2.6-flash" | "xiaomimimo/mimo-v2.6-pro" | "zai-org/autoglm-phone-9b-multilingual" | "zai-org/glm-4.5-air" | "zai-org/glm-4.5v" | "zai-org/glm-4.6" | "zai-org/glm-4.6v" | "zai-org/glm-4.7" | "zai-org/glm-4.7-flash" | "zai-org/glm-5" | "zai-org/glm-5.1" | "zai-org/glm-5.2" | "zai-org/glm-5.3" | "zai-org/glm-5.3-flash" | "zai-org/glm-5.3-flashX";
 export type NovitaAiImageModelId = never;
 export type NovitaAiAudioModelId = never;
 export type NovitaAiVideoModelId = never;

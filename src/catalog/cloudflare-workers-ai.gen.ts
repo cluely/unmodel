@@ -16,7 +16,7 @@ export const models = {
   "@cf/aisingapore/gemma-sea-lion-v4-27b-it": {
     id: "@cf/aisingapore/gemma-sea-lion-v4-27b-it",
     name: "Gemma Sea Lion V4 27B It",
-    family: "gemma",
+    family: "sea-lion",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -29,10 +29,25 @@ export const models = {
     limit: { context: 128000, output: 128000 },
     cost: { input: 0.351, output: 0.555 },
   },
+  "@cf/cloudflare/clairic-flash": {
+    id: "@cf/cloudflare/clairic-flash",
+    name: "Clairic Flash",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-10-29",
+    lastUpdated: "2026-10-29",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 65536, output: 65536 },
+    cost: { input: 0.1, output: 0 },
+  },
   "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": {
     id: "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
     name: "Deepseek R1 Distill Qwen 32B",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -68,7 +83,7 @@ export const models = {
   "@cf/deepseek-ai/deepseek-v4-pro-0813": {
     id: "@cf/deepseek-ai/deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -118,7 +133,7 @@ export const models = {
   "@cf/ibm-granite/granite-4.0-h-micro": {
     id: "@cf/ibm-granite/granite-4.0-h-micro",
     name: "Granite 4.0 H Micro",
-    family: "granite",
+    family: "granite-micro",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -239,7 +254,7 @@ export const models = {
   "@cf/meta/llama-guard-3-8b": {
     id: "@cf/meta/llama-guard-3-8b",
     name: "Llama Guard 3 8B",
-    family: "llama",
+    family: "llama-guard",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -273,7 +288,7 @@ export const models = {
   "@cf/moonshotai/kimi-k2.6": {
     id: "@cf/moonshotai/kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -291,7 +306,7 @@ export const models = {
   "@cf/moonshotai/kimi-k2.7-code": {
     id: "@cf/moonshotai/kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -309,7 +324,7 @@ export const models = {
   "@cf/nvidia/nemotron-3-120b-a12b": {
     id: "@cf/nvidia/nemotron-3-120b-a12b",
     name: "Nemotron 3 Super 120B",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -361,7 +376,7 @@ export const models = {
   "@cf/qwen/qwen2.5-coder-32b-instruct": {
     id: "@cf/qwen/qwen2.5-coder-32b-instruct",
     name: "Qwen2.5 Coder 32B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -410,7 +425,7 @@ export const models = {
   "@cf/qwen/qwq-32b": {
     id: "@cf/qwen/qwq-32b",
     name: "Qwq 32B",
-    family: "qwen",
+    family: "qwq",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -424,6 +439,22 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 24000, output: 24000 },
     cost: { input: 0.66, output: 1 },
+  },
+  "@cf/thinkingmachines/inkling-2-small": {
+    id: "@cf/thinkingmachines/inkling-2-small",
+    name: "Inkling 2 Small",
+    family: "inkling",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-11-09",
+    lastUpdated: "2026-11-09",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.3, output: 1, cacheRead: 0.1 },
   },
   "@cf/zai-org/glm-4.7-flash": {
     id: "@cf/zai-org/glm-4.7-flash",
@@ -495,7 +526,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type CloudflareWorkersAiModelId = keyof typeof models;
-export type CloudflareWorkersAiTextModelId = "@cf/aisingapore/gemma-sea-lion-v4-27b-it" | "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b" | "@cf/deepseek-ai/deepseek-v4-flash-0731" | "@cf/deepseek-ai/deepseek-v4-pro-0813" | "@cf/deepseek-ai/deepseek-v4.1-flash-1017" | "@cf/google/gemma-4-26b-a4b-it" | "@cf/ibm-granite/granite-4.0-h-micro" | "@cf/meta/llama-3.1-8b-instruct-fp8" | "@cf/meta/llama-3.2-11b-vision-instruct" | "@cf/meta/llama-3.2-1b-instruct" | "@cf/meta/llama-3.2-3b-instruct" | "@cf/meta/llama-3.3-70b-instruct-fp8-fast" | "@cf/meta/llama-4-scout-17b-16e-instruct" | "@cf/meta/llama-guard-3-8b" | "@cf/mistralai/mistral-small-3.1-24b-instruct" | "@cf/moonshotai/kimi-k2.6" | "@cf/moonshotai/kimi-k2.7-code" | "@cf/nvidia/nemotron-3-120b-a12b" | "@cf/openai/gpt-oss-120b" | "@cf/openai/gpt-oss-20b" | "@cf/qwen/qwen2.5-coder-32b-instruct" | "@cf/qwen/qwen3-30b-a3b-fp8" | "@cf/qwen/qwen3.8-27b" | "@cf/qwen/qwq-32b" | "@cf/zai-org/glm-4.7-flash" | "@cf/zai-org/glm-5.2" | "@cf/zai-org/glm-5.3" | "@cf/zai-org/glm-5.3-flash";
+export type CloudflareWorkersAiTextModelId = "@cf/aisingapore/gemma-sea-lion-v4-27b-it" | "@cf/cloudflare/clairic-flash" | "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b" | "@cf/deepseek-ai/deepseek-v4-flash-0731" | "@cf/deepseek-ai/deepseek-v4-pro-0813" | "@cf/deepseek-ai/deepseek-v4.1-flash-1017" | "@cf/google/gemma-4-26b-a4b-it" | "@cf/ibm-granite/granite-4.0-h-micro" | "@cf/meta/llama-3.1-8b-instruct-fp8" | "@cf/meta/llama-3.2-11b-vision-instruct" | "@cf/meta/llama-3.2-1b-instruct" | "@cf/meta/llama-3.2-3b-instruct" | "@cf/meta/llama-3.3-70b-instruct-fp8-fast" | "@cf/meta/llama-4-scout-17b-16e-instruct" | "@cf/meta/llama-guard-3-8b" | "@cf/mistralai/mistral-small-3.1-24b-instruct" | "@cf/moonshotai/kimi-k2.6" | "@cf/moonshotai/kimi-k2.7-code" | "@cf/nvidia/nemotron-3-120b-a12b" | "@cf/openai/gpt-oss-120b" | "@cf/openai/gpt-oss-20b" | "@cf/qwen/qwen2.5-coder-32b-instruct" | "@cf/qwen/qwen3-30b-a3b-fp8" | "@cf/qwen/qwen3.8-27b" | "@cf/qwen/qwq-32b" | "@cf/thinkingmachines/inkling-2-small" | "@cf/zai-org/glm-4.7-flash" | "@cf/zai-org/glm-5.2" | "@cf/zai-org/glm-5.3" | "@cf/zai-org/glm-5.3-flash";
 export type CloudflareWorkersAiImageModelId = never;
 export type CloudflareWorkersAiAudioModelId = never;
 export type CloudflareWorkersAiVideoModelId = never;

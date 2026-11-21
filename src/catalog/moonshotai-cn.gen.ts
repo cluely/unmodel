@@ -16,7 +16,7 @@ export const models = {
   "kimi-k2.6": {
     id: "kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -33,7 +33,7 @@ export const models = {
   "kimi-k2.7-code": {
     id: "kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -50,7 +50,7 @@ export const models = {
   "kimi-k2.7-code-highspeed": {
     id: "kimi-k2.7-code-highspeed",
     name: "Kimi K2.7 Code HighSpeed",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -67,7 +67,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -83,7 +83,7 @@ export const models = {
   "kimi-k3.1-pro": {
     id: "kimi-k3.1-pro",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -99,7 +99,7 @@ export const models = {
   "kimi-k3.1-pro-highspeed": {
     id: "kimi-k3.1-pro-highspeed",
     name: "Kimi K3.1 Pro Highspeed",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,

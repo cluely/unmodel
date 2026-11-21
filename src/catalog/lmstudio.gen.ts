@@ -26,7 +26,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0, output: 0 },
   },
   "qwen/qwen3-30b-a3b-2507": {
@@ -48,7 +48,7 @@ export const models = {
   "qwen/qwen3-coder-30b": {
     id: "qwen/qwen3-coder-30b",
     name: "Qwen3 Coder 30B",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,

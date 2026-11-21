@@ -130,7 +130,7 @@ export const models = {
   "moonshotai/Kimi-K2.6": {
     id: "moonshotai/Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -148,7 +148,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8": {
     id: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8",
     name: "Nemotron 3 Nano 30B A3B FP8",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: false,
     reasoning: true,
     toolCall: true,

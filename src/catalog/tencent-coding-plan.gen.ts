@@ -96,7 +96,7 @@ export const models = {
   "kimi-k2.5": {
     id: "kimi-k2.5",
     name: "Kimi-K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -113,7 +113,7 @@ export const models = {
   "minimax-m2.5": {
     id: "minimax-m2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,

@@ -149,7 +149,7 @@ export const models = {
   "qwen/qwen3-embedding-4b": {
     id: "qwen/qwen3-embedding-4b",
     name: "Qwen 3 Embedding 4B",
-    family: "qwen",
+    family: "qwen-embedding",
     attachment: false,
     reasoning: false,
     toolCall: false,

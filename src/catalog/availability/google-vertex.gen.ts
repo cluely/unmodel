@@ -145,6 +145,12 @@ export const availability = {
     "openrouter": "google/gemini-4-hydrogen",
     "vercel": { id: "google/gemini-4-hydrogen", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
+  "gemini-4-neon": {
+    "google": "gemini-4-neon",
+    "google-vertex": "gemini-4-neon",
+    "openrouter": "google/gemini-4-neon",
+    "vercel": { id: "google/gemini-4-neon", narrows: { context: 1000000, drops: ["video", "audio"] } },
+  },
   "gemini-nano-banana-2.1": {
     "google-vertex": "gemini-nano-banana-2.1",
     "openrouter": { id: "google/gemini-nano-banana-2.1", narrows: { context: 65536, drops: ["video", "pdf"] } },

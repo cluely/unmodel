@@ -30,10 +30,27 @@ export const models = {
     limit: { context: 1048576, output: 1048576 },
     cost: { input: 0.13, output: 0.495, cacheRead: 0.027, cacheWrite: 0 },
   },
+  "deepseek-ai/DeepSeek-V4.1-Flash-1017": {
+    id: "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    name: "DeepSeek V4.1 Flash 1017",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-10-17",
+    lastUpdated: "2026-10-17",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.1, output: 0.6, cacheRead: 0.006, cacheWrite: 0 },
+  },
   "moonshotai/Kimi-K2.6": {
     id: "moonshotai/Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -45,12 +62,12 @@ export const models = {
     lastUpdated: "2026-04-20",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0.7985, output: 3.75, cacheRead: 0.19, cacheWrite: 0 },
+    cost: { input: 0.5648, output: 2.788, cacheRead: 0.19, cacheWrite: 0 },
   },
   "moonshotai/Kimi-K2.7-Code": {
     id: "moonshotai/Kimi-K2.7-Code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -62,23 +79,7 @@ export const models = {
     lastUpdated: "2026-06-12",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 262144 },
-    cost: { input: 0.6, output: 3.5, cacheRead: 0.16, cacheWrite: 0 },
-  },
-  "zai-org/GLM-5.2": {
-    id: "zai-org/GLM-5.2",
-    name: "GLM 5.2",
-    family: "glm",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-06-13",
-    lastUpdated: "2026-06-13",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 1048576 },
-    cost: { input: 1.4, output: 4.4, cacheRead: 0.26, cacheWrite: 0 },
+    cost: { input: 0.61, output: 3.55, cacheRead: 0.17, cacheWrite: 0 },
   },
   "zai-org/GLM-5.3": {
     id: "zai-org/GLM-5.3",
@@ -94,7 +95,7 @@ export const models = {
     lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 1048576 },
-    cost: { input: 1, output: 4.2, cacheRead: 0.14, cacheWrite: 0 },
+    cost: { input: 1.05, output: 3.5, cacheRead: 0.1171, cacheWrite: 0 },
   },
   "zai-org/GLM-5.3-Flash": {
     id: "zai-org/GLM-5.3-Flash",
@@ -110,12 +111,12 @@ export const models = {
     lastUpdated: "2026-08-26",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 1048576 },
-    cost: { input: 0.175, output: 0.47, cacheRead: 0.04, cacheWrite: 0 },
+    cost: { input: 0.16, output: 0.5, cacheRead: 0.04, cacheWrite: 0 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type InceptronModelId = keyof typeof models;
-export type InceptronTextModelId = "deepseek-ai/DeepSeek-V4-Flash-0731" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
+export type InceptronTextModelId = "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4.1-Flash-1017" | "moonshotai/Kimi-K2.6" | "moonshotai/Kimi-K2.7-Code" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
 export type InceptronImageModelId = never;
 export type InceptronAudioModelId = never;
 export type InceptronVideoModelId = never;

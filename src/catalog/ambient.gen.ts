@@ -44,10 +44,27 @@ export const models = {
     limit: { context: 101072, output: 101072 },
     cost: { input: 0.001, output: 0.001, cacheRead: 0, cacheWrite: 0 },
   },
+  "deepseek/deepseek-v4.1-flash-1017": {
+    id: "deepseek/deepseek-v4.1-flash-1017",
+    name: "DeepSeek V4.1 Flash 1017",
+    family: "deepseek-flash",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-10-17",
+    lastUpdated: "2026-10-17",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 384000 },
+    cost: { input: 0.045, output: 0.25, cacheRead: 0.0025, cacheWrite: 0 },
+  },
   "minimax/minimax-m3": {
     id: "minimax/minimax-m3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -57,7 +74,7 @@ export const models = {
     releaseDate: "2026-06-01",
     lastUpdated: "2026-06-01",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 131702 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.23, output: 0.96, cacheRead: 0.05, cacheWrite: 0 },
   },
   "qwen/qwen3-30b-a3b-instruct-2507": {
@@ -176,7 +193,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AmbientModelId = keyof typeof models;
-export type AmbientTextModelId = "ambient/large" | "ambient/small" | "minimax/minimax-m3" | "qwen/qwen3-30b-a3b-instruct-2507" | "qwen/qwen3.6-27b" | "qwen/qwen3.6-35b-a3b" | "qwen/qwen3.8-27b" | "unsloth/qwen3.8-27b-gguf" | "z-ai/glm-5.2" | "zai-org/GLM-5.2-FP8";
+export type AmbientTextModelId = "ambient/large" | "ambient/small" | "deepseek/deepseek-v4.1-flash-1017" | "minimax/minimax-m3" | "qwen/qwen3-30b-a3b-instruct-2507" | "qwen/qwen3.6-27b" | "qwen/qwen3.6-35b-a3b" | "qwen/qwen3.8-27b" | "unsloth/qwen3.8-27b-gguf" | "z-ai/glm-5.2" | "zai-org/GLM-5.2-FP8";
 export type AmbientImageModelId = never;
 export type AmbientAudioModelId = never;
 export type AmbientVideoModelId = never;

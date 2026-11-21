@@ -83,7 +83,7 @@ export const models = {
   "deepseek-v4-flash:free": {
     id: "deepseek-v4-flash:free",
     name: "DeepSeek V4 Flash",
-    family: "deepseek-flash",
+    family: "deepseek-flash-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -101,7 +101,7 @@ export const models = {
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -118,7 +118,7 @@ export const models = {
   "deepseek-v4-pro:free": {
     id: "deepseek-v4-pro:free",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -153,7 +153,7 @@ export const models = {
   "gemma-4-31b-it:free": {
     id: "gemma-4-31b-it:free",
     name: "Gemma 4 31B IT",
-    family: "gemma",
+    family: "gemma-free",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -170,7 +170,7 @@ export const models = {
   "glm-4.5-flash:free": {
     id: "glm-4.5-flash:free",
     name: "GLM-4.5-Flash",
-    family: "glm-flash",
+    family: "glm-flash-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -203,7 +203,7 @@ export const models = {
   "glm-5.2:free": {
     id: "glm-5.2:free",
     name: "GLM-5.2",
-    family: "glm",
+    family: "glm-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -256,7 +256,7 @@ export const models = {
   "gpt-5.4:free": {
     id: "gpt-5.4:free",
     name: "GPT-5.4",
-    family: "gpt",
+    family: "gpt-free",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -279,7 +279,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -291,12 +291,12 @@ export const models = {
   "gpt-5.5:free": {
     id: "gpt-5.5:free",
     name: "GPT-5.5",
-    family: "gpt",
+    family: "gpt-free",
     attachment: true,
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -309,7 +309,7 @@ export const models = {
   "kimi-k2.6": {
     id: "kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -326,7 +326,7 @@ export const models = {
   "minimax-m2.7": {
     id: "minimax-m2.7",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -342,7 +342,7 @@ export const models = {
   "minimax-m2.7:free": {
     id: "minimax-m2.7:free",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -357,7 +357,7 @@ export const models = {
   "nemotron-3-ultra-550b-a55b:free": {
     id: "nemotron-3-ultra-550b-a55b:free",
     name: "Nemotron 3 Ultra 550B A55B",
-    family: "nemotron",
+    family: "nemotron-ultra-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -373,7 +373,7 @@ export const models = {
   "qwen3.5-397b-a17b:free": {
     id: "qwen3.5-397b-a17b:free",
     name: "Qwen3.5 397B-A17B",
-    family: "qwen",
+    family: "qwen-free",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -390,6 +390,7 @@ export const models = {
   "step-3.7-flash:free": {
     id: "step-3.7-flash:free",
     name: "Step 3.7 Flash",
+    family: "step-flash-free",
     attachment: true,
     reasoning: true,
     toolCall: true,

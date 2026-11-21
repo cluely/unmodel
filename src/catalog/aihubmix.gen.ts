@@ -33,7 +33,7 @@ export const models = {
   "alicloud-deepseek-v4-pro": {
     id: "alicloud-deepseek-v4-pro",
     name: "DeepSeek V4 Pro (Alibaba Cloud)",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -415,7 +415,7 @@ export const models = {
   "coding-glm-5.1-free": {
     id: "coding-glm-5.1-free",
     name: "Coding GLM 5.1 (free)",
-    family: "glm",
+    family: "glm-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -431,7 +431,7 @@ export const models = {
   "coding-glm-5.2-free": {
     id: "coding-glm-5.2-free",
     name: "GLM-5.2 (Coding, free)",
-    family: "glm",
+    family: "glm-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -447,7 +447,7 @@ export const models = {
   "coding-glm-5.3-flash-free": {
     id: "coding-glm-5.3-flash-free",
     name: "GLM-5.3-Flash (Coding, free)",
-    family: "glm-flash",
+    family: "glm-flash-free",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -463,7 +463,7 @@ export const models = {
   "coding-glm-5.3-free": {
     id: "coding-glm-5.3-free",
     name: "GLM-5.3 (Coding, free)",
-    family: "glm",
+    family: "glm-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -479,7 +479,7 @@ export const models = {
   "coding-minimax-m2.7": {
     id: "coding-minimax-m2.7",
     name: "Coding MiniMax M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -495,7 +495,7 @@ export const models = {
   "coding-minimax-m2.7-free": {
     id: "coding-minimax-m2.7-free",
     name: "Coding MiniMax M2.7 (Free)",
-    family: "minimax",
+    family: "minimax-m-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -511,7 +511,7 @@ export const models = {
   "coding-minimax-m2.7-highspeed": {
     id: "coding-minimax-m2.7-highspeed",
     name: "Coding MiniMax M2.7 Highspeed",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -527,7 +527,7 @@ export const models = {
   "coding-xiaomi-mimo-v2.5": {
     id: "coding-xiaomi-mimo-v2.5",
     name: "Coding Xiaomi MiMo-V2.5",
-    family: "mimo-v2.5",
+    family: "mimo",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -543,7 +543,7 @@ export const models = {
   "coding-xiaomi-mimo-v2.5-pro": {
     id: "coding-xiaomi-mimo-v2.5-pro",
     name: "Coding Xiaomi MiMo-V2.5-Pro",
-    family: "mimo-v2.5-pro",
+    family: "mimo-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -577,7 +577,7 @@ export const models = {
   "deep-deepseek-v4-pro": {
     id: "deep-deepseek-v4-pro",
     name: "DeepSeek V4 Pro (DeepSeek)",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -646,7 +646,7 @@ export const models = {
   "deepseek-v4-pro-0813": {
     id: "deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -679,7 +679,7 @@ export const models = {
   "doubao-seed-2-0-code-preview": {
     id: "doubao-seed-2-0-code-preview",
     name: "Doubao Seed 2.0 Code Preview",
-    family: "seed",
+    family: "seed-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -695,7 +695,7 @@ export const models = {
   "doubao-seed-2-0-lite-260428": {
     id: "doubao-seed-2-0-lite-260428",
     name: "Doubao Seed 2.0 Lite 260428",
-    family: "seed",
+    family: "seed-lite",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -711,7 +711,7 @@ export const models = {
   "doubao-seed-2-0-mini-260428": {
     id: "doubao-seed-2-0-mini-260428",
     name: "Doubao Seed 2.0 Mini 260428",
-    family: "seed",
+    family: "seed-mini",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -727,7 +727,7 @@ export const models = {
   "doubao-seed-2-0-pro": {
     id: "doubao-seed-2-0-pro",
     name: "Doubao Seed 2.0 Pro",
-    family: "seed",
+    family: "seed-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -760,7 +760,7 @@ export const models = {
   "gemini-2.5-flash-image": {
     id: "gemini-2.5-flash-image",
     name: "Nano Banana",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -771,7 +771,7 @@ export const models = {
     lastUpdated: "2025-08-26",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
     limit: { context: 32768, output: 32768 },
-    cost: { input: 0.3, output: 30, cacheRead: 0.03 },
+    cost: { input: 0.3, output: 2.499, cacheRead: 0.03 },
   },
   "gemini-2.5-flash-lite": {
     id: "gemini-2.5-flash-lite",
@@ -827,7 +827,7 @@ export const models = {
   "gemini-3-pro-image": {
     id: "gemini-3-pro-image",
     name: "Nano Banana Pro",
-    family: "gemini-pro",
+    family: "nano-banana-pro",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -838,12 +838,12 @@ export const models = {
     lastUpdated: "2026-05-28",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
     limit: { context: 65536, output: 32768 },
-    cost: { input: 2, output: 120 },
+    cost: { input: 2, output: 12 },
   },
   "gemini-3.1-flash-image": {
     id: "gemini-3.1-flash-image",
     name: "Nano Banana 2",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -876,7 +876,7 @@ export const models = {
   "gemini-3.1-flash-lite-image": {
     id: "gemini-3.1-flash-lite-image",
     name: "Nano Banana 2 Lite",
-    family: "gemini-flash-lite",
+    family: "nano-banana-lite",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1027,10 +1027,41 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 2, output: 10, cacheRead: 0.1, inputAudio: 2 },
   },
+  "gemma-4-26b-a4b-it-free": {
+    id: "gemma-4-26b-a4b-it-free",
+    name: "Gemma 4 26B A4B IT (free)",
+    family: "gemma-free",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-04-02",
+    lastUpdated: "2026-04-02",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 262144, output: 32768 },
+    cost: { input: 0, output: 0 },
+  },
+  "gemma-4-31b-it-free": {
+    id: "gemma-4-31b-it-free",
+    name: "Gemma 4 31B IT (free)",
+    family: "gemma-free",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-01",
+    releaseDate: "2026-04-02",
+    lastUpdated: "2026-04-02",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 262144, output: 32768 },
+    cost: { input: 0, output: 0 },
+  },
   "glm-4.5v": {
     id: "glm-4.5v",
     name: "GLM-4.5V",
-    family: "glm",
+    family: "glmv",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1062,7 +1093,7 @@ export const models = {
   "glm-4.6v": {
     id: "glm-4.6v",
     name: "GLM-4.6V",
-    family: "glm",
+    family: "glmv",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1094,7 +1125,7 @@ export const models = {
   "glm-4.7-flash-free": {
     id: "glm-4.7-flash-free",
     name: "GLM-4.7-Flash (free)",
-    family: "glm-flash",
+    family: "glm-flash-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1158,7 +1189,7 @@ export const models = {
   "glm-5v-turbo": {
     id: "glm-5v-turbo",
     name: "GLM 5 Vision Turbo",
-    family: "glm",
+    family: "glmv-turbo",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1170,6 +1201,38 @@ export const models = {
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
     limit: { context: 200000, output: 131072 },
     cost: { input: 0.7042, output: 3.09848, cacheRead: 0.169008 },
+  },
+  "gpt-4.1-mini": {
+    id: "gpt-4.1-mini",
+    name: "GPT-4.1 mini",
+    family: "gpt-mini",
+    attachment: true,
+    reasoning: false,
+    toolCall: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2024-04",
+    releaseDate: "2025-04-14",
+    lastUpdated: "2025-04-14",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1047576, output: 32768 },
+    cost: { input: 0.4, output: 1.6, cacheRead: 0.1 },
+  },
+  "gpt-4o": {
+    id: "gpt-4o",
+    name: "GPT-4o",
+    family: "gpt",
+    attachment: true,
+    reasoning: false,
+    toolCall: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2023-09",
+    releaseDate: "2024-05-13",
+    lastUpdated: "2024-08-06",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 128000, output: 16384 },
+    cost: { input: 2.5, output: 10, cacheRead: 1.25 },
   },
   "gpt-5": {
     id: "gpt-5",
@@ -1225,7 +1288,7 @@ export const models = {
   "gpt-5.1-codex-mini": {
     id: "gpt-5.1-codex-mini",
     name: "GPT-5.1 Codex mini",
-    family: "gpt-codex",
+    family: "gpt-codex-mini",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1349,7 +1412,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -1383,7 +1446,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1400,7 +1463,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1417,7 +1480,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -1451,7 +1514,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-05-18",
     releaseDate: "2026-09-22",
@@ -1468,7 +1531,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-04-20",
     releaseDate: "2026-09-22",
@@ -1507,7 +1570,7 @@ export const models = {
     lastUpdated: "2025-11-25",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
     limit: { context: 0, output: 0 },
-    cost: { input: 5, output: 32 },
+    cost: { input: 5, output: 10 },
   },
   "gpt-image-2": {
     id: "gpt-image-2",
@@ -1522,7 +1585,7 @@ export const models = {
     lastUpdated: "2026-04-21",
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0, output: 0 },
-    cost: { input: 5, output: 30, cacheRead: 1.25 },
+    cost: { input: 5, output: 10, cacheRead: 1.25 },
   },
   "gpt-image-2.5-flare": {
     id: "gpt-image-2.5-flare",
@@ -1537,7 +1600,7 @@ export const models = {
     lastUpdated: "2026-09-08",
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0, output: 0 },
-    cost: { input: 5, output: 30, cacheRead: 1.25 },
+    cost: { input: 5, output: 10, cacheRead: 1.25 },
   },
   "gpt-image-2.5-sunburst": {
     id: "gpt-image-2.5-sunburst",
@@ -1552,7 +1615,22 @@ export const models = {
     lastUpdated: "2026-09-08",
     modalities: { input: ["text", "image"], output: ["image"] },
     limit: { context: 0, output: 0 },
-    cost: { input: 5, output: 30, cacheRead: 1.25 },
+    cost: { input: 5, output: 10, cacheRead: 1.25 },
+  },
+  "grok-4-fast-non-reasoning": {
+    id: "grok-4-fast-non-reasoning",
+    name: "X-Ai/Grok-4-Fast-Non-Reasoning",
+    family: "grok",
+    attachment: true,
+    reasoning: false,
+    toolCall: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2025-12-18",
+    lastUpdated: "2025-12-18",
+    modalities: { input: ["text", "image", "audio", "video"], output: ["text"] },
+    limit: { context: 2000000, output: 2000000 },
+    cost: { input: 0.2, output: 0.5, cacheRead: 0.05 },
   },
   "grok-4.3": {
     id: "grok-4.3",
@@ -1583,7 +1661,7 @@ export const models = {
     releaseDate: "2026-07-08",
     lastUpdated: "2026-07-08",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 500000, output: 1000000 },
+    limit: { context: 500000, output: 500000 },
     cost: { input: 2.2, output: 6.6, cacheRead: 0.55 },
   },
   "grok-4.6": {
@@ -1639,7 +1717,7 @@ export const models = {
   "hy3": {
     id: "hy3",
     name: "Hy3",
-    family: "Hy",
+    family: "hy",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1655,7 +1733,7 @@ export const models = {
   "hy3-preview": {
     id: "hy3-preview",
     name: "Hy3 Preview",
-    family: "Hy",
+    family: "hy",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1672,7 +1750,7 @@ export const models = {
   "hy4-preview": {
     id: "hy4-preview",
     name: "Hy4 preview",
-    family: "Hy",
+    family: "hy",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1688,7 +1766,7 @@ export const models = {
   "kimi-k2.5": {
     id: "kimi-k2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1705,7 +1783,7 @@ export const models = {
   "kimi-k2.6": {
     id: "kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1722,7 +1800,7 @@ export const models = {
   "kimi-k2.7-code": {
     id: "kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1739,7 +1817,7 @@ export const models = {
   "kimi-k2.7-code-highspeed": {
     id: "kimi-k2.7-code-highspeed",
     name: "Kimi K2.7 Code Highspeed",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1756,7 +1834,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1766,13 +1844,13 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-27",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
   "ling-3.0-flash-free": {
     id: "ling-3.0-flash-free",
     name: "Ling 3.0 Flash (free)",
-    family: "ling",
+    family: "ling-flash-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1819,7 +1897,7 @@ export const models = {
   "mimo-v2.5-pro": {
     id: "mimo-v2.5-pro",
     name: "MiMo-V2.5-Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1836,7 +1914,7 @@ export const models = {
   "mimo-v2.6-flash": {
     id: "mimo-v2.6-flash",
     name: "MiMo-V2.6-Flash",
-    family: "mimo",
+    family: "mimo-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1851,7 +1929,7 @@ export const models = {
   "mimo-v2.6-pro": {
     id: "mimo-v2.6-pro",
     name: "MiMo-V2.6-Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1866,7 +1944,7 @@ export const models = {
   "mimo-v2.6-pro-ultraspeed": {
     id: "mimo-v2.6-pro-ultraspeed",
     name: "MiMo-V2.6-Pro-UltraSpeed",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1881,7 +1959,7 @@ export const models = {
   "minimax-m2.7": {
     id: "minimax-m2.7",
     name: "MiniMax M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1897,7 +1975,7 @@ export const models = {
   "minimax-m3": {
     id: "minimax-m3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1913,7 +1991,7 @@ export const models = {
   "muse-spark-1.1": {
     id: "muse-spark-1.1",
     name: "Muse Spark 1.1",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1929,7 +2007,7 @@ export const models = {
   "muse-spark-1.2": {
     id: "muse-spark-1.2",
     name: "Muse Spark 1.2",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1945,7 +2023,7 @@ export const models = {
   "muse-spark-1.3": {
     id: "muse-spark-1.3",
     name: "Muse Spark 1.3",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1961,7 +2039,7 @@ export const models = {
   "nemotron-3-nano-omni-30b-a3b-reasoning-free": {
     id: "nemotron-3-nano-omni-30b-a3b-reasoning-free",
     name: "Nemotron 3 Nano Omni 30B A3B Reasoning (free)",
-    family: "nemotron",
+    family: "nemotron-nano-free",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1976,7 +2054,7 @@ export const models = {
   "nemotron-3-super-120b-a12b-free": {
     id: "nemotron-3-super-120b-a12b-free",
     name: "Nemotron 3 Super 120B A12B (free)",
-    family: "nemotron",
+    family: "nemotron-super-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1992,7 +2070,7 @@ export const models = {
   "nemotron-3-ultra-550b-a55b-free": {
     id: "nemotron-3-ultra-550b-a55b-free",
     name: "Nemotron 3 Ultra 550B A55B (free)",
-    family: "nemotron",
+    family: "nemotron-ultra-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2008,7 +2086,7 @@ export const models = {
   "nemotron-3.5-content-safety-free": {
     id: "nemotron-3.5-content-safety-free",
     name: "Nemotron 3.5 Content Safety (free)",
-    family: "nemotron",
+    family: "nemotron-safety-free",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -2023,7 +2101,7 @@ export const models = {
   "nemotron-3.5-lightning-free": {
     id: "nemotron-3.5-lightning-free",
     name: "Nemotron 3.5 Lightning 30B A3B (free)",
-    family: "nemotron",
+    family: "nemotron-lightning-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2071,10 +2149,26 @@ export const models = {
     limit: { context: 200000, output: 100000 },
     cost: { input: 1.1, output: 4.4, cacheRead: 0.275 },
   },
+  "qwen3-coder-next": {
+    id: "qwen3-coder-next",
+    name: "Qwen3 Coder Next",
+    family: "qwen-coder",
+    attachment: false,
+    reasoning: false,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-09",
+    releaseDate: "2026-02-03",
+    lastUpdated: "2026-02-03",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 262144, output: 65536 },
+    cost: { input: 0.137, output: 0.548 },
+  },
   "qwen3-max": {
     id: "qwen3-max",
     name: "Qwen3 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -2091,7 +2185,7 @@ export const models = {
   "qwen3-vl-plus": {
     id: "qwen3-vl-plus",
     name: "Qwen3-VL Plus",
-    family: "qwen",
+    family: "qwen-vl-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2171,7 +2265,7 @@ export const models = {
   "qwen3.5-flash": {
     id: "qwen3.5-flash",
     name: "Qwen3.5 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2187,7 +2281,7 @@ export const models = {
   "qwen3.5-plus": {
     id: "qwen3.5-plus",
     name: "Qwen3.5 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2219,7 +2313,7 @@ export const models = {
   "qwen3.6-flash": {
     id: "qwen3.6-flash",
     name: "Qwen3.6 Flash",
-    family: "qwen3.6",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2236,7 +2330,7 @@ export const models = {
   "qwen3.6-max-preview": {
     id: "qwen3.6-max-preview",
     name: "Qwen3.6 Max Preview",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2254,7 +2348,7 @@ export const models = {
   "qwen3.6-plus": {
     id: "qwen3.6-plus",
     name: "Qwen3.6 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2271,7 +2365,7 @@ export const models = {
   "qwen3.7-flash": {
     id: "qwen3.7-flash",
     name: "Qwen3.7 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2281,13 +2375,13 @@ export const models = {
     releaseDate: "2026-07-15",
     lastUpdated: "2026-07-15",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 991000, output: 131072, input: 991808 },
+    limit: { context: 991000, output: 131072 },
     cost: { input: 0.0282, output: 0.1128, cacheRead: 0.00564, cacheWrite: 0.03525 },
   },
   "qwen3.7-max": {
     id: "qwen3.7-max",
     name: "Qwen3.7 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2303,7 +2397,7 @@ export const models = {
   "qwen3.7-plus": {
     id: "qwen3.7-plus",
     name: "Qwen3.7 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2336,7 +2430,7 @@ export const models = {
   "qwen3.8-flash": {
     id: "qwen3.8-flash",
     name: "Qwen3.8 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2352,7 +2446,7 @@ export const models = {
   "qwen3.8-flash-free": {
     id: "qwen3.8-flash-free",
     name: "Qwen3.8 Flash (free)",
-    family: "qwen",
+    family: "qwen-flash-free",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2367,7 +2461,7 @@ export const models = {
   "qwen3.8-max": {
     id: "qwen3.8-max",
     name: "Qwen3.8 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2383,7 +2477,7 @@ export const models = {
   "qwen3.8-max-free": {
     id: "qwen3.8-max-free",
     name: "Qwen3.8 Max (free)",
-    family: "qwen",
+    family: "qwen-max-free",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2398,7 +2492,7 @@ export const models = {
   "qwen3.8-max-preview": {
     id: "qwen3.8-max-preview",
     name: "Qwen3.8 Max Preview",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2414,7 +2508,7 @@ export const models = {
   "qwen3.8-omni-flash": {
     id: "qwen3.8-omni-flash",
     name: "Qwen3.8 Omni Flash",
-    family: "qwen",
+    family: "qwen-omni-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2430,6 +2524,7 @@ export const models = {
   "step-3.7-flash": {
     id: "step-3.7-flash",
     name: "Step 3.7 Flash",
+    family: "step-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2445,6 +2540,7 @@ export const models = {
   "step-5-preview": {
     id: "step-5-preview",
     name: "Step 5 Preview",
+    family: "step",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2460,7 +2556,7 @@ export const models = {
   "xiaomi-mimo-v2.5": {
     id: "xiaomi-mimo-v2.5",
     name: "Xiaomi MiMo-V2.5",
-    family: "mimo-v2.5",
+    family: "mimo",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2477,7 +2573,7 @@ export const models = {
   "xiaomi-mimo-v2.5-free": {
     id: "xiaomi-mimo-v2.5-free",
     name: "Xiaomi MiMo-V2.5 (free)",
-    family: "mimo-v2.5",
+    family: "mimo-free",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2494,7 +2590,7 @@ export const models = {
   "xiaomi-mimo-v2.5-pro": {
     id: "xiaomi-mimo-v2.5-pro",
     name: "Xiaomi MiMo-V2.5-Pro",
-    family: "mimo-v2.5-pro",
+    family: "mimo-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2511,7 +2607,7 @@ export const models = {
   "xiaomi-mimo-v2.5-pro-free": {
     id: "xiaomi-mimo-v2.5-pro-free",
     name: "Xiaomi MiMo-V2.5-Pro (free)",
-    family: "mimo-v2.5-pro",
+    family: "mimo-pro-free",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2545,7 +2641,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AihubmixModelId = keyof typeof models;
-export type AihubmixTextModelId = "alicloud-deepseek-v4-flash" | "alicloud-deepseek-v4-pro" | "alicloud-glm-5.1" | "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-haiku-5-5" | "claude-opus-4-5" | "claude-opus-4-5-think" | "claude-opus-4-6" | "claude-opus-4-6-think" | "claude-opus-4-7" | "claude-opus-4-7-think" | "claude-opus-4-8" | "claude-opus-4-8-think" | "claude-opus-5" | "claude-opus-5-5" | "claude-sonnet-4-5" | "claude-sonnet-4-5-think" | "claude-sonnet-4-6" | "claude-sonnet-4-6-think" | "claude-sonnet-5" | "claude-sonnet-5-5" | "coding-glm-5.1" | "coding-glm-5.1-free" | "coding-glm-5.2-free" | "coding-glm-5.3-flash-free" | "coding-glm-5.3-free" | "coding-minimax-m2.7" | "coding-minimax-m2.7-free" | "coding-minimax-m2.7-highspeed" | "coding-xiaomi-mimo-v2.5" | "coding-xiaomi-mimo-v2.5-pro" | "deep-deepseek-v4-flash" | "deep-deepseek-v4-pro" | "deepseek-v4-flash-0731" | "deepseek-v4-flash-0731-fast" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro-0813" | "deepseek-v4.1-flash" | "doubao-seed-2-0-code-preview" | "doubao-seed-2-0-lite-260428" | "doubao-seed-2-0-mini-260428" | "doubao-seed-2-0-pro" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-image" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-4-argon" | "glm-4.5v" | "glm-4.6" | "glm-4.6v" | "glm-4.7" | "glm-4.7-flash-free" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "glm-5v-turbo" | "gpt-5" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-6-luna" | "gpt-6-sol" | "gpt-6.1-sol" | "gpt-image-1.5" | "grok-4.3" | "grok-4.5" | "grok-4.6" | "grok-4.7" | "grok-build-0.1" | "hy3" | "hy3-preview" | "hy4-preview" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k2.7-code-highspeed" | "kimi-k3" | "ling-3.0-flash-free" | "longcat-2.0" | "mimo-v2.5" | "mimo-v2.5-pro" | "mimo-v2.6-flash" | "mimo-v2.6-pro" | "mimo-v2.6-pro-ultraspeed" | "minimax-m2.7" | "minimax-m3" | "muse-spark-1.1" | "muse-spark-1.2" | "muse-spark-1.3" | "nemotron-3-nano-omni-30b-a3b-reasoning-free" | "nemotron-3-super-120b-a12b-free" | "nemotron-3-ultra-550b-a55b-free" | "nemotron-3.5-content-safety-free" | "nemotron-3.5-lightning-free" | "o3" | "o4-mini" | "qwen3-max" | "qwen3-vl-plus" | "qwen3.5-122b-a10b" | "qwen3.5-27b" | "qwen3.5-35b-a3b" | "qwen3.5-397b-a17b" | "qwen3.5-flash" | "qwen3.5-plus" | "qwen3.6-35b-a3b" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-2.4t-a95b" | "qwen3.8-flash" | "qwen3.8-flash-free" | "qwen3.8-max" | "qwen3.8-max-free" | "qwen3.8-max-preview" | "qwen3.8-omni-flash" | "step-3.7-flash" | "step-5-preview" | "xiaomi-mimo-v2.5" | "xiaomi-mimo-v2.5-free" | "xiaomi-mimo-v2.5-pro" | "xiaomi-mimo-v2.5-pro-free" | "zai-glm-5.1";
+export type AihubmixTextModelId = "alicloud-deepseek-v4-flash" | "alicloud-deepseek-v4-pro" | "alicloud-glm-5.1" | "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-haiku-5-5" | "claude-opus-4-5" | "claude-opus-4-5-think" | "claude-opus-4-6" | "claude-opus-4-6-think" | "claude-opus-4-7" | "claude-opus-4-7-think" | "claude-opus-4-8" | "claude-opus-4-8-think" | "claude-opus-5" | "claude-opus-5-5" | "claude-sonnet-4-5" | "claude-sonnet-4-5-think" | "claude-sonnet-4-6" | "claude-sonnet-4-6-think" | "claude-sonnet-5" | "claude-sonnet-5-5" | "coding-glm-5.1" | "coding-glm-5.1-free" | "coding-glm-5.2-free" | "coding-glm-5.3-flash-free" | "coding-glm-5.3-free" | "coding-minimax-m2.7" | "coding-minimax-m2.7-free" | "coding-minimax-m2.7-highspeed" | "coding-xiaomi-mimo-v2.5" | "coding-xiaomi-mimo-v2.5-pro" | "deep-deepseek-v4-flash" | "deep-deepseek-v4-pro" | "deepseek-v4-flash-0731" | "deepseek-v4-flash-0731-fast" | "deepseek-v4-flash-vision-exp" | "deepseek-v4-pro-0813" | "deepseek-v4.1-flash" | "doubao-seed-2-0-code-preview" | "doubao-seed-2-0-lite-260428" | "doubao-seed-2-0-mini-260428" | "doubao-seed-2-0-pro" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-image" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-4-argon" | "gemma-4-26b-a4b-it-free" | "gemma-4-31b-it-free" | "glm-4.5v" | "glm-4.6" | "glm-4.6v" | "glm-4.7" | "glm-4.7-flash-free" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "glm-5v-turbo" | "gpt-4.1-mini" | "gpt-4o" | "gpt-5" | "gpt-5.1" | "gpt-5.1-codex" | "gpt-5.1-codex-mini" | "gpt-5.2" | "gpt-5.2-codex" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-6-luna" | "gpt-6-sol" | "gpt-6.1-sol" | "gpt-image-1.5" | "grok-4-fast-non-reasoning" | "grok-4.3" | "grok-4.5" | "grok-4.6" | "grok-4.7" | "grok-build-0.1" | "hy3" | "hy3-preview" | "hy4-preview" | "kimi-k2.5" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k2.7-code-highspeed" | "kimi-k3" | "ling-3.0-flash-free" | "longcat-2.0" | "mimo-v2.5" | "mimo-v2.5-pro" | "mimo-v2.6-flash" | "mimo-v2.6-pro" | "mimo-v2.6-pro-ultraspeed" | "minimax-m2.7" | "minimax-m3" | "muse-spark-1.1" | "muse-spark-1.2" | "muse-spark-1.3" | "nemotron-3-nano-omni-30b-a3b-reasoning-free" | "nemotron-3-super-120b-a12b-free" | "nemotron-3-ultra-550b-a55b-free" | "nemotron-3.5-content-safety-free" | "nemotron-3.5-lightning-free" | "o3" | "o4-mini" | "qwen3-coder-next" | "qwen3-max" | "qwen3-vl-plus" | "qwen3.5-122b-a10b" | "qwen3.5-27b" | "qwen3.5-35b-a3b" | "qwen3.5-397b-a17b" | "qwen3.5-flash" | "qwen3.5-plus" | "qwen3.6-35b-a3b" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-2.4t-a95b" | "qwen3.8-flash" | "qwen3.8-flash-free" | "qwen3.8-max" | "qwen3.8-max-free" | "qwen3.8-max-preview" | "qwen3.8-omni-flash" | "step-3.7-flash" | "step-5-preview" | "xiaomi-mimo-v2.5" | "xiaomi-mimo-v2.5-free" | "xiaomi-mimo-v2.5-pro" | "xiaomi-mimo-v2.5-pro-free" | "zai-glm-5.1";
 export type AihubmixImageModelId = "gemini-2.5-flash-image" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite-image" | "gpt-image-1.5" | "gpt-image-2" | "gpt-image-2.5-flare" | "gpt-image-2.5-sunburst";
 export type AihubmixAudioModelId = never;
 export type AihubmixVideoModelId = never;

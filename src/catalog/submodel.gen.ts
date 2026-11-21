@@ -46,7 +46,7 @@ export const models = {
   "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8": {
     id: "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8",
     name: "Qwen3 Coder 480B A35B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -62,7 +62,7 @@ export const models = {
   "deepseek-ai/DeepSeek-R1-0528": {
     id: "deepseek-ai/DeepSeek-R1-0528",
     name: "DeepSeek R1 0528",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -71,7 +71,7 @@ export const models = {
     releaseDate: "2025-05-28",
     lastUpdated: "2025-05-28",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 75000, output: 163840 },
+    limit: { context: 75000, output: 75000 },
     cost: { input: 0.2, output: 0.8 },
   },
   "deepseek-ai/DeepSeek-V3-0324": {
@@ -86,7 +86,7 @@ export const models = {
     releaseDate: "2025-03-24",
     lastUpdated: "2025-03-24",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 75000, output: 163840 },
+    limit: { context: 75000, output: 75000 },
     cost: { input: 0.2, output: 0.8 },
   },
   "deepseek-ai/DeepSeek-V3.1": {
@@ -101,7 +101,7 @@ export const models = {
     releaseDate: "2025-08-21",
     lastUpdated: "2025-08-21",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 75000, output: 163840 },
+    limit: { context: 75000, output: 75000 },
     cost: { input: 0.2, output: 0.8 },
   },
   "openai/gpt-oss-120b": {
@@ -117,7 +117,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.1, output: 0.5 },
   },
   "zai-org/GLM-4.5-Air": {

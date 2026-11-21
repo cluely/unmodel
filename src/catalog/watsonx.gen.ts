@@ -15,7 +15,7 @@ export const models = {
   "ibm/granite-4-h-small": {
     id: "ibm/granite-4-h-small",
     name: "Granite-4.0-H-Small",
-    family: "granite",
+    family: "granite-small",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -91,7 +91,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.159, output: 0.636 },
   },
 } as const satisfies Record<string, ModelInfo>;

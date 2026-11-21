@@ -49,7 +49,7 @@ export const models = {
   "meta-models/Muse-Spark-Open-816B-A42B": {
     id: "meta-models/Muse-Spark-Open-816B-A42B",
     name: "Muse Spark Open",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -66,7 +66,7 @@ export const models = {
   "moonshotai/Kimi-K3": {
     id: "moonshotai/Kimi-K3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -76,7 +76,7 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.3, reasoning: 15 },
   },
   "nvidia/GLM-5.3-Flash-NVFP4": {
@@ -98,7 +98,7 @@ export const models = {
   "thinkingmachines/Inkling-NVFP4": {
     id: "thinkingmachines/Inkling-NVFP4",
     name: "Inkling",
-    family: "ling",
+    family: "inkling",
     attachment: true,
     reasoning: true,
     toolCall: true,

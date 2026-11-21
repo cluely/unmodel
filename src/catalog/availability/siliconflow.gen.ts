@@ -35,7 +35,7 @@ export const availability = {
     "openrouter": "minimax/minimax-m3",
     "siliconflow": "MiniMaxAI/MiniMax-M3",
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
-    "vercel": { id: "minimax/minimax-m3", narrows: { context: 512000 } },
+    "vercel": { id: "minimax/minimax-m3", narrows: { context: 1000000 } },
   },
   "Qwen/Qwen2.5-72B-Instruct": {
     "siliconflow": "Qwen/Qwen2.5-72B-Instruct",

@@ -30,16 +30,6 @@ export const availability = {
     "siliconflow": "google/gemma-4-31B-it",
     "vercel": "google/gemma-4-31b-it",
   },
-  "zai-org/GLM-5.1": {
-    "deepinfra": "zai-org/GLM-5.1",
-    "friendli": "zai-org/GLM-5.1",
-    "huggingface": "zai-org/GLM-5.1",
-    "novita-ai": "zai-org/glm-5.1",
-    "openrouter": "z-ai/glm-5.1",
-    "togetherai": "zai-org/GLM-5.1",
-    "vercel": "zai/glm-5.1",
-    "zhipuai": { id: "glm-5.1", narrows: { context: 200000 } },
-  },
   "zai-org/GLM-5.2": {
     "alibaba": { id: "glm-5.2", narrows: { context: 1000000 } },
     "baseten": "zai-org/GLM-5.2",

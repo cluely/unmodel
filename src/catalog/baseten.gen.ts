@@ -33,7 +33,7 @@ export const models = {
   "deepseek-ai/DeepSeek-V4-Pro-0813": {
     id: "deepseek-ai/DeepSeek-V4-Pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -117,7 +117,7 @@ export const models = {
   "moonshotai/Kimi-K3": {
     id: "moonshotai/Kimi-K3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -133,7 +133,7 @@ export const models = {
   "moonshotai/Kimi-K3.1-Pro": {
     id: "moonshotai/Kimi-K3.1-Pro",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -143,13 +143,13 @@ export const models = {
     releaseDate: "2026-10-23",
     lastUpdated: "2026-10-23",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1000000, output: 262144 },
+    limit: { context: 1048576, output: 262144 },
     cost: { input: 2, output: 10, cacheRead: 0.2 },
   },
   "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": {
     id: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
     name: "Nemotron 3 Ultra",
-    family: "nemotron",
+    family: "nemotron-ultra",
     attachment: false,
     reasoning: true,
     toolCall: true,

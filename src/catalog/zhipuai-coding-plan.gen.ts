@@ -16,7 +16,7 @@ export const models = {
   "glm-4.6v": {
     id: "glm-4.6v",
     name: "GLM-4.6V",
-    family: "glm",
+    family: "glmv",
     attachment: true,
     reasoning: true,
     toolCall: true,

@@ -16,7 +16,7 @@ export const models = {
   "poolside/laguna-m.1": {
     id: "poolside/laguna-m.1",
     name: "Laguna M.1",
-    family: "laguna",
+    family: "laguna-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -32,7 +32,7 @@ export const models = {
   "poolside/laguna-s-2.1": {
     id: "poolside/laguna-s-2.1",
     name: "Laguna S 2.1",
-    family: "laguna",
+    family: "laguna-s",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -48,7 +48,7 @@ export const models = {
   "poolside/laguna-xs-2.1": {
     id: "poolside/laguna-xs-2.1",
     name: "Laguna XS 2.1",
-    family: "laguna",
+    family: "laguna-xs",
     attachment: false,
     reasoning: true,
     toolCall: true,

@@ -16,7 +16,7 @@ export const models = {
   "deepseek/deepseek-r1-0528": {
     id: "deepseek/deepseek-r1-0528",
     name: "DeepSeek R1-0528",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -67,7 +67,7 @@ export const models = {
   "deepseek/deepseek-v4-pro": {
     id: "deepseek/deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -85,7 +85,7 @@ export const models = {
   "deepseek/deepseek-v4-pro-0813": {
     id: "deepseek/deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -118,7 +118,7 @@ export const models = {
   "minimax/minimax-m2.5": {
     id: "minimax/minimax-m2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -134,7 +134,7 @@ export const models = {
   "minimax/minimax-m3": {
     id: "minimax/minimax-m3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -149,7 +149,7 @@ export const models = {
   "moonshotai/kimi-k2.5": {
     id: "moonshotai/kimi-k2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -167,7 +167,7 @@ export const models = {
   "moonshotai/kimi-k2.6": {
     id: "moonshotai/kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -185,7 +185,7 @@ export const models = {
   "moonshotai/kimi-k2.7-code": {
     id: "moonshotai/kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -202,7 +202,7 @@ export const models = {
   "moonshotai/kimi-k3": {
     id: "moonshotai/kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -212,7 +212,7 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.75 },
   },
   "qwen/qwen3-235b-a22b-2507": {
@@ -229,7 +229,7 @@ export const models = {
     lastUpdated: "2025-07-21",
     status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131000, output: 262144 },
+    limit: { context: 131000, output: 131000 },
     cost: { input: 0.072, output: 0.464, cacheRead: 0.018, cacheWrite: 0.09 },
   },
   "qwen/qwen3.5-122b-a10b": {
@@ -301,7 +301,7 @@ export const models = {
   "qwen/qwen3.8-flash-next": {
     id: "qwen/qwen3.8-flash-next",
     name: "Qwen3.8 Flash Next",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -333,7 +333,7 @@ export const models = {
   "z-ai/glm-5-turbo": {
     id: "z-ai/glm-5-turbo",
     name: "GLM-5-Turbo",
-    family: "glm",
+    family: "glm-turbo",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -415,7 +415,7 @@ export const models = {
   "z-ai/glm-5v-turbo": {
     id: "z-ai/glm-5v-turbo",
     name: "GLM-5V-Turbo",
-    family: "glm",
+    family: "glmv-turbo",
     attachment: true,
     reasoning: true,
     toolCall: true,

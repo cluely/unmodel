@@ -16,7 +16,7 @@ export const models = {
   "MiniMax-M1": {
     id: "MiniMax-M1",
     name: "MiniMax M1",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -186,7 +186,7 @@ export const models = {
   "deepseek-r1": {
     id: "deepseek-r1",
     name: "DeepSeek-R1",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -204,7 +204,7 @@ export const models = {
   "deepseek-r1-0528": {
     id: "deepseek-r1-0528",
     name: "DeepSeek-R1-0528",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -417,7 +417,7 @@ export const models = {
   "doubao-seed-1.6-flash": {
     id: "doubao-seed-1.6-flash",
     name: "Doubao-Seed 1.6 Flash",
-    family: "seed",
+    family: "seed-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -450,7 +450,7 @@ export const models = {
   "doubao-seed-2.0-code": {
     id: "doubao-seed-2.0-code",
     name: "Doubao Seed 2.0 Code",
-    family: "seed",
+    family: "seed-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -467,7 +467,7 @@ export const models = {
   "doubao-seed-2.0-lite": {
     id: "doubao-seed-2.0-lite",
     name: "Doubao Seed 2.0 Lite",
-    family: "seed",
+    family: "seed-lite",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -483,7 +483,7 @@ export const models = {
   "doubao-seed-2.0-mini": {
     id: "doubao-seed-2.0-mini",
     name: "Doubao Seed 2.0 Mini",
-    family: "seed",
+    family: "seed-mini",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -499,7 +499,7 @@ export const models = {
   "doubao-seed-2.0-pro": {
     id: "doubao-seed-2.0-pro",
     name: "Doubao Seed 2.0 Pro",
-    family: "seed",
+    family: "seed-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -567,7 +567,7 @@ export const models = {
   "gemini-2.5-flash-image": {
     id: "gemini-2.5-flash-image",
     name: "Gemini 2.5 Flash Image",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -635,7 +635,7 @@ export const models = {
   "gemini-3.0-pro-image-preview": {
     id: "gemini-3.0-pro-image-preview",
     name: "Gemini 3.0 Pro Image Preview",
-    family: "gemini-pro",
+    family: "nano-banana-pro",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -721,7 +721,7 @@ export const models = {
   "kimi-k2": {
     id: "kimi-k2",
     name: "Kimi K2",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -778,13 +778,13 @@ export const models = {
     lastUpdated: "2026-02-06",
     status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 320000 },
+    limit: { context: 256000, output: 256000 },
     cost: { input: 0, output: 0 },
   },
   "mimo-v2-flash": {
     id: "mimo-v2-flash",
     name: "Mimo-V2-Flash",
-    family: "mimo",
+    family: "mimo-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -801,7 +801,7 @@ export const models = {
   "minimax/minimax-m2": {
     id: "minimax/minimax-m2",
     name: "Minimax/Minimax-M2",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -818,7 +818,7 @@ export const models = {
   "minimax/minimax-m2.1": {
     id: "minimax/minimax-m2.1",
     name: "Minimax/Minimax-M2.1",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -835,7 +835,7 @@ export const models = {
   "minimax/minimax-m2.5": {
     id: "minimax/minimax-m2.5",
     name: "Minimax/Minimax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -851,7 +851,7 @@ export const models = {
   "minimax/minimax-m2.5-highspeed": {
     id: "minimax/minimax-m2.5-highspeed",
     name: "Minimax/Minimax-M2.5 Highspeed",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -868,7 +868,7 @@ export const models = {
   "moonshotai/kimi-k2-0905": {
     id: "moonshotai/kimi-k2-0905",
     name: "Kimi K2 0905",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -884,7 +884,7 @@ export const models = {
   "moonshotai/kimi-k2-thinking": {
     id: "moonshotai/kimi-k2-thinking",
     name: "Kimi K2 Thinking",
-    family: "kimi-thinking",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -902,7 +902,7 @@ export const models = {
   "moonshotai/kimi-k2.5": {
     id: "moonshotai/kimi-k2.5",
     name: "Moonshotai/Kimi-K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -954,7 +954,7 @@ export const models = {
   "qwen-max-2025-01-25": {
     id: "qwen-max-2025-01-25",
     name: "Qwen2.5-Max-2025-01-25",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -972,7 +972,7 @@ export const models = {
   "qwen-turbo": {
     id: "qwen-turbo",
     name: "Qwen-Turbo",
-    family: "qwen",
+    family: "qwen-turbo",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1006,7 +1006,7 @@ export const models = {
   "qwen2.5-vl-72b-instruct": {
     id: "qwen2.5-vl-72b-instruct",
     name: "Qwen 2.5 VL 72B Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -1144,7 +1144,7 @@ export const models = {
   "qwen3-coder-480b-a35b-instruct": {
     id: "qwen3-coder-480b-a35b-instruct",
     name: "Qwen3 Coder 480B A35B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -1162,7 +1162,7 @@ export const models = {
   "qwen3-max": {
     id: "qwen3-max",
     name: "Qwen3 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -1180,7 +1180,7 @@ export const models = {
   "qwen3-max-preview": {
     id: "qwen3-max-preview",
     name: "Qwen3 Max Preview",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -1281,7 +1281,7 @@ export const models = {
   "stepfun/step-3.5-flash": {
     id: "stepfun/step-3.5-flash",
     name: "Stepfun/Step-3.5 Flash",
-    family: "step",
+    family: "step-flash",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -1293,7 +1293,7 @@ export const models = {
     lastUpdated: "2026-02-13",
     status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 64000, output: 4096, input: 256000 },
+    limit: { context: 64000, output: 4096 },
   },
   "x-ai/grok-4-fast": {
     id: "x-ai/grok-4-fast",
@@ -1392,7 +1392,7 @@ export const models = {
   "x-ai/grok-code-fast-1": {
     id: "x-ai/grok-code-fast-1",
     name: "x-AI/Grok-Code-Fast 1",
-    family: "grok",
+    family: "grok-code",
     attachment: false,
     reasoning: true,
     toolCall: true,

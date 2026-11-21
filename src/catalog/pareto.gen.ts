@@ -13,6 +13,37 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "deepseek/deepseek-v4.1-flash": {
+    id: "deepseek/deepseek-v4.1-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0.105, output: 0.42, cacheRead: 0.0021 },
+  },
+  "xiaomi/mimo-v2.6-flash": {
+    id: "xiaomi/mimo-v2.6-flash",
+    name: "MiMo-V2.6-Flash",
+    family: "mimo-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-22",
+    lastUpdated: "2026-09-22",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.126, output: 0.252, cacheRead: 0.00252 },
+  },
   "z-ai/glm-5.3-flash": {
     id: "z-ai/glm-5.3-flash",
     name: "GLM-5.3-Flash",
@@ -32,7 +63,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type ParetoModelId = keyof typeof models;
-export type ParetoTextModelId = "z-ai/glm-5.3-flash";
+export type ParetoTextModelId = "deepseek/deepseek-v4.1-flash" | "xiaomi/mimo-v2.6-flash" | "z-ai/glm-5.3-flash";
 export type ParetoImageModelId = never;
 export type ParetoAudioModelId = never;
 export type ParetoVideoModelId = never;

@@ -240,7 +240,7 @@ export const models = {
   "deepseek-r1-distill-llama-70b": {
     id: "deepseek-r1-distill-llama-70b",
     name: "DeepSeek R1 Distill Llama 70B",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -256,7 +256,7 @@ export const models = {
   "deepseek-reasoner": {
     id: "deepseek-reasoner",
     name: "DeepSeek Reasoner",
-    family: "deepseek-thinking",
+    family: "deepseek",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -272,7 +272,7 @@ export const models = {
   "deepseek-tng-r1t2-chimera": {
     id: "deepseek-tng-r1t2-chimera",
     name: "DeepSeek TNG R1T2 Chimera",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -282,7 +282,7 @@ export const models = {
     releaseDate: "2025-07-02",
     lastUpdated: "2025-07-02",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 130000, output: 163840 },
+    limit: { context: 130000, output: 130000 },
     cost: { input: 0.3, output: 1.2 },
   },
   "deepseek-v3": {
@@ -586,7 +586,7 @@ export const models = {
     releaseDate: "2025-08-07",
     lastUpdated: "2025-08-07",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 128000, output: 16384, input: 272000 },
+    limit: { context: 128000, output: 16384 },
     cost: { input: 1.25, output: 10, cacheRead: 0.125 },
   },
   "gpt-5-codex": {
@@ -650,7 +650,7 @@ export const models = {
     releaseDate: "2025-10-06",
     lastUpdated: "2025-10-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 128000, output: 32768, input: 272000 },
+    limit: { context: 128000, output: 32768 },
     cost: { input: 15, output: 120 },
   },
   "gpt-5.1": {
@@ -704,7 +704,7 @@ export const models = {
   "gpt-5.1-codex-mini": {
     id: "gpt-5.1-codex-mini",
     name: "OpenAI: GPT-5.1 Codex Mini",
-    family: "gpt-codex",
+    family: "gpt-codex-mini",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -864,7 +864,7 @@ export const models = {
   "grok-code-fast-1": {
     id: "grok-code-fast-1",
     name: "xAI Grok Code Fast 1",
-    family: "grok",
+    family: "grok-code",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -896,7 +896,7 @@ export const models = {
   "kimi-k2-0711": {
     id: "kimi-k2-0711",
     name: "Kimi K2 (07/11)",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -912,7 +912,7 @@ export const models = {
   "kimi-k2-0905": {
     id: "kimi-k2-0905",
     name: "Kimi K2 (09/05)",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -928,7 +928,7 @@ export const models = {
   "kimi-k2-thinking": {
     id: "kimi-k2-thinking",
     name: "Kimi K2 Thinking",
-    family: "kimi-thinking",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -938,7 +938,7 @@ export const models = {
     releaseDate: "2025-11-06",
     lastUpdated: "2025-11-06",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 262144 },
+    limit: { context: 256000, output: 256000 },
     cost: { input: 0.48, output: 2 },
   },
   "llama-3.1-8b-instant": {
@@ -1056,7 +1056,7 @@ export const models = {
   "llama-guard-4": {
     id: "llama-guard-4",
     name: "Meta Llama Guard 4 12B",
-    family: "llama",
+    family: "llama-guard",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -1072,7 +1072,7 @@ export const models = {
   "llama-prompt-guard-2-22m": {
     id: "llama-prompt-guard-2-22m",
     name: "Meta Llama Prompt Guard 2 22M",
-    family: "llama",
+    family: "llama-prompt-guard",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -1088,7 +1088,7 @@ export const models = {
   "llama-prompt-guard-2-86m": {
     id: "llama-prompt-guard-2-86m",
     name: "Meta Llama Prompt Guard 2 86M",
-    family: "llama",
+    family: "llama-prompt-guard",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -1248,7 +1248,7 @@ export const models = {
   "qwen2.5-coder-7b-fast": {
     id: "qwen2.5-coder-7b-fast",
     name: "Qwen2.5 Coder 7B fast",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -1312,7 +1312,7 @@ export const models = {
   "qwen3-coder": {
     id: "qwen3-coder",
     name: "Qwen3 Coder 480B A35B Instruct Turbo",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -1328,7 +1328,7 @@ export const models = {
   "qwen3-coder-30b-a3b-instruct": {
     id: "qwen3-coder-30b-a3b-instruct",
     name: "Qwen3 Coder 30B A3B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -1360,7 +1360,7 @@ export const models = {
   "qwen3-vl-235b-a22b-instruct": {
     id: "qwen3-vl-235b-a22b-instruct",
     name: "Qwen3 VL 235B A22B Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -1392,7 +1392,7 @@ export const models = {
   "sonar-deep-research": {
     id: "sonar-deep-research",
     name: "Perplexity Sonar Deep Research",
-    family: "sonar",
+    family: "sonar-deep-research",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -1440,7 +1440,7 @@ export const models = {
   "sonar-reasoning-pro": {
     id: "sonar-reasoning-pro",
     name: "Perplexity Sonar Reasoning Pro",
-    family: "sonar-reasoning",
+    family: "sonar-reasoning-pro",
     attachment: false,
     reasoning: true,
     toolCall: false,

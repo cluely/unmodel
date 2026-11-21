@@ -16,7 +16,7 @@ export const models = {
   "Intel/Qwen3-Coder-480B-A35B-Instruct-int4-mixed-ar": {
     id: "Intel/Qwen3-Coder-480B-A35B-Instruct-int4-mixed-ar",
     name: "Qwen 3 Coder 480B",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -32,7 +32,7 @@ export const models = {
   "Qwen/Qwen2.5-VL-32B-Instruct": {
     id: "Qwen/Qwen2.5-VL-32B-Instruct",
     name: "Qwen 2.5 VL 32B Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -82,7 +82,7 @@ export const models = {
   "deepseek-ai/DeepSeek-R1-0528": {
     id: "deepseek-ai/DeepSeek-R1-0528",
     name: "DeepSeek R1",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -147,7 +147,7 @@ export const models = {
   "mistralai/Devstral-Small-2505": {
     id: "mistralai/Devstral-Small-2505",
     name: "Devstral Small 2505",
-    family: "devstral",
+    family: "devstral-small",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -164,7 +164,7 @@ export const models = {
   "mistralai/Magistral-Small-2506": {
     id: "mistralai/Magistral-Small-2506",
     name: "Magistral Small 2506",
-    family: "magistral",
+    family: "magistral-small",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -214,7 +214,7 @@ export const models = {
   "moonshotai/Kimi-K2-Instruct-0905": {
     id: "moonshotai/Kimi-K2-Instruct-0905",
     name: "Kimi K2 Instruct",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -230,7 +230,7 @@ export const models = {
   "moonshotai/Kimi-K2-Thinking": {
     id: "moonshotai/Kimi-K2-Thinking",
     name: "Kimi K2 Thinking",
-    family: "kimi-thinking",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,

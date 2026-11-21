@@ -32,7 +32,7 @@ export const models = {
   "sonar-deep-research": {
     id: "sonar-deep-research",
     name: "Perplexity Sonar Deep Research",
-    family: "sonar",
+    family: "sonar-deep-research",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -66,7 +66,7 @@ export const models = {
   "sonar-reasoning-pro": {
     id: "sonar-reasoning-pro",
     name: "Sonar Reasoning Pro",
-    family: "sonar-reasoning",
+    family: "sonar-reasoning-pro",
     attachment: true,
     reasoning: true,
     toolCall: false,

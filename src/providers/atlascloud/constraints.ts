@@ -76,9 +76,6 @@ export const VIDEO_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9", "adapt
 /** `ratio` on Wan 3.0 / 3.0-prime text-to-video — the same list without `21:9`. */
 export const WAN_RATIOS = ["adaptive", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
-/** `aspect_ratio` on Seedance v1.5 pro — a different field name and no `adaptive`. */
-export const SEEDANCE_15_ASPECT_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
-
 /** `aspect_ratio` on Veo 3.1 — two shapes, and the schema says so. */
 export const VEO_ASPECT_RATIOS = ["16:9", "9:16"] as const;
 
@@ -140,10 +137,6 @@ export const SEEDANCE_20_SMALL_RESOLUTIONS = [
   "1080p-SR",
   "1440p-SR",
 ] as const;
-
-/** Seedance v1.5 pro `resolution`; the `-fast` pair renders 720p only. */
-export const SEEDANCE_15_RESOLUTIONS = ["720p", "480p"] as const;
-export const SEEDANCE_15_FAST_RESOLUTIONS = ["720p"] as const;
 
 /**
  * Wan 3.0 prime `resolution`: the same lower-case list, `-esr` ladder
@@ -356,15 +349,6 @@ const WAN_BASE = {
   ...NO_REFERENCES,
 } as const;
 
-/** Seedance v1.5 pro: `{"type":"integer","minimum":4,"maximum":12}` — a RANGE. */
-const SEEDANCE_15_BASE = {
-  minDuration: 4,
-  maxDuration: 12,
-  allowsAutoDuration: false,
-  forcesAdaptiveRatio: false,
-  ...NO_REFERENCES,
-} as const;
-
 const VEO_BASE = {
   minDuration: 4,
   maxDuration: 8,
@@ -487,10 +471,6 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
     required: [],
     forcesAdaptiveRatio: false,
   },
-  "bytedance/seedance-v1.5-pro/text-to-video": { ...SEEDANCE_15_BASE, required: ["prompt"] },
-  "bytedance/seedance-v1.5-pro/image-to-video": { ...SEEDANCE_15_BASE, required: ["image"] },
-  "bytedance/seedance-v1.5-pro/text-to-video-fast": { ...SEEDANCE_15_BASE, required: ["prompt"] },
-  "bytedance/seedance-v1.5-pro/image-to-video-fast": { ...SEEDANCE_15_BASE, required: ["image"] },
   "alibaba/wan-3.0-prime/text-to-video": { ...WAN_BASE, required: ["prompt"] },
   "alibaba/wan-3.0-prime/image-to-video": { ...WAN_BASE, required: ["prompt", "image"] },
   "alibaba/wan-3.0/text-to-video": { ...WAN_BASE, required: ["prompt"] },
@@ -795,19 +775,6 @@ const wanReferenceDeny: Record<string, DenyRule> = {
   ...denyTable(WAN_FLAT_REFERENCES_ABSENT, VIDEO_API_SOURCE),
 };
 
-const seedance15Deny: Record<string, DenyRule> = denyReferences({
-  ...denyTable(OMNI_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(VEO_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(RATIO_ABSENT, VIDEO_API_SOURCE),
-  ...denyTable(AUDIO_FIELD_ABSENT, VIDEO_API_SOURCE),
-  ...denyTable(SEEDANCE_25_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(SEEDANCE_20_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(SEEDANCE_2X_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(IMAGES_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(WAN_REFERENCE_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
-});
-
 /** Everything Veo 3.1 rejects *except* `images`, which its reference arm owns. */
 const veoCommonDeny: Record<string, DenyRule> = denyReferences({
   ...denyTable(OMNI_ONLY, VIDEO_API_SOURCE),
@@ -897,22 +864,6 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   "bytedance/seedance-2.0-fast/reference-to-video": {
     deny: denyFrames(seedance20Base),
     enums: { resolution: SEEDANCE_20_SMALL_RESOLUTIONS, ratio: VIDEO_RATIOS, bitrate_mode: BITRATE_MODES },
-  },
-  "bytedance/seedance-v1.5-pro/text-to-video": {
-    deny: denyFrames(seedance15Deny),
-    enums: { resolution: SEEDANCE_15_RESOLUTIONS, aspect_ratio: SEEDANCE_15_ASPECT_RATIOS },
-  },
-  "bytedance/seedance-v1.5-pro/image-to-video": {
-    deny: seedance15Deny,
-    enums: { resolution: SEEDANCE_15_RESOLUTIONS, aspect_ratio: SEEDANCE_15_ASPECT_RATIOS },
-  },
-  "bytedance/seedance-v1.5-pro/text-to-video-fast": {
-    deny: denyFrames(seedance15Deny),
-    enums: { resolution: SEEDANCE_15_FAST_RESOLUTIONS, aspect_ratio: SEEDANCE_15_ASPECT_RATIOS },
-  },
-  "bytedance/seedance-v1.5-pro/image-to-video-fast": {
-    deny: seedance15Deny,
-    enums: { resolution: SEEDANCE_15_FAST_RESOLUTIONS, aspect_ratio: SEEDANCE_15_ASPECT_RATIOS },
   },
   "alibaba/wan-3.0-prime/text-to-video": {
     deny: denyFrames(wanDeny),

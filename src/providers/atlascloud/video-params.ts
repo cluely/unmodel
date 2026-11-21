@@ -41,10 +41,6 @@ export const MODELS = [
   "bytedance/seedance-2.0-fast/text-to-video",
   "bytedance/seedance-2.0-fast/image-to-video",
   "bytedance/seedance-2.0-fast/reference-to-video",
-  "bytedance/seedance-v1.5-pro/text-to-video",
-  "bytedance/seedance-v1.5-pro/image-to-video",
-  "bytedance/seedance-v1.5-pro/text-to-video-fast",
-  "bytedance/seedance-v1.5-pro/image-to-video-fast",
   "alibaba/wan-3.0-prime/text-to-video",
   "alibaba/wan-3.0-prime/image-to-video",
   "alibaba/wan-3.0/text-to-video",
@@ -122,11 +118,6 @@ const SEEDANCE_20_EXTRAS = {
   bitrate_mode: EXTRA as (typeof BITRATE_MODES)[number],
 } as const;
 
-const SEEDANCE_15_EXTRAS = {
-  generate_audio: EXTRA as boolean,
-  camera_fixed: EXTRA as boolean,
-} as const;
-
 /** Wan spells the audio toggle `audio`, which is why it is not `generate_audio`. */
 const WAN_EXTRAS = {
   audio: EXTRA as boolean,
@@ -147,8 +138,6 @@ const VEO_EXTRAS = {
 const SEEDANCE_25_TIERS = ["480p", "720p", "1080p", "1440p", "4k"] as const;
 const SEEDANCE_20_TIERS = ["480p", "720p", "1080p", "1440p", "4k"] as const;
 const SEEDANCE_20_SMALL_TIERS = ["480p", "720p", "1080p", "1440p"] as const;
-const SEEDANCE_15_TIERS = ["480p", "720p"] as const;
-const SEEDANCE_15_FAST_TIERS = ["720p"] as const;
 const WAN_TIERS = ["480p", "720p", "1080p", "1440p", "4k"] as const;
 const VEO_TIERS = ["720p", "1080p", "4k"] as const;
 const VEO_LITE_TIERS = ["720p", "1080p"] as const;
@@ -238,26 +227,6 @@ export const ATLASCLOUD_VIDEO_MODEL_PARAMS = {
     resolutions: SEEDANCE_20_SMALL_TIERS,
     ratios: RATIOS,
     extras: SEEDANCE_20_EXTRAS,
-  },
-  "bytedance/seedance-v1.5-pro/text-to-video": {
-    resolutions: SEEDANCE_15_TIERS,
-    ratios: RATIOS,
-    extras: SEEDANCE_15_EXTRAS,
-  },
-  "bytedance/seedance-v1.5-pro/image-to-video": {
-    resolutions: SEEDANCE_15_TIERS,
-    ratios: RATIOS,
-    extras: SEEDANCE_15_EXTRAS,
-  },
-  "bytedance/seedance-v1.5-pro/text-to-video-fast": {
-    resolutions: SEEDANCE_15_FAST_TIERS,
-    ratios: RATIOS,
-    extras: SEEDANCE_15_EXTRAS,
-  },
-  "bytedance/seedance-v1.5-pro/image-to-video-fast": {
-    resolutions: SEEDANCE_15_FAST_TIERS,
-    ratios: RATIOS,
-    extras: SEEDANCE_15_EXTRAS,
   },
   "alibaba/wan-3.0-prime/text-to-video": {
     resolutions: WAN_TIERS,

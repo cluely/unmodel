@@ -35,7 +35,7 @@
  * # And the catalog cannot settle it
  *
  * `GET https://api.atlascloud.ai/api/v1/models` (608 rows, read 2026-11-12)
- * returns a `price` object per row, but **none of the 31 curated rows**
+ * returns a `price` object per row, but **none of the 27 curated rows**
  * carries `price.actual.unit`, and 389 of its 470 media rows are a bare
  * `base_price` string with no unit at all. **223 of 608** rows carry a
  * promotional `discount` between 30 and 95, so `price.actual` is not the list
@@ -110,7 +110,7 @@ export interface AtlascloudListedPrice {
 }
 
 /**
- * The figures Atlas listed for the 31 curated ids, read from the keyless
+ * The figures Atlas listed for the 27 curated ids, read from the keyless
  * catalog 2026-11-12 — e.g. `"price":{"discount":"80","actual":{"base_price":
  * "0.134"},"origin":{"base_price":"0.167"}}` on each Seedance 2.5 generation
  * route, and `"price":{"discount":"80","actual":{"base_price":"0.263"},
@@ -141,10 +141,6 @@ export const ATLASCLOUD_LISTED_BASE_PRICE_USD: Readonly<
   "bytedance/seedance-2.0-fast/text-to-video": { actual: 0.072, origin: 0.09, discount: 80 },
   "bytedance/seedance-2.0-fast/image-to-video": { actual: 0.072, origin: 0.09, discount: 80 },
   "bytedance/seedance-2.0-fast/reference-to-video": { actual: 0.072, origin: 0.09, discount: 80 },
-  "bytedance/seedance-v1.5-pro/text-to-video": { actual: 0.047, origin: 0.052, discount: 90 },
-  "bytedance/seedance-v1.5-pro/image-to-video": { actual: 0.047, origin: 0.052, discount: 90 },
-  "bytedance/seedance-v1.5-pro/text-to-video-fast": { actual: 0.018, origin: 0.02, discount: 90 },
-  "bytedance/seedance-v1.5-pro/image-to-video-fast": { actual: 0.018, origin: 0.02, discount: 90 },
   "google/veo3.1/text-to-video": { actual: 0.2, origin: 0.2, discount: 100 },
   "google/veo3.1/image-to-video": { actual: 0.2, origin: 0.2, discount: 100 },
   "google/veo3.1/reference-to-video": { actual: 0.2, origin: 0.2, discount: 100 },

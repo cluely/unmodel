@@ -149,9 +149,6 @@ const SEEDANCE_20_SMALL_TIERS: TierMap = {
   "1440p": "1440p-SR",
 };
 
-const SEEDANCE_15_TIERS: TierMap = { "480p": "480p", "720p": "720p" };
-const SEEDANCE_15_FAST_TIERS: TierMap = { "720p": "720p" };
-
 const WAN_TIERS: TierMap = {
   "480p": "480p",
   "720p": "720p",
@@ -228,15 +225,6 @@ const seedance20 = (
   ...extra,
 });
 
-const seedance15 = (routes: readonly VideoRoute[], resolutions: TierMap): AtlasWireRow => ({
-  routes,
-  resolutions,
-  ratioField: "aspect_ratio",
-  ratios: SEEDANCE_SHAPES,
-  seed: true,
-  negativePrompt: false,
-});
-
 const wan = (
   routes: readonly VideoRoute[],
   resolutions: TierMap,
@@ -297,10 +285,6 @@ const ROWS: Readonly<Partial<Record<string, AtlasWireRow>>> = {
     SEEDANCE_20_SMALL_TIERS,
     { referenceField: "reference_images" },
   ),
-  "bytedance/seedance-v1.5-pro/text-to-video": seedance15(TEXT, SEEDANCE_15_TIERS),
-  "bytedance/seedance-v1.5-pro/image-to-video": seedance15(IMAGE, SEEDANCE_15_TIERS),
-  "bytedance/seedance-v1.5-pro/text-to-video-fast": seedance15(TEXT, SEEDANCE_15_FAST_TIERS),
-  "bytedance/seedance-v1.5-pro/image-to-video-fast": seedance15(IMAGE, SEEDANCE_15_FAST_TIERS),
   "alibaba/wan-3.0-prime/text-to-video": wan(TEXT, WAN_TIERS),
   "alibaba/wan-3.0-prime/image-to-video": wan(IMAGE, WAN_TIERS, NO_SHAPE),
   "alibaba/wan-3.0/text-to-video": wan(TEXT, WAN_TIERS),

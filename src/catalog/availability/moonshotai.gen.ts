@@ -61,9 +61,11 @@ export const availability = {
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000, drops: ["video"] } },
   },
   "kimi-k3.1-pro": {
-    "baseten": { id: "moonshotai/Kimi-K3.1-Pro", narrows: { context: 1000000, drops: ["video"] } },
+    "baseten": { id: "moonshotai/Kimi-K3.1-Pro", narrows: { drops: ["video"] } },
     "deepinfra": { id: "moonshotai/Kimi-K3.1-Pro", narrows: { drops: ["video"] } },
+    "huggingface": { id: "moonshotai/Kimi-K3.1-Pro", narrows: { drops: ["video"] } },
     "moonshotai": "kimi-k3.1-pro",
+    "nebius": { id: "moonshotai/Kimi-K3.1-Pro", narrows: { drops: ["video"] } },
     "novita-ai": "moonshotai/kimi-k3.1-pro",
     "openrouter": "moonshotai/kimi-k3.1-pro",
     "togetherai": { id: "moonshotai/Kimi-K3.1-Pro", narrows: { drops: ["video"] } },

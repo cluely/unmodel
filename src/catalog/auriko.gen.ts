@@ -81,7 +81,7 @@ export const models = {
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -181,7 +181,7 @@ export const models = {
   "kimi-k2.5": {
     id: "kimi-k2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -198,7 +198,7 @@ export const models = {
   "kimi-k2.6": {
     id: "kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -215,7 +215,7 @@ export const models = {
   "minimax-m2-7": {
     id: "minimax-m2-7",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -230,7 +230,7 @@ export const models = {
   "minimax-m2-7-highspeed": {
     id: "minimax-m2-7-highspeed",
     name: "MiniMax-M2.7-highspeed",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -245,7 +245,7 @@ export const models = {
   "qwen-3.6-plus": {
     id: "qwen-3.6-plus",
     name: "Qwen3.6 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,

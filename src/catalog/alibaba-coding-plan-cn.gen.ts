@@ -16,7 +16,7 @@ export const models = {
   "MiniMax-M2.5": {
     id: "MiniMax-M2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -63,7 +63,7 @@ export const models = {
   "kimi-k2.5": {
     id: "kimi-k2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -79,7 +79,7 @@ export const models = {
   "qwen3-coder-next": {
     id: "qwen3-coder-next",
     name: "Qwen3 Coder Next",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -96,7 +96,7 @@ export const models = {
   "qwen3-coder-plus": {
     id: "qwen3-coder-plus",
     name: "Qwen3 Coder Plus",
-    family: "qwen",
+    family: "qwen-coder-plus",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -113,7 +113,7 @@ export const models = {
   "qwen3-max-2026-01-23": {
     id: "qwen3-max-2026-01-23",
     name: "Qwen3 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -130,7 +130,7 @@ export const models = {
   "qwen3.5-plus": {
     id: "qwen3.5-plus",
     name: "Qwen3.5 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -146,7 +146,7 @@ export const models = {
   "qwen3.6-plus": {
     id: "qwen3.6-plus",
     name: "Qwen3.6 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -162,7 +162,7 @@ export const models = {
   "qwen3.7-plus": {
     id: "qwen3.7-plus",
     name: "Qwen3.7 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,

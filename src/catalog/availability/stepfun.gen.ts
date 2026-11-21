@@ -21,7 +21,6 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
 export const availability = {
   "step-3.5-flash": {
     "huggingface": "stepfun-ai/Step-3.5-Flash",
-    "openrouter": "stepfun/step-3.5-flash",
     "stepfun": "step-3.5-flash",
   },
   "step-3.5-flash-2603": {

@@ -16,7 +16,7 @@ export const models = {
   "z-ai/glm-5.3-free": {
     id: "z-ai/glm-5.3-free",
     name: "GLM-5.3 (free)",
-    family: "glm",
+    family: "glm-free",
     attachment: false,
     reasoning: true,
     toolCall: true,

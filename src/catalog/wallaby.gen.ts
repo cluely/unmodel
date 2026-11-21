@@ -16,7 +16,7 @@ export const models = {
   "moonshotai/kimi-k3": {
     id: "moonshotai/kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -26,13 +26,45 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
-    cost: { input: 2.7, output: 13.5, cacheRead: 0.27 },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 2.55, output: 12.75, cacheRead: 0.255 },
+  },
+  "moonshotai/kimi-k3.1-pro": {
+    id: "moonshotai/kimi-k3.1-pro",
+    name: "Kimi K3.1 Pro",
+    family: "kimi-pro",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: true,
+    releaseDate: "2026-10-23",
+    lastUpdated: "2026-10-23",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 1.8, output: 9, cacheRead: 0.18 },
+  },
+  "moonshotai/kimi-k3.1-pro-highspeed": {
+    id: "moonshotai/kimi-k3.1-pro-highspeed",
+    name: "Kimi K3.1 Pro Highspeed",
+    family: "kimi-pro",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: true,
+    releaseDate: "2026-10-23",
+    lastUpdated: "2026-10-23",
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 3.6, output: 18, cacheRead: 0.18 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type WallabyModelId = keyof typeof models;
-export type WallabyTextModelId = "moonshotai/kimi-k3";
+export type WallabyTextModelId = "moonshotai/kimi-k3" | "moonshotai/kimi-k3.1-pro" | "moonshotai/kimi-k3.1-pro-highspeed";
 export type WallabyImageModelId = never;
 export type WallabyAudioModelId = never;
 export type WallabyVideoModelId = never;

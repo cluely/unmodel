@@ -16,7 +16,7 @@ export const models = {
   "black-forest-labs/flux.1-dev": {
     id: "black-forest-labs/flux.1-dev",
     name: "FLUX.1-dev",
-    family: "flux",
+    family: "flux-dev",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -32,7 +32,7 @@ export const models = {
   "black-forest-labs/flux_1-kontext-dev": {
     id: "black-forest-labs/flux_1-kontext-dev",
     name: "FLUX.1-Kontext-dev",
-    family: "flux",
+    family: "flux-kontext-dev",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -47,7 +47,7 @@ export const models = {
   "black-forest-labs/flux_1-schnell": {
     id: "black-forest-labs/flux_1-schnell",
     name: "FLUX.1-schnell",
-    family: "flux",
+    family: "flux-schnell",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -64,7 +64,7 @@ export const models = {
   "black-forest-labs/flux_2-klein-4b": {
     id: "black-forest-labs/flux_2-klein-4b",
     name: "FLUX.2 Klein 4B",
-    family: "flux",
+    family: "flux-klein",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -97,7 +97,7 @@ export const models = {
   "google/diffusiongemma-26b-a4b-it": {
     id: "google/diffusiongemma-26b-a4b-it",
     name: "DiffusionGemma 26B A4B IT",
-    family: "gemma",
+    family: "gemma-diffusion",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -210,7 +210,7 @@ export const models = {
   "meta/llama-guard-4-12b": {
     id: "meta/llama-guard-4-12b",
     name: "Llama Guard 4 12B",
-    family: "llama",
+    family: "llama-guard",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -225,7 +225,7 @@ export const models = {
   "meta/muse-glimmer-30b": {
     id: "meta/muse-glimmer-30b",
     name: "Muse Glimmer 30B",
-    family: "muse",
+    family: "muse-glimmer",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -242,7 +242,7 @@ export const models = {
   "minimaxai/minimax-m3.1-flash": {
     id: "minimaxai/minimax-m3.1-flash",
     name: "MiniMax-M3.1-Flash",
-    family: "minimax",
+    family: "minimax-m-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -258,7 +258,7 @@ export const models = {
   "mistralai/magistral-small-2506": {
     id: "mistralai/magistral-small-2506",
     name: "Magistral Small 2506",
-    family: "magistral",
+    family: "magistral-small",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -310,7 +310,7 @@ export const models = {
   "moonshotai/kimi-k2.6": {
     id: "moonshotai/kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -328,7 +328,7 @@ export const models = {
   "moonshotai/kimi-k3": {
     id: "moonshotai/kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -339,7 +339,7 @@ export const models = {
     lastUpdated: "2026-07-16",
     status: "deprecated",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 0, output: 0 },
   },
   "nvidia/active-speaker-detection": {
@@ -418,7 +418,7 @@ export const models = {
   "nvidia/llama-3.1-nemotron-safety-guard-8b-v3": {
     id: "nvidia/llama-3.1-nemotron-safety-guard-8b-v3",
     name: "llama-3.1-nemotron-safety-guard-8b-v3",
-    family: "nemotron",
+    family: "nemotron-safety",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -433,7 +433,7 @@ export const models = {
   "nvidia/llama-3.1-nemotron-ultra-253b-v1": {
     id: "nvidia/llama-3.1-nemotron-ultra-253b-v1",
     name: "Llama 3.1 Nemotron Ultra 253B",
-    family: "nemotron",
+    family: "nemotron-ultra",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -449,7 +449,7 @@ export const models = {
   "nvidia/llama-nemotron-embed-vl-1b-v2": {
     id: "nvidia/llama-nemotron-embed-vl-1b-v2",
     name: "llama-nemotron-embed-vl-1b-v2",
-    family: "nemotron",
+    family: "nemotron-embed",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -464,7 +464,7 @@ export const models = {
   "nvidia/llama-nemotron-rerank-vl-1b-v2": {
     id: "nvidia/llama-nemotron-rerank-vl-1b-v2",
     name: "llama-nemotron-rerank-vl-1b-v2",
-    family: "nemotron",
+    family: "nemotron-rerank",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -493,7 +493,7 @@ export const models = {
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
     id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
     name: "Nemotron 3 Nano Omni",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -509,7 +509,7 @@ export const models = {
   "nvidia/nemotron-3-ultra-550b-a55b": {
     id: "nvidia/nemotron-3-ultra-550b-a55b",
     name: "Nemotron 3 Ultra 550B A55B",
-    family: "nemotron",
+    family: "nemotron-ultra",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -526,7 +526,7 @@ export const models = {
   "nvidia/nemotron-3.5-content-safety": {
     id: "nvidia/nemotron-3.5-content-safety",
     name: "Nemotron 3.5 Content Safety",
-    family: "nemotron",
+    family: "nemotron-safety",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -541,7 +541,7 @@ export const models = {
   "nvidia/nemotron-3.5-lightning-30b-a3b": {
     id: "nvidia/nemotron-3.5-lightning-30b-a3b",
     name: "Nemotron 3.5 Lightning 30B A3B",
-    family: "nemotron",
+    family: "nemotron-lightning",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -558,7 +558,7 @@ export const models = {
   "nvidia/nemotron-3.5-super-vl-120b-a12b": {
     id: "nvidia/nemotron-3.5-super-vl-120b-a12b",
     name: "Nemotron 3.5 Super VL 120B A12B",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -573,7 +573,7 @@ export const models = {
   "nvidia/nemotron-voicechat": {
     id: "nvidia/nemotron-voicechat",
     name: "nemotron-voicechat",
-    family: "nemotron",
+    family: "nemotron-voice",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -715,7 +715,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0, output: 0 },
   },
   "openai/whisper-large-v3": {
@@ -731,13 +731,13 @@ export const models = {
     releaseDate: "2023-11-06",
     lastUpdated: "2023-11-06",
     modalities: { input: ["audio"], output: ["text"] },
-    limit: { context: 448, output: 4096 },
+    limit: { context: 448, output: 448 },
     cost: { input: 0, output: 0 },
   },
   "poolside/laguna-xs-2.1": {
     id: "poolside/laguna-xs-2.1",
     name: "Laguna XS 2.1",
-    family: "laguna",
+    family: "laguna-xs",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -753,7 +753,7 @@ export const models = {
   "qwen/qwen-image": {
     id: "qwen/qwen-image",
     name: "Qwen Image",
-    family: "qwen",
+    family: "qwen-image",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -769,7 +769,7 @@ export const models = {
   "qwen/qwen-image-edit": {
     id: "qwen/qwen-image-edit",
     name: "Qwen Image Edit",
-    family: "qwen",
+    family: "qwen-image",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -785,6 +785,7 @@ export const models = {
   "stepfun-ai/step-5-preview": {
     id: "stepfun-ai/step-5-preview",
     name: "Step 5 Preview",
+    family: "step",
     attachment: true,
     reasoning: true,
     toolCall: true,

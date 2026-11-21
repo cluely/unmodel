@@ -33,7 +33,7 @@ export const models = {
   "deepseek-v4-pro-0813": {
     id: "deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -49,7 +49,7 @@ export const models = {
   "gemma-4-31b-it:free": {
     id: "gemma-4-31b-it:free",
     name: "Gemma 4 31B IT (free)",
-    family: "gemma",
+    family: "gemma-free",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -103,7 +103,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -115,7 +115,7 @@ export const models = {
   "muse-spark-1.3-contributor": {
     id: "muse-spark-1.3-contributor",
     name: "Muse Spark 1.3 Contributor",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -131,7 +131,7 @@ export const models = {
   "nemotron-3-ultra-550b-a55b:free": {
     id: "nemotron-3-ultra-550b-a55b:free",
     name: "Nemotron 3 Ultra (free)",
-    family: "nemotron",
+    family: "nemotron-ultra-free",
     attachment: false,
     reasoning: true,
     toolCall: true,

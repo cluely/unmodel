@@ -28,7 +28,7 @@ export const availability = {
     "huggingface": "MiniMaxAI/MiniMax-M2.5",
     "minimax": "MiniMax-M2.5",
     "novita-ai": "minimax/minimax-m2.5",
-    "openrouter": { id: "minimax/minimax-m2.5", narrows: { context: 200000 } },
+    "openrouter": { id: "minimax/minimax-m2.5", narrows: { context: 198000 } },
     "togetherai": "MiniMaxAI/MiniMax-M2.5",
     "vercel": "minimax/minimax-m2.5",
   },
@@ -51,7 +51,7 @@ export const availability = {
     "openrouter": "minimax/minimax-m3",
     "siliconflow": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["video"] } },
     "togetherai": "MiniMaxAI/MiniMax-M3",
-    "vercel": { id: "minimax/minimax-m3", narrows: { context: 512000, drops: ["video"] } },
+    "vercel": { id: "minimax/minimax-m3", narrows: { drops: ["video"] } },
   },
   "Qwen/Qwen2.5-7B-Instruct-Turbo": {
     "togetherai": "Qwen/Qwen2.5-7B-Instruct-Turbo",
@@ -135,7 +135,7 @@ export const availability = {
     "openrouter": "deepseek/deepseek-v4-pro-0813",
     "siliconflow": { id: "deepseek-ai/DeepSeek-V4-Pro-0813", narrows: { context: 1000000 } },
     "togetherai": "deepseek-ai/DeepSeek-V4-Pro-0813",
-    "vercel": { id: "deepseek/deepseek-v4-pro-0813", narrows: { context: 1000000 } },
+    "vercel": "deepseek/deepseek-v4-pro-0813",
   },
   "deepseek-ai/DeepSeek-V4.1-Flash": {
     "azure": { id: "deepseek-v4.1-flash", narrows: { context: 1000000 } },
@@ -173,9 +173,11 @@ export const availability = {
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000 } },
   },
   "moonshotai/Kimi-K3.1-Pro": {
-    "baseten": { id: "moonshotai/Kimi-K3.1-Pro", narrows: { context: 1000000 } },
+    "baseten": "moonshotai/Kimi-K3.1-Pro",
     "deepinfra": "moonshotai/Kimi-K3.1-Pro",
+    "huggingface": "moonshotai/Kimi-K3.1-Pro",
     "moonshotai": "kimi-k3.1-pro",
+    "nebius": "moonshotai/Kimi-K3.1-Pro",
     "novita-ai": "moonshotai/kimi-k3.1-pro",
     "openrouter": "moonshotai/kimi-k3.1-pro",
     "togetherai": "moonshotai/Kimi-K3.1-Pro",
@@ -229,7 +231,6 @@ export const availability = {
   },
   "zai-org/GLM-5.1": {
     "deepinfra": "zai-org/GLM-5.1",
-    "friendli": "zai-org/GLM-5.1",
     "huggingface": "zai-org/GLM-5.1",
     "novita-ai": "zai-org/glm-5.1",
     "openrouter": "z-ai/glm-5.1",

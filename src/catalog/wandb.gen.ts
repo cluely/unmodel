@@ -16,7 +16,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M3": {
     id: "MiniMaxAI/MiniMax-M3",
     name: "MiniMax M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -97,7 +97,7 @@ export const models = {
   "deepseek-ai/DeepSeek-V4-Pro-0813": {
     id: "deepseek-ai/DeepSeek-V4-Pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -230,7 +230,7 @@ export const models = {
   "moonshotai/Kimi-K2.6": {
     id: "moonshotai/Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -247,7 +247,7 @@ export const models = {
   "moonshotai/Kimi-K2.7-Code": {
     id: "moonshotai/Kimi-K2.7-Code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -264,7 +264,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": {
     id: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
     name: "Nemotron 3 Ultra",
-    family: "nemotron",
+    family: "nemotron-ultra",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -281,7 +281,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B": {
     id: "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B",
     name: "Nemotron 3.5 Lightning",
-    family: "nemotron",
+    family: "nemotron-lightning",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -298,7 +298,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B": {
     id: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B",
     name: "Nemotron 3.5 Super VL",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: true,
     reasoning: true,
     toolCall: true,

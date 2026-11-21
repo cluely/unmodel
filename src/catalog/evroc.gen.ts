@@ -29,7 +29,7 @@ export const models = {
   "Qwen/Qwen3-Embedding-8B": {
     id: "Qwen/Qwen3-Embedding-8B",
     name: "Qwen3 Embedding 8B",
-    family: "qwen",
+    family: "qwen-embedding",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -44,7 +44,7 @@ export const models = {
   "Qwen/Qwen3-Reranker-4B": {
     id: "Qwen/Qwen3-Reranker-4B",
     name: "Qwen3 Reranker 4B",
-    family: "qwen",
+    family: "qwen-reranker",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -152,7 +152,7 @@ export const models = {
   "mistralai/Voxtral-Small-24B-2507": {
     id: "mistralai/Voxtral-Small-24B-2507",
     name: "Voxtral Small 24B",
-    family: "voxtral",
+    family: "voxtral-transcribe",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -165,7 +165,7 @@ export const models = {
   "moonshotai/Kimi-K2.6": {
     id: "moonshotai/Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -223,7 +223,7 @@ export const models = {
     releaseDate: "2023-11-06",
     lastUpdated: "2023-11-06",
     modalities: { input: ["audio"], output: ["text"] },
-    limit: { context: 448, output: 4096 },
+    limit: { context: 448, output: 448 },
     cost: { input: 0.0023, output: 0.0023, outputAudio: 2.3 },
   },
   "openai/whisper-large-v3-turbo": {

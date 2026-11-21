@@ -49,7 +49,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -82,7 +82,7 @@ export const models = {
   "qwen-flash": {
     id: "qwen-flash",
     name: "Qwen Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -99,7 +99,7 @@ export const models = {
   "qwen-max": {
     id: "qwen-max",
     name: "Qwen Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -116,7 +116,7 @@ export const models = {
   "qwen-mt-plus": {
     id: "qwen-mt-plus",
     name: "Qwen-MT Plus",
-    family: "qwen",
+    family: "qwen-mt-plus",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -132,7 +132,7 @@ export const models = {
   "qwen-mt-turbo": {
     id: "qwen-mt-turbo",
     name: "Qwen-MT Turbo",
-    family: "qwen",
+    family: "qwen-mt-turbo",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -149,7 +149,7 @@ export const models = {
   "qwen-omni-turbo": {
     id: "qwen-omni-turbo",
     name: "Qwen-Omni Turbo",
-    family: "qwen",
+    family: "qwen-omni",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -166,7 +166,7 @@ export const models = {
   "qwen-omni-turbo-realtime": {
     id: "qwen-omni-turbo-realtime",
     name: "Qwen-Omni Turbo Realtime",
-    family: "qwen",
+    family: "qwen-omni-realtime",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -183,7 +183,7 @@ export const models = {
   "qwen-plus": {
     id: "qwen-plus",
     name: "Qwen Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -200,7 +200,7 @@ export const models = {
   "qwen-plus-character-ja": {
     id: "qwen-plus-character-ja",
     name: "Qwen Plus Character (Japanese)",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -216,7 +216,7 @@ export const models = {
   "qwen-turbo": {
     id: "qwen-turbo",
     name: "Qwen Turbo",
-    family: "qwen",
+    family: "qwen-turbo",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -233,7 +233,7 @@ export const models = {
   "qwen-vl-max": {
     id: "qwen-vl-max",
     name: "Qwen-VL Max",
-    family: "qwen",
+    family: "qwen-vl-max",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -250,7 +250,7 @@ export const models = {
   "qwen-vl-ocr": {
     id: "qwen-vl-ocr",
     name: "Qwen-VL OCR",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -266,7 +266,7 @@ export const models = {
   "qwen-vl-plus": {
     id: "qwen-vl-plus",
     name: "Qwen-VL Plus",
-    family: "qwen",
+    family: "qwen-vl-plus",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -283,7 +283,7 @@ export const models = {
   "qwen2-5-omni-7b": {
     id: "qwen2-5-omni-7b",
     name: "Qwen2.5-Omni 7B",
-    family: "qwen",
+    family: "qwen-omni",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -368,7 +368,7 @@ export const models = {
   "qwen3-asr-flash": {
     id: "qwen3-asr-flash",
     name: "Qwen3-ASR Flash",
-    family: "qwen",
+    family: "qwen-asr-flash",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -383,7 +383,7 @@ export const models = {
   "qwen3-coder-30b-a3b-instruct": {
     id: "qwen3-coder-30b-a3b-instruct",
     name: "Qwen3-Coder 30B-A3B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -400,7 +400,7 @@ export const models = {
   "qwen3-coder-480b-a35b-instruct": {
     id: "qwen3-coder-480b-a35b-instruct",
     name: "Qwen3-Coder 480B-A35B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -417,7 +417,7 @@ export const models = {
   "qwen3-coder-flash": {
     id: "qwen3-coder-flash",
     name: "Qwen3 Coder Flash",
-    family: "qwen",
+    family: "qwen-coder-flash",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -434,7 +434,7 @@ export const models = {
   "qwen3-coder-plus": {
     id: "qwen3-coder-plus",
     name: "Qwen3 Coder Plus",
-    family: "qwen",
+    family: "qwen-coder-plus",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -451,7 +451,7 @@ export const models = {
   "qwen3-livetranslate-flash-realtime": {
     id: "qwen3-livetranslate-flash-realtime",
     name: "Qwen3-LiveTranslate Flash Realtime",
-    family: "qwen",
+    family: "qwen-livetranslate",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -468,7 +468,7 @@ export const models = {
   "qwen3-max": {
     id: "qwen3-max",
     name: "Qwen3 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -519,7 +519,7 @@ export const models = {
   "qwen3-omni-flash": {
     id: "qwen3-omni-flash",
     name: "Qwen3-Omni Flash",
-    family: "qwen",
+    family: "qwen-omni-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -535,7 +535,7 @@ export const models = {
   "qwen3-omni-flash-realtime": {
     id: "qwen3-omni-flash-realtime",
     name: "Qwen3-Omni Flash Realtime",
-    family: "qwen",
+    family: "qwen-omni-realtime-flash",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -552,7 +552,7 @@ export const models = {
   "qwen3-vl-235b-a22b": {
     id: "qwen3-vl-235b-a22b",
     name: "Qwen3-VL 235B-A22B",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -569,7 +569,7 @@ export const models = {
   "qwen3-vl-30b-a3b": {
     id: "qwen3-vl-30b-a3b",
     name: "Qwen3-VL 30B-A3B",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -585,7 +585,7 @@ export const models = {
   "qwen3-vl-plus": {
     id: "qwen3-vl-plus",
     name: "Qwen3-VL Plus",
-    family: "qwen",
+    family: "qwen-vl-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -595,7 +595,7 @@ export const models = {
     knowledge: "2025-04",
     releaseDate: "2025-09-23",
     lastUpdated: "2025-09-23",
-    modalities: { input: ["text", "image"], output: ["text"] },
+    modalities: { input: ["text", "image", "video"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
     cost: { input: 0.2, output: 1.6, cacheRead: 0.04, cacheWrite: 0.25 },
   },
@@ -666,7 +666,7 @@ export const models = {
   "qwen3.5-flash": {
     id: "qwen3.5-flash",
     name: "Qwen3.5 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -682,7 +682,7 @@ export const models = {
   "qwen3.5-plus": {
     id: "qwen3.5-plus",
     name: "Qwen3.5 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -731,7 +731,7 @@ export const models = {
   "qwen3.6-flash": {
     id: "qwen3.6-flash",
     name: "Qwen3.6 Flash",
-    family: "qwen3.6",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -747,7 +747,7 @@ export const models = {
   "qwen3.6-max-preview": {
     id: "qwen3.6-max-preview",
     name: "Qwen3.6 Max Preview",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -764,7 +764,7 @@ export const models = {
   "qwen3.6-plus": {
     id: "qwen3.6-plus",
     name: "Qwen3.6 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -781,7 +781,7 @@ export const models = {
   "qwen3.7-flash": {
     id: "qwen3.7-flash",
     name: "Qwen3.7 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -797,7 +797,7 @@ export const models = {
   "qwen3.7-max": {
     id: "qwen3.7-max",
     name: "Qwen3.7 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -813,7 +813,7 @@ export const models = {
   "qwen3.7-plus": {
     id: "qwen3.7-plus",
     name: "Qwen3.7 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -830,7 +830,7 @@ export const models = {
   "qwen3.8-flash": {
     id: "qwen3.8-flash",
     name: "Qwen3.8 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -846,7 +846,7 @@ export const models = {
   "qwen3.8-max": {
     id: "qwen3.8-max",
     name: "Qwen3.8 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -862,7 +862,7 @@ export const models = {
   "qwen3.8-omni-flash": {
     id: "qwen3.8-omni-flash",
     name: "Qwen3.8 Omni Flash",
-    family: "qwen",
+    family: "qwen-omni-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -878,7 +878,7 @@ export const models = {
   "qwq-plus": {
     id: "qwq-plus",
     name: "QwQ Plus",
-    family: "qwen",
+    family: "qwq",
     attachment: false,
     reasoning: true,
     toolCall: true,

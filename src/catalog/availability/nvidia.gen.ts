@@ -216,7 +216,7 @@ export const availability = {
     "nvidia": "stepfun-ai/step-5-preview",
     "openrouter": { id: "stepfun/step-5-preview", narrows: { context: 1000000 } },
     "stepfun": { id: "step-5-preview", narrows: { context: 1000000 } },
-    "vercel": "stepfun/step-5-preview",
+    "vercel": { id: "stepfun/step-5-preview", narrows: { context: 1000000 } },
   },
   "z-ai/glm-5.3": {
     "amazon-bedrock": "us.zai.glm-5.3",

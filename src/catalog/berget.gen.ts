@@ -66,7 +66,7 @@ export const models = {
   "moonshotai/Kimi-K3": {
     id: "moonshotai/Kimi-K3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,

@@ -33,7 +33,7 @@ export const models = {
   "moonshotai/kimi-k2.7-code": {
     id: "moonshotai/kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -61,7 +61,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.1055, output: 0.422 },
   },
 } as const satisfies Record<string, ModelInfo>;

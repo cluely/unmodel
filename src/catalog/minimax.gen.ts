@@ -16,7 +16,7 @@ export const models = {
   "MiniMax-M2": {
     id: "MiniMax-M2",
     name: "MiniMax-M2",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -32,7 +32,7 @@ export const models = {
   "MiniMax-M2.1": {
     id: "MiniMax-M2.1",
     name: "MiniMax-M2.1",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -48,7 +48,7 @@ export const models = {
   "MiniMax-M2.5": {
     id: "MiniMax-M2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -64,7 +64,7 @@ export const models = {
   "MiniMax-M2.5-highspeed": {
     id: "MiniMax-M2.5-highspeed",
     name: "MiniMax-M2.5-highspeed",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -80,7 +80,7 @@ export const models = {
   "MiniMax-M2.7": {
     id: "MiniMax-M2.7",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -96,7 +96,7 @@ export const models = {
   "MiniMax-M2.7-highspeed": {
     id: "MiniMax-M2.7-highspeed",
     name: "MiniMax-M2.7-highspeed",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -112,7 +112,7 @@ export const models = {
   "MiniMax-M3": {
     id: "MiniMax-M3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -128,7 +128,7 @@ export const models = {
   "MiniMax-M3.1-Flash": {
     id: "MiniMax-M3.1-Flash",
     name: "MiniMax-M3.1-Flash",
-    family: "minimax",
+    family: "minimax-m-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,

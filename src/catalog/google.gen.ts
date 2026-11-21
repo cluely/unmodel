@@ -15,7 +15,7 @@ export const models = {
   "deep-research-max-preview-04-2026": {
     id: "deep-research-max-preview-04-2026",
     name: "Deep Research Max Preview (Apr-21-2026)",
-    family: "gemini-pro",
+    family: "gemini-deep-research-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -31,7 +31,7 @@ export const models = {
   "deep-research-preview-04-2026": {
     id: "deep-research-preview-04-2026",
     name: "Deep Research Preview (Apr-21-2026)",
-    family: "gemini-pro",
+    family: "gemini-deep-research",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -47,7 +47,7 @@ export const models = {
   "gemini-2.5-computer-use-preview-10-2025": {
     id: "gemini-2.5-computer-use-preview-10-2025",
     name: "Gemini 2.5 Computer Use Preview 10-2025",
-    family: "gemini-pro",
+    family: "gemini-computer-use",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -80,7 +80,7 @@ export const models = {
   "gemini-2.5-flash-image": {
     id: "gemini-2.5-flash-image",
     name: "Nano Banana",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -92,7 +92,7 @@ export const models = {
     status: "deprecated",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
     limit: { context: 32768, output: 32768 },
-    cost: { input: 0.3, output: 30, cacheRead: 0.075 },
+    cost: { input: 0.3, output: 2.5, cacheRead: 0.075 },
   },
   "gemini-2.5-flash-lite": {
     id: "gemini-2.5-flash-lite",
@@ -114,7 +114,7 @@ export const models = {
   "gemini-2.5-flash-preview-tts": {
     id: "gemini-2.5-flash-preview-tts",
     name: "Gemini 2.5 Flash Preview TTS",
-    family: "gemini-flash",
+    family: "gemini-tts-flash",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -147,7 +147,7 @@ export const models = {
   "gemini-2.5-pro-preview-tts": {
     id: "gemini-2.5-pro-preview-tts",
     name: "Gemini 2.5 Pro Preview TTS",
-    family: "gemini-flash",
+    family: "gemini-tts-pro",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -180,7 +180,7 @@ export const models = {
   "gemini-3-pro-image": {
     id: "gemini-3-pro-image",
     name: "Nano Banana Pro",
-    family: "gemini-pro",
+    family: "nano-banana-pro",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -191,12 +191,12 @@ export const models = {
     lastUpdated: "2026-05-28",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
     limit: { context: 65536, output: 32768 },
-    cost: { input: 2, output: 120 },
+    cost: { input: 2, output: 12 },
   },
   "gemini-3.1-flash-image": {
     id: "gemini-3.1-flash-image",
     name: "Nano Banana 2",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -207,7 +207,7 @@ export const models = {
     lastUpdated: "2026-05-28",
     modalities: { input: ["text", "image", "video", "pdf"], output: ["text", "image"] },
     limit: { context: 131072, output: 32768 },
-    cost: { input: 0.5, output: 60 },
+    cost: { input: 0.5, output: 3 },
   },
   "gemini-3.1-flash-lite": {
     id: "gemini-3.1-flash-lite",
@@ -229,7 +229,7 @@ export const models = {
   "gemini-3.1-flash-lite-image": {
     id: "gemini-3.1-flash-lite-image",
     name: "Nano Banana 2 Lite",
-    family: "gemini-flash-lite",
+    family: "nano-banana-lite",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -241,7 +241,7 @@ export const models = {
     lastUpdated: "2026-06-30",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
     limit: { context: 65536, output: 4096 },
-    cost: { input: 0.25, output: 30 },
+    cost: { input: 0.25, output: 1.5 },
   },
   "gemini-3.1-flash-lite-preview": {
     id: "gemini-3.1-flash-lite-preview",
@@ -264,7 +264,7 @@ export const models = {
   "gemini-3.1-flash-live-preview": {
     id: "gemini-3.1-flash-live-preview",
     name: "Gemini 3.1 Flash Live Preview",
-    family: "gemini-flash",
+    family: "gemini-live",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -281,7 +281,7 @@ export const models = {
   "gemini-3.1-flash-tts-preview": {
     id: "gemini-3.1-flash-tts-preview",
     name: "Gemini 3.1 Flash TTS Preview",
-    family: "gemini-flash",
+    family: "gemini-tts-flash",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -365,7 +365,7 @@ export const models = {
   "gemini-3.5-live-translate-preview": {
     id: "gemini-3.5-live-translate-preview",
     name: "Gemini 3.5 Live Translate Preview",
-    family: "gemini-pro",
+    family: "gemini-live-translate",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -375,7 +375,7 @@ export const models = {
     releaseDate: "2026-06-09",
     lastUpdated: "2026-06-09",
     modalities: { input: ["audio"], output: ["audio", "text"] },
-    limit: { context: 16384, output: 32768 },
+    limit: { context: 16384, output: 16384 },
     cost: { input: 3.5, output: 21, inputAudio: 3.5, outputAudio: 21 },
   },
   "gemini-3.6-flash": {
@@ -479,10 +479,27 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 1.5, output: 7.5, cacheRead: 0.075, inputAudio: 1.5 },
   },
+  "gemini-4-neon": {
+    id: "gemini-4-neon",
+    name: "Gemini 4 Neon",
+    family: "gemini",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2026-03",
+    releaseDate: "2026-11-18",
+    lastUpdated: "2026-11-18",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 3, output: 15, cacheRead: 0.15, inputAudio: 3 },
+  },
   "gemini-embedding-001": {
     id: "gemini-embedding-001",
     name: "Gemini Embedding 001",
-    family: "gemini",
+    family: "gemini-embedding",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -498,7 +515,7 @@ export const models = {
   "gemini-embedding-2": {
     id: "gemini-embedding-2",
     name: "Gemini Embedding 2",
-    family: "gemini",
+    family: "gemini-embedding",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -548,7 +565,7 @@ export const models = {
   "gemini-omni-flash-preview": {
     id: "gemini-omni-flash-preview",
     name: "Gemini Omni Flash Preview",
-    family: "gemini",
+    family: "gemini-omni-flash",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -591,6 +608,7 @@ export const models = {
     lastUpdated: "2026-04-02",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
+    cost: { input: 0, output: 0 },
   },
   "gemma-4-31b-it": {
     id: "gemma-4-31b-it",
@@ -606,11 +624,12 @@ export const models = {
     lastUpdated: "2026-04-02",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
+    cost: { input: 0, output: 0 },
   },
   "lyria-3-clip-preview": {
     id: "lyria-3-clip-preview",
     name: "Lyria 3 Clip Preview",
-    family: "lyria",
+    family: "lyria-clip",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -626,7 +645,7 @@ export const models = {
   "lyria-3-pro-preview": {
     id: "lyria-3-pro-preview",
     name: "Lyria 3 Pro Preview",
-    family: "lyria",
+    family: "lyria-pro",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -642,7 +661,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GoogleModelId = keyof typeof models;
-export type GoogleTextModelId = "deep-research-max-preview-04-2026" | "deep-research-preview-04-2026" | "gemini-2.5-computer-use-preview-10-2025" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-image" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-flash-live-preview" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.5-live-translate-preview" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-4-argon" | "gemini-4-carbon" | "gemini-4-hydrogen" | "gemini-embedding-001" | "gemini-embedding-2" | "gemini-flash-latest" | "gemini-flash-lite-latest" | "gemini-pro-latest" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "lyria-3-clip-preview" | "lyria-3-pro-preview";
+export type GoogleTextModelId = "deep-research-max-preview-04-2026" | "deep-research-preview-04-2026" | "gemini-2.5-computer-use-preview-10-2025" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-image" | "gemini-3.1-flash-lite-preview" | "gemini-3.1-flash-live-preview" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.5-live-translate-preview" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-4-argon" | "gemini-4-carbon" | "gemini-4-hydrogen" | "gemini-4-neon" | "gemini-embedding-001" | "gemini-embedding-2" | "gemini-flash-latest" | "gemini-flash-lite-latest" | "gemini-pro-latest" | "gemma-4-26b-a4b-it" | "gemma-4-31b-it" | "lyria-3-clip-preview" | "lyria-3-pro-preview";
 export type GoogleImageModelId = "deep-research-max-preview-04-2026" | "deep-research-preview-04-2026" | "gemini-2.5-flash-image" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite-image";
 export type GoogleAudioModelId = "gemini-2.5-flash-preview-tts" | "gemini-2.5-pro-preview-tts" | "gemini-3.1-flash-live-preview" | "gemini-3.1-flash-tts-preview" | "gemini-3.5-live-translate-preview" | "lyria-3-clip-preview" | "lyria-3-pro-preview";
 export type GoogleVideoModelId = "gemini-omni-flash-preview";

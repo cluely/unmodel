@@ -33,7 +33,7 @@ export const models = {
   "glm-5-turbo": {
     id: "glm-5-turbo",
     name: "GLM-5-Turbo",
-    family: "glm",
+    family: "glm-turbo",
     attachment: false,
     reasoning: true,
     toolCall: true,

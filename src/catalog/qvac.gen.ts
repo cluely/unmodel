@@ -44,7 +44,7 @@ export const models = {
     lastUpdated: "2025-08-05",
     status: "deprecated",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0, output: 0 },
   },
   "gpt-oss-20b": {
@@ -61,7 +61,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0, output: 0 },
   },
   "qwen3.5-0.8b": {

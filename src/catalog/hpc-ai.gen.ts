@@ -49,7 +49,7 @@ export const models = {
   "deepseek/deepseek-v4-pro": {
     id: "deepseek/deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -66,7 +66,7 @@ export const models = {
   "minimax/minimax-m2.5": {
     id: "minimax/minimax-m2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -82,7 +82,7 @@ export const models = {
   "moonshotai/kimi-k2.5": {
     id: "moonshotai/kimi-k2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -99,7 +99,7 @@ export const models = {
   "moonshotai/kimi-k2.7-code": {
     id: "moonshotai/kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,

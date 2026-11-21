@@ -356,7 +356,7 @@ export const models = {
   "elevenlabs/elevenlabs-v2.5-turbo": {
     id: "elevenlabs/elevenlabs-v2.5-turbo",
     name: "ElevenLabs-v2.5-Turbo",
-    family: "elevenlabs",
+    family: "elevenlabs-turbo",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -400,7 +400,7 @@ export const models = {
   "empiriolabs/deepseek-v4-pro-el": {
     id: "empiriolabs/deepseek-v4-pro-el",
     name: "DeepSeek-V4-Pro-EL",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -416,7 +416,7 @@ export const models = {
   "fireworks-ai/kimi-k2.5-fw": {
     id: "fireworks-ai/kimi-k2.5-fw",
     name: "Kimi-K2.5-FW",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -668,7 +668,7 @@ export const models = {
   "google/gemini-omni-1.1-flash": {
     id: "google/gemini-omni-1.1-flash",
     name: "Gemini-Omni-1.1-Flash",
-    family: "gemini",
+    family: "gemini-omni-flash",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -786,7 +786,7 @@ export const models = {
   "google/nano-banana": {
     id: "google/nano-banana",
     name: "Nano-Banana",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -803,7 +803,7 @@ export const models = {
   "google/nano-banana-pro": {
     id: "google/nano-banana-pro",
     name: "Nano-Banana-Pro",
-    family: "gemini-pro",
+    family: "nano-banana-pro",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -994,7 +994,7 @@ export const models = {
   "novita/glm-4.6v": {
     id: "novita/glm-4.6v",
     name: "glm-4.6v",
-    family: "glm",
+    family: "glmv",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1071,7 +1071,7 @@ export const models = {
   "novita/kimi-k2-thinking": {
     id: "novita/kimi-k2-thinking",
     name: "kimi-k2-thinking",
-    family: "kimi-thinking",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1087,7 +1087,7 @@ export const models = {
   "novita/kimi-k2.5": {
     id: "novita/kimi-k2.5",
     name: "Kimi-K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1098,13 +1098,13 @@ export const models = {
     lastUpdated: "2026-01-27",
     status: "deprecated",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 128000, output: 262144 },
+    limit: { context: 128000, output: 128000 },
     cost: { input: 0.6, output: 3, cacheRead: 0.1 },
   },
   "novita/kimi-k2.6": {
     id: "novita/kimi-k2.6",
     name: "Kimi-K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1120,7 +1120,7 @@ export const models = {
   "novita/minimax-m2.1": {
     id: "novita/minimax-m2.1",
     name: "minimax-m2.1",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1387,7 +1387,7 @@ export const models = {
     lastUpdated: "2025-08-07",
     status: "deprecated",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 128000, output: 16384, input: 272000 },
+    limit: { context: 128000, output: 16384 },
     cost: { input: 1.1, output: 9, cacheRead: 0.11 },
   },
   "openai/gpt-5-codex": {
@@ -1508,7 +1508,7 @@ export const models = {
   "openai/gpt-5.1-codex-mini": {
     id: "openai/gpt-5.1-codex-mini",
     name: "GPT-5.1-Codex-Mini",
-    family: "gpt-codex",
+    family: "gpt-codex-mini",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1726,13 +1726,13 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
     lastUpdated: "2026-04-23",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
-    limit: { context: 400000, output: 128000, input: 922000 },
+    limit: { context: 400000, output: 128000 },
     cost: { input: 4.5455, output: 27.2727, cacheRead: 0.4545 },
   },
   "openai/gpt-5.5-pro": {
@@ -1749,7 +1749,7 @@ export const models = {
     releaseDate: "2026-04-23",
     lastUpdated: "2026-04-23",
     modalities: { input: ["text", "image"], output: ["text", "image"] },
-    limit: { context: 400000, output: 128000, input: 922000 },
+    limit: { context: 400000, output: 128000 },
     cost: { input: 27.2727, output: 163.6364 },
   },
   "openai/gpt-image-1": {
@@ -1770,7 +1770,7 @@ export const models = {
   "openai/gpt-image-1-mini": {
     id: "openai/gpt-image-1-mini",
     name: "GPT-Image-1-Mini",
-    family: "gpt-image",
+    family: "gpt-image-mini",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -1863,7 +1863,7 @@ export const models = {
   "openai/o3-deep-research": {
     id: "openai/o3-deep-research",
     name: "o3-deep-research",
-    family: "o",
+    family: "o-deep-research",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1947,7 +1947,7 @@ export const models = {
   "openai/o4-mini-deep-research": {
     id: "openai/o4-mini-deep-research",
     name: "o4-mini-deep-research",
-    family: "o-mini",
+    family: "o-deep-research-mini",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2022,7 +2022,7 @@ export const models = {
   "runwayml/runway-gen-4-turbo": {
     id: "runwayml/runway-gen-4-turbo",
     name: "Runway-Gen-4-Turbo",
-    family: "runway",
+    family: "runway-gen",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -2201,7 +2201,7 @@ export const models = {
   "xai/grok-code-fast-1": {
     id: "xai/grok-code-fast-1",
     name: "Grok Code Fast 1",
-    family: "grok",
+    family: "grok-code",
     attachment: false,
     reasoning: true,
     toolCall: true,

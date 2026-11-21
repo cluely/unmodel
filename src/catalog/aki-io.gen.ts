@@ -9,10 +9,27 @@ export const provider = {
   name: "AKI.IO",
   env: ["AKI_IO_API_KEY"],
   doc: "https://aki.io/docs/",
-  api: "https://aki.io/v1",
+  api: "https://aki.io/openai/v1",
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "deepseek-v4.1-flash-1017-tl5": {
+    id: "deepseek-v4.1-flash-1017-tl5",
+    name: "DeepSeek V4.1 Flash 1017",
+    family: "deepseek-flash",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-10-17",
+    lastUpdated: "2026-10-17",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 81920 },
+    cost: { input: 0.279125, output: 1.1165, cacheRead: 0.11165 },
+  },
   "deepseek-v4.1-flash-552b": {
     id: "deepseek-v4.1-flash-552b",
     name: "DeepSeek V4.1 Flash",
@@ -76,8 +93,25 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 128000, output: 32768 },
+    limit: { context: 128000, output: 128000 },
     cost: { input: 0.168225, output: 0.616825 },
+  },
+  "kolibri-1-tl5": {
+    id: "kolibri-1-tl5",
+    name: "Kolibri 1",
+    family: "kolibri",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2026-06-18",
+    releaseDate: "2026-10-03",
+    lastUpdated: "2026-10-03",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 262144, output: 81920 },
+    cost: { input: 0.167475, output: 0.614075, cacheRead: 0.0837375 },
   },
   "mistral4-119b": {
     id: "mistral4-119b",
@@ -95,23 +129,6 @@ export const models = {
     limit: { context: 262144, output: 81920 },
     cost: { input: 0.2243, output: 0.6729 },
   },
-  "qwen3.6-35b": {
-    id: "qwen3.6-35b",
-    name: "Qwen3.6 35B-A3B",
-    family: "qwen",
-    attachment: false,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    releaseDate: "2026-04-17",
-    lastUpdated: "2026-04-17",
-    status: "deprecated",
-    modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 256000, output: 32768 },
-    cost: { input: 0.168225, output: 0.56075 },
-  },
   "qwen3.8-27b": {
     id: "qwen3.8-27b",
     name: "Qwen3.8 27B",
@@ -126,12 +143,12 @@ export const models = {
     lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
-    cost: { input: 0.33645, output: 2.4673, cacheRead: 0.11215 },
+    cost: { input: 0.167475, output: 0.725725, cacheRead: 0.0837375 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type AkiIoModelId = keyof typeof models;
-export type AkiIoTextModelId = "deepseek-v4.1-flash-552b" | "gemma4-26b" | "glm5.3-754b" | "gpt-oss-120b" | "mistral4-119b" | "qwen3.6-35b" | "qwen3.8-27b";
+export type AkiIoTextModelId = "deepseek-v4.1-flash-1017-tl5" | "deepseek-v4.1-flash-552b" | "gemma4-26b" | "glm5.3-754b" | "gpt-oss-120b" | "kolibri-1-tl5" | "mistral4-119b" | "qwen3.8-27b";
 export type AkiIoImageModelId = never;
 export type AkiIoAudioModelId = never;
 export type AkiIoVideoModelId = never;

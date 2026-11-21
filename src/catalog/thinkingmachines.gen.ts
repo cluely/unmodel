@@ -258,7 +258,7 @@ export const models = {
   "moonshotai/Kimi-K2.6": {
     id: "moonshotai/Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -274,7 +274,7 @@ export const models = {
   "moonshotai/Kimi-K2.6:peft:131072": {
     id: "moonshotai/Kimi-K2.6:peft:131072",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -290,7 +290,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16": {
     id: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
     name: "Nemotron 3 Nano 30B A3B",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -306,7 +306,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16": {
     id: "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
     name: "Nemotron 3 Super 120B A12B",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -322,7 +322,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16:peft:262144": {
     id: "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16:peft:262144",
     name: "Nemotron 3 Super 120B A12B",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -338,7 +338,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16": {
     id: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
     name: "Nemotron 3 Ultra 550B A55B",
-    family: "nemotron",
+    family: "nemotron-ultra",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -354,7 +354,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16:peft:262144": {
     id: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16:peft:262144",
     name: "Nemotron 3 Ultra 550B A55B",
-    family: "nemotron",
+    family: "nemotron-ultra",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -370,7 +370,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16": {
     id: "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
     name: "Nemotron 3.5 Lightning 30B A3B",
-    family: "nemotron",
+    family: "nemotron-lightning",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -386,7 +386,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16:peft:262144": {
     id: "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16:peft:262144",
     name: "Nemotron 3.5 Lightning 30B A3B",
-    family: "nemotron",
+    family: "nemotron-lightning",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -402,7 +402,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16": {
     id: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16",
     name: "Nemotron 3.5 Super VL 120B A12B",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -417,7 +417,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16:peft:262144": {
     id: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16:peft:262144",
     name: "Nemotron 3.5 Super VL 120B A12B",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -480,7 +480,7 @@ export const models = {
   "thinkingmachines/Inkling": {
     id: "thinkingmachines/Inkling",
     name: "Inkling",
-    family: "ling",
+    family: "inkling",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -495,7 +495,7 @@ export const models = {
   "thinkingmachines/Inkling-Small": {
     id: "thinkingmachines/Inkling-Small",
     name: "Inkling Small",
-    family: "ling",
+    family: "inkling-small",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -510,7 +510,7 @@ export const models = {
   "thinkingmachines/Inkling-Small:peft:262144": {
     id: "thinkingmachines/Inkling-Small:peft:262144",
     name: "Inkling Small",
-    family: "ling",
+    family: "inkling-small",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -525,7 +525,7 @@ export const models = {
   "thinkingmachines/Inkling-Small:peft:262144:sampling-nvfp4": {
     id: "thinkingmachines/Inkling-Small:peft:262144:sampling-nvfp4",
     name: "Inkling Small",
-    family: "ling",
+    family: "inkling-small",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -540,7 +540,7 @@ export const models = {
   "thinkingmachines/Inkling:peft:262144": {
     id: "thinkingmachines/Inkling:peft:262144",
     name: "Inkling (256K)",
-    family: "ling",
+    family: "inkling",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -555,7 +555,7 @@ export const models = {
   "thinkingmachines/Inkling:peft:262144:sampling-nvfp4": {
     id: "thinkingmachines/Inkling:peft:262144:sampling-nvfp4",
     name: "Inkling",
-    family: "ling",
+    family: "inkling",
     attachment: true,
     reasoning: true,
     toolCall: true,

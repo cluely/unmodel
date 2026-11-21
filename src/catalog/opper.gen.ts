@@ -220,7 +220,7 @@ export const models = {
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -494,7 +494,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -528,7 +528,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -545,7 +545,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -562,7 +562,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -587,6 +587,23 @@ export const models = {
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
+  },
+  "gpt-6-luna": {
+    id: "gpt-6-luna",
+    name: "GPT-6 Luna",
+    family: "gpt-luna",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    knowledge: "2026-05-18",
+    releaseDate: "2026-09-22",
+    lastUpdated: "2026-09-22",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
   },
   "gpt-oss-120b": {
     id: "gpt-oss-120b",
@@ -690,7 +707,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -700,13 +717,13 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15 },
   },
   "minimax-m2.7": {
     id: "minimax-m2.7",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -722,7 +739,7 @@ export const models = {
   "minimax-m3": {
     id: "minimax-m3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -772,7 +789,7 @@ export const models = {
   "muse-spark-1.2": {
     id: "muse-spark-1.2",
     name: "Muse Spark 1.2",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -788,7 +805,7 @@ export const models = {
   "muse-spark-1.3": {
     id: "muse-spark-1.3",
     name: "Muse Spark 1.3",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -804,7 +821,7 @@ export const models = {
   "qwen3-coder-next": {
     id: "qwen3-coder-next",
     name: "Qwen3 Coder Next",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -870,7 +887,7 @@ export const models = {
   "qwen3.8-max": {
     id: "qwen3.8-max",
     name: "Qwen3.8 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -920,7 +937,7 @@ export const models = {
   "sonar-reasoning-pro": {
     id: "sonar-reasoning-pro",
     name: "Sonar Reasoning Pro",
-    family: "sonar-reasoning",
+    family: "sonar-reasoning-pro",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -937,7 +954,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type OpperModelId = keyof typeof models;
-export type OpperTextModelId = "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "deepseek-v4-flash" | "deepseek-v4-pro" | "gemini-3-flash-preview" | "gemini-3.1-pro-preview" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemma-4-31b-it" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-oss-120b" | "gpt-oss-20b" | "grok-4.3" | "grok-4.5" | "grok-4.6" | "grok-build-0.1" | "kimi-k3" | "minimax-m2.7" | "minimax-m3" | "mistral-large-2512" | "mistral-small-2603" | "muse-spark-1.2" | "muse-spark-1.3" | "qwen3-coder-next" | "qwen3.6-35b-a3b" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-max" | "sonar" | "sonar-pro" | "sonar-reasoning-pro";
+export type OpperTextModelId = "claude-fable-5" | "claude-fable-5-1" | "claude-haiku-4-5" | "claude-opus-4-5" | "claude-opus-4-6" | "claude-opus-4-7" | "claude-opus-4-8" | "claude-opus-5" | "claude-sonnet-4-5" | "claude-sonnet-4-6" | "claude-sonnet-5" | "deepseek-v4-flash" | "deepseek-v4-pro" | "gemini-3-flash-preview" | "gemini-3.1-pro-preview" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemma-4-31b-it" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-5.3-codex" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-6-luna" | "gpt-oss-120b" | "gpt-oss-20b" | "grok-4.3" | "grok-4.5" | "grok-4.6" | "grok-build-0.1" | "kimi-k3" | "minimax-m2.7" | "minimax-m3" | "mistral-large-2512" | "mistral-small-2603" | "muse-spark-1.2" | "muse-spark-1.3" | "qwen3-coder-next" | "qwen3.6-35b-a3b" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-max" | "sonar" | "sonar-pro" | "sonar-reasoning-pro";
 export type OpperImageModelId = never;
 export type OpperAudioModelId = never;
 export type OpperVideoModelId = never;

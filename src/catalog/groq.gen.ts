@@ -15,6 +15,7 @@ export const models = {
   "allam-2-7b": {
     id: "allam-2-7b",
     name: "ALLaM-2-7b",
+    family: "allam",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -29,7 +30,7 @@ export const models = {
   "canopylabs/orpheus-arabic-saudi": {
     id: "canopylabs/orpheus-arabic-saudi",
     name: "Canopy Labs Orpheus Arabic Saudi",
-    family: "canopylabs",
+    family: "orpheus",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -44,7 +45,7 @@ export const models = {
   "canopylabs/orpheus-v1-english": {
     id: "canopylabs/orpheus-v1-english",
     name: "Canopy Labs Orpheus V1 English",
-    family: "canopylabs",
+    family: "orpheus",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -93,7 +94,7 @@ export const models = {
   "meta-llama/llama-prompt-guard-2-22m": {
     id: "meta-llama/llama-prompt-guard-2-22m",
     name: "Llama Prompt Guard 2 22M",
-    family: "llama",
+    family: "llama-prompt-guard",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -109,7 +110,7 @@ export const models = {
   "meta-llama/llama-prompt-guard-2-86m": {
     id: "meta-llama/llama-prompt-guard-2-86m",
     name: "Prompt Guard 2 86M",
-    family: "llama",
+    family: "llama-prompt-guard",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -159,7 +160,7 @@ export const models = {
   "openai/gpt-oss-safeguard-20b": {
     id: "openai/gpt-oss-safeguard-20b",
     name: "Safety GPT OSS 20B",
-    family: "gpt-oss",
+    family: "gpt-oss-safeguard",
     attachment: false,
     reasoning: true,
     toolCall: true,

@@ -16,7 +16,7 @@ export const models = {
   "ByteDance-Seed/Seed-OSS-36B-Instruct": {
     id: "ByteDance-Seed/Seed-OSS-36B-Instruct",
     name: "ByteDance-Seed/Seed-OSS-36B-Instruct",
-    family: "seed",
+    family: "seed-oss",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -32,7 +32,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M2.5": {
     id: "MiniMaxAI/MiniMax-M2.5",
     name: "MiniMaxAI/MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -49,7 +49,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M3": {
     id: "MiniMaxAI/MiniMax-M3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -161,7 +161,7 @@ export const models = {
   "Qwen/Qwen3-Coder-30B-A3B-Instruct": {
     id: "Qwen/Qwen3-Coder-30B-A3B-Instruct",
     name: "Qwen/Qwen3-Coder-30B-A3B-Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -178,7 +178,7 @@ export const models = {
   "Qwen/Qwen3-Coder-480B-A35B-Instruct": {
     id: "Qwen/Qwen3-Coder-480B-A35B-Instruct",
     name: "Qwen/Qwen3-Coder-480B-A35B-Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -195,7 +195,7 @@ export const models = {
   "Qwen/Qwen3-VL-30B-A3B-Instruct": {
     id: "Qwen/Qwen3-VL-30B-A3B-Instruct",
     name: "Qwen/Qwen3-VL-30B-A3B-Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -211,7 +211,7 @@ export const models = {
   "Qwen/Qwen3-VL-30B-A3B-Thinking": {
     id: "Qwen/Qwen3-VL-30B-A3B-Thinking",
     name: "Qwen/Qwen3-VL-30B-A3B-Thinking",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -227,7 +227,7 @@ export const models = {
   "Qwen/Qwen3-VL-32B-Instruct": {
     id: "Qwen/Qwen3-VL-32B-Instruct",
     name: "Qwen/Qwen3-VL-32B-Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -243,7 +243,7 @@ export const models = {
   "Qwen/Qwen3-VL-32B-Thinking": {
     id: "Qwen/Qwen3-VL-32B-Thinking",
     name: "Qwen/Qwen3-VL-32B-Thinking",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -259,7 +259,7 @@ export const models = {
   "Qwen/Qwen3-VL-8B-Instruct": {
     id: "Qwen/Qwen3-VL-8B-Instruct",
     name: "Qwen/Qwen3-VL-8B-Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -404,7 +404,7 @@ export const models = {
   "deepseek-ai/DeepSeek-R1": {
     id: "deepseek-ai/DeepSeek-R1",
     name: "deepseek-ai/DeepSeek-R1",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -551,7 +551,7 @@ export const models = {
   "deepseek-ai/DeepSeek-V4-Pro": {
     id: "deepseek-ai/DeepSeek-V4-Pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -568,7 +568,7 @@ export const models = {
   "deepseek-ai/DeepSeek-V4-Pro-0813": {
     id: "deepseek-ai/DeepSeek-V4-Pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -633,7 +633,7 @@ export const models = {
   "inclusionAI/Ling-flash-2.0": {
     id: "inclusionAI/Ling-flash-2.0",
     name: "inclusionAI/Ling-flash-2.0",
-    family: "ling",
+    family: "ling-flash",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -664,7 +664,7 @@ export const models = {
   "moonshotai/Kimi-K2.5": {
     id: "moonshotai/Kimi-K2.5",
     name: "moonshotai/Kimi-K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -681,7 +681,7 @@ export const models = {
   "moonshotai/Kimi-K2.6": {
     id: "moonshotai/Kimi-K2.6",
     name: "moonshotai/Kimi-K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -698,7 +698,7 @@ export const models = {
   "moonshotai/Kimi-K2.7-Code": {
     id: "moonshotai/Kimi-K2.7-Code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -715,7 +715,7 @@ export const models = {
   "moonshotai/Kimi-K3": {
     id: "moonshotai/Kimi-K3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -731,6 +731,7 @@ export const models = {
   "nex-agi/Nex-N2-Pro": {
     id: "nex-agi/Nex-N2-Pro",
     name: "Nex-N2-Pro",
+    family: "nex-n-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -781,7 +782,7 @@ export const models = {
   "stepfun-ai/Step-3.5-Flash": {
     id: "stepfun-ai/Step-3.5-Flash",
     name: "stepfun-ai/Step-3.5-Flash",
-    family: "step",
+    family: "step-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -814,7 +815,7 @@ export const models = {
   "tencent/Hy3": {
     id: "tencent/Hy3",
     name: "Hy3",
-    family: "Hy",
+    family: "hy",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -926,7 +927,7 @@ export const models = {
   "zai-org/GLM-5V-Turbo": {
     id: "zai-org/GLM-5V-Turbo",
     name: "zai-org/GLM-5V-Turbo",
-    family: "glm",
+    family: "glmv-turbo",
     attachment: true,
     reasoning: true,
     toolCall: true,

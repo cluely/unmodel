@@ -16,6 +16,7 @@ export const models = {
   "aleph-alpha/kolibri-1": {
     id: "aleph-alpha/kolibri-1",
     name: "Kolibri 1",
+    family: "kolibri",
     attachment: false,
     reasoning: true,
     toolCall: true,

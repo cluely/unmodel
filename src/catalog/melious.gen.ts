@@ -99,7 +99,7 @@ export const models = {
   "kimi-k2.6": {
     id: "kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -116,7 +116,7 @@ export const models = {
   "kimi-k2.7-code": {
     id: "kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -133,7 +133,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -143,7 +143,7 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1000000, output: 131072 },
+    limit: { context: 1000000, output: 1000000 },
     cost: { input: 3.17775, output: 15.88875, cacheRead: 0.79165 },
   },
 } as const satisfies Record<string, ModelInfo>;

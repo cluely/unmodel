@@ -32,7 +32,7 @@ export const models = {
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "deepseek-v4-pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -43,13 +43,13 @@ export const models = {
     releaseDate: "2026-04-24",
     lastUpdated: "2026-04-24",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 1048576 },
+    limit: { context: 1048576, output: 65536 },
     cost: { input: 0.66, output: 1.98, cacheRead: 0.022 },
   },
   "deepseek-v4-pro:0813": {
     id: "deepseek-v4-pro:0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -59,7 +59,7 @@ export const models = {
     releaseDate: "2026-08-13",
     lastUpdated: "2026-08-22",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 1048576 },
+    limit: { context: 1048576, output: 65536 },
     cost: { input: 0.66, output: 1.98, cacheRead: 0.022 },
   },
   "deepseek-v4.1-flash": {
@@ -175,7 +175,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.15, output: 0.6, cacheRead: 0.014 },
   },
   "gpt-oss:20b": {
@@ -192,13 +192,29 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.07, output: 0.3, cacheRead: 0.035 },
+  },
+  "inkling-2-small": {
+    id: "inkling-2-small",
+    name: "Inkling 2 Small",
+    family: "inkling-small",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: false,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-11-05",
+    lastUpdated: "2026-11-12",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 131072 },
+    cost: { input: 0.3, output: 1, cacheRead: 0.03 },
   },
   "kimi-k2.6": {
     id: "kimi-k2.6",
     name: "kimi-k2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -215,7 +231,7 @@ export const models = {
   "kimi-k2.7-code": {
     id: "kimi-k2.7-code",
     name: "kimi-k2.7-code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -232,7 +248,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "kimi-k3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -242,13 +258,13 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
   "kimi-k3.1-pro": {
     id: "kimi-k3.1-pro",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -258,13 +274,13 @@ export const models = {
     releaseDate: "2026-10-23",
     lastUpdated: "2026-10-23",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 2, output: 10, cacheRead: 0.2 },
   },
   "mimo-v2.6-flash": {
     id: "mimo-v2.6-flash",
     name: "MiMo-V2.6-Flash",
-    family: "mimo",
+    family: "mimo-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -280,7 +296,7 @@ export const models = {
   "mimo-v2.6-pro": {
     id: "mimo-v2.6-pro",
     name: "MiMo-V2.6-Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -296,7 +312,7 @@ export const models = {
   "minimax-m2.7": {
     id: "minimax-m2.7",
     name: "minimax-m2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -312,7 +328,7 @@ export const models = {
   "minimax-m3": {
     id: "minimax-m3",
     name: "minimax-m3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -329,7 +345,7 @@ export const models = {
   "minimax-m3.1-flash": {
     id: "minimax-m3.1-flash",
     name: "MiniMax-M3.1-Flash",
-    family: "minimax",
+    family: "minimax-m-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -378,7 +394,7 @@ export const models = {
   "muse-spark-open": {
     id: "muse-spark-open",
     name: "Muse Spark Open",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -395,7 +411,7 @@ export const models = {
   "nemotron-3-nano:30b": {
     id: "nemotron-3-nano:30b",
     name: "nemotron-3-nano:30b",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -412,7 +428,7 @@ export const models = {
   "nemotron-3-super": {
     id: "nemotron-3-super",
     name: "nemotron-3-super",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -429,7 +445,7 @@ export const models = {
   "nemotron-3-ultra": {
     id: "nemotron-3-ultra",
     name: "nemotron-3-ultra",
-    family: "nemotron",
+    family: "nemotron-ultra",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -446,7 +462,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type OllamaCloudModelId = keyof typeof models;
-export type OllamaCloudTextModelId = "beam" | "deepseek-v4-pro" | "deepseek-v4-pro:0813" | "deepseek-v4.1-flash" | "deepseek-v4.1-flash:1017" | "gemma4:31b" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss:120b" | "gpt-oss:20b" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "kimi-k3.1-pro" | "mimo-v2.6-flash" | "mimo-v2.6-pro" | "minimax-m2.7" | "minimax-m3" | "minimax-m3.1-flash" | "mistral-large-3:675b" | "mistral-large-4" | "muse-spark-open" | "nemotron-3-nano:30b" | "nemotron-3-super" | "nemotron-3-ultra";
+export type OllamaCloudTextModelId = "beam" | "deepseek-v4-pro" | "deepseek-v4-pro:0813" | "deepseek-v4.1-flash" | "deepseek-v4.1-flash:1017" | "gemma4:31b" | "glm-5.2" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss:120b" | "gpt-oss:20b" | "inkling-2-small" | "kimi-k2.6" | "kimi-k2.7-code" | "kimi-k3" | "kimi-k3.1-pro" | "mimo-v2.6-flash" | "mimo-v2.6-pro" | "minimax-m2.7" | "minimax-m3" | "minimax-m3.1-flash" | "mistral-large-3:675b" | "mistral-large-4" | "muse-spark-open" | "nemotron-3-nano:30b" | "nemotron-3-super" | "nemotron-3-ultra";
 export type OllamaCloudImageModelId = never;
 export type OllamaCloudAudioModelId = never;
 export type OllamaCloudVideoModelId = never;

@@ -50,7 +50,7 @@ export const models = {
   "DeepSeek-V4-Pro": {
     id: "DeepSeek-V4-Pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -67,7 +67,7 @@ export const models = {
   "DeepSeek-V4-Pro-0813": {
     id: "DeepSeek-V4-Pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -179,7 +179,7 @@ export const models = {
   "Kimi-K2.5": {
     id: "Kimi-K2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -196,7 +196,7 @@ export const models = {
   "Kimi-K2.6": {
     id: "Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -213,7 +213,7 @@ export const models = {
   "Kimi-K2.7-Code": {
     id: "Kimi-K2.7-Code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -230,7 +230,7 @@ export const models = {
   "Kimi-K3": {
     id: "Kimi-K3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -240,13 +240,13 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 0, output: 0, cacheRead: 0 },
   },
   "MiniMax-M2.5": {
     id: "MiniMax-M2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -261,7 +261,7 @@ export const models = {
   "MiniMax-M2.7": {
     id: "MiniMax-M2.7",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -276,7 +276,7 @@ export const models = {
   "MiniMax-M3": {
     id: "MiniMax-M3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -291,7 +291,7 @@ export const models = {
   "Qwen3.8-Flash": {
     id: "Qwen3.8-Flash",
     name: "Qwen3.8 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -307,7 +307,7 @@ export const models = {
   "Qwen3.8-Max": {
     id: "Qwen3.8-Max",
     name: "Qwen3.8 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,

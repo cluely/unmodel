@@ -82,7 +82,7 @@ export const models = {
   "moonshotai/Kimi-K2.6": {
     id: "moonshotai/Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -100,7 +100,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B": {
     id: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     name: "Nemotron 3 Nano 30B A3B",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -116,7 +116,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B": {
     id: "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B",
     name: "Nemotron 3 Super 120B A12B",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -132,7 +132,7 @@ export const models = {
   "nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B": {
     id: "nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B",
     name: "Nemotron 3 Nano Omni 30B A3B Reasoning",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -158,7 +158,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.05, output: 0.25, cacheRead: 0.05 },
   },
   "zai/GLM-5.1": {

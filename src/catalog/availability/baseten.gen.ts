@@ -42,7 +42,7 @@ export const availability = {
     "openrouter": "deepseek/deepseek-v4-pro-0813",
     "siliconflow": { id: "deepseek-ai/DeepSeek-V4-Pro-0813", narrows: { context: 1000000 } },
     "togetherai": "deepseek-ai/DeepSeek-V4-Pro-0813",
-    "vercel": { id: "deepseek/deepseek-v4-pro-0813", narrows: { context: 1000000 } },
+    "vercel": "deepseek/deepseek-v4-pro-0813",
   },
   "deepseek-ai/DeepSeek-V4.1-Flash": {
     "azure": { id: "deepseek-v4.1-flash", narrows: { context: 1000000 } },
@@ -60,7 +60,7 @@ export const availability = {
     "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
     "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-    "mistral": { id: "deepseek-v4-1-flash-1017", narrows: { drops: ["image"] } },
+    "mistral": "deepseek-v4-1-flash-1017",
     "nebius": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "novita-ai": "deepseek/deepseek-v4.1-flash-1017",
     "openrouter": "deepseek/deepseek-v4.1-flash-1017",
@@ -93,11 +93,13 @@ export const availability = {
   "moonshotai/Kimi-K3.1-Pro": {
     "baseten": "moonshotai/Kimi-K3.1-Pro",
     "deepinfra": "moonshotai/Kimi-K3.1-Pro",
+    "huggingface": "moonshotai/Kimi-K3.1-Pro",
     "moonshotai": "kimi-k3.1-pro",
+    "nebius": "moonshotai/Kimi-K3.1-Pro",
     "novita-ai": "moonshotai/kimi-k3.1-pro",
     "openrouter": "moonshotai/kimi-k3.1-pro",
     "togetherai": "moonshotai/Kimi-K3.1-Pro",
-    "vercel": "moonshotai/kimi-k3.1-pro",
+    "vercel": { id: "moonshotai/kimi-k3.1-pro", narrows: { context: 1000000 } },
   },
   "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": {
     "baseten": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",

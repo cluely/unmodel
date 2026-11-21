@@ -15,6 +15,7 @@ export const models = {
   "c4ai-aya-expanse-32b": {
     id: "c4ai-aya-expanse-32b",
     name: "Aya Expanse 32B",
+    family: "aya",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -30,6 +31,7 @@ export const models = {
   "c4ai-aya-vision-32b": {
     id: "c4ai-aya-vision-32b",
     name: "Aya Vision 32B",
+    family: "aya-vision",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -61,7 +63,7 @@ export const models = {
   "command-a-plus-05-2026": {
     id: "command-a-plus-05-2026",
     name: "Command A Plus",
-    family: "command-a",
+    family: "command-a-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -146,7 +148,7 @@ export const models = {
   "command-r-plus-08-2024": {
     id: "command-r-plus-08-2024",
     name: "Command R+",
-    family: "command-r",
+    family: "command-r-plus",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -197,7 +199,7 @@ export const models = {
   "north-mini-code-1-0": {
     id: "north-mini-code-1-0",
     name: "North Mini Code",
-    family: "north",
+    family: "north-mini",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -214,7 +216,7 @@ export const models = {
   "north-small-translate-09-2026": {
     id: "north-small-translate-09-2026",
     name: "North Small Translate",
-    family: "north",
+    family: "north-small",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -230,6 +232,7 @@ export const models = {
   "tiny-aya-earth": {
     id: "tiny-aya-earth",
     name: "Tiny Aya Earth",
+    family: "aya-tiny",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -244,6 +247,7 @@ export const models = {
   "tiny-aya-fire": {
     id: "tiny-aya-fire",
     name: "Tiny Aya Fire",
+    family: "aya-tiny",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -258,6 +262,7 @@ export const models = {
   "tiny-aya-global": {
     id: "tiny-aya-global",
     name: "Tiny Aya Global",
+    family: "aya-tiny",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -272,6 +277,7 @@ export const models = {
   "tiny-aya-water": {
     id: "tiny-aya-water",
     name: "Tiny Aya Water",
+    family: "aya-tiny",
     attachment: false,
     reasoning: false,
     toolCall: true,

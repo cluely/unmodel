@@ -33,7 +33,7 @@
  * Atlas's per-model OpenAPI documents disagree with each other about where a
  * submitted job is read back from. The Seedance 2.x, Wan 3.0, Veo 3.1 Lite and
  * MiniMax schemas declare `GET /api/v1/model/prediction/{request_id}`; the
- * Seedance v1.5 pro, Veo 3.1 and Veo 3.1 Fast schemas declare
+ * Veo 3.1 and Veo 3.1 Fast schemas declare
  * `GET /api/v1/model/result/{request_id}` for the same envelope (and
  * `google/veo3.1-lite/image-to-video` drops the slash:
  * `/api/v1/model/prediction{request_id}`, read 2026-11-12). The docs site
@@ -80,7 +80,7 @@ export function predictionUrl(id: string): string {
 
 /**
  * `GET /api/v1/model/result/{request_id}` — the same read-back, spelled the
- * way the Seedance v1.5 pro, Veo 3.1 and Veo 3.1 Fast schemas spell it. See the module
+ * way the Veo 3.1 and Veo 3.1 Fast schemas spell it. See the module
  * docstring: this is a documented disagreement inside Atlas's own OpenAPI set,
  * not a second API.
  */

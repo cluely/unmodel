@@ -36,9 +36,7 @@
 //   - `google/veo3.1/reference-to-video`'s schema lists `aspect_ratio` in `x-order-properties`
 //     but declares no such property, and carries a stray top-level `seed` object beside
 //     `properties`;
-//   - `bytedance/seedance-v1.5-pro/*` describes `image` and `last_image` as "The positive
-//     prompt for the generation" — a copy-paste from `prompt`;
-//   - nine of the thirty-one schemas (Seedance v1.5 pro, Veo 3.1 and Veo 3.1 Fast) declare
+//   - five of the twenty-seven schemas (Veo 3.1 and Veo 3.1 Fast) declare
 //     the read-back route as `GET /api/v1/model/result/{request_id}`, twenty-one declare
 //     `GET /api/v1/model/prediction/{request_id}`, and `google/veo3.1-lite/image-to-video`
 //     spells it `/api/v1/model/prediction{request_id}`, slash missing (./urls.ts exports
@@ -101,14 +99,14 @@ const DRAFT_TO_VIDEO = {
 } as const;
 
 /**
- * The thirty-one curated ids on `POST /api/v1/model/generateVideo`.
+ * The twenty-seven curated ids on `POST /api/v1/model/generateVideo`.
  *
  * The id IS the model AND the route, which is why a family appears three times:
  * `bytedance/seedance-2.5/text-to-video` and `.../reference-to-video` are the
  * same weights behind two different Input schemas.
  *
  * Roster shape, and why these: the Seedance families the adopter named
- * (2.5, 2.0, 2.0-mini, 2.0-fast, v1.5-pro — 16 ids, and the `-mini` tier plus
+ * (2.5, 2.0, 2.0-mini, 2.0-fast — 12 ids, and the `-mini` tier plus
  * the SR/ESR resolution ladder are Atlas's genuine additions over fal), plus
  * the earners at the top of Atlas's own TEXT-TO-VIDEO / IMAGE-TO-VIDEO listing:
  * Wan 3.0 and Wan 3.0-prime (Atlas's highest-priority video rows, tagged HOT +
@@ -204,30 +202,6 @@ export const videoModels = {
     name: "Seedance 2.0 Fast Reference-to-Video",
     family: "seedance2",
     ...OMNI_TO_VIDEO,
-  },
-  "bytedance/seedance-v1.5-pro/text-to-video": {
-    id: "bytedance/seedance-v1.5-pro/text-to-video",
-    name: "Seedance v1.5 Pro Text-to-Video",
-    family: "seedance1.5",
-    ...TEXT_TO_VIDEO,
-  },
-  "bytedance/seedance-v1.5-pro/image-to-video": {
-    id: "bytedance/seedance-v1.5-pro/image-to-video",
-    name: "Seedance v1.5 Pro Image-to-Video",
-    family: "seedance1.5",
-    ...IMAGE_TO_VIDEO,
-  },
-  "bytedance/seedance-v1.5-pro/text-to-video-fast": {
-    id: "bytedance/seedance-v1.5-pro/text-to-video-fast",
-    name: "Seedance v1.5 Pro Text-to-Video Fast",
-    family: "seedance1.5",
-    ...TEXT_TO_VIDEO,
-  },
-  "bytedance/seedance-v1.5-pro/image-to-video-fast": {
-    id: "bytedance/seedance-v1.5-pro/image-to-video-fast",
-    name: "Seedance v1.5 Pro Image-to-Video Fast",
-    family: "seedance1.5",
-    ...IMAGE_TO_VIDEO,
   },
   "alibaba/wan-3.0-prime/text-to-video": {
     id: "alibaba/wan-3.0-prime/text-to-video",

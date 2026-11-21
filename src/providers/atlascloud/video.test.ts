@@ -170,21 +170,14 @@ describe("duration", () => {
     }
   });
 
-  test("`-1` is refused where it is not, naming the families that have it", () => {
-    const result = safeUnchecked({
-      model: "bytedance/seedance-v1.5-pro/text-to-video",
-      prompt: "hi",
-      duration: -1,
-    });
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["duration"] });
-    expect(result.errors[0]!.message).toContain("Seedance 2.x and Wan 3.0");
-  });
-
   test("Veo 3.1 has no sentinel either — its enum is three members", () => {
-    expect(codes(safeUnchecked({ model: "google/veo3.1/text-to-video", prompt: "p", duration: -1 })))
-      .toEqual(["invalid_enum_value@duration"]);
+    const noSentinel = safeUnchecked({ model: "google/veo3.1/text-to-video", prompt: "p", duration: -1 });
+    expect(codes(noSentinel)).toEqual(["invalid_enum_value@duration"]);
+    expect(noSentinel.ok).toBe(false);
+    if (noSentinel.ok) return;
+    expect(noSentinel.errors[0]).toMatchObject({ code: "invalid_enum_value", path: ["duration"] });
+    expect(noSentinel.errors[0]!.message).toContain("Seedance 2.x and Wan 3.0");
+    expect(noSentinel.errors[0]!.message).toContain("4–8 seconds");
     expect(codes(safeUnchecked({ model: "google/veo3.1/text-to-video", prompt: "p", duration: 6 })))
       .toEqual([]);
     expect(codes(safeUnchecked({ model: "google/veo3.1/text-to-video", prompt: "p", duration: 5 })))
@@ -198,19 +191,6 @@ describe("duration", () => {
       .toEqual(["invalid_enum_value@duration"]);
     expect(codes(safeUnchecked({ model: "bytedance/seedance-2.0/text-to-video", prompt: "p", duration: 15 })))
       .toEqual([]);
-  });
-
-  test("Seedance v1.5 pro publishes a RANGE, so the message quotes bounds", () => {
-    expect(codes(safeUnchecked({ model: "bytedance/seedance-v1.5-pro/text-to-video", prompt: "p", duration: 12 })))
-      .toEqual([]);
-    const over = safeUnchecked({
-      model: "bytedance/seedance-v1.5-pro/text-to-video",
-      prompt: "p",
-      duration: 13,
-    });
-    expect(over.ok).toBe(false);
-    if (over.ok) return;
-    expect(over.errors[0]!.message).toContain("4–12 seconds");
   });
 
   test("Wan 3.0 starts at 2 seconds, where every Seedance starts at 4", () => {
@@ -436,14 +416,14 @@ describe("the shape field", () => {
   });
 
   test("`ratio` and `aspect_ratio` are refused for each other by name", () => {
-    const ratioOnSeedance15 = safeUnchecked({
-      model: "bytedance/seedance-v1.5-pro/text-to-video",
+    const ratioOnVeo = safeUnchecked({
+      model: "google/veo3.1/text-to-video",
       prompt: "p",
       ratio: "16:9",
     });
-    expect(codes(ratioOnSeedance15)).toEqual(["unsupported_param@ratio"]);
-    if (!ratioOnSeedance15.ok) {
-      expect(ratioOnSeedance15.errors[0]!.message).toContain("aspect_ratio");
+    expect(codes(ratioOnVeo)).toEqual(["unsupported_param@ratio"]);
+    if (!ratioOnVeo.ok) {
+      expect(ratioOnVeo.errors[0]!.message).toContain("aspect_ratio");
     }
     expect(codes(safeUnchecked({
       model: "bytedance/seedance-2.0/text-to-video",
@@ -526,15 +506,6 @@ describe("resolution", () => {
     }
   });
 
-  test("the v1.5-pro fast pair renders 720p only", () => {
-    expect(codes(safeUnchecked({ model: "bytedance/seedance-v1.5-pro/text-to-video", prompt: "p", resolution: "480p" })))
-      .toEqual([]);
-    expect(codes(safeUnchecked({
-      model: "bytedance/seedance-v1.5-pro/text-to-video-fast",
-      prompt: "p",
-      resolution: "480p",
-    }))).toEqual(["invalid_enum_value@resolution"]);
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -545,10 +516,9 @@ describe("a param from another family is named, not swallowed", () => {
   test("`seed` is absent from every Seedance 2.5 schema", () => {
     const result = safeUnchecked({ model: "bytedance/seedance-2.5/text-to-video", prompt: "p", seed: 1 });
     expect(codes(result)).toEqual(["unsupported_param@seed"]);
-    // …and present on the 2.0 series, v1.5 pro, Wan and Veo.
+    // …and present on the 2.0 series, Wan and Veo.
     for (const model of [
       "bytedance/seedance-2.0/text-to-video",
-      "bytedance/seedance-v1.5-pro/text-to-video",
       "alibaba/wan-3.0/text-to-video",
       "google/veo3.1/text-to-video",
     ]) {
@@ -676,7 +646,7 @@ describe("degradation", () => {
 
 describe("the roster and its tables agree", () => {
   test("every curated id has a catalog row, a shape rule, a constraint row and a listed price", () => {
-    expect(Object.keys(models)).toHaveLength(31);
+    expect(Object.keys(models)).toHaveLength(27);
     for (const id of Object.keys(models)) {
       expect(videoShapeRules[id], `${id} shape rule`).toBeDefined();
       expect(videoConstraints[id], `${id} constraints`).toBeDefined();
@@ -685,7 +655,7 @@ describe("the roster and its tables agree", () => {
   });
 
   test("`unmodel/video` reaches every catalogued id but the wire-only draft completion", () => {
-    expect(MODELS).toHaveLength(30);
+    expect(MODELS).toHaveLength(26);
     for (const id of MODELS) {
       expect(videoModels[id as keyof typeof videoModels], `${id} catalog`).toBeDefined();
     }

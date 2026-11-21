@@ -25,7 +25,7 @@
     "     for a given model cannot be read without executing the page.",
     "",
     "AND THE CATALOG CANNOT SETTLE IT. GET https://api.atlascloud.ai/api/v1/models (608 rows, read",
-    "2026-11-12) returns a `price` object per row, but NONE of the 31 curated rows carries",
+    "2026-11-12) returns a `price` object per row, but NONE of the 27 curated rows carries",
     "`price.actual.unit`, and 389 of its 470 media rows are a bare `base_price` STRING with no unit at",
     "all. And 223 of 608 rows carry a promotional `discount` between 30 and 95, so `price.actual` is",
     "not the list price either — it is today's offer.",
@@ -243,46 +243,6 @@
         "discount": 80
       },
       "source": "https://www.atlascloud.ai/models/bytedance/seedance-2.5/text-to-video",
-      "verified": "2026-11-12"
-    },
-    "bytedance/seedance-v1.5-pro/image-to-video": {
-      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
-      "listed": {
-        "actual": 0.047,
-        "origin": 0.052,
-        "discount": 90
-      },
-      "source": "https://www.atlascloud.ai/models/bytedance/seedance-v1.5-pro/image-to-video",
-      "verified": "2026-11-12"
-    },
-    "bytedance/seedance-v1.5-pro/image-to-video-fast": {
-      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
-      "listed": {
-        "actual": 0.018,
-        "origin": 0.02,
-        "discount": 90
-      },
-      "source": "https://www.atlascloud.ai/models/bytedance/seedance-v1.5-pro/image-to-video-fast",
-      "verified": "2026-11-12"
-    },
-    "bytedance/seedance-v1.5-pro/text-to-video": {
-      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
-      "listed": {
-        "actual": 0.047,
-        "origin": 0.052,
-        "discount": 90
-      },
-      "source": "https://www.atlascloud.ai/models/bytedance/seedance-v1.5-pro/text-to-video",
-      "verified": "2026-11-12"
-    },
-    "bytedance/seedance-v1.5-pro/text-to-video-fast": {
-      "unpriced": "Atlas publishes no unit-bearing rate for this model. Its catalog row carries a bare `base_price` with no `price.actual.unit`, and Atlas's billing page (https://www.atlascloud.ai/docs/models/price, read 2026-11-12) says video pricing \"Varies by model, duration, and resolution; some models are billed by output video tokens\" — so the model page's single per-second figure is not a rate that holds across the resolutions this id renders. unmodel ships no `cost` for this model rather than a guess; see the $comment above and ATLASCLOUD_PRICING_CAVEAT.",
-      "listed": {
-        "actual": 0.018,
-        "origin": 0.02,
-        "discount": 90
-      },
-      "source": "https://www.atlascloud.ai/models/bytedance/seedance-v1.5-pro/text-to-video-fast",
       "verified": "2026-11-12"
     },
     "google/veo3.1-fast/image-to-video": {

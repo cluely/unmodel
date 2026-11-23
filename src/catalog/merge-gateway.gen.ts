@@ -288,7 +288,7 @@ export const models = {
   "bytedance/dola-seed-2.0-code": {
     id: "bytedance/dola-seed-2.0-code",
     name: "Seed 2.0 Code",
-    family: "seed",
+    family: "seed-code",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -304,7 +304,7 @@ export const models = {
   "bytedance/dola-seed-2.0-code-preview": {
     id: "bytedance/dola-seed-2.0-code-preview",
     name: "Dola Seed 2.0 Code (preview)",
-    family: "seed",
+    family: "seed-code",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -320,7 +320,7 @@ export const models = {
   "bytedance/dola-seed-2.0-lite": {
     id: "bytedance/dola-seed-2.0-lite",
     name: "Seed 2.0 Lite",
-    family: "seed",
+    family: "seed-lite",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -336,7 +336,7 @@ export const models = {
   "bytedance/dola-seed-2.0-mini": {
     id: "bytedance/dola-seed-2.0-mini",
     name: "Seed 2.0 Mini",
-    family: "seed",
+    family: "seed-mini",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -352,7 +352,7 @@ export const models = {
   "bytedance/dola-seed-2.0-pro": {
     id: "bytedance/dola-seed-2.0-pro",
     name: "Seed 2.0 Pro",
-    family: "seed",
+    family: "seed-pro",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -402,7 +402,7 @@ export const models = {
   "cohere/command-r-plus-08-2024": {
     id: "cohere/command-r-plus-08-2024",
     name: "Command R+ 08-2024",
-    family: "command-r",
+    family: "command-r-plus",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -436,7 +436,7 @@ export const models = {
   "deepseek/deepseek-r1": {
     id: "deepseek/deepseek-r1",
     name: "DeepSeek R1",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -453,7 +453,7 @@ export const models = {
   "deepseek/deepseek-r1-0528": {
     id: "deepseek/deepseek-r1-0528",
     name: "DeepSeek R1 (0528)",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -586,7 +586,7 @@ export const models = {
   "deepseek/deepseek-v4-pro": {
     id: "deepseek/deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -603,7 +603,7 @@ export const models = {
   "deepseek/deepseek-v4-pro-0423": {
     id: "deepseek/deepseek-v4-pro-0423",
     name: "DeepSeek V4 Pro 0423",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -620,7 +620,7 @@ export const models = {
   "deepseek/deepseek-v4-pro-0813": {
     id: "deepseek/deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -670,7 +670,7 @@ export const models = {
   "google/gemini-2.5-computer-use-preview-10-2025": {
     id: "google/gemini-2.5-computer-use-preview-10-2025",
     name: "Gemini 2.5 Computer Use Preview (10-2025)",
-    family: "gemini-pro",
+    family: "gemini-computer-use",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -704,7 +704,7 @@ export const models = {
   "google/gemini-2.5-flash-image": {
     id: "google/gemini-2.5-flash-image",
     name: "Gemini 2.5 Flash Image",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -772,7 +772,7 @@ export const models = {
   "google/gemini-3-pro-image": {
     id: "google/gemini-3-pro-image",
     name: "Gemini 3 Pro Image",
-    family: "gemini-pro",
+    family: "nano-banana-pro",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -789,7 +789,7 @@ export const models = {
   "google/gemini-3.1-flash-image": {
     id: "google/gemini-3.1-flash-image",
     name: "Gemini 3.1 Flash Image",
-    family: "gemini-flash",
+    family: "nano-banana",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -972,10 +972,44 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 2, output: 10, cacheRead: 0.1 },
   },
+  "google/gemini-4-hydrogen": {
+    id: "google/gemini-4-hydrogen",
+    name: "Gemini 4 Hydrogen",
+    family: "gemini",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-03",
+    releaseDate: "2026-11-12",
+    lastUpdated: "2026-11-12",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 1.5, output: 7.5, cacheRead: 0.075 },
+  },
+  "google/gemini-4-neon": {
+    id: "google/gemini-4-neon",
+    name: "Gemini 4 Neon",
+    family: "gemini",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-03",
+    releaseDate: "2026-11-18",
+    lastUpdated: "2026-11-18",
+    modalities: { input: ["text", "image", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 3, output: 15, cacheRead: 0.15 },
+  },
   "google/gemini-embedding-001": {
     id: "google/gemini-embedding-001",
     name: "Gemini Embedding 001",
-    family: "gemini",
+    family: "gemini-embedding",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -992,7 +1026,7 @@ export const models = {
   "google/gemini-embedding-2": {
     id: "google/gemini-embedding-2",
     name: "Gemini Embedding 2",
-    family: "gemini",
+    family: "gemini-embedding",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -1178,7 +1212,7 @@ export const models = {
   "meta/muse-spark-open": {
     id: "meta/muse-spark-open",
     name: "Muse Spark Open",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1195,7 +1229,7 @@ export const models = {
   "minimax/minimax-m2": {
     id: "minimax/minimax-m2",
     name: "MiniMax M2",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1211,7 +1245,7 @@ export const models = {
   "minimax/minimax-m2.1": {
     id: "minimax/minimax-m2.1",
     name: "MiniMax M2.1",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1227,7 +1261,7 @@ export const models = {
   "minimax/minimax-m2.5": {
     id: "minimax/minimax-m2.5",
     name: "MiniMax M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1243,7 +1277,7 @@ export const models = {
   "minimax/minimax-m2.5-highspeed": {
     id: "minimax/minimax-m2.5-highspeed",
     name: "MiniMax M2.5 Highspeed",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1259,7 +1293,7 @@ export const models = {
   "minimax/minimax-m2.7": {
     id: "minimax/minimax-m2.7",
     name: "MiniMax M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1275,7 +1309,7 @@ export const models = {
   "minimax/minimax-m2.7-highspeed": {
     id: "minimax/minimax-m2.7-highspeed",
     name: "MiniMax M2.7 Highspeed",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1291,7 +1325,7 @@ export const models = {
   "minimax/minimax-m3": {
     id: "minimax/minimax-m3",
     name: "MiniMax M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1307,7 +1341,7 @@ export const models = {
   "minimax/minimax-m3.1-flash": {
     id: "minimax/minimax-m3.1-flash",
     name: "MiniMax M3.1 Flash",
-    family: "minimax",
+    family: "minimax-m-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1356,7 +1390,7 @@ export const models = {
   "mistral/devstral-medium-latest": {
     id: "mistral/devstral-medium-latest",
     name: "Devstral 2 (latest)",
-    family: "devstral",
+    family: "devstral-medium",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -1471,7 +1505,7 @@ export const models = {
   "mistral/pixtral-large-latest": {
     id: "mistral/pixtral-large-latest",
     name: "Pixtral Large (latest)",
-    family: "pixtral",
+    family: "pixtral-large",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -1487,24 +1521,24 @@ export const models = {
   "moonshot/kimi-k2.5": {
     id: "moonshot/kimi-k2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
-    attachment: true,
+    family: "kimi",
+    attachment: false,
     reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
+    toolCall: false,
+    structuredOutput: false,
     temperature: false,
     openWeights: true,
     knowledge: "2025-01",
     releaseDate: "2026-01-27",
     lastUpdated: "2026-01-27",
-    modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262144, output: 262144 },
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 131072, output: 32768 },
     cost: { input: 0.6, output: 3, cacheRead: 0.1 },
   },
   "moonshot/kimi-k2.6": {
     id: "moonshot/kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1521,7 +1555,7 @@ export const models = {
   "moonshot/kimi-k2.7-code": {
     id: "moonshot/kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1538,7 +1572,7 @@ export const models = {
   "moonshot/kimi-k2.7-code-highspeed": {
     id: "moonshot/kimi-k2.7-code-highspeed",
     name: "Kimi K2.7 Code Highspeed",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1555,7 +1589,7 @@ export const models = {
   "moonshot/kimi-k3": {
     id: "moonshot/kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1571,7 +1605,7 @@ export const models = {
   "moonshot/kimi-k3.1-pro": {
     id: "moonshot/kimi-k3.1-pro",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -1587,7 +1621,7 @@ export const models = {
   "nvidia/nemotron-3-nano-30b-a3b": {
     id: "nvidia/nemotron-3-nano-30b-a3b",
     name: "Nemotron 3 Nano 30B A3B",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -1604,7 +1638,7 @@ export const models = {
   "nvidia/nemotron-3.5-lightning-30b-a3b": {
     id: "nvidia/nemotron-3.5-lightning-30b-a3b",
     name: "Nemotron 3.5 Lightning 30B A3B",
-    family: "nemotron",
+    family: "nemotron-lightning",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -1621,7 +1655,7 @@ export const models = {
   "nvidia/nemotron-nano-9b-v2": {
     id: "nvidia/nemotron-nano-9b-v2",
     name: "Nemotron Nano 9B",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -2050,7 +2084,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",
@@ -2067,7 +2101,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -2084,7 +2118,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -2101,7 +2135,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-02-16",
     releaseDate: "2026-07-09",
@@ -2135,7 +2169,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-05-18",
     releaseDate: "2026-09-22",
@@ -2152,7 +2186,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-04-20",
     releaseDate: "2026-09-22",
@@ -2186,7 +2220,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2026-06-01",
     releaseDate: "2026-10-26",
@@ -2195,10 +2229,44 @@ export const models = {
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 1, output: 5, cacheRead: 0.05, cacheWrite: 1.25 },
   },
+  "openai/gpt-6.2-astra": {
+    id: "openai/gpt-6.2-astra",
+    name: "GPT-6.2 Astra",
+    family: "gpt-astra",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-05-18",
+    releaseDate: "2026-11-17",
+    lastUpdated: "2026-11-17",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 8, output: 40, cacheRead: 0.4, cacheWrite: 10 },
+  },
+  "openai/gpt-6.2-sol": {
+    id: "openai/gpt-6.2-sol",
+    name: "GPT-6.2 Sol",
+    family: "gpt-sol",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06-01",
+    releaseDate: "2026-11-17",
+    lastUpdated: "2026-11-17",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5 },
+  },
   "openai/gpt-audio": {
     id: "openai/gpt-audio",
     name: "GPT Audio",
-    family: "gpt",
+    family: "gpt-audio",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -2215,7 +2283,7 @@ export const models = {
   "openai/gpt-audio-mini": {
     id: "openai/gpt-audio-mini",
     name: "GPT Audio Mini",
-    family: "gpt-mini",
+    family: "gpt-audio-mini",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -2266,7 +2334,7 @@ export const models = {
   "openai/gpt-oss-safeguard-120b": {
     id: "openai/gpt-oss-safeguard-120b",
     name: "GPT OSS Safeguard 120B",
-    family: "gpt-oss",
+    family: "gpt-oss-safeguard",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -2282,7 +2350,7 @@ export const models = {
   "openai/gpt-oss-safeguard-20b": {
     id: "openai/gpt-oss-safeguard-20b",
     name: "GPT OSS Safeguard 20B",
-    family: "gpt-oss",
+    family: "gpt-oss-safeguard",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -2381,7 +2449,7 @@ export const models = {
   "qwen/qwen-flash": {
     id: "qwen/qwen-flash",
     name: "Qwen Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2398,7 +2466,7 @@ export const models = {
   "qwen/qwen-plus": {
     id: "qwen/qwen-plus",
     name: "Qwen Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2481,7 +2549,7 @@ export const models = {
   "qwen/qwen3-coder-480b-a35b-instruct": {
     id: "qwen/qwen3-coder-480b-a35b-instruct",
     name: "Qwen3 Coder 480B A35B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -2498,7 +2566,7 @@ export const models = {
   "qwen/qwen3-coder-flash": {
     id: "qwen/qwen3-coder-flash",
     name: "Qwen3 Coder Flash",
-    family: "qwen",
+    family: "qwen-coder-flash",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -2515,7 +2583,7 @@ export const models = {
   "qwen/qwen3-coder-next": {
     id: "qwen/qwen3-coder-next",
     name: "Qwen3 Coder Next",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -2532,7 +2600,7 @@ export const models = {
   "qwen/qwen3-coder-plus": {
     id: "qwen/qwen3-coder-plus",
     name: "Qwen3 Coder Plus",
-    family: "qwen",
+    family: "qwen-coder-plus",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -2549,7 +2617,7 @@ export const models = {
   "qwen/qwen3-max": {
     id: "qwen/qwen3-max",
     name: "Qwen3 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -2566,7 +2634,7 @@ export const models = {
   "qwen/qwen3-max-preview": {
     id: "qwen/qwen3-max-preview",
     name: "Qwen3 Max Preview",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -2617,7 +2685,7 @@ export const models = {
   "qwen/qwen3-vl-235b-a22b-instruct": {
     id: "qwen/qwen3-vl-235b-a22b-instruct",
     name: "Qwen3-VL 235B A22B Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -2634,7 +2702,7 @@ export const models = {
   "qwen/qwen3-vl-235b-a22b-thinking": {
     id: "qwen/qwen3-vl-235b-a22b-thinking",
     name: "Qwen3-VL 235B A22B Thinking",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2651,7 +2719,7 @@ export const models = {
   "qwen/qwen3-vl-30b-a3b-instruct": {
     id: "qwen/qwen3-vl-30b-a3b-instruct",
     name: "Qwen3-VL 30B-A3B Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -2667,6 +2735,7 @@ export const models = {
   "qwen/qwen3-vl-flash": {
     id: "qwen/qwen3-vl-flash",
     name: "Qwen3-VL Flash",
+    family: "qwen-vl-flash",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -2682,7 +2751,7 @@ export const models = {
   "qwen/qwen3-vl-plus": {
     id: "qwen/qwen3-vl-plus",
     name: "Qwen3-VL Plus",
-    family: "qwen",
+    family: "qwen-vl-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2795,7 +2864,7 @@ export const models = {
   "qwen/qwen3.5-flash": {
     id: "qwen/qwen3.5-flash",
     name: "Qwen3.5 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2811,7 +2880,7 @@ export const models = {
   "qwen/qwen3.5-plus": {
     id: "qwen/qwen3.5-plus",
     name: "Qwen3.5 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2860,7 +2929,7 @@ export const models = {
   "qwen/qwen3.6-flash": {
     id: "qwen/qwen3.6-flash",
     name: "Qwen3.6 Flash",
-    family: "qwen3.6",
+    family: "qwen-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2876,7 +2945,7 @@ export const models = {
   "qwen/qwen3.6-max-preview": {
     id: "qwen/qwen3.6-max-preview",
     name: "Qwen3.6 Max Preview",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2893,7 +2962,7 @@ export const models = {
   "qwen/qwen3.6-plus": {
     id: "qwen/qwen3.6-plus",
     name: "Qwen3.6 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2910,7 +2979,7 @@ export const models = {
   "qwen/qwen3.7-max": {
     id: "qwen/qwen3.7-max",
     name: "Qwen3.7 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2926,7 +2995,7 @@ export const models = {
   "qwen/qwen3.7-plus": {
     id: "qwen/qwen3.7-plus",
     name: "Qwen3.7 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -2953,7 +3022,7 @@ export const models = {
     releaseDate: "2026-08-12",
     lastUpdated: "2026-08-12",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 262144, output: 1010000 },
+    limit: { context: 262144, output: 262144 },
     cost: { input: 2.5, output: 6.25, cacheRead: 0.5 },
   },
   "qwen/qwen3.8-27b": {
@@ -2975,7 +3044,7 @@ export const models = {
   "qwen/qwen3.8-flash": {
     id: "qwen/qwen3.8-flash",
     name: "Qwen3.8 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -2991,7 +3060,7 @@ export const models = {
   "qwen/qwen3.8-max": {
     id: "qwen/qwen3.8-max",
     name: "Qwen3.8 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -3007,7 +3076,7 @@ export const models = {
   "sakana/fugu-max": {
     id: "sakana/fugu-max",
     name: "Fugu Max",
-    family: "fugu",
+    family: "fugu-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -3023,7 +3092,7 @@ export const models = {
   "sakana/fugu-ultra": {
     id: "sakana/fugu-ultra",
     name: "Fugu Ultra",
-    family: "fugu",
+    family: "fugu-ultra",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -3055,7 +3124,7 @@ export const models = {
   "thinkingmachines/inkling": {
     id: "thinkingmachines/inkling",
     name: "Inkling",
-    family: "ling",
+    family: "inkling",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -3251,7 +3320,7 @@ export const models = {
   "zai/glm-4.5v": {
     id: "zai/glm-4.5v",
     name: "Glm 4.5V",
-    family: "glm",
+    family: "glmv",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -3352,7 +3421,7 @@ export const models = {
   "zai/glm-5-turbo": {
     id: "zai/glm-5-turbo",
     name: "GLM-5 Turbo",
-    family: "glm",
+    family: "glm-turbo",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -3432,7 +3501,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type MergeGatewayModelId = keyof typeof models;
-export type MergeGatewayTextModelId = "anthropic/claude-fable-5" | "anthropic/claude-fable-5-1" | "anthropic/claude-fable-5-2" | "anthropic/claude-haiku-4-5-20251001" | "anthropic/claude-haiku-5-5" | "anthropic/claude-opus-4-1-20250805" | "anthropic/claude-opus-4-5-20251101" | "anthropic/claude-opus-4-6" | "anthropic/claude-opus-4-7" | "anthropic/claude-opus-4-8" | "anthropic/claude-opus-5" | "anthropic/claude-opus-5-5" | "anthropic/claude-sonnet-4-5-20250929" | "anthropic/claude-sonnet-4-6" | "anthropic/claude-sonnet-5" | "anthropic/claude-sonnet-5-5" | "bytedance/dola-seed-2.0-code" | "bytedance/dola-seed-2.0-code-preview" | "bytedance/dola-seed-2.0-lite" | "bytedance/dola-seed-2.0-mini" | "bytedance/dola-seed-2.0-pro" | "cohere/command-a-03-2025" | "cohere/command-r-08-2024" | "cohere/command-r-plus-08-2024" | "cohere/command-r7b-12-2024" | "deepseek/deepseek-r1" | "deepseek/deepseek-r1-0528" | "deepseek/deepseek-v3" | "deepseek/deepseek-v3.1" | "deepseek/deepseek-v3.2" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-0423" | "deepseek/deepseek-v4-flash-0731" | "deepseek/deepseek-v4-flash-0731-fast" | "deepseek/deepseek-v4-pro" | "deepseek/deepseek-v4-pro-0423" | "deepseek/deepseek-v4-pro-0813" | "deepseek/deepseek-v4.1-flash" | "deepseek/deepseek-v4.1-flash-1017" | "google/gemini-2.5-computer-use-preview-10-2025" | "google/gemini-2.5-flash" | "google/gemini-2.5-flash-image" | "google/gemini-2.5-flash-lite" | "google/gemini-2.5-pro" | "google/gemini-3-flash-preview" | "google/gemini-3-pro-image" | "google/gemini-3.1-flash-image" | "google/gemini-3.1-flash-lite" | "google/gemini-3.1-pro-preview" | "google/gemini-3.1-pro-preview-customtools" | "google/gemini-3.5-flash" | "google/gemini-3.5-flash-lite" | "google/gemini-3.6-flash" | "google/gemini-3.7-flash" | "google/gemini-3.8-flash" | "google/gemini-4-argon" | "google/gemini-4-carbon" | "google/gemini-embedding-001" | "google/gemini-embedding-2" | "google/gemini-flash-latest" | "google/gemini-flash-lite-latest" | "google/gemma-3-12b-it" | "google/gemma-3-27b-it" | "google/gemma-3-4b-it" | "google/gemma-4-26b-a4b-it" | "google/gemma-4-31b-it" | "meta/llama-3.1-70b-instruct" | "meta/llama-3.1-8b-instruct" | "meta/llama-3.3-70b-instruct" | "meta/muse-spark-open" | "minimax/minimax-m2" | "minimax/minimax-m2.1" | "minimax/minimax-m2.5" | "minimax/minimax-m2.5-highspeed" | "minimax/minimax-m2.7" | "minimax/minimax-m2.7-highspeed" | "minimax/minimax-m3" | "minimax/minimax-m3.1-flash" | "mistral/codestral-latest" | "mistral/devstral-2512" | "mistral/devstral-medium-latest" | "mistral/magistral-medium-latest" | "mistral/mistral-large-2512" | "mistral/mistral-large-latest" | "mistral/mistral-medium-2505" | "mistral/mistral-medium-latest" | "mistral/mistral-small-latest" | "mistral/pixtral-large-latest" | "moonshot/kimi-k2.5" | "moonshot/kimi-k2.6" | "moonshot/kimi-k2.7-code" | "moonshot/kimi-k2.7-code-highspeed" | "moonshot/kimi-k3" | "moonshot/kimi-k3.1-pro" | "nvidia/nemotron-3-nano-30b-a3b" | "nvidia/nemotron-3.5-lightning-30b-a3b" | "nvidia/nemotron-nano-9b-v2" | "openai/gpt-3.5-turbo" | "openai/gpt-4" | "openai/gpt-4-turbo" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-4o" | "openai/gpt-4o-2024-05-13" | "openai/gpt-4o-2024-08-06" | "openai/gpt-4o-2024-11-20" | "openai/gpt-4o-mini" | "openai/gpt-5" | "openai/gpt-5-chat-latest" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5-search-api" | "openai/gpt-5.1" | "openai/gpt-5.1-chat-latest" | "openai/gpt-5.2" | "openai/gpt-5.2-chat-latest" | "openai/gpt-5.3-chat-latest" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.5" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-terra" | "openai/gpt-6-astra" | "openai/gpt-6-luna" | "openai/gpt-6-sol" | "openai/gpt-6.1-sol" | "openai/gpt-6.1-terra" | "openai/gpt-audio" | "openai/gpt-audio-mini" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "openai/gpt-oss-safeguard-120b" | "openai/gpt-oss-safeguard-20b" | "openai/o1" | "openai/o3" | "openai/o3-mini" | "openai/o4-mini" | "openai/whisper-1" | "qwen/qwen-flash" | "qwen/qwen-plus" | "qwen/qwen3-235b-a22b" | "qwen/qwen3-235b-a22b-instruct-2507" | "qwen/qwen3-30b-a3b" | "qwen/qwen3-32b" | "qwen/qwen3-coder-480b-a35b-instruct" | "qwen/qwen3-coder-flash" | "qwen/qwen3-coder-next" | "qwen/qwen3-coder-plus" | "qwen/qwen3-max" | "qwen/qwen3-max-preview" | "qwen/qwen3-next-80b-a3b-instruct" | "qwen/qwen3-next-80b-a3b-thinking" | "qwen/qwen3-vl-235b-a22b-instruct" | "qwen/qwen3-vl-235b-a22b-thinking" | "qwen/qwen3-vl-30b-a3b-instruct" | "qwen/qwen3-vl-flash" | "qwen/qwen3-vl-plus" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-27b" | "qwen/qwen3.5-35b-a3b" | "qwen/qwen3.5-397b-a17b" | "qwen/qwen3.5-4b" | "qwen/qwen3.5-9b" | "qwen/qwen3.5-flash" | "qwen/qwen3.5-plus" | "qwen/qwen3.6-27b" | "qwen/qwen3.6-35b-a3b" | "qwen/qwen3.6-flash" | "qwen/qwen3.6-max-preview" | "qwen/qwen3.6-plus" | "qwen/qwen3.7-max" | "qwen/qwen3.7-plus" | "qwen/qwen3.8-2.4t-a95b" | "qwen/qwen3.8-27b" | "qwen/qwen3.8-flash" | "qwen/qwen3.8-max" | "sakana/fugu-max" | "sakana/fugu-ultra" | "sakana/sakana-namazu" | "thinkingmachines/inkling" | "writer/palmyra-x4" | "writer/palmyra-x5" | "xai/grok-4.20-0309-non-reasoning" | "xai/grok-4.20-0309-reasoning" | "xai/grok-4.3" | "xai/grok-4.5" | "xai/grok-4.6" | "xai/grok-4.7" | "xai/grok-build-0.1" | "zai/glm-4.5" | "zai/glm-4.5-air" | "zai/glm-4.5v" | "zai/glm-4.6" | "zai/glm-4.7" | "zai/glm-4.7-flash" | "zai/glm-4.7-flashx" | "zai/glm-5" | "zai/glm-5-turbo" | "zai/glm-5.1" | "zai/glm-5.2" | "zai/glm-5.3" | "zai/glm-5.3-flash";
+export type MergeGatewayTextModelId = "anthropic/claude-fable-5" | "anthropic/claude-fable-5-1" | "anthropic/claude-fable-5-2" | "anthropic/claude-haiku-4-5-20251001" | "anthropic/claude-haiku-5-5" | "anthropic/claude-opus-4-1-20250805" | "anthropic/claude-opus-4-5-20251101" | "anthropic/claude-opus-4-6" | "anthropic/claude-opus-4-7" | "anthropic/claude-opus-4-8" | "anthropic/claude-opus-5" | "anthropic/claude-opus-5-5" | "anthropic/claude-sonnet-4-5-20250929" | "anthropic/claude-sonnet-4-6" | "anthropic/claude-sonnet-5" | "anthropic/claude-sonnet-5-5" | "bytedance/dola-seed-2.0-code" | "bytedance/dola-seed-2.0-code-preview" | "bytedance/dola-seed-2.0-lite" | "bytedance/dola-seed-2.0-mini" | "bytedance/dola-seed-2.0-pro" | "cohere/command-a-03-2025" | "cohere/command-r-08-2024" | "cohere/command-r-plus-08-2024" | "cohere/command-r7b-12-2024" | "deepseek/deepseek-r1" | "deepseek/deepseek-r1-0528" | "deepseek/deepseek-v3" | "deepseek/deepseek-v3.1" | "deepseek/deepseek-v3.2" | "deepseek/deepseek-v4-flash" | "deepseek/deepseek-v4-flash-0423" | "deepseek/deepseek-v4-flash-0731" | "deepseek/deepseek-v4-flash-0731-fast" | "deepseek/deepseek-v4-pro" | "deepseek/deepseek-v4-pro-0423" | "deepseek/deepseek-v4-pro-0813" | "deepseek/deepseek-v4.1-flash" | "deepseek/deepseek-v4.1-flash-1017" | "google/gemini-2.5-computer-use-preview-10-2025" | "google/gemini-2.5-flash" | "google/gemini-2.5-flash-image" | "google/gemini-2.5-flash-lite" | "google/gemini-2.5-pro" | "google/gemini-3-flash-preview" | "google/gemini-3-pro-image" | "google/gemini-3.1-flash-image" | "google/gemini-3.1-flash-lite" | "google/gemini-3.1-pro-preview" | "google/gemini-3.1-pro-preview-customtools" | "google/gemini-3.5-flash" | "google/gemini-3.5-flash-lite" | "google/gemini-3.6-flash" | "google/gemini-3.7-flash" | "google/gemini-3.8-flash" | "google/gemini-4-argon" | "google/gemini-4-carbon" | "google/gemini-4-hydrogen" | "google/gemini-4-neon" | "google/gemini-embedding-001" | "google/gemini-embedding-2" | "google/gemini-flash-latest" | "google/gemini-flash-lite-latest" | "google/gemma-3-12b-it" | "google/gemma-3-27b-it" | "google/gemma-3-4b-it" | "google/gemma-4-26b-a4b-it" | "google/gemma-4-31b-it" | "meta/llama-3.1-70b-instruct" | "meta/llama-3.1-8b-instruct" | "meta/llama-3.3-70b-instruct" | "meta/muse-spark-open" | "minimax/minimax-m2" | "minimax/minimax-m2.1" | "minimax/minimax-m2.5" | "minimax/minimax-m2.5-highspeed" | "minimax/minimax-m2.7" | "minimax/minimax-m2.7-highspeed" | "minimax/minimax-m3" | "minimax/minimax-m3.1-flash" | "mistral/codestral-latest" | "mistral/devstral-2512" | "mistral/devstral-medium-latest" | "mistral/magistral-medium-latest" | "mistral/mistral-large-2512" | "mistral/mistral-large-latest" | "mistral/mistral-medium-2505" | "mistral/mistral-medium-latest" | "mistral/mistral-small-latest" | "mistral/pixtral-large-latest" | "moonshot/kimi-k2.5" | "moonshot/kimi-k2.6" | "moonshot/kimi-k2.7-code" | "moonshot/kimi-k2.7-code-highspeed" | "moonshot/kimi-k3" | "moonshot/kimi-k3.1-pro" | "nvidia/nemotron-3-nano-30b-a3b" | "nvidia/nemotron-3.5-lightning-30b-a3b" | "nvidia/nemotron-nano-9b-v2" | "openai/gpt-3.5-turbo" | "openai/gpt-4" | "openai/gpt-4-turbo" | "openai/gpt-4.1" | "openai/gpt-4.1-mini" | "openai/gpt-4.1-nano" | "openai/gpt-4o" | "openai/gpt-4o-2024-05-13" | "openai/gpt-4o-2024-08-06" | "openai/gpt-4o-2024-11-20" | "openai/gpt-4o-mini" | "openai/gpt-5" | "openai/gpt-5-chat-latest" | "openai/gpt-5-mini" | "openai/gpt-5-nano" | "openai/gpt-5-search-api" | "openai/gpt-5.1" | "openai/gpt-5.1-chat-latest" | "openai/gpt-5.2" | "openai/gpt-5.2-chat-latest" | "openai/gpt-5.3-chat-latest" | "openai/gpt-5.4" | "openai/gpt-5.4-mini" | "openai/gpt-5.4-nano" | "openai/gpt-5.5" | "openai/gpt-5.6-luna" | "openai/gpt-5.6-sol" | "openai/gpt-5.6-terra" | "openai/gpt-6-astra" | "openai/gpt-6-luna" | "openai/gpt-6-sol" | "openai/gpt-6.1-sol" | "openai/gpt-6.1-terra" | "openai/gpt-6.2-astra" | "openai/gpt-6.2-sol" | "openai/gpt-audio" | "openai/gpt-audio-mini" | "openai/gpt-oss-120b" | "openai/gpt-oss-20b" | "openai/gpt-oss-safeguard-120b" | "openai/gpt-oss-safeguard-20b" | "openai/o1" | "openai/o3" | "openai/o3-mini" | "openai/o4-mini" | "openai/whisper-1" | "qwen/qwen-flash" | "qwen/qwen-plus" | "qwen/qwen3-235b-a22b" | "qwen/qwen3-235b-a22b-instruct-2507" | "qwen/qwen3-30b-a3b" | "qwen/qwen3-32b" | "qwen/qwen3-coder-480b-a35b-instruct" | "qwen/qwen3-coder-flash" | "qwen/qwen3-coder-next" | "qwen/qwen3-coder-plus" | "qwen/qwen3-max" | "qwen/qwen3-max-preview" | "qwen/qwen3-next-80b-a3b-instruct" | "qwen/qwen3-next-80b-a3b-thinking" | "qwen/qwen3-vl-235b-a22b-instruct" | "qwen/qwen3-vl-235b-a22b-thinking" | "qwen/qwen3-vl-30b-a3b-instruct" | "qwen/qwen3-vl-flash" | "qwen/qwen3-vl-plus" | "qwen/qwen3.5-122b-a10b" | "qwen/qwen3.5-27b" | "qwen/qwen3.5-35b-a3b" | "qwen/qwen3.5-397b-a17b" | "qwen/qwen3.5-4b" | "qwen/qwen3.5-9b" | "qwen/qwen3.5-flash" | "qwen/qwen3.5-plus" | "qwen/qwen3.6-27b" | "qwen/qwen3.6-35b-a3b" | "qwen/qwen3.6-flash" | "qwen/qwen3.6-max-preview" | "qwen/qwen3.6-plus" | "qwen/qwen3.7-max" | "qwen/qwen3.7-plus" | "qwen/qwen3.8-2.4t-a95b" | "qwen/qwen3.8-27b" | "qwen/qwen3.8-flash" | "qwen/qwen3.8-max" | "sakana/fugu-max" | "sakana/fugu-ultra" | "sakana/sakana-namazu" | "thinkingmachines/inkling" | "writer/palmyra-x4" | "writer/palmyra-x5" | "xai/grok-4.20-0309-non-reasoning" | "xai/grok-4.20-0309-reasoning" | "xai/grok-4.3" | "xai/grok-4.5" | "xai/grok-4.6" | "xai/grok-4.7" | "xai/grok-build-0.1" | "zai/glm-4.5" | "zai/glm-4.5-air" | "zai/glm-4.5v" | "zai/glm-4.6" | "zai/glm-4.7" | "zai/glm-4.7-flash" | "zai/glm-4.7-flashx" | "zai/glm-5" | "zai/glm-5-turbo" | "zai/glm-5.1" | "zai/glm-5.2" | "zai/glm-5.3" | "zai/glm-5.3-flash";
 export type MergeGatewayImageModelId = "google/gemini-2.5-flash-image" | "google/gemini-3-pro-image" | "google/gemini-3.1-flash-image";
 export type MergeGatewayAudioModelId = never;
 export type MergeGatewayVideoModelId = never;

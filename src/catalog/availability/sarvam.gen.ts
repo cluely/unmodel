@@ -19,11 +19,26 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  * warn without loading the target provider's catalog.
  */
 export const availability = {
+  "deepseekv4.1-flash-1017": {
+    "sarvam": "deepseekv4.1-flash-1017",
+  },
+  "deepseekv4.1-flash-1017-interactive": {
+    "sarvam": "deepseekv4.1-flash-1017-interactive",
+  },
+  "gemma4": {
+    "sarvam": "gemma4",
+  },
+  "glm5.3": {
+    "sarvam": "glm5.3",
+  },
+  "glm5.3-flash": {
+    "sarvam": "glm5.3-flash",
+  },
   "sarvam-105b": {
     "sarvam": "sarvam-105b",
   },
-  "sarvam-30b": {
-    "sarvam": "sarvam-30b",
+  "sarvam-105b-conversations": {
+    "sarvam": "sarvam-105b-conversations",
   },
 } as const satisfies AvailabilityMap;
 

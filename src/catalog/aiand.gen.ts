@@ -16,7 +16,7 @@ export const models = {
   "deepseek-ai/deepseek-v4-pro": {
     id: "deepseek-ai/deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -67,7 +67,7 @@ export const models = {
   "meta/muse-spark-open": {
     id: "meta/muse-spark-open",
     name: "Muse Spark Open",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -84,7 +84,7 @@ export const models = {
   "moonshotai/kimi-k3": {
     id: "moonshotai/kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -100,7 +100,7 @@ export const models = {
   "moonshotai/kimi-k3.1-pro": {
     id: "moonshotai/kimi-k3.1-pro",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,

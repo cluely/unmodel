@@ -44,7 +44,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 131072, output: 131072 },
+    limit: { context: 131072, output: 65536 },
     cost: { input: 0.05, output: 0.18 },
   },
   "meta-llama-3_3-70b-instruct": {
@@ -84,7 +84,7 @@ export const models = {
   "qwen2.5-vl-72b-instruct": {
     id: "qwen2.5-vl-72b-instruct",
     name: "Qwen2.5-VL-72B-Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -127,7 +127,7 @@ export const models = {
     releaseDate: "2026-02-23",
     lastUpdated: "2026-02-23",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 262144, output: 262144 },
+    limit: { context: 262144, output: 65536 },
     cost: { input: 0.12, output: 0.18 },
   },
   "qwen3.6-27b": {

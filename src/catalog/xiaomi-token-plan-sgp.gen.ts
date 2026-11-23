@@ -33,7 +33,7 @@ export const models = {
   "mimo-v2.5-pro": {
     id: "mimo-v2.5-pro",
     name: "MiMo-V2.5-Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -50,7 +50,7 @@ export const models = {
   "mimo-v2.5-tts": {
     id: "mimo-v2.5-tts",
     name: "MiMo-V2.5-TTS",
-    family: "mimo",
+    family: "mimo-tts",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -65,7 +65,7 @@ export const models = {
   "mimo-v2.5-tts-voiceclone": {
     id: "mimo-v2.5-tts-voiceclone",
     name: "MiMo-V2.5-TTS-VoiceClone",
-    family: "mimo",
+    family: "mimo-tts",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -80,7 +80,7 @@ export const models = {
   "mimo-v2.5-tts-voicedesign": {
     id: "mimo-v2.5-tts-voicedesign",
     name: "MiMo-V2.5-TTS-VoiceDesign",
-    family: "mimo",
+    family: "mimo-tts",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -95,7 +95,7 @@ export const models = {
   "mimo-v2.6-flash": {
     id: "mimo-v2.6-flash",
     name: "MiMo-V2.6-Flash",
-    family: "mimo",
+    family: "mimo-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -111,7 +111,7 @@ export const models = {
   "mimo-v2.6-pro": {
     id: "mimo-v2.6-pro",
     name: "MiMo-V2.6-Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,

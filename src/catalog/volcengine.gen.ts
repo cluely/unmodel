@@ -33,7 +33,7 @@ export const models = {
   "deepseek-v4-pro-ga-260813": {
     id: "deepseek-v4-pro-ga-260813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -66,7 +66,7 @@ export const models = {
   "doubao-seed-1-6-flash-250828": {
     id: "doubao-seed-1-6-flash-250828",
     name: "Seed 1.6 Flash",
-    family: "seed",
+    family: "seed-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -117,7 +117,7 @@ export const models = {
   "doubao-seed-2-0-code-preview-260215": {
     id: "doubao-seed-2-0-code-preview-260215",
     name: "Seed 2.0 Code",
-    family: "seed",
+    family: "seed-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -134,7 +134,7 @@ export const models = {
   "doubao-seed-2-0-lite-260428": {
     id: "doubao-seed-2-0-lite-260428",
     name: "Seed 2.0 Lite",
-    family: "seed",
+    family: "seed-lite",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -150,7 +150,7 @@ export const models = {
   "doubao-seed-2-0-mini-260428": {
     id: "doubao-seed-2-0-mini-260428",
     name: "Seed 2.0 Mini",
-    family: "seed",
+    family: "seed-mini",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -166,7 +166,7 @@ export const models = {
   "doubao-seed-2-0-pro-260215": {
     id: "doubao-seed-2-0-pro-260215",
     name: "Seed 2.0 Pro",
-    family: "seed",
+    family: "seed-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -183,7 +183,7 @@ export const models = {
   "doubao-seed-2-1-pro-260628": {
     id: "doubao-seed-2-1-pro-260628",
     name: "Seed 2.1 Pro",
-    family: "seed",
+    family: "seed-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -193,13 +193,13 @@ export const models = {
     releaseDate: "2026-06-23",
     lastUpdated: "2026-06-23",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 256000, output: 256000 },
+    limit: { context: 1024000, output: 256000 },
     cost: { input: 0.8906, output: 4.45301, cacheRead: 0.17812 },
   },
   "doubao-seed-2-1-turbo-260628": {
     id: "doubao-seed-2-1-turbo-260628",
     name: "Seed 2.1 Turbo",
-    family: "seed",
+    family: "seed-turbo",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -241,7 +241,7 @@ export const models = {
     releaseDate: "2026-06-23",
     lastUpdated: "2026-06-23",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 256000, output: 256000 },
+    limit: { context: 1024000, output: 256000 },
     cost: { input: 0.8906, output: 4.45301, cacheRead: 0.17812 },
   },
   "glm-5-2-260617": {

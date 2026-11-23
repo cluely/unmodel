@@ -16,6 +16,7 @@ export const models = {
   "apertus-70b": {
     id: "apertus-70b",
     name: "Apertus 70B",
+    family: "apertus",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -61,6 +62,7 @@ export const models = {
   "deepseek-ocr-2": {
     id: "deepseek-ocr-2",
     name: "DeepSeek OCR 2",
+    family: "deepseek-ocr",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -84,7 +86,7 @@ export const models = {
     releaseDate: "2023-11-06",
     lastUpdated: "2023-11-06",
     modalities: { input: ["audio"], output: ["text"] },
-    limit: { context: 448, output: 4096 },
+    limit: { context: 448, output: 448 },
     cost: { input: 0, output: 0 },
   },
   "gemma4-31b": {
@@ -188,7 +190,7 @@ export const models = {
   "qwen-image": {
     id: "qwen-image",
     name: "Qwen-Image",
-    family: "qwen",
+    family: "qwen-image",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -203,7 +205,7 @@ export const models = {
   "qwen3-coder-next": {
     id: "qwen3-coder-next",
     name: "Qwen3-Coder-Next",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -220,7 +222,7 @@ export const models = {
   "qwen3-embedding-8b": {
     id: "qwen3-embedding-8b",
     name: "Qwen3-Embedding-8B",
-    family: "qwen",
+    family: "qwen-embedding",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -235,7 +237,7 @@ export const models = {
   "qwen3-reranker-4b": {
     id: "qwen3-reranker-4b",
     name: "Qwen3-Reranker-4B",
-    family: "qwen",
+    family: "qwen-reranker",
     attachment: false,
     reasoning: false,
     toolCall: false,

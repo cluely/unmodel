@@ -29,7 +29,7 @@ export const availability = {
     "openrouter": "minimax/minimax-m3",
     "siliconflow": "MiniMaxAI/MiniMax-M3",
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
-    "vercel": { id: "minimax/minimax-m3", narrows: { context: 512000 } },
+    "vercel": { id: "minimax/minimax-m3", narrows: { context: 1000000 } },
   },
   "MiniMaxAI/MiniMax-M3.1-Flash": {
     "huggingface": { id: "MiniMaxAI/MiniMax-M3.1-Flash", narrows: { context: 1000000 } },
@@ -38,7 +38,7 @@ export const availability = {
     "novita-ai": { id: "minimax/minimax-m3.1-flash", narrows: { context: 1000000 } },
     "nvidia": { id: "minimaxai/minimax-m3.1-flash", narrows: { context: 262144 } },
     "openrouter": "minimax/minimax-m3.1-flash",
-    "vercel": "minimax/minimax-m3.1-flash",
+    "vercel": { id: "minimax/minimax-m3.1-flash", narrows: { context: 1000000 } },
   },
   "NousResearch/Hermes-4-405B": {
     "nebius": "NousResearch/Hermes-4-405B",
@@ -51,6 +51,7 @@ export const availability = {
     "scaleway": { id: "qwen3-235b-a22b-instruct-2507", narrows: { context: 260000 } },
   },
   "Qwen/Qwen3-30B-A3B-Instruct-2507": {
+    "huggingface": "Qwen/Qwen3-30B-A3B-Instruct-2507",
     "nebius": "Qwen/Qwen3-30B-A3B-Instruct-2507",
     "openrouter": "qwen/qwen3-30b-a3b-instruct-2507",
   },
@@ -82,7 +83,7 @@ export const availability = {
     "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
     "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-    "mistral": { id: "deepseek-v4-1-flash-1017", narrows: { drops: ["image"] } },
+    "mistral": "deepseek-v4-1-flash-1017",
     "nebius": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "novita-ai": "deepseek/deepseek-v4.1-flash-1017",
     "openrouter": "deepseek/deepseek-v4.1-flash-1017",
@@ -118,6 +119,20 @@ export const availability = {
     "togetherai": "moonshotai/Kimi-K3",
     "vercel": { id: "moonshotai/kimi-k3", narrows: { context: 1000000 } },
   },
+  "moonshotai/Kimi-K3.1-Pro": {
+    "baseten": "moonshotai/Kimi-K3.1-Pro",
+    "deepinfra": "moonshotai/Kimi-K3.1-Pro",
+    "huggingface": "moonshotai/Kimi-K3.1-Pro",
+    "moonshotai": "kimi-k3.1-pro",
+    "nebius": "moonshotai/Kimi-K3.1-Pro",
+    "novita-ai": "moonshotai/kimi-k3.1-pro",
+    "openrouter": "moonshotai/kimi-k3.1-pro",
+    "togetherai": "moonshotai/Kimi-K3.1-Pro",
+    "vercel": { id: "moonshotai/kimi-k3.1-pro", narrows: { context: 1000000 } },
+  },
+  "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B": {
+    "nebius": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+  },
   "nvidia/Nemotron-3-Ultra-550b-a55b": {
     "nebius": "nvidia/Nemotron-3-Ultra-550b-a55b",
     "nvidia": { id: "nvidia/nemotron-3-ultra-550b-a55b", narrows: { context: 1000000 } },
@@ -151,6 +166,14 @@ export const availability = {
   },
   "reflection/beam": {
     "nebius": "reflection/beam",
+  },
+  "thinkingmachines/Inkling-2-Small": {
+    "cloudflare-workers-ai": "@cf/thinkingmachines/inkling-2-small",
+    "deepinfra": "thinkingmachines/Inkling-2-Small",
+    "huggingface": "thinkingmachines/Inkling-2-Small",
+    "nebius": "thinkingmachines/Inkling-2-Small",
+    "openrouter": "thinkingmachines/inkling-2-small",
+    "vercel": "thinkingmachines/inkling-2-small",
   },
   "zai-org/GLM-5.2": {
     "alibaba": { id: "glm-5.2", narrows: { context: 1000000 } },

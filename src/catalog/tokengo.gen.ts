@@ -65,7 +65,7 @@ export const models = {
   "deepseek/deepseek-v4-pro": {
     id: "deepseek/deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -82,7 +82,7 @@ export const models = {
   "minimax/minimax-m2.5": {
     id: "minimax/minimax-m2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -97,7 +97,7 @@ export const models = {
   "moonshotai/kimi-k2.6": {
     id: "moonshotai/kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -114,7 +114,7 @@ export const models = {
   "moonshotai/kimi-k3": {
     id: "moonshotai/kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -124,7 +124,7 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
   "qwen/qwen3.5-397b-a17b": {

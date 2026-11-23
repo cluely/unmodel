@@ -16,7 +16,7 @@ export const models = {
   "glm-4.6v": {
     id: "glm-4.6v",
     name: "GLM-4.6V",
-    family: "glm",
+    family: "glmv",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -78,10 +78,26 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
+  "glm-5.4": {
+    id: "glm-5.4",
+    name: "GLM-5.4",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-11-23",
+    lastUpdated: "2026-11-23",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type ZhipuaiCodingPlanModelId = keyof typeof models;
-export type ZhipuaiCodingPlanTextModelId = "glm-4.6v" | "glm-5.3" | "glm-5.3-flash" | "glm-5.3-highspeed";
+export type ZhipuaiCodingPlanTextModelId = "glm-4.6v" | "glm-5.3" | "glm-5.3-flash" | "glm-5.3-highspeed" | "glm-5.4";
 export type ZhipuaiCodingPlanImageModelId = never;
 export type ZhipuaiCodingPlanAudioModelId = never;
 export type ZhipuaiCodingPlanVideoModelId = never;

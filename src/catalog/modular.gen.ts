@@ -16,7 +16,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M3.1-Flash": {
     id: "MiniMaxAI/MiniMax-M3.1-Flash",
     name: "MiniMax-M3.1-Flash",
-    family: "minimax",
+    family: "minimax-m-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -63,7 +63,7 @@ export const models = {
   "minimax/minimax-m3": {
     id: "minimax/minimax-m3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,

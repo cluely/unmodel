@@ -31,7 +31,7 @@ export const models = {
   "fugu-ultra": {
     id: "fugu-ultra",
     name: "Fugu Ultra",
-    family: "fugu",
+    family: "fugu-ultra",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -47,7 +47,7 @@ export const models = {
   "fugu-ultra-20260615": {
     id: "fugu-ultra-20260615",
     name: "Fugu Ultra",
-    family: "fugu",
+    family: "fugu-ultra",
     attachment: true,
     reasoning: true,
     toolCall: true,

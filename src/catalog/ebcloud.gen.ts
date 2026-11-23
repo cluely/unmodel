@@ -33,7 +33,7 @@ export const models = {
   "DeepSeek-V4-Pro": {
     id: "DeepSeek-V4-Pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -66,7 +66,7 @@ export const models = {
   "Kimi-K2.6": {
     id: "Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,

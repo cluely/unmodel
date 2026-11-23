@@ -33,7 +33,7 @@ export const models = {
   "glm-5-turbo": {
     id: "glm-5-turbo",
     name: "GLM-5-Turbo",
-    family: "glm",
+    family: "glm-turbo",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -129,10 +129,26 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   },
+  "glm-5.4": {
+    id: "glm-5.4",
+    name: "GLM-5.4",
+    family: "glm",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-11-23",
+    lastUpdated: "2026-11-23",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type ZaiCodingPlanModelId = keyof typeof models;
-export type ZaiCodingPlanTextModelId = "glm-4.7" | "glm-5-turbo" | "glm-5.2" | "glm-5.2-highspeed" | "glm-5.3" | "glm-5.3-flash" | "glm-5.3-highspeed";
+export type ZaiCodingPlanTextModelId = "glm-4.7" | "glm-5-turbo" | "glm-5.2" | "glm-5.2-highspeed" | "glm-5.3" | "glm-5.3-flash" | "glm-5.3-highspeed" | "glm-5.4";
 export type ZaiCodingPlanImageModelId = never;
 export type ZaiCodingPlanAudioModelId = never;
 export type ZaiCodingPlanVideoModelId = never;

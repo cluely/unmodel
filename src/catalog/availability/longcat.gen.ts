@@ -21,7 +21,6 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
 export const availability = {
   "LongCat-2.0": {
     "longcat": "LongCat-2.0",
-    "openrouter": "meituan/longcat-2.0",
     "siliconflow": "meituan-longcat/LongCat-2.0",
   },
   "LongCat-2.5-Preview": {

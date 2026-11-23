@@ -90,7 +90,7 @@ export const models = {
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -222,7 +222,7 @@ export const models = {
     reasoning: true,
     toolCall: true,
     structuredOutput: true,
-    temperature: false,
+    temperature: true,
     openWeights: false,
     knowledge: "2025-12-01",
     releaseDate: "2026-04-23",

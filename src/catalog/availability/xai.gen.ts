@@ -56,11 +56,6 @@ export const availability = {
     "vercel": { id: "spacexai/grok-4.7", narrows: { drops: ["pdf"] } },
     "xai": "grok-4.7",
   },
-  "grok-build-0.1": {
-    "openrouter": "x-ai/grok-build-0.1",
-    "vercel": { id: "spacexai/grok-build-0.1", narrows: { drops: ["pdf"] } },
-    "xai": "grok-build-0.1",
-  },
 } as const satisfies AvailabilityMap;
 
 export type XaiAvailability = typeof availability;

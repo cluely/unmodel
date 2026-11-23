@@ -215,9 +215,26 @@ export const availability = {
   "gpt-6.1-terra": {
     "amazon-bedrock": "openai.gpt-6.1-terra",
     "azure": "gpt-6.1-terra",
+    "novita-ai": "openai/gpt-6.1-terra",
     "openai": "gpt-6.1-terra",
     "openrouter": "openai/gpt-6.1-terra",
     "vercel": "openai/gpt-6.1-terra",
+  },
+  "gpt-6.2-astra": {
+    "amazon-bedrock": { id: "openai.gpt-6.2-astra", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-6.2-astra",
+    "novita-ai": "openai/gpt-6.2-astra",
+    "openai": "gpt-6.2-astra",
+    "openrouter": "openai/gpt-6.2-astra",
+    "vercel": "openai/gpt-6.2-astra",
+  },
+  "gpt-6.2-sol": {
+    "amazon-bedrock": { id: "openai.gpt-6.2-sol", narrows: { drops: ["pdf"] } },
+    "azure": "gpt-6.2-sol",
+    "novita-ai": "openai/gpt-6.2-sol",
+    "openai": "gpt-6.2-sol",
+    "openrouter": "openai/gpt-6.2-sol",
+    "vercel": "openai/gpt-6.2-sol",
   },
   "gpt-daybreak-blue-latest": {
     "openai": "gpt-daybreak-blue-latest",

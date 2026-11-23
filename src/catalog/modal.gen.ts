@@ -29,6 +29,22 @@ export const models = {
     limit: { context: 1010000, output: 131072 },
     cost: { input: 2, output: 6, cacheRead: 0.25 },
   },
+  "Qwen/Qwen3.8-Max-VL-Thinking": {
+    id: "Qwen/Qwen3.8-Max-VL-Thinking",
+    name: "Qwen3.8-Max VL",
+    family: "qwen-max",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-08-03",
+    lastUpdated: "2026-08-03",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 131072 },
+    cost: { input: 2, output: 6, cacheRead: 0.25 },
+  },
   "deepseek-ai/DeepSeek-V4.1-Flash": {
     id: "deepseek-ai/DeepSeek-V4.1-Flash",
     name: "DeepSeek V4.1 Flash",
@@ -49,7 +65,7 @@ export const models = {
   "meta-models/Muse-Spark-Open-816B-A42B": {
     id: "meta-models/Muse-Spark-Open-816B-A42B",
     name: "Muse Spark Open",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -66,7 +82,7 @@ export const models = {
   "moonshotai/Kimi-K3": {
     id: "moonshotai/Kimi-K3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -76,8 +92,24 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.3, reasoning: 15 },
+  },
+  "moonshotai/Kimi-K3.1-Pro": {
+    id: "moonshotai/Kimi-K3.1-Pro",
+    name: "Kimi K3.1 Pro",
+    family: "kimi-pro",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: true,
+    releaseDate: "2026-10-23",
+    lastUpdated: "2026-10-23",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 2, output: 10, cacheRead: 0.2 },
   },
   "nvidia/GLM-5.3-Flash-NVFP4": {
     id: "nvidia/GLM-5.3-Flash-NVFP4",
@@ -98,7 +130,7 @@ export const models = {
   "thinkingmachines/Inkling-NVFP4": {
     id: "thinkingmachines/Inkling-NVFP4",
     name: "Inkling",
-    family: "ling",
+    family: "inkling",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -146,7 +178,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type ModalModelId = keyof typeof models;
-export type ModalTextModelId = "Qwen/Qwen3.8-2.4T-A95B" | "deepseek-ai/DeepSeek-V4.1-Flash" | "meta-models/Muse-Spark-Open-816B-A42B" | "moonshotai/Kimi-K3" | "nvidia/GLM-5.3-Flash-NVFP4" | "thinkingmachines/Inkling-NVFP4" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
+export type ModalTextModelId = "Qwen/Qwen3.8-2.4T-A95B" | "Qwen/Qwen3.8-Max-VL-Thinking" | "deepseek-ai/DeepSeek-V4.1-Flash" | "meta-models/Muse-Spark-Open-816B-A42B" | "moonshotai/Kimi-K3" | "moonshotai/Kimi-K3.1-Pro" | "nvidia/GLM-5.3-Flash-NVFP4" | "thinkingmachines/Inkling-NVFP4" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
 export type ModalImageModelId = never;
 export type ModalAudioModelId = never;
 export type ModalVideoModelId = never;

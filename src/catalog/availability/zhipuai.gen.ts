@@ -20,6 +20,7 @@ import type { AvailabilityMap } from "../../core/translate/availability-types";
  */
 export const availability = {
   "glm-4.5": {
+    "huggingface": "zai-org/GLM-4.5",
     "openrouter": "z-ai/glm-4.5",
     "vercel": { id: "zai/glm-4.5", narrows: { context: 128000 } },
     "zhipuai": "glm-4.5",
@@ -50,6 +51,7 @@ export const availability = {
     "zhipuai": "glm-4.6",
   },
   "glm-4.6v": {
+    "huggingface": { id: "zai-org/GLM-4.6V", narrows: { drops: ["video"] } },
     "novita-ai": "zai-org/glm-4.6v",
     "openrouter": "z-ai/glm-4.6v",
     "zhipuai": "glm-4.6v",
@@ -95,7 +97,6 @@ export const availability = {
   },
   "glm-5.1": {
     "deepinfra": "zai-org/GLM-5.1",
-    "friendli": "zai-org/GLM-5.1",
     "huggingface": "zai-org/GLM-5.1",
     "novita-ai": "zai-org/glm-5.1",
     "openrouter": "z-ai/glm-5.1",

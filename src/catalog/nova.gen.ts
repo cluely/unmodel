@@ -16,7 +16,7 @@ export const models = {
   "nova-2-lite-v1": {
     id: "nova-2-lite-v1",
     name: "Nova 2 Lite",
-    family: "nova",
+    family: "nova-lite",
     attachment: true,
     reasoning: true,
     toolCall: true,

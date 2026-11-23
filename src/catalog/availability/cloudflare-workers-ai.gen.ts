@@ -48,14 +48,14 @@ export const availability = {
     "openrouter": "deepseek/deepseek-v4-pro-0813",
     "siliconflow": { id: "deepseek-ai/DeepSeek-V4-Pro-0813", narrows: { context: 1000000 } },
     "togetherai": "deepseek-ai/DeepSeek-V4-Pro-0813",
-    "vercel": { id: "deepseek/deepseek-v4-pro-0813", narrows: { context: 1000000 } },
+    "vercel": "deepseek/deepseek-v4-pro-0813",
   },
   "@cf/deepseek-ai/deepseek-v4.1-flash-1017": {
     "baseten": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "cloudflare-workers-ai": "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
     "deepinfra": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "huggingface": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
-    "mistral": { id: "deepseek-v4-1-flash-1017", narrows: { drops: ["image"] } },
+    "mistral": "deepseek-v4-1-flash-1017",
     "nebius": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     "novita-ai": "deepseek/deepseek-v4.1-flash-1017",
     "openrouter": "deepseek/deepseek-v4.1-flash-1017",
@@ -86,11 +86,12 @@ export const availability = {
   },
   "@cf/meta/llama-3.2-1b-instruct": {
     "cloudflare-workers-ai": "@cf/meta/llama-3.2-1b-instruct",
+    "huggingface": "meta-llama/Llama-3.2-1B-Instruct",
     "novita-ai": "meta-llama/llama-3.2-1b-instruct",
-    "openrouter": "meta-llama/llama-3.2-1b-instruct",
   },
   "@cf/meta/llama-3.2-3b-instruct": {
     "cloudflare-workers-ai": "@cf/meta/llama-3.2-3b-instruct",
+    "huggingface": "meta-llama/Llama-3.2-3B-Instruct",
     "openrouter": "meta-llama/llama-3.2-3b-instruct",
   },
   "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
@@ -177,6 +178,14 @@ export const availability = {
   },
   "@cf/qwen/qwq-32b": {
     "cloudflare-workers-ai": "@cf/qwen/qwq-32b",
+  },
+  "@cf/thinkingmachines/inkling-2-small": {
+    "cloudflare-workers-ai": "@cf/thinkingmachines/inkling-2-small",
+    "deepinfra": "thinkingmachines/Inkling-2-Small",
+    "huggingface": "thinkingmachines/Inkling-2-Small",
+    "nebius": "thinkingmachines/Inkling-2-Small",
+    "openrouter": "thinkingmachines/inkling-2-small",
+    "vercel": "thinkingmachines/inkling-2-small",
   },
   "@cf/zai-org/glm-4.7-flash": {
     "amazon-bedrock": "zai.glm-4.7-flash",

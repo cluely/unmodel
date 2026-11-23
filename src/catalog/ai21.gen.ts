@@ -16,7 +16,7 @@ export const models = {
   "jamba-large": {
     id: "jamba-large",
     name: "Jamba Large",
-    family: "jamba",
+    family: "jamba-large",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -33,7 +33,7 @@ export const models = {
   "jamba-mini": {
     id: "jamba-mini",
     name: "Jamba Mini",
-    family: "jamba",
+    family: "jamba-mini",
     attachment: false,
     reasoning: false,
     toolCall: true,

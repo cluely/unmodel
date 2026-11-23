@@ -16,7 +16,7 @@ export const models = {
   "public/deepseek-r1": {
     id: "public/deepseek-r1",
     name: "DeepSeek R1",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -48,7 +48,7 @@ export const models = {
   "public/minimax-m25": {
     id: "public/minimax-m25",
     name: "MiniMax M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,

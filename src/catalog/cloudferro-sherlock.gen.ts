@@ -16,7 +16,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M2.5": {
     id: "MiniMaxAI/MiniMax-M2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,

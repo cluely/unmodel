@@ -23,7 +23,6 @@ export const availability = {
     "amazon-bedrock": { id: "minimax.minimax-m2", narrows: { context: 204608 } },
     "huggingface": "MiniMaxAI/MiniMax-M2",
     "minimax": "MiniMax-M2",
-    "vercel": "minimax/minimax-m2",
   },
   "MiniMax-M2.1": {
     "amazon-bedrock": { id: "minimax.minimax-m2.1", narrows: { context: 196608 } },
@@ -37,13 +36,12 @@ export const availability = {
     "huggingface": "MiniMaxAI/MiniMax-M2.5",
     "minimax": "MiniMax-M2.5",
     "novita-ai": "minimax/minimax-m2.5",
-    "openrouter": { id: "minimax/minimax-m2.5", narrows: { context: 200000 } },
+    "openrouter": { id: "minimax/minimax-m2.5", narrows: { context: 198000 } },
     "togetherai": "MiniMaxAI/MiniMax-M2.5",
     "vercel": "minimax/minimax-m2.5",
   },
   "MiniMax-M2.5-highspeed": {
     "minimax": "MiniMax-M2.5-highspeed",
-    "vercel": "minimax/minimax-m2.5-highspeed",
   },
   "MiniMax-M2.7": {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M2.7", narrows: { context: 196608 } },
@@ -57,7 +55,6 @@ export const availability = {
   "MiniMax-M2.7-highspeed": {
     "minimax": "MiniMax-M2.7-highspeed",
     "novita-ai": "minimax/minimax-m2.7-highspeed",
-    "vercel": "minimax/minimax-m2.7-highspeed",
   },
   "MiniMax-M3": {
     "deepinfra": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
@@ -69,7 +66,7 @@ export const availability = {
     "openrouter": "minimax/minimax-m3",
     "siliconflow": { id: "MiniMaxAI/MiniMax-M3", narrows: { drops: ["video"] } },
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
-    "vercel": { id: "minimax/minimax-m3", narrows: { context: 512000, drops: ["video"] } },
+    "vercel": { id: "minimax/minimax-m3", narrows: { drops: ["video"] } },
   },
   "MiniMax-M3.1-Flash": {
     "huggingface": { id: "MiniMaxAI/MiniMax-M3.1-Flash", narrows: { drops: ["video"] } },

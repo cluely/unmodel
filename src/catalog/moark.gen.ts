@@ -33,7 +33,7 @@ export const models = {
   "DeepSeek-V4-Pro": {
     id: "DeepSeek-V4-Pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -83,7 +83,7 @@ export const models = {
   "Kimi-K2.6": {
     id: "Kimi-K2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -100,7 +100,7 @@ export const models = {
   "MiniMax-M2.1": {
     id: "MiniMax-M2.1",
     name: "MiniMax-M2.1",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -116,7 +116,7 @@ export const models = {
   "MiniMax-M2.7": {
     id: "MiniMax-M2.7",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -131,7 +131,7 @@ export const models = {
   "Qwen3.6-Flash": {
     id: "Qwen3.6-Flash",
     name: "Qwen3.6 Flash",
-    family: "qwen3.6",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -164,7 +164,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -174,7 +174,7 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15 },
   },
 } as const satisfies Record<string, ModelInfo>;

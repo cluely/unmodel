@@ -35,7 +35,7 @@ export const availability = {
     "openrouter": "minimax/minimax-m3",
     "siliconflow": "MiniMaxAI/MiniMax-M3",
     "togetherai": { id: "MiniMaxAI/MiniMax-M3", narrows: { context: 524288 } },
-    "vercel": { id: "minimax/minimax-m3", narrows: { context: 512000 } },
+    "vercel": { id: "minimax/minimax-m3", narrows: { context: 1000000 } },
   },
   "Qwen/Qwen2.5-72B-Instruct": {
     "siliconflow": "Qwen/Qwen2.5-72B-Instruct",
@@ -242,7 +242,6 @@ export const availability = {
   },
   "meituan-longcat/LongCat-2.0": {
     "longcat": { id: "LongCat-2.0", narrows: { context: 1048576 } },
-    "openrouter": { id: "meituan/longcat-2.0", narrows: { context: 1048756 } },
     "siliconflow": "meituan-longcat/LongCat-2.0",
   },
   "moonshotai/Kimi-K2.5": {

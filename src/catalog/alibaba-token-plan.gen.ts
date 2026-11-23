@@ -16,7 +16,7 @@ export const models = {
   "MiniMax-M2.5": {
     id: "MiniMax-M2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -84,7 +84,7 @@ export const models = {
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -101,7 +101,7 @@ export const models = {
   "deepseek-v4-pro-0813": {
     id: "deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -257,7 +257,7 @@ export const models = {
   "kimi-k2.5": {
     id: "kimi-k2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -274,7 +274,7 @@ export const models = {
   "kimi-k2.6": {
     id: "kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -291,7 +291,7 @@ export const models = {
   "kimi-k2.7-code": {
     id: "kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -308,7 +308,7 @@ export const models = {
   "qwen-image-2.0": {
     id: "qwen-image-2.0",
     name: "Qwen Image 2.0",
-    family: "qwen",
+    family: "qwen-image",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -323,7 +323,7 @@ export const models = {
   "qwen-image-2.0-pro": {
     id: "qwen-image-2.0-pro",
     name: "Qwen Image 2.0 Pro",
-    family: "qwen",
+    family: "qwen-image-pro",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -338,7 +338,7 @@ export const models = {
   "qwen3.6-flash": {
     id: "qwen3.6-flash",
     name: "Qwen3.6 Flash",
-    family: "qwen3.6",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -354,7 +354,7 @@ export const models = {
   "qwen3.6-plus": {
     id: "qwen3.6-plus",
     name: "Qwen3.6 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -371,7 +371,7 @@ export const models = {
   "qwen3.7-max": {
     id: "qwen3.7-max",
     name: "Qwen3.7 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -387,7 +387,7 @@ export const models = {
   "qwen3.7-plus": {
     id: "qwen3.7-plus",
     name: "Qwen3.7 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -404,7 +404,7 @@ export const models = {
   "qwen3.8-flash": {
     id: "qwen3.8-flash",
     name: "Qwen3.8 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -420,7 +420,7 @@ export const models = {
   "qwen3.8-max": {
     id: "qwen3.8-max",
     name: "Qwen3.8 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -436,7 +436,7 @@ export const models = {
   "qwen3.8-max-preview": {
     id: "qwen3.8-max-preview",
     name: "Qwen3.8 Max Preview",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,

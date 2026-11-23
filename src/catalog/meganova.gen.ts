@@ -16,7 +16,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M2.1": {
     id: "MiniMaxAI/MiniMax-M2.1",
     name: "MiniMax M2.1",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -31,7 +31,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M2.5": {
     id: "MiniMaxAI/MiniMax-M2.5",
     name: "MiniMax M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -46,7 +46,7 @@ export const models = {
   "Qwen/Qwen2.5-VL-32B-Instruct": {
     id: "Qwen/Qwen2.5-VL-32B-Instruct",
     name: "Qwen2.5 VL 32B Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -78,7 +78,7 @@ export const models = {
   "Qwen/Qwen3.5-Plus": {
     id: "Qwen/Qwen3.5-Plus",
     name: "Qwen3.5 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -94,7 +94,7 @@ export const models = {
   "XiaomiMiMo/MiMo-V2-Flash": {
     id: "XiaomiMiMo/MiMo-V2-Flash",
     name: "MiMo V2 Flash",
-    family: "mimo",
+    family: "mimo-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -111,7 +111,7 @@ export const models = {
   "deepseek-ai/DeepSeek-R1-0528": {
     id: "deepseek-ai/DeepSeek-R1-0528",
     name: "DeepSeek R1 0528",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -241,7 +241,7 @@ export const models = {
   "moonshotai/Kimi-K2-Thinking": {
     id: "moonshotai/Kimi-K2-Thinking",
     name: "Kimi K2 Thinking",
-    family: "kimi-thinking",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -257,7 +257,7 @@ export const models = {
   "moonshotai/Kimi-K2.5": {
     id: "moonshotai/Kimi-K2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,

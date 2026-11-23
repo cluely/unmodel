@@ -66,7 +66,7 @@ export const models = {
   "mercury-edit-2": {
     id: "mercury-edit-2",
     name: "Mercury Edit 2",
-    family: "mercury",
+    family: "mercury-edit",
     attachment: false,
     reasoning: false,
     toolCall: false,

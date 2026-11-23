@@ -114,7 +114,7 @@ export const models = {
   "laguna-s-2.1": {
     id: "laguna-s-2.1",
     name: "Laguna S 2.1",
-    family: "laguna",
+    family: "laguna-s",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -131,7 +131,7 @@ export const models = {
   "mimo-v2.6-flash-rl": {
     id: "mimo-v2.6-flash-rl",
     name: "MiMo-V2.6-Flash",
-    family: "mimo",
+    family: "mimo-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -146,7 +146,7 @@ export const models = {
   "mimo-v2.6-pro-rl": {
     id: "mimo-v2.6-pro-rl",
     name: "MiMo-V2.6-Pro",
-    family: "mimo",
+    family: "mimo-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -161,7 +161,7 @@ export const models = {
   "minimax-m3": {
     id: "minimax-m3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -176,7 +176,7 @@ export const models = {
   "muse-glimmer-30b": {
     id: "muse-glimmer-30b",
     name: "Muse Glimmer 30B",
-    family: "muse",
+    family: "muse-glimmer",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -193,7 +193,7 @@ export const models = {
   "nemotron-3-nano-omni-30b-a3b-reasoning": {
     id: "nemotron-3-nano-omni-30b-a3b-reasoning",
     name: "Nemotron 3 Nano Omni 30B A3B Reasoning",
-    family: "nemotron",
+    family: "nemotron-nano",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -208,7 +208,7 @@ export const models = {
   "nemotron-3.5-content-safety": {
     id: "nemotron-3.5-content-safety",
     name: "Nemotron 3.5 Content Safety",
-    family: "nemotron",
+    family: "nemotron-safety",
     attachment: true,
     reasoning: true,
     toolCall: false,
@@ -239,7 +239,7 @@ export const models = {
   "qwen3.8-flash-next": {
     id: "qwen3.8-flash-next",
     name: "Qwen3.8 Flash Next",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,

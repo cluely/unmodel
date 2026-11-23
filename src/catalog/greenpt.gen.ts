@@ -338,7 +338,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.228, output: 0.798 },
   },
   "green-l": {
@@ -387,7 +387,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.399, output: 1.083 },
   },
   "green-r-raw": {
@@ -404,7 +404,7 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 131072, output: 32768 },
+    limit: { context: 131072, output: 131072 },
     cost: { input: 0.399, output: 1.083 },
   },
   "green-s": {
@@ -452,7 +452,7 @@ export const models = {
   "kimi-k2.6": {
     id: "kimi-k2.6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -469,7 +469,7 @@ export const models = {
   "kimi-k2.6-fast": {
     id: "kimi-k2.6-fast",
     name: "Kimi K2.6 Fast",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -487,7 +487,7 @@ export const models = {
   "kimi-k2.7-code": {
     id: "kimi-k2.7-code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -504,7 +504,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -514,7 +514,7 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3.762, output: 18.81, cacheRead: 0.9405 },
   },
   "llama-3.3-70b-instruct": {
@@ -536,7 +536,7 @@ export const models = {
   "minimax-m2.5": {
     id: "minimax-m2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -617,7 +617,7 @@ export const models = {
   "qwen3-coder-30b-a3b-instruct": {
     id: "qwen3-coder-30b-a3b-instruct",
     name: "Qwen3-Coder 30B-A3B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -666,7 +666,7 @@ export const models = {
   "voxtral-small-24b-2507": {
     id: "voxtral-small-24b-2507",
     name: "Voxtral Small 24B",
-    family: "voxtral",
+    family: "voxtral-small",
     attachment: true,
     reasoning: false,
     toolCall: true,

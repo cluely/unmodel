@@ -28,12 +28,12 @@ export const models = {
     lastUpdated: "2026-07-31",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
-    cost: { input: 0.44, output: 1.32, cacheRead: 0.014 },
+    cost: { input: 0.293, output: 0.88, cacheRead: 0.0093 },
   },
   "deepseek-v4-pro-fast": {
     id: "deepseek-v4-pro-fast",
     name: "DeepSeek V4 Pro Fast",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -45,7 +45,7 @@ export const models = {
     lastUpdated: "2026-04-24",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
-    cost: { input: 1.91, output: 3.83, cacheRead: 0.16 },
+    cost: { input: 1.68, output: 3.38, cacheRead: 0.14 },
   },
   "deepseek-v4.1-flash": {
     id: "deepseek-v4.1-flash",
@@ -62,7 +62,23 @@ export const models = {
     lastUpdated: "2026-09-10",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
-    cost: { input: 0.3, output: 1.2, cacheRead: 0.006 },
+    cost: { input: 0.275, output: 1.2, cacheRead: 0.006 },
+  },
+  "deepseek-v4.1-flash-1017": {
+    id: "deepseek-v4.1-flash-1017",
+    name: "DeepSeek V4.1 Flash 1017",
+    family: "deepseek-flash",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-10-17",
+    lastUpdated: "2026-10-17",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 0.195, output: 1, cacheRead: 0.006 },
   },
   "deepseek-v4.1-flash-fast": {
     id: "deepseek-v4.1-flash-fast",
@@ -79,7 +95,7 @@ export const models = {
     lastUpdated: "2026-09-10",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
-    cost: { input: 0.6, output: 2.4, cacheRead: 0.014 },
+    cost: { input: 0.275, output: 1.2, cacheRead: 0.006 },
   },
   "glm-5.3-fast": {
     id: "glm-5.3-fast",
@@ -95,7 +111,7 @@ export const models = {
     lastUpdated: "2026-08-14",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
-    cost: { input: 2.1, output: 6.6, cacheRead: 0.39 },
+    cost: { input: 1.4, output: 4.4, cacheRead: 0.26 },
   },
   "glm-5.3-flash": {
     id: "glm-5.3-flash",
@@ -111,12 +127,12 @@ export const models = {
     lastUpdated: "2026-08-26",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
-    cost: { input: 0.272, output: 0.65, cacheRead: 0.076 },
+    cost: { input: 0.15, output: 0.5, cacheRead: 0.03 },
   },
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -127,12 +143,12 @@ export const models = {
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
-    cost: { input: 3, output: 15, cacheRead: 0.3 },
+    cost: { input: 2.925, output: 15, cacheRead: 0.3 },
   },
   "minimax-m3": {
     id: "minimax-m3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -143,12 +159,12 @@ export const models = {
     lastUpdated: "2026-06-01",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 524287, output: 131072 },
-    cost: { input: 0.33, output: 1.32, cacheRead: 0.066 },
+    cost: { input: 0.3, output: 1.2, cacheRead: 0.06 },
   },
 } as const satisfies Record<string, ModelInfo>;
 
 export type WallyModelId = keyof typeof models;
-export type WallyTextModelId = "deepseek-v4-flash-0731" | "deepseek-v4-pro-fast" | "deepseek-v4.1-flash" | "deepseek-v4.1-flash-fast" | "glm-5.3-fast" | "glm-5.3-flash" | "kimi-k3" | "minimax-m3";
+export type WallyTextModelId = "deepseek-v4-flash-0731" | "deepseek-v4-pro-fast" | "deepseek-v4.1-flash" | "deepseek-v4.1-flash-1017" | "deepseek-v4.1-flash-fast" | "glm-5.3-fast" | "glm-5.3-flash" | "kimi-k3" | "minimax-m3";
 export type WallyImageModelId = never;
 export type WallyAudioModelId = never;
 export type WallyVideoModelId = never;

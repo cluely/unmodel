@@ -175,6 +175,7 @@ export const availability = {
   },
   "qwen3-vl-plus": {
     "alibaba": "qwen3-vl-plus",
+    "novita-ai": { id: "qwen/qwen3-vl-plus", narrows: { context: 262000 } },
   },
   "qwen3.5-122b-a10b": {
     "alibaba": "qwen3.5-122b-a10b",
@@ -280,7 +281,7 @@ export const availability = {
     "alibaba": "qwen3.8-max",
     "deepinfra": { id: "Qwen/Qwen3.8-Max", narrows: { context: 256000 } },
     "novita-ai": { id: "qwen/qwen3.8-max", narrows: { drops: ["pdf"] } },
-    "vercel": { id: "alibaba/qwen3.8-max", narrows: { context: 262144, drops: ["video", "pdf"] } },
+    "vercel": { id: "alibaba/qwen3.8-max", narrows: { drops: ["video", "pdf"] } },
   },
   "qwen3.8-omni-flash": {
     "alibaba": "qwen3.8-omni-flash",

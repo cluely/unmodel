@@ -16,7 +16,7 @@ export const models = {
   "arcee_ai/AFM/models/trinity-mini": {
     id: "arcee_ai/AFM/models/trinity-mini",
     name: "Trinity Mini",
-    family: "trinity",
+    family: "trinity-mini",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -62,7 +62,7 @@ export const models = {
   "minimaxai/chat-completion/models/MiniMax-M2_5-high-throughput": {
     id: "minimaxai/chat-completion/models/MiniMax-M2_5-high-throughput",
     name: "MiniMax-M2.5 High Throughput",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -108,7 +108,7 @@ export const models = {
   "moonshotai/chat-completion/models/Kimi-K2_6": {
     id: "moonshotai/chat-completion/models/Kimi-K2_6",
     name: "Kimi K2.6",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -157,7 +157,7 @@ export const models = {
   "qwen/qwenCoder/models/Qwen3-Coder-30B-A3B-Instruct": {
     id: "qwen/qwenCoder/models/Qwen3-Coder-30B-A3B-Instruct",
     name: "Qwen3 Coder 30B A3B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,

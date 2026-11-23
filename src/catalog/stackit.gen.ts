@@ -16,7 +16,7 @@ export const models = {
   "Qwen/Qwen3-VL-235B-A22B-Instruct-FP8": {
     id: "Qwen/Qwen3-VL-235B-A22B-Instruct-FP8",
     name: "Qwen3-VL 235B",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -33,7 +33,7 @@ export const models = {
   "Qwen/Qwen3-VL-Embedding-8B": {
     id: "Qwen/Qwen3-VL-Embedding-8B",
     name: "Qwen3-VL Embedding 8B",
-    family: "qwen",
+    family: "qwen-embedding",
     attachment: true,
     reasoning: false,
     toolCall: false,

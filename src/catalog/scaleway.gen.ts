@@ -128,12 +128,13 @@ export const models = {
     releaseDate: "2025-08-05",
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 128000, output: 32768 },
+    limit: { context: 128000, output: 128000 },
     cost: { input: 0.168225, output: 0.6729 },
   },
   "lightonocr-3-0.8b": {
     id: "lightonocr-3-0.8b",
     name: "LightOnOCR-3 0.8B",
+    family: "lightonocr",
     attachment: true,
     reasoning: false,
     toolCall: false,
@@ -213,7 +214,7 @@ export const models = {
   "qwen3-embedding-8b": {
     id: "qwen3-embedding-8b",
     name: "Qwen3 Embedding 8B",
-    family: "qwen",
+    family: "qwen-embedding",
     attachment: false,
     reasoning: false,
     toolCall: false,

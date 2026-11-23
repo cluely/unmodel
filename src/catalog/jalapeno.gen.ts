@@ -33,7 +33,7 @@ export const models = {
   "DeepSeek-V4-Pro": {
     id: "DeepSeek-V4-Pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -82,7 +82,7 @@ export const models = {
   "Hy3": {
     id: "Hy3",
     name: "Hy3",
-    family: "Hy",
+    family: "hy",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -99,7 +99,7 @@ export const models = {
   "Kimi-K2.5": {
     id: "Kimi-K2.5",
     name: "Kimi K2.5",
-    family: "kimi-k2",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -116,7 +116,7 @@ export const models = {
   "Kimi-K2.7-Code": {
     id: "Kimi-K2.7-Code",
     name: "Kimi K2.7 Code",
-    family: "kimi-k2",
+    family: "kimi-code",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -133,7 +133,7 @@ export const models = {
   "Kimi-K3": {
     id: "Kimi-K3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -143,13 +143,13 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
   "MiniMax-M3": {
     id: "MiniMax-M3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -201,7 +201,7 @@ export const models = {
   "Qwen3-VL-235B-A22B-Instruct": {
     id: "Qwen3-VL-235B-A22B-Instruct",
     name: "Qwen3 VL 235B A22B Instruct",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: false,
     toolCall: true,
@@ -219,7 +219,7 @@ export const models = {
   "Qwen3-VL-235B-A22B-Thinking": {
     id: "Qwen3-VL-235B-A22B-Thinking",
     name: "Qwen3 VL 235B A22B Thinking",
-    family: "qwen",
+    family: "qwen-vl",
     attachment: true,
     reasoning: true,
     toolCall: true,

@@ -67,7 +67,7 @@ export const models = {
   "deepseek-ai/DeepSeek-V4-Pro-0813": {
     id: "deepseek-ai/DeepSeek-V4-Pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -84,7 +84,7 @@ export const models = {
   "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16": {
     id: "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
     name: "Nemotron 3.5 Lightning 30B A3B",
-    family: "nemotron",
+    family: "nemotron-lightning",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -113,6 +113,22 @@ export const models = {
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 262144, output: 32768 },
     cost: { input: 0.1, output: 0.4, cacheRead: 0.01 },
+  },
+  "stepfun-ai/Step-5-Preview": {
+    id: "stepfun-ai/Step-5-Preview",
+    name: "Step 5 Preview",
+    family: "step",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-09-16",
+    lastUpdated: "2026-09-20",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 32768 },
+    cost: { input: 0.9, output: 2.43, cacheRead: 0.09 },
   },
   "zai-org/GLM-5.3": {
     id: "zai-org/GLM-5.3",
@@ -149,7 +165,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type RuninfraModelId = keyof typeof models;
-export type RuninfraTextModelId = "Inferact/Qwen3.8-2.4T-A95B-NVFP4" | "Qwen/Qwen3.8-27B" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16" | "ornith-ai/Ornith-1.5-35B-A3B" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
+export type RuninfraTextModelId = "Inferact/Qwen3.8-2.4T-A95B-NVFP4" | "Qwen/Qwen3.8-27B" | "deepseek-ai/DeepSeek-V4-Flash-0731" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16" | "ornith-ai/Ornith-1.5-35B-A3B" | "stepfun-ai/Step-5-Preview" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
 export type RuninfraImageModelId = never;
 export type RuninfraAudioModelId = never;
 export type RuninfraVideoModelId = never;

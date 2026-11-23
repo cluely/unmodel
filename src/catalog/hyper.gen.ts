@@ -16,7 +16,7 @@ export const models = {
   "deepseek-v4-pro-0813": {
     id: "deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -45,6 +45,19 @@ export const models = {
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1000000, output: 262144 },
     cost: { input: 0.33, output: 1.31, cacheRead: 0.03 },
+  },
+  "deepseek-v4.1-flash-1017-economy": {
+    id: "deepseek-v4.1-flash-1017-economy",
+    name: "DeepSeek V4.1 Flash 1017 (Economy)",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    openWeights: false,
+    releaseDate: "1970-01-01",
+    lastUpdated: "2026-11-14",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 384000 },
+    cost: { input: 0.2, output: 0.6, cacheRead: 0.01 },
   },
   "gemma-4-26b-a4b-it": {
     id: "gemma-4-26b-a4b-it",
@@ -114,7 +127,7 @@ export const models = {
   "inkling": {
     id: "inkling",
     name: "Inkling",
-    family: "ling",
+    family: "inkling",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -129,7 +142,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -145,7 +158,7 @@ export const models = {
   "kimi-k3.1-pro": {
     id: "kimi-k3.1-pro",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -160,7 +173,7 @@ export const models = {
   "minimax-m3": {
     id: "minimax-m3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -175,7 +188,7 @@ export const models = {
   "muse-spark-open": {
     id: "muse-spark-open",
     name: "Muse Spark Open",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -262,7 +275,7 @@ export const models = {
   "qwen3.8-flash": {
     id: "qwen3.8-flash",
     name: "Qwen3.8 Flash",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -278,7 +291,7 @@ export const models = {
   "qwen3.8-max": {
     id: "qwen3.8-max",
     name: "Qwen3.8 Max Preview",
-    family: "qwen",
+    family: "qwen-max",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -290,10 +303,25 @@ export const models = {
     limit: { context: 1000000, output: 65536 },
     cost: { input: 2, output: 6, cacheRead: 0.25 },
   },
+  "qwen4-max": {
+    id: "qwen4-max",
+    name: "Qwen4 Max",
+    family: "qwen-max",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-11-16",
+    lastUpdated: "2026-11-16",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1000000, output: 128000 },
+    cost: { input: 1.5, output: 4.5, cacheRead: 0.075 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 export type HyperModelId = keyof typeof models;
-export type HyperTextModelId = "deepseek-v4-pro-0813" | "deepseek-v4.1-flash-1017" | "gemma-4-26b-a4b-it" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss-120b" | "inkling" | "kimi-k3" | "kimi-k3.1-pro" | "minimax-m3" | "muse-spark-open" | "prism" | "prism-core" | "prism-flash" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-flash" | "qwen3.8-max";
+export type HyperTextModelId = "deepseek-v4-pro-0813" | "deepseek-v4.1-flash-1017" | "deepseek-v4.1-flash-1017-economy" | "gemma-4-26b-a4b-it" | "glm-5.3" | "glm-5.3-flash" | "gpt-oss-120b" | "inkling" | "kimi-k3" | "kimi-k3.1-pro" | "minimax-m3" | "muse-spark-open" | "prism" | "prism-core" | "prism-flash" | "qwen3.8-2.4t-a95b" | "qwen3.8-27b" | "qwen3.8-flash" | "qwen3.8-max" | "qwen4-max";
 export type HyperImageModelId = never;
 export type HyperAudioModelId = never;
 export type HyperVideoModelId = never;

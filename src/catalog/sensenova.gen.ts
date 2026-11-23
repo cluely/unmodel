@@ -13,6 +13,23 @@ export const provider = {
 } as const satisfies ProviderInfo;
 
 export const models = {
+  "deepseek-flash": {
+    id: "deepseek-flash",
+    name: "DeepSeek V4.1 Flash",
+    family: "deepseek-flash",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-05",
+    releaseDate: "2026-09-10",
+    lastUpdated: "2026-09-10",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 0, output: 0, cacheRead: 0 },
+  },
   "deepseek-v4-flash": {
     id: "deepseek-v4-flash",
     name: "DeepSeek V4 Flash",
@@ -33,7 +50,7 @@ export const models = {
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -43,23 +60,6 @@ export const models = {
     releaseDate: "2026-08-13",
     lastUpdated: "2026-08-22",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 65536 },
-    cost: { input: 0, output: 0, cacheRead: 0 },
-  },
-  "deepseek-v4.1-flash": {
-    id: "deepseek-v4.1-flash",
-    name: "DeepSeek V4.1 Flash",
-    family: "deepseek-flash",
-    attachment: true,
-    reasoning: true,
-    toolCall: true,
-    structuredOutput: true,
-    temperature: true,
-    openWeights: true,
-    knowledge: "2025-05",
-    releaseDate: "2026-09-10",
-    lastUpdated: "2026-09-10",
-    modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 1048576, output: 65536 },
     cost: { input: 0, output: 0, cacheRead: 0 },
   },
@@ -82,7 +82,7 @@ export const models = {
   "kimi-k3": {
     id: "kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -113,7 +113,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type SensenovaModelId = keyof typeof models;
-export type SensenovaTextModelId = "deepseek-v4-flash" | "deepseek-v4-pro" | "deepseek-v4.1-flash" | "glm-5.2" | "kimi-k3" | "sensenova-6.8-flash-lite";
+export type SensenovaTextModelId = "deepseek-flash" | "deepseek-v4-flash" | "deepseek-v4-pro" | "glm-5.2" | "kimi-k3" | "sensenova-6.8-flash-lite";
 export type SensenovaImageModelId = never;
 export type SensenovaAudioModelId = never;
 export type SensenovaVideoModelId = never;

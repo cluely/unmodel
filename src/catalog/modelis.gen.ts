@@ -81,7 +81,7 @@ export const models = {
   "deepseek-v4-pro": {
     id: "deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -132,7 +132,7 @@ export const models = {
   "qwen/qwen3.7-max": {
     id: "qwen/qwen3.7-max",
     name: "Qwen3.7 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -147,7 +147,7 @@ export const models = {
   "qwen/qwen3.7-plus": {
     id: "qwen/qwen3.7-plus",
     name: "Qwen3.7 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: true,
     reasoning: true,
     toolCall: true,

@@ -81,7 +81,7 @@ export const models = {
   "kimi-k3:fast": {
     id: "kimi-k3:fast",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -91,13 +91,13 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image", "video"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 6, output: 30, cacheRead: 0.6 },
   },
   "minimax-m3": {
     id: "minimax-m3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -112,7 +112,7 @@ export const models = {
   "minimax-m3:fast": {
     id: "minimax-m3:fast",
     name: "MiniMax M3 Fast",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,

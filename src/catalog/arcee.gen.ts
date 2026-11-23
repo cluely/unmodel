@@ -34,7 +34,7 @@ export const models = {
   "deepseek/deepseek-v4-pro": {
     id: "deepseek/deepseek-v4-pro",
     name: "DeepSeek V4 Pro",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -52,7 +52,7 @@ export const models = {
   "deepseek/deepseek-v4-pro-0813": {
     id: "deepseek/deepseek-v4-pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -105,7 +105,7 @@ export const models = {
   "moonshotai/kimi-k3": {
     id: "moonshotai/kimi-k3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -116,13 +116,13 @@ export const models = {
     lastUpdated: "2026-07-16",
     status: "beta",
     modalities: { input: ["text"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
   "thinkingmachines/inkling-small": {
     id: "thinkingmachines/inkling-small",
     name: "Inkling Small",
-    family: "ling",
+    family: "inkling-small",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -138,7 +138,7 @@ export const models = {
   "trinity-large-thinking": {
     id: "trinity-large-thinking",
     name: "Trinity Large Thinking",
-    family: "trinity",
+    family: "trinity-large",
     attachment: false,
     reasoning: true,
     toolCall: true,

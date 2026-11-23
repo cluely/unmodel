@@ -100,7 +100,7 @@ export const models = {
   "MiMo-V2.6-Flash": {
     id: "MiMo-V2.6-Flash",
     name: "MiMo-V2.6-Flash",
-    family: "mimo",
+    family: "mimo-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -116,6 +116,7 @@ export const models = {
   "MiniCPM-V-4.7-1B": {
     id: "MiniCPM-V-4.7-1B",
     name: "MiniCPM-V 4.7 1B",
+    family: "minicpm-v",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -131,6 +132,7 @@ export const models = {
   "MiniCPM-V-4.7-35B-A3B": {
     id: "MiniCPM-V-4.7-35B-A3B",
     name: "MiniCPM-V 4.7 35B-A3B",
+    family: "minicpm-v",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -146,6 +148,7 @@ export const models = {
   "MiniCPM5-2B": {
     id: "MiniCPM5-2B",
     name: "MiniCPM5-2B",
+    family: "minicpm",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -176,7 +179,7 @@ export const models = {
   "Qwen3.8-Flash-Next": {
     id: "Qwen3.8-Flash-Next",
     name: "Qwen3.8 Flash Next",
-    family: "qwen",
+    family: "qwen-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,

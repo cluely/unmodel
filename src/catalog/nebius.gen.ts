@@ -16,7 +16,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M3": {
     id: "MiniMaxAI/MiniMax-M3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -31,7 +31,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M3.1-Flash": {
     id: "MiniMaxAI/MiniMax-M3.1-Flash",
     name: "MiniMax-M3.1-Flash",
-    family: "minimax",
+    family: "minimax-m-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -59,7 +59,7 @@ export const models = {
     lastUpdated: "2025-08-26",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131072, output: 8192, input: 120000 },
-    cost: { input: 1, output: 3, cacheRead: 1, reasoning: 3 },
+    cost: { input: 1, output: 3, cacheRead: 0.2, reasoning: 3 },
   },
   "Qwen/Qwen3-235B-A22B-Instruct-2507": {
     id: "Qwen/Qwen3-235B-A22B-Instruct-2507",
@@ -97,7 +97,7 @@ export const models = {
   "Qwen/Qwen3-Embedding-8B": {
     id: "Qwen/Qwen3-Embedding-8B",
     name: "Qwen3-Embedding-8B",
-    family: "qwen",
+    family: "qwen-embedding",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -130,7 +130,7 @@ export const models = {
   "deepseek-ai/DeepSeek-V4-Pro-0813": {
     id: "deepseek-ai/DeepSeek-V4-Pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -175,12 +175,12 @@ export const models = {
     lastUpdated: "2025-03-12",
     modalities: { input: ["text", "image"], output: ["text"] },
     limit: { context: 110000, output: 8192, input: 100000 },
-    cost: { input: 0.1, output: 0.3, cacheRead: 0.1 },
+    cost: { input: 0.1, output: 0.3, cacheRead: 0.04 },
   },
   "meta-models/muse-spark-open": {
     id: "meta-models/muse-spark-open",
     name: "Muse Spark Open",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -197,7 +197,7 @@ export const models = {
   "moonshotai/Kimi-K3": {
     id: "moonshotai/Kimi-K3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -210,10 +210,43 @@ export const models = {
     limit: { context: 1024000, output: 8000 },
     cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
+  "moonshotai/Kimi-K3.1-Pro": {
+    id: "moonshotai/Kimi-K3.1-Pro",
+    name: "Kimi K3.1 Pro",
+    family: "kimi-pro",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-10-23",
+    lastUpdated: "2026-10-23",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 2, output: 10, cacheRead: 0.2 },
+  },
+  "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B": {
+    id: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    name: "NVIDIA-Nemotron-3-Nano-30B-A3B",
+    family: "nemotron-nano",
+    attachment: false,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    knowledge: "2025-06-25",
+    releaseDate: "2025-12-15",
+    lastUpdated: "2025-12-15",
+    modalities: { input: ["text"], output: ["text"] },
+    limit: { context: 262144, output: 262144 },
+    cost: { input: 0.06, output: 0.24, cacheRead: 0.012 },
+  },
   "nvidia/Nemotron-3-Ultra-550b-a55b": {
     id: "nvidia/Nemotron-3-Ultra-550b-a55b",
     name: "Nemotron 3 Ultra 550B A55B",
-    family: "nemotron",
+    family: "nemotron-ultra",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -229,7 +262,7 @@ export const models = {
   "nvidia/Nemotron-3.5-Super-VL": {
     id: "nvidia/Nemotron-3.5-Super-VL",
     name: "Nemotron 3.5 Super VL 120B A12B",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -245,7 +278,7 @@ export const models = {
   "nvidia/Nemotron-3_5-Lightning": {
     id: "nvidia/Nemotron-3_5-Lightning",
     name: "Nemotron 3.5 Lightning 30B A3B",
-    family: "nemotron",
+    family: "nemotron-lightning",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -257,12 +290,12 @@ export const models = {
     lastUpdated: "2026-08-11",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 1048576 },
-    cost: { input: 0.06, output: 0.24, cacheRead: 0.06 },
+    cost: { input: 0.06, output: 0.24, cacheRead: 0.03 },
   },
   "nvidia/nemotron-3-super-120b-a12b": {
     id: "nvidia/nemotron-3-super-120b-a12b",
     name: "Nemotron-3-Super-120B-A12B",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -291,7 +324,7 @@ export const models = {
     lastUpdated: "2025-08-05",
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 131072, output: 8192, input: 124000 },
-    cost: { input: 0.15, output: 0.6, cacheRead: 0.15, reasoning: 0.6 },
+    cost: { input: 0.15, output: 0.6, cacheRead: 0.1, reasoning: 0.6 },
   },
   "reflection/beam": {
     id: "reflection/beam",
@@ -309,6 +342,22 @@ export const models = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1048576, output: 131072 },
     cost: { input: 0.25, output: 1, cacheRead: 0.05 },
+  },
+  "thinkingmachines/Inkling-2-Small": {
+    id: "thinkingmachines/Inkling-2-Small",
+    name: "Inkling 2 Small",
+    family: "inkling-small",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    releaseDate: "2026-11-05",
+    lastUpdated: "2026-11-12",
+    modalities: { input: ["text", "image"], output: ["text"] },
+    limit: { context: 1048576, output: 1048576 },
+    cost: { input: 0.3, output: 1, cacheRead: 0.06 },
   },
   "zai-org/GLM-5.2": {
     id: "zai-org/GLM-5.2",
@@ -361,7 +410,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type NebiusModelId = keyof typeof models;
-export type NebiusTextModelId = "MiniMaxAI/MiniMax-M3" | "MiniMaxAI/MiniMax-M3.1-Flash" | "NousResearch/Hermes-4-405B" | "Qwen/Qwen3-235B-A22B-Instruct-2507" | "Qwen/Qwen3-30B-A3B-Instruct-2507" | "Qwen/Qwen3-Embedding-8B" | "Qwen/Qwen3.8-27B" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "deepseek-ai/DeepSeek-V4.1-Flash-1017" | "google/gemma-3-27b-it" | "meta-models/muse-spark-open" | "moonshotai/Kimi-K3" | "nvidia/Nemotron-3-Ultra-550b-a55b" | "nvidia/Nemotron-3.5-Super-VL" | "nvidia/Nemotron-3_5-Lightning" | "nvidia/nemotron-3-super-120b-a12b" | "openai/gpt-oss-120b" | "reflection/beam" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
+export type NebiusTextModelId = "MiniMaxAI/MiniMax-M3" | "MiniMaxAI/MiniMax-M3.1-Flash" | "NousResearch/Hermes-4-405B" | "Qwen/Qwen3-235B-A22B-Instruct-2507" | "Qwen/Qwen3-30B-A3B-Instruct-2507" | "Qwen/Qwen3-Embedding-8B" | "Qwen/Qwen3.8-27B" | "deepseek-ai/DeepSeek-V4-Pro-0813" | "deepseek-ai/DeepSeek-V4.1-Flash-1017" | "google/gemma-3-27b-it" | "meta-models/muse-spark-open" | "moonshotai/Kimi-K3" | "moonshotai/Kimi-K3.1-Pro" | "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B" | "nvidia/Nemotron-3-Ultra-550b-a55b" | "nvidia/Nemotron-3.5-Super-VL" | "nvidia/Nemotron-3_5-Lightning" | "nvidia/nemotron-3-super-120b-a12b" | "openai/gpt-oss-120b" | "reflection/beam" | "thinkingmachines/Inkling-2-Small" | "zai-org/GLM-5.2" | "zai-org/GLM-5.3" | "zai-org/GLM-5.3-Flash";
 export type NebiusImageModelId = never;
 export type NebiusAudioModelId = never;
 export type NebiusVideoModelId = never;

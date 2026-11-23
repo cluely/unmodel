@@ -16,7 +16,7 @@ export const models = {
   "step-3.5-flash": {
     id: "step-3.5-flash",
     name: "Step 3.5 Flash",
-    family: "step",
+    family: "step-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -31,7 +31,7 @@ export const models = {
   "step-3.5-flash-2603": {
     id: "step-3.5-flash-2603",
     name: "Step 3.5 Flash 2603",
-    family: "step",
+    family: "step-flash",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -46,6 +46,7 @@ export const models = {
   "step-3.7-flash": {
     id: "step-3.7-flash",
     name: "Step 3.7 Flash",
+    family: "step-flash",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -60,6 +61,7 @@ export const models = {
   "step-5-preview": {
     id: "step-5-preview",
     name: "Step 5 Preview",
+    family: "step",
     attachment: true,
     reasoning: true,
     toolCall: true,

@@ -15,7 +15,7 @@ export const models = {
   "LiquidAI/LFM2-24B-A2B": {
     id: "LiquidAI/LFM2-24B-A2B",
     name: "LFM2-24B-A2B",
-    family: "liquid",
+    family: "lfm",
     attachment: false,
     reasoning: false,
     toolCall: false,
@@ -31,7 +31,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M2.5": {
     id: "MiniMaxAI/MiniMax-M2.5",
     name: "MiniMax-M2.5",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -47,7 +47,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M2.7": {
     id: "MiniMaxAI/MiniMax-M2.7",
     name: "MiniMax-M2.7",
-    family: "minimax",
+    family: "minimax-m",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -64,7 +64,7 @@ export const models = {
   "MiniMaxAI/MiniMax-M3": {
     id: "MiniMaxAI/MiniMax-M3",
     name: "MiniMax-M3",
-    family: "minimax",
+    family: "minimax-m",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -113,7 +113,7 @@ export const models = {
   "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8": {
     id: "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8",
     name: "Qwen3 Coder 480B A35B Instruct",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -130,7 +130,7 @@ export const models = {
   "Qwen/Qwen3-Coder-Next-FP8": {
     id: "Qwen/Qwen3-Coder-Next-FP8",
     name: "Qwen3 Coder Next FP8",
-    family: "qwen",
+    family: "qwen-coder",
     attachment: false,
     reasoning: false,
     toolCall: true,
@@ -179,7 +179,7 @@ export const models = {
   "Qwen/Qwen3.6-Plus": {
     id: "Qwen/Qwen3.6-Plus",
     name: "Qwen3.6 Plus",
-    family: "qwen",
+    family: "qwen-plus",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -196,7 +196,7 @@ export const models = {
   "Qwen/Qwen3.7-Max": {
     id: "Qwen/Qwen3.7-Max",
     name: "Qwen3.7 Max",
-    family: "qwen",
+    family: "qwen-max",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -212,7 +212,7 @@ export const models = {
   "deepseek-ai/DeepSeek-R1": {
     id: "deepseek-ai/DeepSeek-R1",
     name: "DeepSeek-R1",
-    family: "deepseek-thinking",
+    family: "deepseek-r",
     attachment: false,
     reasoning: true,
     toolCall: false,
@@ -279,7 +279,7 @@ export const models = {
   "deepseek-ai/DeepSeek-V4-Pro-0813": {
     id: "deepseek-ai/DeepSeek-V4-Pro-0813",
     name: "DeepSeek V4 Pro 0813",
-    family: "deepseek-thinking",
+    family: "deepseek-pro",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -345,7 +345,7 @@ export const models = {
   "meta-models/Muse-Spark-Open-816B-A42B": {
     id: "meta-models/Muse-Spark-Open-816B-A42B",
     name: "Muse Spark Open",
-    family: "muse",
+    family: "muse-spark",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -362,7 +362,7 @@ export const models = {
   "moonshotai/Kimi-K3": {
     id: "moonshotai/Kimi-K3",
     name: "Kimi K3",
-    family: "kimi-k3",
+    family: "kimi",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -372,13 +372,13 @@ export const models = {
     releaseDate: "2026-07-16",
     lastUpdated: "2026-07-16",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 3, output: 15, cacheRead: 0.3 },
   },
   "moonshotai/Kimi-K3.1-Pro": {
     id: "moonshotai/Kimi-K3.1-Pro",
     name: "Kimi K3.1 Pro",
-    family: "kimi-k3",
+    family: "kimi-pro",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -388,13 +388,13 @@ export const models = {
     releaseDate: "2026-10-23",
     lastUpdated: "2026-10-23",
     modalities: { input: ["text", "image"], output: ["text"] },
-    limit: { context: 1048576, output: 131072 },
+    limit: { context: 1048576, output: 1048576 },
     cost: { input: 2, output: 10, cacheRead: 0.2 },
   },
   "nvidia/NVIDIA-Nemotron-3.5-Super-VL": {
     id: "nvidia/NVIDIA-Nemotron-3.5-Super-VL",
     name: "Nemotron 3.5 Super VL 120B A12B",
-    family: "nemotron",
+    family: "nemotron-super",
     attachment: true,
     reasoning: true,
     toolCall: true,
@@ -410,7 +410,7 @@ export const models = {
   "nvidia/nemotron-3-ultra-550b-a55b": {
     id: "nvidia/nemotron-3-ultra-550b-a55b",
     name: "Nemotron 3 Ultra 550B A55B",
-    family: "nemotron",
+    family: "nemotron-ultra",
     attachment: false,
     reasoning: true,
     toolCall: true,
@@ -462,7 +462,7 @@ export const models = {
   "thinkingmachines/Inkling": {
     id: "thinkingmachines/Inkling",
     name: "Inkling",
-    family: "ling",
+    family: "inkling",
     attachment: true,
     reasoning: true,
     toolCall: true,

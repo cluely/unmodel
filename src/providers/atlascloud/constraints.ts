@@ -10,7 +10,7 @@
  * `data/atlascloud/openapi/`, one file per curated id, and
  * `scripts/atlascloud-audit.ts` is what notices when they drift.
  *
- * Ground truth: the 31 snapshots in `data/atlascloud/openapi/`, one per
+ * Ground truth: the 27 snapshots in `data/atlascloud/openapi/`, one per
  * catalogued id, every one re-fetched and diffed canonically against the live
  * document on 2026-11-12. Route and auth prose: ./urls.ts.
  *
@@ -76,9 +76,6 @@ export const VIDEO_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9", "adapt
 /** `ratio` on Wan 3.0 / 3.0-prime text-to-video — the same list without `21:9`. */
 export const WAN_RATIOS = ["adaptive", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
-/** `aspect_ratio` on Seedance v1.5 pro — a different field name and no `adaptive`. */
-export const SEEDANCE_15_ASPECT_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
-
 /** `aspect_ratio` on Veo 3.1 — two shapes, and the schema says so. */
 export const VEO_ASPECT_RATIOS = ["16:9", "9:16"] as const;
 
@@ -140,10 +137,6 @@ export const SEEDANCE_20_SMALL_RESOLUTIONS = [
   "1080p-SR",
   "1440p-SR",
 ] as const;
-
-/** Seedance v1.5 pro `resolution`; the `-fast` pair renders 720p only. */
-export const SEEDANCE_15_RESOLUTIONS = ["720p", "480p"] as const;
-export const SEEDANCE_15_FAST_RESOLUTIONS = ["720p"] as const;
 
 /**
  * Wan 3.0 prime `resolution`: the same lower-case list, `-esr` ladder
@@ -218,8 +211,7 @@ export const VIDEO_SEED_RANGE = { min: -1, max: 4_294_967_295 } as const;
  * `-1` = "let the model choose the length".
  *
  * It is a real enum member on the Seedance 2.x and Wan 3.0 families and it is
- * absent from Seedance v1.5 pro (a plain `[4, 12]` range) and Veo 3.1 (a
- * three-member enum). `unified-video.ts` never invents it: the canonical
+ * absent from Veo 3.1 (a three-member enum). `unified-video.ts` never invents it: the canonical
  * `duration` is "a positive number of seconds" everywhere in this library, so
  * the sentinel is reached wire-side — `atlascloud.video({ duration: -1 })` — or
  * through `providerOptions.atlascloud.duration` from the unified surface.
@@ -242,15 +234,14 @@ export interface VideoShapeRule {
   readonly minDuration: number;
   readonly maxDuration: number;
   /**
-   * The exact `duration` enum, when the schema publishes one, with `-1`
-   * filtered out (it is {@link allowsAutoDuration}'s job). Seedance v1.5 pro
-   * publishes a `[minimum, maximum]` range instead and gets `undefined`.
+   * The exact `duration` enum, with `-1` filtered out (it is
+   * {@link allowsAutoDuration}'s job).
    *
    * EMPTY means the route has no `duration` field at all —
    * `bytedance/seedance-2.5/draft-complete` inherits it from the draft — so
    * the deny table answers for it and `checkDuration` stays silent.
    */
-  readonly durations?: readonly number[];
+  readonly durations: readonly number[];
   /** Whether `duration: -1` ("the model picks") is an enum member. */
   readonly allowsAutoDuration: boolean;
   /** Max `reference_images` / `images` items; 0 when the model has no such field. */
@@ -352,15 +343,6 @@ const WAN_BASE = {
   maxDuration: 30,
   durations: WAN_DURATIONS,
   allowsAutoDuration: true,
-  forcesAdaptiveRatio: false,
-  ...NO_REFERENCES,
-} as const;
-
-/** Seedance v1.5 pro: `{"type":"integer","minimum":4,"maximum":12}` — a RANGE. */
-const SEEDANCE_15_BASE = {
-  minDuration: 4,
-  maxDuration: 12,
-  allowsAutoDuration: false,
   forcesAdaptiveRatio: false,
   ...NO_REFERENCES,
 } as const;
@@ -487,10 +469,6 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
     required: [],
     forcesAdaptiveRatio: false,
   },
-  "bytedance/seedance-v1.5-pro/text-to-video": { ...SEEDANCE_15_BASE, required: ["prompt"] },
-  "bytedance/seedance-v1.5-pro/image-to-video": { ...SEEDANCE_15_BASE, required: ["image"] },
-  "bytedance/seedance-v1.5-pro/text-to-video-fast": { ...SEEDANCE_15_BASE, required: ["prompt"] },
-  "bytedance/seedance-v1.5-pro/image-to-video-fast": { ...SEEDANCE_15_BASE, required: ["image"] },
   "alibaba/wan-3.0-prime/text-to-video": { ...WAN_BASE, required: ["prompt"] },
   "alibaba/wan-3.0-prime/image-to-video": { ...WAN_BASE, required: ["prompt", "image"] },
   "alibaba/wan-3.0/text-to-video": { ...WAN_BASE, required: ["prompt"] },
@@ -624,12 +602,12 @@ const VEO_ONLY = {
 } as const;
 
 const RATIO_ABSENT = {
-  ratio: "`ratio` is a Seedance 2.x / Wan 3.0 field; Seedance v1.5 pro and Veo 3.1 spell it `aspect_ratio`",
+  ratio: "`ratio` is a Seedance 2.x / Wan 3.0 field; Veo 3.1 spells it `aspect_ratio`",
 } as const;
 
 const ASPECT_RATIO_ABSENT = {
   aspect_ratio:
-    "`aspect_ratio` is a Seedance v1.5 pro / Veo 3.1 field; the Seedance 2.x and Wan 3.0 models spell it `ratio`",
+    "`aspect_ratio` is a Veo 3.1 field; the Seedance 2.x and Wan 3.0 models spell it `ratio`",
 } as const;
 
 const AUDIO_FIELD_ABSENT = {
@@ -638,10 +616,6 @@ const AUDIO_FIELD_ABSENT = {
 
 const GENERATE_AUDIO_ABSENT = {
   generate_audio: "Wan 3.0 spells its audio toggle `audio`, not `generate_audio`",
-} as const;
-
-const CAMERA_FIXED_ONLY = {
-  camera_fixed: "`camera_fixed` is a Seedance v1.5 pro parameter",
 } as const;
 
 const IMAGES_ONLY = {
@@ -717,7 +691,6 @@ const DRAFT_COMPLETE_ABSENT = [
   "seed",
   "draft",
   "negative_prompt",
-  "camera_fixed",
   "bitrate_mode",
   "omni_reference_task_type",
   "refers",
@@ -747,7 +720,6 @@ const seedance2xDeny: Record<string, DenyRule> = {
   ...denyTable(VEO_ONLY, VIDEO_API_SOURCE),
   ...denyTable(ASPECT_RATIO_ABSENT, VIDEO_API_SOURCE),
   ...denyTable(AUDIO_FIELD_ABSENT, VIDEO_API_SOURCE),
-  ...denyTable(CAMERA_FIXED_ONLY, VIDEO_API_SOURCE),
   ...denyTable(IMAGES_ONLY, VIDEO_API_SOURCE),
   ...denyTable(WAN_REFERENCE_ONLY, VIDEO_API_SOURCE),
   ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
@@ -774,7 +746,6 @@ const wanFamilyDeny: Record<string, DenyRule> = denyReferences({
   ...denyTable(SEEDANCE_25_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_20_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_2X_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(CAMERA_FIXED_ONLY, VIDEO_API_SOURCE),
   ...denyTable(IMAGES_ONLY, VIDEO_API_SOURCE),
   ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
 });
@@ -795,19 +766,6 @@ const wanReferenceDeny: Record<string, DenyRule> = {
   ...denyTable(WAN_FLAT_REFERENCES_ABSENT, VIDEO_API_SOURCE),
 };
 
-const seedance15Deny: Record<string, DenyRule> = denyReferences({
-  ...denyTable(OMNI_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(VEO_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(RATIO_ABSENT, VIDEO_API_SOURCE),
-  ...denyTable(AUDIO_FIELD_ABSENT, VIDEO_API_SOURCE),
-  ...denyTable(SEEDANCE_25_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(SEEDANCE_20_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(SEEDANCE_2X_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(IMAGES_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(WAN_REFERENCE_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
-});
-
 /** Everything Veo 3.1 rejects *except* `images`, which its reference arm owns. */
 const veoCommonDeny: Record<string, DenyRule> = denyReferences({
   ...denyTable(OMNI_ONLY, VIDEO_API_SOURCE),
@@ -816,7 +774,6 @@ const veoCommonDeny: Record<string, DenyRule> = denyReferences({
   ...denyTable(SEEDANCE_25_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_20_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_2X_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(CAMERA_FIXED_ONLY, VIDEO_API_SOURCE),
   ...denyTable(WAN_REFERENCE_ONLY, VIDEO_API_SOURCE),
   ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
 });
@@ -897,22 +854,6 @@ export const videoConstraints: Readonly<Partial<Record<string, EndpointConstrain
   "bytedance/seedance-2.0-fast/reference-to-video": {
     deny: denyFrames(seedance20Base),
     enums: { resolution: SEEDANCE_20_SMALL_RESOLUTIONS, ratio: VIDEO_RATIOS, bitrate_mode: BITRATE_MODES },
-  },
-  "bytedance/seedance-v1.5-pro/text-to-video": {
-    deny: denyFrames(seedance15Deny),
-    enums: { resolution: SEEDANCE_15_RESOLUTIONS, aspect_ratio: SEEDANCE_15_ASPECT_RATIOS },
-  },
-  "bytedance/seedance-v1.5-pro/image-to-video": {
-    deny: seedance15Deny,
-    enums: { resolution: SEEDANCE_15_RESOLUTIONS, aspect_ratio: SEEDANCE_15_ASPECT_RATIOS },
-  },
-  "bytedance/seedance-v1.5-pro/text-to-video-fast": {
-    deny: denyFrames(seedance15Deny),
-    enums: { resolution: SEEDANCE_15_FAST_RESOLUTIONS, aspect_ratio: SEEDANCE_15_ASPECT_RATIOS },
-  },
-  "bytedance/seedance-v1.5-pro/image-to-video-fast": {
-    deny: seedance15Deny,
-    enums: { resolution: SEEDANCE_15_FAST_RESOLUTIONS, aspect_ratio: SEEDANCE_15_ASPECT_RATIOS },
   },
   "alibaba/wan-3.0-prime/text-to-video": {
     deny: denyFrames(wanDeny),

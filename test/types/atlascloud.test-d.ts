@@ -3,8 +3,8 @@
  * `bun test` — this file is only type-checked (`bun run check` / tsc
  * --noEmit). Atlas ships no typed client SDK, so these tests exercise the
  * per-model arms, which is where this provider's whole compile-time story is:
- * `model` names the ROUTE as well as the model, so the thirty-one ids are
- * thirty-one param surfaces rather than one narrowed thirty-one ways.
+ * `model` names the ROUTE as well as the model, so the twenty-seven ids are
+ * twenty-seven param surfaces rather than one narrowed twenty-seven ways.
  */
 import {
   video,
@@ -54,19 +54,13 @@ function routeIsTheModelTypeTests(): void {
 }
 
 function crossFamilyFieldTypeTests(): void {
-  // Four families, four vocabularies, and the compiler keeps them apart.
+  // Three families, three vocabularies, and the compiler keeps them apart.
   video({
     model: "bytedance/seedance-2.0/text-to-video",
     prompt: "hi",
     bitrate_mode: "high",
     seed: 7,
     resolution: "4k",
-  });
-  video({
-    model: "bytedance/seedance-v1.5-pro/text-to-video",
-    prompt: "hi",
-    aspect_ratio: "21:9",
-    camera_fixed: true,
   });
   video({ model: "alibaba/wan-3.0/text-to-video", prompt: "hi", audio: false, ratio: "16:9" });
   video({
@@ -88,15 +82,15 @@ function crossFamilyFieldTypeTests(): void {
   video({ model: "bytedance/seedance-2.0/text-to-video", prompt: "hi", draft: true });
   // @ts-expect-error — Seedance 2.x spells the shape field `ratio`
   video({ model: "bytedance/seedance-2.0/text-to-video", prompt: "hi", aspect_ratio: "16:9" });
-  // @ts-expect-error — …and v1.5 pro spells it `aspect_ratio`
-  video({ model: "bytedance/seedance-v1.5-pro/text-to-video", prompt: "hi", ratio: "16:9" });
+  // @ts-expect-error — …and Veo 3.1 spells it `aspect_ratio`
+  video({ model: "google/veo3.1/text-to-video", prompt: "hi", ratio: "16:9" });
   // @ts-expect-error — Wan spells its audio toggle `audio`, not `generate_audio`
   video({ model: "alibaba/wan-3.0/text-to-video", prompt: "hi", generate_audio: false });
   // @ts-expect-error — …and the Seedance families spell it `generate_audio`
   video({ model: "bytedance/seedance-2.0/text-to-video", prompt: "hi", audio: false });
   // @ts-expect-error — `negative_prompt` is Veo 3.1's alone
   video({ model: "bytedance/seedance-2.5/text-to-video", prompt: "hi", negative_prompt: "x" });
-  // @ts-expect-error — `camera_fixed` is Seedance v1.5 pro's alone
+  // @ts-expect-error — `camera_fixed` is accepted by no model
   video({ model: "google/veo3.1/text-to-video", prompt: "hi", camera_fixed: true });
   // @ts-expect-error — Wan's image route has no `ratio`: the first frame decides it
   video({ model: "alibaba/wan-3.0/image-to-video", prompt: "hi", image: "https://x/a.png", ratio: "16:9" });
@@ -120,8 +114,6 @@ function resolutionEnumTypeTests(): void {
   video({ model: "bytedance/seedance-2.0-mini/text-to-video", prompt: "hi", resolution: "4k" });
   // @ts-expect-error: Wan 3.0-prime spells its tiers lower-case, like Wan 3.0
   video({ model: "alibaba/wan-3.0-prime/text-to-video", prompt: "hi", resolution: "1080P" });
-  // @ts-expect-error — the v1.5-pro fast pair renders 720p only
-  video({ model: "bytedance/seedance-v1.5-pro/text-to-video-fast", prompt: "hi", resolution: "480p" });
 }
 
 function inFamilyRouteTypeTests(): void {

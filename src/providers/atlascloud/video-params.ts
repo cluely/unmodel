@@ -14,7 +14,7 @@ import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 import { BITRATE_MODES, OMNI_REFERENCE_TASK_TYPES, VIDEO_OUTPUT_FORMATS } from "./constraints";
 
 /**
- * The thirty ids `unmodel/video` reaches — the `atlascloud/…` ref union.
+ * The twenty-six ids `unmodel/video` reaches — the `atlascloud/…` ref union.
  *
  * These are Atlas's OWN ids, slashes and all, so a unified ref is
  * `"atlascloud/bytedance/seedance-2.5/text-to-video"` and splits on the FIRST
@@ -41,10 +41,6 @@ export const MODELS = [
   "bytedance/seedance-2.0-fast/text-to-video",
   "bytedance/seedance-2.0-fast/image-to-video",
   "bytedance/seedance-2.0-fast/reference-to-video",
-  "bytedance/seedance-v1.5-pro/text-to-video",
-  "bytedance/seedance-v1.5-pro/image-to-video",
-  "bytedance/seedance-v1.5-pro/text-to-video-fast",
-  "bytedance/seedance-v1.5-pro/image-to-video-fast",
   "alibaba/wan-3.0-prime/text-to-video",
   "alibaba/wan-3.0-prime/image-to-video",
   "alibaba/wan-3.0/text-to-video",
@@ -77,10 +73,10 @@ export const VEO_RATIOS_SHAPES = ["16:9", "9:16"] as const;
 const NO_RATIOS = [] as const;
 
 /**
- * The `-1` sentinel and why `durations` is absent on twenty-two of these rows.
+ * The `-1` sentinel and why `durations` is absent on eighteen of these rows.
  *
- * Atlas publishes `duration` as an ENUM on every family but Seedance v1.5 pro
- * — and the enums are long: `[-1, 4…30]` on Seedance 2.5, `[-1, 2…30]` on Wan
+ * Atlas publishes `duration` as an ENUM on every family — and on Seedance 2.x
+ * and Wan 3.0 the enums are long: `[-1, 4…30]` on Seedance 2.5, `[-1, 2…30]` on Wan
  * 3.0. Spelling twenty-nine literals into a completion list to describe what is
  * really "any integer in a range, plus a sentinel" is the trade
  * `model-params.ts` documents against, so those rows declare no `durations`,
@@ -97,7 +93,7 @@ const NO_RATIOS = [] as const;
  * (`core/unified/derive.ts`) at every provider in the pack. It is reached
  * through `providerOptions.atlascloud.duration`, which is documented on the
  * adapter beside the reason — and `checkDuration` in ./video.ts still gates it
- * per model, so the sentinel is refused on Seedance v1.5 pro and Veo 3.1 where
+ * per model, so the sentinel is refused on Veo 3.1 where
  * the schema does not declare it.
  */
 const SEEDANCE_2X_EXTRAS = {
@@ -122,11 +118,6 @@ const SEEDANCE_20_EXTRAS = {
   bitrate_mode: EXTRA as (typeof BITRATE_MODES)[number],
 } as const;
 
-const SEEDANCE_15_EXTRAS = {
-  generate_audio: EXTRA as boolean,
-  camera_fixed: EXTRA as boolean,
-} as const;
-
 /** Wan spells the audio toggle `audio`, which is why it is not `generate_audio`. */
 const WAN_EXTRAS = {
   audio: EXTRA as boolean,
@@ -147,8 +138,6 @@ const VEO_EXTRAS = {
 const SEEDANCE_25_TIERS = ["480p", "720p", "1080p", "1440p", "4k"] as const;
 const SEEDANCE_20_TIERS = ["480p", "720p", "1080p", "1440p", "4k"] as const;
 const SEEDANCE_20_SMALL_TIERS = ["480p", "720p", "1080p", "1440p"] as const;
-const SEEDANCE_15_TIERS = ["480p", "720p"] as const;
-const SEEDANCE_15_FAST_TIERS = ["720p"] as const;
 const WAN_TIERS = ["480p", "720p", "1080p", "1440p", "4k"] as const;
 const VEO_TIERS = ["720p", "1080p", "4k"] as const;
 const VEO_LITE_TIERS = ["720p", "1080p"] as const;
@@ -238,26 +227,6 @@ export const ATLASCLOUD_VIDEO_MODEL_PARAMS = {
     resolutions: SEEDANCE_20_SMALL_TIERS,
     ratios: RATIOS,
     extras: SEEDANCE_20_EXTRAS,
-  },
-  "bytedance/seedance-v1.5-pro/text-to-video": {
-    resolutions: SEEDANCE_15_TIERS,
-    ratios: RATIOS,
-    extras: SEEDANCE_15_EXTRAS,
-  },
-  "bytedance/seedance-v1.5-pro/image-to-video": {
-    resolutions: SEEDANCE_15_TIERS,
-    ratios: RATIOS,
-    extras: SEEDANCE_15_EXTRAS,
-  },
-  "bytedance/seedance-v1.5-pro/text-to-video-fast": {
-    resolutions: SEEDANCE_15_FAST_TIERS,
-    ratios: RATIOS,
-    extras: SEEDANCE_15_EXTRAS,
-  },
-  "bytedance/seedance-v1.5-pro/image-to-video-fast": {
-    resolutions: SEEDANCE_15_FAST_TIERS,
-    ratios: RATIOS,
-    extras: SEEDANCE_15_EXTRAS,
   },
   "alibaba/wan-3.0-prime/text-to-video": {
     resolutions: WAN_TIERS,

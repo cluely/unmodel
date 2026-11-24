@@ -36,13 +36,13 @@
  * The POST creates a prediction and answers
  * `{ code, message, data: { id, status, outputs } }`. Poll
  * `predictionUrl(id)` (see ./urls.ts, which also records the second spelling
- * nine of these schemas use) until `status` leaves `processing`. Polling is
+ * five of these schemas use) until `status` leaves `processing`. Polling is
  * transport and stays out of unmodel's scope.
  *
  * Auth is `Authorization: Bearer <ATLASCLOUD_API_KEY>` — unmodel never touches
  * keys; add the header yourself when fetching.
  *
- * Wire facts transcribed from the 31 committed snapshots in
+ * Wire facts transcribed from the 27 committed snapshots in
  * `data/atlascloud/openapi/` (each diffed canonically against its live
  * document 2026-11-12) and from https://www.atlascloud.ai/docs/models/video.
  */
@@ -61,9 +61,6 @@ import {
   DRAFT_COMPLETE_RESOLUTIONS,
   OMNI_REFERENCE_TASK_TYPES,
   REFER_TYPES,
-  SEEDANCE_15_ASPECT_RATIOS,
-  SEEDANCE_15_FAST_RESOLUTIONS,
-  SEEDANCE_15_RESOLUTIONS,
   SEEDANCE_20_RESOLUTIONS,
   SEEDANCE_20_SMALL_RESOLUTIONS,
   SEEDANCE_25_RESOLUTIONS,
@@ -126,8 +123,6 @@ export type AtlasMediaRef = AtlasMediaUrl | AtlasMediaDataUrl | AtlasAssetRef | 
 export type AtlasVideoRatio = (typeof VIDEO_RATIOS)[number];
 /** `ratio` on Wan 3.0 text-to-video — no `21:9`. */
 export type AtlasWanRatio = (typeof WAN_RATIOS)[number];
-/** `aspect_ratio` on Seedance v1.5 pro. */
-export type AtlasSeedance15AspectRatio = (typeof SEEDANCE_15_ASPECT_RATIOS)[number];
 /** `aspect_ratio` on Veo 3.1. */
 export type AtlasVeoAspectRatio = (typeof VEO_ASPECT_RATIOS)[number];
 /** `output_format` — Seedance 2.5 only. */
@@ -140,8 +135,6 @@ export type AtlasOmniReferenceTaskType = (typeof OMNI_REFERENCE_TASK_TYPES)[numb
 export type AtlasSeedance25Resolution = (typeof SEEDANCE_25_RESOLUTIONS)[number];
 export type AtlasSeedance20Resolution = (typeof SEEDANCE_20_RESOLUTIONS)[number];
 export type AtlasSeedance20SmallResolution = (typeof SEEDANCE_20_SMALL_RESOLUTIONS)[number];
-export type AtlasSeedance15Resolution = (typeof SEEDANCE_15_RESOLUTIONS)[number];
-export type AtlasSeedance15FastResolution = (typeof SEEDANCE_15_FAST_RESOLUTIONS)[number];
 export type AtlasWanPrimeResolution = (typeof WAN_PRIME_RESOLUTIONS)[number];
 export type AtlasWanResolution = (typeof WAN_RESOLUTIONS)[number];
 export type AtlasVeoResolution = (typeof VEO_RESOLUTIONS)[number];
@@ -196,11 +189,6 @@ interface NotVeo {
   images?: never;
 }
 
-interface NotSeedance15 {
-  /** Seedance v1.5 pro only. */
-  camera_fixed?: never;
-}
-
 interface NotWan {
   /** Wan 3.0 spells its audio toggle `audio`. */
   audio?: never;
@@ -227,9 +215,9 @@ interface NotSeedance2x {
   return_last_frame?: never;
 }
 
-/** `aspect_ratio` is the Seedance v1.5 pro / Veo 3.1 spelling. */
+/** `aspect_ratio` is the Veo 3.1 spelling. */
 interface NoAspectRatio {
-  /** Seedance v1.5 pro and Veo 3.1 spell it `aspect_ratio`; this route has `ratio`. */
+  /** Veo 3.1 spells it `aspect_ratio`; this route has `ratio`. */
   aspect_ratio?: never;
 }
 
@@ -260,7 +248,6 @@ interface NotDraftComplete {
 
 interface Seedance25Shared
   extends NotVeo,
-    NotSeedance15,
     NotWan,
     NotSeedance20,
     NotWanReference,
@@ -332,7 +319,6 @@ export interface Seedance25ReferenceToVideoBody extends Seedance25Shared, NoFram
 
 interface Seedance20Shared
   extends NotVeo,
-    NotSeedance15,
     NotWan,
     NotSeedance25,
     NotWanReference,
@@ -429,65 +415,11 @@ export interface Seedance20FastReferenceToVideoBody extends Seedance20Shared, No
   resolution?: AtlasSeedance20SmallResolution;
 }
 
-// --- Seedance v1.5 pro -----------------------------------------------------
-
-/**
- * The family that breaks the Atlas house dialect: `aspect_ratio` rather than
- * `ratio`, a `[4, 12]` RANGE rather than an enum, and no `-1` sentinel.
- */
-interface Seedance15Shared
-  extends NotVeo,
-    NotWan,
-    NotSeedance25,
-    NotSeedance20,
-    NotSeedance2x,
-    NotWanReference,
-    NotDraftComplete,
-    NoRatio,
-    NoReferenceArrays {
-  prompt?: string;
-  /** 4–12 seconds. Default 5. A range, not an enum — and no `-1`. */
-  duration?: number;
-  aspect_ratio?: AtlasSeedance15AspectRatio;
-  /** Hold the camera still. Default false. */
-  camera_fixed?: boolean;
-  generate_audio?: boolean;
-  /** "-1 means a random seed will be used." */
-  seed?: number;
-}
-
-export interface Seedance15ProTextToVideoBody extends Seedance15Shared, NoFrames {
-  model: "bytedance/seedance-v1.5-pro/text-to-video";
-  prompt: string;
-  resolution?: AtlasSeedance15Resolution;
-}
-
-export interface Seedance15ProImageToVideoBody extends Seedance15Shared {
-  model: "bytedance/seedance-v1.5-pro/image-to-video";
-  image: AtlasMediaRef;
-  last_image?: AtlasMediaRef;
-  resolution?: AtlasSeedance15Resolution;
-}
-
-export interface Seedance15ProTextToVideoFastBody extends Seedance15Shared, NoFrames {
-  model: "bytedance/seedance-v1.5-pro/text-to-video-fast";
-  prompt: string;
-  resolution?: AtlasSeedance15FastResolution;
-}
-
-export interface Seedance15ProImageToVideoFastBody extends Seedance15Shared {
-  model: "bytedance/seedance-v1.5-pro/image-to-video-fast";
-  image: AtlasMediaRef;
-  last_image?: AtlasMediaRef;
-  resolution?: AtlasSeedance15FastResolution;
-}
-
 // --- Alibaba Wan 3.0 -------------------------------------------------------
 
 /** Wan spells the audio toggle `audio` and requires `prompt` on every route. */
 interface WanShared
   extends NotVeo,
-    NotSeedance15,
     NotSeedance25,
     NotSeedance20,
     NotSeedance2x,
@@ -583,8 +515,7 @@ export interface Wan30PrimeReferenceToVideoBody extends WanReferenceShared {
 // --- Google Veo 3.1 --------------------------------------------------------
 
 interface VeoShared
-  extends NotSeedance15,
-    NotWan,
+  extends NotWan,
     NotSeedance25,
     NotSeedance20,
     NotSeedance2x,
@@ -694,7 +625,6 @@ export interface Seedance25DraftCompleteBody
   extends NoFrames,
     NoReferenceArrays,
     NotVeo,
-    NotSeedance15,
     NotWan,
     NotSeedance20,
     NotWanReference,
@@ -751,10 +681,6 @@ export type GenerateVideoBody<FutureModel extends string = never> =
   | Seedance20FastTextToVideoBody
   | Seedance20FastImageToVideoBody
   | Seedance20FastReferenceToVideoBody
-  | Seedance15ProTextToVideoBody
-  | Seedance15ProImageToVideoBody
-  | Seedance15ProTextToVideoFastBody
-  | Seedance15ProImageToVideoFastBody
   | Wan30PrimeTextToVideoBody
   | Wan30PrimeImageToVideoBody
   | Wan30TextToVideoBody
@@ -785,10 +711,6 @@ interface VideoBodyByModel {
   "bytedance/seedance-2.0-fast/text-to-video": Seedance20FastTextToVideoBody;
   "bytedance/seedance-2.0-fast/image-to-video": Seedance20FastImageToVideoBody;
   "bytedance/seedance-2.0-fast/reference-to-video": Seedance20FastReferenceToVideoBody;
-  "bytedance/seedance-v1.5-pro/text-to-video": Seedance15ProTextToVideoBody;
-  "bytedance/seedance-v1.5-pro/image-to-video": Seedance15ProImageToVideoBody;
-  "bytedance/seedance-v1.5-pro/text-to-video-fast": Seedance15ProTextToVideoFastBody;
-  "bytedance/seedance-v1.5-pro/image-to-video-fast": Seedance15ProImageToVideoFastBody;
   "alibaba/wan-3.0-prime/text-to-video": Wan30PrimeTextToVideoBody;
   "alibaba/wan-3.0-prime/image-to-video": Wan30PrimeImageToVideoBody;
   "alibaba/wan-3.0/text-to-video": Wan30TextToVideoBody;
@@ -840,7 +762,6 @@ const videoSchema = z.looseObject({
   resolution: z.string().optional(),
   ratio: z.string().optional(),
   aspect_ratio: z.string().optional(),
-  camera_fixed: z.boolean().optional(),
   generate_audio: z.boolean().optional(),
   audio: z.boolean().optional(),
   negative_prompt: z.string().optional(),
@@ -900,8 +821,8 @@ function checkRequired(
 }
 
 /**
- * `duration` — the enum where the schema publishes one, the bounds where it
- * publishes a range, and the `-1` sentinel where it is a member.
+ * `duration` — the enum the schema publishes, and the `-1` sentinel where it
+ * is a member.
  */
 function checkDuration(
   params: AnyGenerateVideoBody,
@@ -913,7 +834,7 @@ function checkDuration(
   const rule = videoShapeRules[params.model];
   if (rule === undefined) return;
   // A route with no `duration` field at all: its deny rule already said so.
-  if (rule.durations?.length === 0) return;
+  if (rule.durations.length === 0) return;
 
   if (duration === AUTO_DURATION) {
     if (rule.allowsAutoDuration) return;
@@ -928,7 +849,7 @@ function checkDuration(
   }
 
   const allowed = rule.durations;
-  if (allowed !== undefined && !allowed.includes(duration)) {
+  if (!allowed.includes(duration)) {
     ctx.report({
       code: "invalid_enum_value",
       path: ["duration"],
@@ -937,15 +858,6 @@ function checkDuration(
       meta: { allowed: [...allowed], value: duration, source: VIDEO_API_SOURCE },
     });
     return;
-  }
-  if (allowed === undefined && (duration < rule.minDuration || duration > rule.maxDuration)) {
-    ctx.report({
-      code: "invalid_enum_value",
-      path: ["duration"],
-      model: params.model,
-      message: `\`duration\` must be ${rule.minDuration}–${rule.maxDuration} seconds for "${params.model}"; got ${duration}.`,
-      meta: { min: rule.minDuration, max: rule.maxDuration, value: duration, source: VIDEO_API_SOURCE },
-    });
   }
 }
 

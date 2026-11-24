@@ -206,6 +206,8 @@ const VIDEO_USD_PER_SECOND: Readonly<Record<string, Readonly<Record<string, numb
   // $1.156 per video · $0.231 per second |* $2.843 per video · $0.569 per
   // second |" — https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
   "dreamina-seedance-2-5-260628": { "480p": 0.103, "720p": 0.231, "1080p": 0.569 },
+  // Same source (2026-11-24): "Dreamina Seedance 2.5 Flash ... $0.07 per second ... $0.15 per second".
+  "dreamina-seedance-2-5-flash-261115": { "480p": 0.07, "720p": 0.15 },
   "dreamina-seedance-2-0-260128": { "480p": 0.07, "720p": 0.15, "1080p": 0.37, "4k": 0.78 },
   "dreamina-seedance-2-0-fast-260128": { "480p": 0.06, "720p": 0.12 },
   "dreamina-seedance-2-0-mini-260615": { "480p": 0.04, "720p": 0.08 },
@@ -216,6 +218,7 @@ const VIDEO_USD_PER_SECOND: Readonly<Record<string, Readonly<Record<string, numb
 /** Documented `resolution` default per model. */
 const DEFAULT_RESOLUTION: Readonly<Record<string, string>> = {
   "dreamina-seedance-2-5-260628": "720p",
+  "dreamina-seedance-2-5-flash-261115": "720p",
   "dreamina-seedance-2-0-260128": "720p",
   "dreamina-seedance-2-0-fast-260128": "720p",
   "dreamina-seedance-2-0-mini-260615": "720p",

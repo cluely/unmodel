@@ -30,6 +30,8 @@
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
 //   data/fal/openapi/microsoft__mai-image-2.5.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.7__text-to-image.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -670,6 +672,42 @@ export const imageModels = {
     openWeights: false,
     lastUpdated: "2026-06-24",
     modalities: { input: ["image", "text"], output: ["image"] },
+    limit: { context: 0 },
+  },
+  /**
+   * UNPRICED. Token billing depends on text and image input tokens and output image tokens.
+   * A flat per-image USD rate would misprice the request.
+   *
+   * Source: https://fal.ai/mai-image-2.7 — verified 2026-11-24. Quote: “Otherwise it is
+   * pay-per-use, billed by tokens.”
+   */
+  "microsoft/mai-image-2.7/flash/text-to-image": {
+    id: "microsoft/mai-image-2.7/flash/text-to-image",
+    name: "MAI-Image-2.7 Flash",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-11-20",
+    modalities: { input: ["text"], output: ["image"] },
+    limit: { context: 0 },
+  },
+  /**
+   * UNPRICED. Token billing depends on text and image input tokens and output image tokens.
+   * A flat per-image USD rate would misprice the request.
+   *
+   * Source: https://fal.ai/mai-image-2.7 — verified 2026-11-24. Quote: “Otherwise it is
+   * pay-per-use, billed by tokens.”
+   */
+  "microsoft/mai-image-2.7/text-to-image": {
+    id: "microsoft/mai-image-2.7/text-to-image",
+    name: "MAI-Image-2.7",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-11-20",
+    modalities: { input: ["text"], output: ["image"] },
     limit: { context: 0 },
   },
   /**

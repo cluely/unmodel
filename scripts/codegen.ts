@@ -60,6 +60,14 @@ const rawCostSchema = z
   })
   .optional();
 
+const rawLongContextTierSchema = z.object({
+  tier: z.object({ type: z.literal("context"), size: z.number().int().positive() }),
+  input: z.number(),
+  output: z.number(),
+  cache_read: z.number(),
+  cache_write: z.number(),
+});
+
 const rawModelSchema = z.looseObject({
   id: z.string(),
   name: z.string(),
@@ -138,7 +146,9 @@ const CHAT_FACTORY_PROVIDERS: ReadonlySet<string> = new Set([
   "google-vertex",
 ]);
 
-function renderCost(cost: NonNullable<RawModel["cost"]>): string | undefined {
+function renderCost(model: RawModel, providerId: string): string | undefined {
+  const cost = model.cost;
+  if (cost === undefined) return undefined;
   const fields: string[] = [];
   const push = (key: string, value: number | undefined) => {
     if (value !== undefined) fields.push(`${key}: ${num(value)}`);
@@ -150,6 +160,14 @@ function renderCost(cost: NonNullable<RawModel["cost"]>): string | undefined {
   push("reasoning", cost.reasoning);
   push("inputAudio", cost.input_audio);
   push("outputAudio", cost.output_audio);
+  if (providerId === "openai" && (model.id === "gpt-6.2-astra" || model.id === "gpt-6.2-sol")) {
+    // OpenAI applies the higher rates to the whole request above 272K input tokens.
+    // Both model pages document the same threshold and rate structure.
+    const [tier] = z.tuple([rawLongContextTierSchema]).parse(cost["tiers"]);
+    fields.push(
+      `longContext: { aboveInputTokens: ${tier.tier.size}, rates: { input: ${num(tier.input)}, output: ${num(tier.output)}, cacheRead: ${num(tier.cache_read)}, cacheWrite: ${num(tier.cache_write)} } }`,
+    );
+  }
   if (fields.length === 0) return undefined;
   return `{ ${fields.join(", ")} }`;
 }
@@ -159,7 +177,7 @@ function renderModalities(modalities: RawModel["modalities"]): string {
   return `{ input: ${renderStringArray(modalities.input)}, output: ${renderStringArray(modalities.output)} }`;
 }
 
-function renderModel(model: RawModel, indent: string): string {
+function renderModel(model: RawModel, indent: string, providerId: string): string {
   const lines: string[] = [];
   const push = (key: string, rendered: string | undefined) => {
     if (rendered !== undefined) lines.push(`${indent}  ${key}: ${rendered},`);
@@ -182,7 +200,7 @@ function renderModel(model: RawModel, indent: string): string {
   push("status", model.status === undefined ? undefined : quote(model.status));
   push("modalities", renderModalities(model.modalities));
   push("limit", renderLimit(model.limit));
-  push("cost", model.cost === undefined ? undefined : renderCost(model.cost));
+  push("cost", renderCost(model, providerId));
   return `${indent}${quote(model.id)}: {\n${lines.join("\n")}\n${indent}},`;
 }
 
@@ -212,7 +230,7 @@ ${providerFields.join("\n")}
 } as const satisfies ProviderInfo;
 
 export const models = {
-${models.map((m) => renderModel(m, "  ")).join("\n")}
+${models.map((m) => renderModel(m, "  ", provider.id)).join("\n")}
 } as const satisfies Record<string, ModelInfo>;
 
 export type ${pascal}ModelId = keyof typeof models;
@@ -584,7 +602,7 @@ function modalitySignatureName(modalities: RawModel["modalities"]): string {
 }
 
 /** One profile row: the slim subset, in `ModelInfo` field order. */
-function renderProfile(model: RawModel, modalitiesRef: string): string {
+function renderProfile(model: RawModel, modalitiesRef: string, providerId: string): string {
   const fields: string[] = [
     `attachment: ${String(model.attachment)}`,
     `reasoning: ${String(model.reasoning)}`,
@@ -597,7 +615,7 @@ function renderProfile(model: RawModel, modalitiesRef: string): string {
   if (model.status !== undefined) fields.push(`status: ${quote(model.status)}`);
   fields.push(`modalities: ${modalitiesRef}`);
   fields.push(`limit: ${renderLimit(model.limit)}`);
-  const cost = model.cost === undefined ? undefined : renderCost(model.cost);
+  const cost = renderCost(model, providerId);
   if (cost !== undefined) fields.push(`cost: ${cost}`);
   return `${quote(model.id)}: { ${fields.join(", ")} },`;
 }
@@ -637,7 +655,7 @@ function renderChatProfilesFile(scope: ReturnType<typeof chatScope>): string {
     .map(
       ({ id, models }) =>
         `  ${quote(id)}: {\n${models
-          .map((model) => `    ${renderProfile(model, modalitySignatureName(model.modalities))}`)
+          .map((model) => `    ${renderProfile(model, modalitySignatureName(model.modalities), id)}`)
           .join("\n")}\n  },`,
     )
     .join("\n");

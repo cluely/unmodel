@@ -17,7 +17,7 @@
 // warning and model-dependent checks are skipped. Matching is case-sensitive,
 // like azure chat's.
 //
-// All four models are (Preview) — `status: "beta"` is the closest ModelInfo
+// The catalogued models are (Preview) — `status: "beta"` is the closest ModelInfo
 // arm. `MAI-Image-2e` is text-to-image only (the models-at-a-glance table
 // lists it without "Image-to-image edits"); the 2.5 family supports both.
 //
@@ -51,6 +51,9 @@ export const MAI_IMAGE_MIN_DIMENSION = 768;
  */
 export const MAI_IMAGE_MAX_TOTAL_PIXELS = 1_048_576;
 
+/** Microsoft MAI Image 2.7 model card and Foundry's 2048×2048 REST example. */
+export const MAI_IMAGE_2_7_MAX_TOTAL_PIXELS = 4_194_304;
+
 /**
  * "The text prompt that describes the image to generate or edits to make.
  * Maximum context length: 32,000 tokens." — a TOKEN cap, so it is published
@@ -68,7 +71,7 @@ const base = {
   limit: { context: 0 },
 } as const;
 
-/** The 2.5 family: text-to-image generation AND image-to-image edits. */
+/** MAI models with both generation and editing. */
 const editCapable = {
   ...base,
   attachment: true,
@@ -94,6 +97,18 @@ export const maiImageModels = {
     name: "MAI-Image-2.5-Flash",
     releaseDate: "2026-06-02", // model version
   },
+  "MAI-Image-2.7": {
+    ...editCapable,
+    id: "MAI-Image-2.7",
+    name: "MAI-Image-2.7",
+    releaseDate: "2026-11-02", // Foundry model version
+  },
+  "MAI-Image-2.7-Flash": {
+    ...editCapable,
+    id: "MAI-Image-2.7-Flash",
+    name: "MAI-Image-2.7-Flash",
+    releaseDate: "2026-11-02", // Foundry model version
+  },
   "MAI-Image-2e": {
     ...base,
     id: "MAI-Image-2e",
@@ -109,7 +124,7 @@ export const maiImageModels = {
 /** Canonical MAI image model names — catalog keys, not deployment names. */
 export type AzureMaiImageModelId = keyof typeof maiImageModels;
 
-/** The models `/mai/v1/images/edits` documents (the 2.5 family; not 2e). */
+/** The models `/mai/v1/images/edits` documents. */
 export type AzureMaiImageEditModelId = Exclude<AzureMaiImageModelId, "MAI-Image-2e">;
 
 /** Every model `/mai/v1/images/generations` documents. */
@@ -117,6 +132,8 @@ export const MAI_IMAGE_MODEL_IDS = [
   "MAI-Image-2.5",
   "MAI-Image-2.5-Pro",
   "MAI-Image-2.5-Flash",
+  "MAI-Image-2.7",
+  "MAI-Image-2.7-Flash",
   "MAI-Image-2e",
 ] as const satisfies readonly AzureMaiImageModelId[];
 
@@ -125,4 +142,6 @@ export const MAI_IMAGE_EDIT_MODEL_IDS = [
   "MAI-Image-2.5",
   "MAI-Image-2.5-Pro",
   "MAI-Image-2.5-Flash",
+  "MAI-Image-2.7",
+  "MAI-Image-2.7-Flash",
 ] as const satisfies readonly AzureMaiImageEditModelId[];

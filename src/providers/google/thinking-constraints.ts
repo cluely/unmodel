@@ -22,7 +22,7 @@ export const GEMINI_LONG_DECODE_DOCS_URL = "https://ai.google.dev/gemini-api/doc
  * earlier models results in an error."
  *
  * `XHIGH` — "XHigh thinking level." (REST reference, 2026-11-12). Documented
- * as supported on `gemini-4-hydrogen` only ("The model defaults to `high` and
+ * as supported on `gemini-4-hydrogen` and `gemini-4-neon` ("The model defaults to `high` and
  * introduces `xhigh`"), and NOT refused elsewhere: no page says it errors on
  * another model, and a refusal the API would have fulfilled is the one failure
  * this library must not have. {@link GEMINI_XHIGH_THINKING_MODEL_IDS} is what
@@ -63,6 +63,7 @@ export const GEMINI_NO_MINIMAL_THINKING_MODEL_IDS = [
   "gemini-4-argon",
   "gemini-4-carbon",
   "gemini-4-hydrogen",
+  "gemini-4-neon",
 ] as const;
 
 /**
@@ -75,7 +76,8 @@ export const GEMINI_NO_MINIMAL_THINKING_MODEL_IDS = [
  * `xhigh`, and rejects `minimal` with an error." `gemini-4-argon` is "Supported
  * (low, medium, high)" and carbon the same, so neither is listed.
  */
-export const GEMINI_XHIGH_THINKING_MODEL_IDS = ["gemini-4-hydrogen"] as const;
+// Neon documents the same levels: https://aistudio.google.com/docs/models/gemini-4-neon.
+export const GEMINI_XHIGH_THINKING_MODEL_IDS = ["gemini-4-hydrogen", "gemini-4-neon"] as const;
 
 /**
  * The Gemini 4 generateContent models — the three ids two documented rules name
@@ -99,7 +101,7 @@ export const GEMINI_XHIGH_THINKING_MODEL_IDS = ["gemini-4-hydrogen"] as const;
  *
  * A fourth Gemini 4 id joins only when BOTH pages name it.
  */
-export const GEMINI_4_MODEL_IDS = ["gemini-4-argon", "gemini-4-carbon", "gemini-4-hydrogen"] as const;
+export const GEMINI_4_MODEL_IDS = ["gemini-4-argon", "gemini-4-carbon", "gemini-4-hydrogen", "gemini-4-neon"] as const;
 
 /**
  * "Output can use up to 1,048,576 minus your input tokens." — the long-decode

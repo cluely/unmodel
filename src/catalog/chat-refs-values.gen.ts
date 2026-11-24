@@ -8,7 +8,7 @@
 import type { ChatModelRef } from "./chat-refs.gen";
 
 /**
- * Every `"provider/model"` pair `chat()` accepts — 1530 of them — as
+ * Every `"provider/model"` pair `chat()` accepts — 1538 of them — as
  * values, for the dropdown a type cannot draw.
  *
  * Sorted exactly like {@link ChatModelRef}: by provider id, then by model id,
@@ -69,6 +69,7 @@ export const CHAT_MODEL_REFS = [
   "alibaba/qwen3.8-flash",
   "alibaba/qwen3.8-max",
   "alibaba/qwen3.8-omni-flash",
+  "alibaba/qwen4-max",
   "alibaba/qwq-plus",
   "anthropic/claude-fable-5",
   "anthropic/claude-fable-5-1",
@@ -244,6 +245,7 @@ export const CHAT_MODEL_REFS = [
   "google/gemini-4-argon",
   "google/gemini-4-carbon",
   "google/gemini-4-hydrogen",
+  "google/gemini-4-neon",
   "google/gemini-embedding-001",
   "google/gemini-embedding-2",
   "google/gemini-flash-latest",
@@ -588,6 +590,8 @@ export const CHAT_MODEL_REFS = [
   "openai/gpt-6-sol",
   "openai/gpt-6.1-sol",
   "openai/gpt-6.1-terra",
+  "openai/gpt-6.2-astra",
+  "openai/gpt-6.2-sol",
   "openai/o1",
   "openai/o3",
   "openai/o3-mini",
@@ -673,6 +677,7 @@ export const CHAT_MODEL_REFS = [
   "openrouter/google/gemini-4-argon",
   "openrouter/google/gemini-4-carbon",
   "openrouter/google/gemini-4-hydrogen",
+  "openrouter/google/gemini-4-neon",
   "openrouter/google/gemini-nano-banana-2.1",
   "openrouter/google/gemini-omni-1.1-flash",
   "openrouter/google/gemini-omni-1.2-flash",
@@ -820,6 +825,8 @@ export const CHAT_MODEL_REFS = [
   "openrouter/openai/gpt-6.1-sol-pro",
   "openrouter/openai/gpt-6.1-terra",
   "openrouter/openai/gpt-6.1-terra-pro",
+  "openrouter/openai/gpt-6.2-astra",
+  "openrouter/openai/gpt-6.2-sol",
   "openrouter/openai/gpt-audio",
   "openrouter/openai/gpt-audio-mini",
   "openrouter/openai/gpt-chat-latest",
@@ -883,6 +890,7 @@ export const CHAT_MODEL_REFS = [
   "openrouter/qwen/qwen3.8-max-0902",
   "openrouter/qwen/qwen3.8-max-prime",
   "openrouter/qwen/qwen3.8-omni-flash",
+  "openrouter/qwen/qwen4-max",
   "openrouter/recursive/flint-v1.0:free",
   "openrouter/reflection/beam-1.0-501b-a23b",
   "openrouter/rekaai/reka-edge",

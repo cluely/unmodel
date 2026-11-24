@@ -30,6 +30,8 @@
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
 //   data/fal/openapi/microsoft__mai-image-2.5.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.7__text-to-image.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -56,6 +58,7 @@ const E_0fc622 = ["1K", "2K"] as const;
 const E_1a4359 = ["16:9", "9:16", "1:1", "4:3", "3:4", "3:2", "2:3", "21:9"] as const;
 const E_1bdef2 = ["1", "2", "3", "4", "5"] as const;
 const E_205460 = ["jpeg", "png", "webp"] as const;
+const E_2257dd = ["square_hd", "portrait_4_3", "landscape_4_3", "portrait_3_2", "landscape_3_2", "portrait_16_9", "landscape_16_9"] as const;
 const E_2493d0 = ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9"] as const;
 const E_375a80 = ["auto", "21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16"] as const;
 const E_38d343 = ["21:9", "16:9", "4:3", "3:2", "1:1", "2:3", "3:4", "9:16", "9:21"] as const;
@@ -81,6 +84,7 @@ const E_9f102a = ["low", "medium", "high"] as const;
 const E_a008c0 = ["auto", "21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16", "4:1", "1:4", "8:1", "1:8"] as const;
 const E_a09649 = ["21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16"] as const;
 const E_a13c1b = ["none", "regular", "high"] as const;
+const E_b4beec = ["opaque", "transparent"] as const;
 const E_b4f39b = ["euler", "dpmpp_2m"] as const;
 const E_b80dce = ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9", "auto_2K", "auto_4K"] as const;
 const E_cc09d1 = ["none", "low", "regular", "high"] as const;
@@ -523,6 +527,28 @@ export const FAL_IMAGE_SHAPES = {
       sync_mode: { t: "boolean", def: true },
     },
   },
+  "microsoft/mai-image-2.7/flash/text-to-image": {
+    order: ["prompt", "image_size", "resolution", "background", "output_format", "sync_mode"],
+    props: {
+      prompt: { t: "string", req: true, minLen: 1, maxLen: 32000 },
+      image_size: { t: "union", def: true, size: { presets: E_2257dd, width: { xmin: 0, max: 14142, default: 512 }, height: { xmin: 0, max: 14142, default: 512 } } },
+      resolution: { t: "string", def: true, enum: E_0fc622 },
+      background: { t: "string", def: true, enum: E_b4beec },
+      output_format: { t: "string", def: true, enum: E_205460 },
+      sync_mode: { t: "boolean", def: true },
+    },
+  },
+  "microsoft/mai-image-2.7/text-to-image": {
+    order: ["prompt", "image_size", "resolution", "background", "output_format", "sync_mode"],
+    props: {
+      prompt: { t: "string", req: true, minLen: 1, maxLen: 32000 },
+      image_size: { t: "union", def: true, size: { presets: E_2257dd, width: { xmin: 0, max: 14142, default: 512 }, height: { xmin: 0, max: 14142, default: 512 } } },
+      resolution: { t: "string", def: true, enum: E_0fc622 },
+      background: { t: "string", def: true, enum: E_b4beec },
+      output_format: { t: "string", def: true, enum: E_205460 },
+      sync_mode: { t: "boolean", def: true },
+    },
+  },
   "openai/gpt-image-2": {
     order: ["prompt", "image_size", "background", "quality", "num_images", "output_format", "sync_mode"],
     props: {
@@ -685,6 +711,16 @@ export const FAL_IMAGE_CONSTRAINTS = {
   },
   "microsoft/mai-image-2.5": {
     aspect_ratio: E_7ae612,
+    output_format: E_205460,
+  },
+  "microsoft/mai-image-2.7/flash/text-to-image": {
+    resolution: E_0fc622,
+    background: E_b4beec,
+    output_format: E_205460,
+  },
+  "microsoft/mai-image-2.7/text-to-image": {
+    resolution: E_0fc622,
+    background: E_b4beec,
     output_format: E_205460,
   },
   "openai/gpt-image-2": {

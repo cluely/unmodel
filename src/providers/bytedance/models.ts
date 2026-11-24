@@ -233,6 +233,21 @@ export const videoModels = {
     // ./pricing.ts picks the tier.
     cost: { perVideoSecond: 0.231 },
   },
+  "dreamina-seedance-2-5-flash-261115": {
+    id: "dreamina-seedance-2-5-flash-261115",
+    name: "Dreamina Seedance 2.5 Flash",
+    family: "seedance",
+    attachment: true,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    modalities: { input: ["text", "image", "audio", "video"], output: ["video"] },
+    limit: { context: 0 },
+    // https://docs.byteplus.com/docs/en/modelark/model-pricing.md (2026-11-24),
+    // Price examples: "Dreamina Seedance 2.5 Flash ... $0.76 per video ...
+    // $0.15 per second" for default 720p, 16:9, without input video.
+    cost: { perVideoSecond: 0.15 },
+  },
   "dreamina-seedance-2-0-260128": {
     id: "dreamina-seedance-2-0-260128",
     name: "Dreamina Seedance 2.0",

@@ -146,6 +146,11 @@ export const availability = {
     "openrouter": "google/gemini-4-hydrogen",
     "vercel": { id: "google/gemini-4-hydrogen", narrows: { context: 1000000, drops: ["video", "audio"] } },
   },
+  "gemini-4-neon": {
+    "google": "gemini-4-neon",
+    "google-vertex": "gemini-4-neon",
+    "openrouter": "google/gemini-4-neon",
+  },
   "gemini-flash-latest": {
     "google": "gemini-flash-latest",
     "openrouter": "~google/gemini-flash-latest",

@@ -9,7 +9,8 @@
  * whose per-model rows list the parameters verbatim: `width`, `height`,
  * `prompt`):
  *
- * - The documented body is exactly `model`, `prompt`, `width`, `height`.
+ * - The documented body is `model`, `prompt`, `width`, `height`, and
+ *   `background` for transparent output on the MAI Image 2.7 family.
  *   There is NO `n` ("Output: One image"), no `size`/`quality`/`style`, and no
  *   `output_format`/`response_format` — "The output format is always PNG",
  *   returned as base64 in `data[0].b64_json`.
@@ -17,8 +18,8 @@
  *   assigned when you deployed the model"), not a canonical model id — same
  *   as azure chat. Catalog matching is best-effort via the deployment-catalog
  *   proxy; unrelated custom names get an `unknown_model` warning.
- * - `width`/`height`: integers, "Minimum: 768", and "The product of `width` ×
- *   `height` must not exceed 1,048,576" (violations answer `400`). The docs
+ * - `width` and `height` are integers, with a minimum of 768 per side and a
+ *   per-model pixel cap. The docs
  *   mark no default and no required flag; every example passes both, so they
  *   are typed optional here and range-checked when present.
  * - No `api-version` query parameter appears anywhere in the MAI docs, so the
@@ -50,6 +51,7 @@ import {
   MAI_IMAGE_DOCS,
   MAI_IMAGE_MIN_DIMENSION,
   MAI_IMAGE_MAX_TOTAL_PIXELS,
+  MAI_IMAGE_2_7_MAX_TOTAL_PIXELS,
   maiImageModels,
   type AzureMaiImageModelId,
 } from "./mai-image-models";
@@ -81,14 +83,16 @@ export interface MaiImagesGenerationsBody {
   prompt: string;
   /**
    * Width of the output image in pixels. Integer, minimum 768;
-   * `width` × `height` must not exceed 1,048,576.
+   * The product cap depends on the deployed model.
    */
   width?: number;
   /**
    * Height of the output image in pixels. Integer, minimum 768;
-   * `width` × `height` must not exceed 1,048,576.
+   * The product cap depends on the deployed model.
    */
   height?: number;
+  /** Foundry documents transparent background generation for MAI Image 2.7. */
+  background?: "transparent" | (string & {});
 }
 
 const imageSchema = z.looseObject({
@@ -96,16 +100,16 @@ const imageSchema = z.looseObject({
   prompt: z.string(),
   width: z.number().int().optional(),
   height: z.number().int().optional(),
+  background: z.string().optional(),
 });
 
 /**
- * "Ensure `width` and `height` are each at least 768, and that
- * `width` × `height` ≤ 1,048,576." — the documented 400s, moved pre-call.
- * Each dimension is checked when present; the product only when both are.
+ * Check each present dimension. Check the product when both dimensions and
+ * the deployment model are known.
  */
 export function checkMaiDimensions(
   params: { model?: string; width?: unknown; height?: unknown },
-  _info: ModelInfo | undefined,
+  info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
   const model = typeof params.model === "string" ? params.model : undefined;
@@ -139,11 +143,14 @@ export function checkMaiDimensions(
     Number.isInteger(height)
   ) {
     const pixels = width * height;
-    if (pixels > MAI_IMAGE_MAX_TOTAL_PIXELS) {
+    const maxPixels = info?.id === "MAI-Image-2.7" || info?.id === "MAI-Image-2.7-Flash"
+      ? MAI_IMAGE_2_7_MAX_TOTAL_PIXELS
+      : MAI_IMAGE_MAX_TOTAL_PIXELS;
+    if (info !== undefined && pixels > maxPixels) {
       report(
         ["width"],
-        `\`width\` × \`height\` is ${pixels.toLocaleString("en-US")} pixels; the MAI image APIs cap the total at ${MAI_IMAGE_MAX_TOTAL_PIXELS.toLocaleString("en-US")} (equivalent to 1024×1024 — either dimension may exceed 1024 as long as the product fits).`,
-        { width, height, pixels, maxPixels: MAI_IMAGE_MAX_TOTAL_PIXELS },
+        `\`width\` × \`height\` is ${pixels.toLocaleString("en-US")} pixels; the MAI image APIs cap the total at ${maxPixels.toLocaleString("en-US")} for this model.`,
+        { width, height, pixels, maxPixels },
       );
     }
   }

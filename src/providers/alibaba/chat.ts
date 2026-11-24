@@ -6,9 +6,7 @@
  * generated alibaba catalog. This is DashScope's international "compatible
  * mode" endpoint (the China endpoint is the separate alibaba-cn catalog).
  *
- * DashScope-only params (enable_thinking, enable_search, thinking_budget, …)
- * are not part of the shared dialect schema and surface as unknown-param
- * warnings rather than errors.
+ * The Alibaba schema extends user turns with the documented video parts.
  *
  * A dedicated LEAF, not part of ../alibaba's barrel body, for the same reason
  * anthropic, google, openai and minimax have one: `src/chat/providers.ts`
@@ -19,13 +17,86 @@
  * tables below stay in this leaf for the same reason.
  */
 
-import { createOpenAICompatible, type ChatCompletionsBodyBase } from "../openai-compatible";
+import { z } from "zod";
+import { createOpenAICompatible } from "../openai-compatible";
+import {
+  audioPartSchema,
+  createChatCompletionsSchema,
+  createMessagesSchema,
+  filePartSchema,
+  imagePartSchema,
+  textPartSchema,
+  type ChatCompletionsBodyBase,
+  type ChatMessage,
+  type ChatUserContentPart,
+  type ChatUserMessage,
+} from "../openai-compatible/wire";
+import type { StandardSchemaV1 } from "../../core/standard-schema";
 import { models, provider } from "../../catalog/alibaba.gen";
 import type { AlibabaTextModelId } from "../../catalog/alibaba.gen";
 import { availability } from "../../catalog/availability/alibaba.gen";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import type { PipelineContext } from "../../core/pipeline";
+
+/** Video content accepted by Alibaba's OpenAI-compatible chat reference. */
+export type AlibabaVideoPart = ({
+  type: "video_url";
+  video_url: { url: string };
+} | {
+  type: "video";
+  video: string[];
+}) & {
+  fps?: number;
+  min_pixels?: number;
+  max_pixels?: number;
+  total_pixels?: number;
+};
+
+export interface AlibabaChatUserMessage extends Omit<ChatUserMessage, "content"> {
+  content: string | Array<ChatUserContentPart | AlibabaVideoPart>;
+}
+
+export interface AlibabaChatBody<ModelId extends string = AlibabaTextModelId>
+  extends Omit<ChatCompletionsBodyBase<ModelId>, "messages"> {
+  messages: Array<Exclude<ChatMessage, ChatUserMessage> | AlibabaChatUserMessage>;
+  enable_thinking?: boolean;
+  thinking_budget?: number;
+  preserve_thinking?: boolean;
+}
+
+const videoOptions = {
+  fps: z.number().min(0.1).max(10).optional(),
+  min_pixels: z.number().int().optional(),
+  max_pixels: z.number().int().optional(),
+  total_pixels: z.number().int().optional(),
+};
+const userContentSchema = z.union([
+  z.string(),
+  z.array(z.discriminatedUnion("type", [
+    textPartSchema,
+    imagePartSchema,
+    audioPartSchema,
+    filePartSchema,
+    z.looseObject({
+      type: z.literal("video_url"),
+      video_url: z.looseObject({ url: z.string() }),
+      ...videoOptions,
+    }),
+    z.looseObject({
+      type: z.literal("video"),
+      video: z.array(z.string()),
+      ...videoOptions,
+    }),
+  ])),
+]);
+
+const chatSchema: StandardSchemaV1 = createChatCompletionsSchema({
+  messages: createMessagesSchema(userContentSchema),
+  enable_thinking: z.boolean().optional(),
+  thinking_budget: z.number().optional(),
+  preserve_thinking: z.boolean().optional(),
+});
 
 /** The Chat Completions reference: per-model `reasoning_effort` ladders and tool-call notes. */
 const CHAT_DOCS =
@@ -44,7 +115,7 @@ const OMNI_DOCS = "https://www.alibabacloud.com/help/en/model-studio/qwen-omni";
  * Completions request field reasoning_effort accepts none, minimal, low,
  * medium, high, xhigh, and max."
  */
-const QWEN38_REASONING_EFFORTS = ["none", "minimal", "low", "medium", "high", "xhigh", "max"];
+const QWEN_REASONING_EFFORTS = ["none", "minimal", "low", "medium", "high", "xhigh", "max"];
 
 /**
  * The ids both pages say reject `reasoning_effort` beside `thinking_budget`
@@ -68,8 +139,10 @@ const QWEN38_MODEL_ID_SET: ReadonlySet<string> = new Set(QWEN38_MODEL_IDS);
 /** Per-model rules the catalog cannot express. Every row cites its page (checked 2026-11-12). */
 const chatConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = {
   ...Object.fromEntries(
-    QWEN38_MODEL_IDS.map((id) => [id, { enums: { reasoning_effort: QWEN38_REASONING_EFFORTS } }]),
+    QWEN38_MODEL_IDS.map((id) => [id, { enums: { reasoning_effort: QWEN_REASONING_EFFORTS } }]),
   ),
+  // The Chat Completions reference maps minimal, medium and max and accepts none.
+  "qwen4-max": { enums: { reasoning_effort: QWEN_REASONING_EFFORTS } },
   "kimi-k3": {
     // CHAT_DOCS, the kimi-k3 group: "Default value: max Valid values: max
     // (default): deep reasoning high: enhanced reasoning low: light
@@ -120,7 +193,13 @@ const chatConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = 
 };
 
 export const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<AlibabaTextModelId, typeof availability, "alibaba">({
+  createOpenAICompatible<
+    AlibabaTextModelId,
+    typeof availability,
+    "alibaba",
+    Record<string, ModelInfo>,
+    AlibabaChatBody
+  >({
     id: "alibaba",
     // Legacy international compatible-mode domain (the models.dev value;
     // still functional). Alibaba's doc page now recommends workspace/
@@ -129,20 +208,33 @@ export const { chat, chatUrl, checkChat, estimateChatTokens } =
     // https://www.alibabacloud.com/help/en/model-studio/compatibility-of-openai-with-dashscope
     baseUrl: provider.api,
     catalog: models,
+    schema: chatSchema,
     availability,
     constraints: chatConstraints,
     extraChecks: [checkThinkingBudgetPairing, checkOmniJsonSchema],
   });
 
-/** `reasoning_effort` + the DashScope `thinking_budget` extension is a 400 on Qwen3.8. */
+/** `reasoning_effort` + the DashScope `thinking_budget` extension is a 400 on Qwen3.8 and Qwen4-Max. */
 function checkThinkingBudgetPairing(
   params: ChatCompletionsBodyBase,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
-  if (!QWEN38_MODEL_ID_SET.has(params.model)) return;
+  if (params.model !== "qwen4-max" && !QWEN38_MODEL_ID_SET.has(params.model)) return;
   const thinkingBudget = (params as { thinking_budget?: unknown }).thinking_budget;
-  if (params.reasoning_effort == null || thinkingBudget == null) return;
+  if (thinkingBudget == null) return;
+  if (params.model === "qwen4-max" &&
+      (typeof thinkingBudget !== "number" || !Number.isInteger(thinkingBudget) ||
+        thinkingBudget < 1 || thinkingBudget > 262_144)) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["thinking_budget"],
+      model: params.model,
+      message: "Qwen4-Max thinking_budget must be an integer from 1 to 262144.",
+      meta: { source: CHAT_DOCS },
+    });
+  }
+  if (params.reasoning_effort == null) return;
   ctx.report({
     code: "unsupported_param",
     path: ["thinking_budget"],

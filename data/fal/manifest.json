@@ -57,6 +57,30 @@
       "status": "active",
       "updated_at": "2026-07-10T18:12:05.187Z"
     },
+    "bytedance/seedance-2.5/flash/image-to-video": {
+      "category": "unknown",
+      "display_name": "Seedance 2.5 Flash Image to Video",
+      "file": "openapi/bytedance__seedance-2.5__flash__image-to-video.json",
+      "sha256": "02ae47736a56b77f9d87be5e88abf77a0d8ad08bbbd685d8b4e6ecd2e0b5f3ca",
+      "status": "active",
+      "updated_at": "2026-11-23T03:23:15.756Z"
+    },
+    "bytedance/seedance-2.5/flash/reference-to-video": {
+      "category": "unknown",
+      "display_name": "Seedance 2.5 Flash Reference to Video",
+      "file": "openapi/bytedance__seedance-2.5__flash__reference-to-video.json",
+      "sha256": "6921cba1292c7ea7e0d8ba41ab1e31ec109fd841bf1c523d3e94b454bd94351f",
+      "status": "active",
+      "updated_at": "2026-11-23T03:23:15.730Z"
+    },
+    "bytedance/seedance-2.5/flash/text-to-video": {
+      "category": "unknown",
+      "display_name": "Seedance 2.5 Flash Text to Video",
+      "file": "openapi/bytedance__seedance-2.5__flash__text-to-video.json",
+      "sha256": "065aacd2865a3d2381a631723c06c7aba324ec0e405288fca9111468fdb0ec1d",
+      "status": "active",
+      "updated_at": "2026-11-23T03:23:15.830Z"
+    },
     "bytedance/seedance-2.5/image-to-video": {
       "category": "unknown",
       "display_name": "Seedance 2.5 Image to Video",
@@ -1240,6 +1264,38 @@
       "sha256": "3d0f0c9a0b4f4bb39460cb8b68704c121663a56f6a6455b155858ae41a17f7e3",
       "status": "active",
       "updated_at": "2026-06-24T00:21:44.881Z"
+    },
+    "microsoft/mai-image-2.7/edit": {
+      "category": "image-to-image",
+      "display_name": "MAI-Image-2.7 Edit",
+      "file": "openapi/microsoft__mai-image-2.7__edit.json",
+      "sha256": "20e3dabe06f49aac61449ede5bd0464c6b1bf8a43ebd1bc4d3fe056780c95bf5",
+      "status": "active",
+      "updated_at": "2026-11-20T17:19:44.900Z"
+    },
+    "microsoft/mai-image-2.7/flash/edit": {
+      "category": "image-to-image",
+      "display_name": "MAI-Image-2.7 Flash Edit",
+      "file": "openapi/microsoft__mai-image-2.7__flash__edit.json",
+      "sha256": "4a97b97e3472a8cdb775a4fb6e5a27b8243cbff39e7e419f68c2b12bc862cbf1",
+      "status": "active",
+      "updated_at": "2026-11-20T17:19:56.997Z"
+    },
+    "microsoft/mai-image-2.7/flash/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "MAI-Image-2.7 Flash",
+      "file": "openapi/microsoft__mai-image-2.7__flash__text-to-image.json",
+      "sha256": "0dadf6e29ffdc9da4ca83dca92218b91ad0ad024a4dd00b11aab35fd2f2ca8e0",
+      "status": "active",
+      "updated_at": "2026-11-20T17:20:08.580Z"
+    },
+    "microsoft/mai-image-2.7/text-to-image": {
+      "category": "text-to-image",
+      "display_name": "MAI-Image-2.7",
+      "file": "openapi/microsoft__mai-image-2.7__text-to-image.json",
+      "sha256": "b857f547998d08e97df1fa3e35510360405634091926e5564c549c0182351443",
+      "status": "active",
+      "updated_at": "2026-11-20T17:19:42.593Z"
     },
     "minimax/h3/image-to-video": {
       "category": "unknown",

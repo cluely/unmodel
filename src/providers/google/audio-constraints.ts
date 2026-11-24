@@ -120,6 +120,8 @@ export const GEMINI_STT_MODEL_IDS = [
   "gemini-4-argon",
   "gemini-4-carbon",
   "gemini-4-hydrogen",
+  // https://aistudio.google.com/docs/models/gemini-4-neon lists audio input and text output.
+  "gemini-4-neon",
   "gemini-flash-latest",
   "gemini-flash-lite-latest",
   "gemini-pro-latest",

@@ -107,6 +107,21 @@
       "textParam": "prompt",
       "note": "Seedance 2.0 text-to-video — a 4k resolution tier its 2.5 sibling does not offer."
     },
+    "bytedance/seedance-2.5/flash/image-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Seedance 2.5 Flash, 480p or 720p. Public route verified 2026-11-24 at https://fal.ai/models/bytedance/seedance-2.5/flash/image-to-video."
+    },
+    "bytedance/seedance-2.5/flash/reference-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Seedance 2.5 Flash, 480p or 720p. Public route verified 2026-11-24 at https://fal.ai/models/bytedance/seedance-2.5/flash/reference-to-video."
+    },
+    "bytedance/seedance-2.5/flash/text-to-video": {
+      "verb": "video",
+      "textParam": "prompt",
+      "note": "Seedance 2.5 Flash, 480p or 720p. Public route verified 2026-11-24 at https://fal.ai/models/bytedance/seedance-2.5/flash/text-to-video."
+    },
     "bytedance/seedance-2.5/image-to-video": {
       "verb": "video",
       "textParam": "prompt",
@@ -818,6 +833,26 @@
       "verb": "image",
       "textParam": "prompt",
       "note": "Microsoft MAI-Image-2.5, sized by `aspect_ratio` rather than by pixels. Two of the roster's provenance quirks at once: fal documents it at the internal route `fal-ai/mai-image-2.5`, and its `info.x-fal-metadata` carries a documentationUrl but no `category` (the wizper shape). Carries an `unpriced` reason, not a rate."
+    },
+    "microsoft/mai-image-2.7/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "MAI Image 2.7 family, 1K or 2K presets and custom dimensions. Public route verified 2026-11-24 at https://fal.ai/models/microsoft/mai-image-2.7/edit."
+    },
+    "microsoft/mai-image-2.7/flash/edit": {
+      "verb": "imageEdit",
+      "textParam": "prompt",
+      "note": "MAI Image 2.7 family, 1K or 2K presets and custom dimensions. Public route verified 2026-11-24 at https://fal.ai/models/microsoft/mai-image-2.7/flash/edit."
+    },
+    "microsoft/mai-image-2.7/flash/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "MAI Image 2.7 family, 1K or 2K presets and custom dimensions. Public route verified 2026-11-24 at https://fal.ai/models/microsoft/mai-image-2.7/flash/text-to-image."
+    },
+    "microsoft/mai-image-2.7/text-to-image": {
+      "verb": "image",
+      "textParam": "prompt",
+      "note": "MAI Image 2.7 family, 1K or 2K presets and custom dimensions. Public route verified 2026-11-24 at https://fal.ai/models/microsoft/mai-image-2.7/text-to-image."
     },
     "minimax/h3/image-to-video": {
       "verb": "video",

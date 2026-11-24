@@ -3,6 +3,9 @@
 // Committed snapshots:
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
@@ -96,6 +99,67 @@ export const videoModels = {
     toolCall: false,
     openWeights: false,
     lastUpdated: "2026-07-10",
+    modalities: { input: ["text"], output: ["video"] },
+    limit: { context: 0 },
+  },
+  /**
+   * Conditional pricing on output pixels and duration:
+   *   $0.014 — per 1,000 tokens at 480p or 720p before any input-video multiplier
+   * Not on `cost`: a rate that depends on the request cannot be a scalar. It belongs in the
+   * hand pricing table, where the estimate can read the body or honestly return undefined.
+   *
+   * Source: https://fal.ai/models/bytedance/seedance-2.5/flash/image-to-video — verified
+   * 2026-11-24. Quote: “Your request will cost $0.014 per 1,000 tokens.”
+   */
+  "bytedance/seedance-2.5/flash/image-to-video": {
+    id: "bytedance/seedance-2.5/flash/image-to-video",
+    name: "Seedance 2.5 Flash Image to Video",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-11-23",
+    modalities: { input: ["image", "text"], output: ["video"] },
+    limit: { context: 0 },
+  },
+  /**
+   * Conditional pricing on output pixels and input plus output duration; multiply by 0.614
+   * with video input:
+   *   $0.014 — per 1,000 tokens at 480p or 720p before any input-video multiplier
+   * Not on `cost`: a rate that depends on the request cannot be a scalar. It belongs in the
+   * hand pricing table, where the estimate can read the body or honestly return undefined.
+   *
+   * Source: https://fal.ai/models/bytedance/seedance-2.5/flash/reference-to-video — verified
+   * 2026-11-24. Quote: “Your request will cost $0.014 per 1,000 tokens.”
+   */
+  "bytedance/seedance-2.5/flash/reference-to-video": {
+    id: "bytedance/seedance-2.5/flash/reference-to-video",
+    name: "Seedance 2.5 Flash Reference to Video",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-11-23",
+    modalities: { input: ["audio", "image", "text", "video"], output: ["video"] },
+    limit: { context: 0 },
+  },
+  /**
+   * Conditional pricing on output pixels and duration:
+   *   $0.014 — per 1,000 tokens at 480p or 720p before any input-video multiplier
+   * Not on `cost`: a rate that depends on the request cannot be a scalar. It belongs in the
+   * hand pricing table, where the estimate can read the body or honestly return undefined.
+   *
+   * Source: https://fal.ai/models/bytedance/seedance-2.5/flash/text-to-video — verified
+   * 2026-11-24. Quote: “Your request will cost $0.014 per 1,000 tokens.”
+   */
+  "bytedance/seedance-2.5/flash/text-to-video": {
+    id: "bytedance/seedance-2.5/flash/text-to-video",
+    name: "Seedance 2.5 Flash Text to Video",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-11-23",
     modalities: { input: ["text"], output: ["video"] },
     limit: { context: 0 },
   },

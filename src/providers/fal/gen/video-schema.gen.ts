@@ -3,6 +3,9 @@
 // Committed snapshots:
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
@@ -41,7 +44,7 @@
 /**
  * The ONE request schema for every `fal.video` endpoint.
  *
- * One `z.looseObject` for the whole category, not 35 per-endpoint schemas: zod objects are
+ * One `z.looseObject` for the whole category, not 38 per-endpoint schemas: zod objects are
  * built eagerly, and a hundred of them would be constructed on import for the one the
  * caller actually used.
  *
@@ -79,8 +82,11 @@ export const falVideoInputSchema = z.looseObject({
   /**
    * Every `fal.video` endpoint types `aspect_ratio` as string, but they disagree on the
    * details (bytedance/seedance-2.0/image-to-video, bytedance/seedance-2.0/text-to-video,
-   * bytedance/seedance-2.5/image-to-video, bytedance/seedance-2.5/reference-to-video,
-   * bytedance/seedance-2.5/text-to-video, fal-ai/kling-video/v2.5-turbo/pro/text-to-video,
+   * bytedance/seedance-2.5/flash/image-to-video,
+   * bytedance/seedance-2.5/flash/reference-to-video,
+   * bytedance/seedance-2.5/flash/text-to-video, bytedance/seedance-2.5/image-to-video,
+   * bytedance/seedance-2.5/reference-to-video, bytedance/seedance-2.5/text-to-video,
+   * fal-ai/kling-video/v2.5-turbo/pro/text-to-video,
    * fal-ai/kling-video/v2.6/pro/text-to-video, fal-ai/kling-video/v3/pro/text-to-video,
    * fal-ai/kling-video/v3/standard/text-to-video, fal-ai/pixverse/v6/text-to-video,
    * fal-ai/veo3.1, fal-ai/veo3.1/extend-video, fal-ai/veo3.1/fast,
@@ -99,10 +105,14 @@ export const falVideoInputSchema = z.looseObject({
   camera_motion: z.enum(["dolly_in", "dolly_out", "dolly_left", "dolly_right", "jib_up", "jib_down", "static", "focus_shift"]).nullable().optional(),
   cfg_scale: z.number().optional(),
   character_orientation: z.enum(["image", "video"]).optional(),
+  codec: z.enum(["auto", "H264", "H265"]).optional(),
   /**
    * `duration` means different things at different endpoints — string at
    * bytedance/seedance-2.0/image-to-video, string at bytedance/seedance-2.0/text-to-video,
-   * string at bytedance/seedance-2.5/image-to-video, string at
+   * string at bytedance/seedance-2.5/flash/image-to-video, string at
+   * bytedance/seedance-2.5/flash/reference-to-video, string at
+   * bytedance/seedance-2.5/flash/text-to-video, string at
+   * bytedance/seedance-2.5/image-to-video, string at
    * bytedance/seedance-2.5/reference-to-video, string at
    * bytedance/seedance-2.5/text-to-video, string at
    * fal-ai/kling-video/v2.5-turbo/pro/image-to-video, string at
@@ -174,11 +184,15 @@ export const falVideoInputSchema = z.looseObject({
   num_frames: z.number().optional(),
   num_inference_steps: z.number().optional(),
   num_interpolated_frames: z.number().optional(),
+  output_format: z.enum(["mp4", "mov"]).optional(),
   /**
    * Every `fal.video` endpoint types `prompt` as string, but they disagree on the details
    * (bytedance/seedance-2.0/image-to-video, bytedance/seedance-2.0/text-to-video,
-   * bytedance/seedance-2.5/image-to-video, bytedance/seedance-2.5/reference-to-video,
-   * bytedance/seedance-2.5/text-to-video, fal-ai/kling-video/o1/video-to-video/edit,
+   * bytedance/seedance-2.5/flash/image-to-video,
+   * bytedance/seedance-2.5/flash/reference-to-video,
+   * bytedance/seedance-2.5/flash/text-to-video, bytedance/seedance-2.5/image-to-video,
+   * bytedance/seedance-2.5/reference-to-video, bytedance/seedance-2.5/text-to-video,
+   * fal-ai/kling-video/o1/video-to-video/edit,
    * fal-ai/kling-video/o3/pro/video-to-video/edit,
    * fal-ai/kling-video/v2.5-turbo/pro/image-to-video,
    * fal-ai/kling-video/v2.5-turbo/pro/text-to-video,
@@ -207,9 +221,12 @@ export const falVideoInputSchema = z.looseObject({
   /**
    * Every `fal.video` endpoint types `resolution` as string, but they disagree on the
    * details (bytedance/seedance-2.0/image-to-video, bytedance/seedance-2.0/text-to-video,
-   * bytedance/seedance-2.5/image-to-video, bytedance/seedance-2.5/reference-to-video,
-   * bytedance/seedance-2.5/text-to-video, fal-ai/pixverse/v6/text-to-video, fal-ai/veo3.1,
-   * fal-ai/veo3.1/extend-video, fal-ai/veo3.1/fast, fal-ai/veo3.1/first-last-frame-to-video,
+   * bytedance/seedance-2.5/flash/image-to-video,
+   * bytedance/seedance-2.5/flash/reference-to-video,
+   * bytedance/seedance-2.5/flash/text-to-video, bytedance/seedance-2.5/image-to-video,
+   * bytedance/seedance-2.5/reference-to-video, bytedance/seedance-2.5/text-to-video,
+   * fal-ai/pixverse/v6/text-to-video, fal-ai/veo3.1, fal-ai/veo3.1/extend-video,
+   * fal-ai/veo3.1/fast, fal-ai/veo3.1/first-last-frame-to-video,
    * fal-ai/veo3.1/image-to-video, fal-ai/veo3.1/reference-to-video,
    * fal-ai/wan/v2.2-a14b/image-to-video, fal-ai/wan/v2.2-a14b/text-to-video,
    * fal-ai/wan/v2.7/image-to-video, fal-ai/wan/v2.7/text-to-video,
@@ -218,6 +235,7 @@ export const falVideoInputSchema = z.looseObject({
    * bare type and the exact vocabulary is enforced per endpoint from FAL_VIDEO_SHAPES.
    */
   resolution: z.string().optional(),
+  return_last_frame: z.boolean().optional(),
   safety_tolerance: z.enum(["1", "2", "3", "4", "5", "6"]).optional(),
   seed: z.number().nullable().optional(),
   shift: z.number().optional(),
@@ -234,6 +252,7 @@ export const falVideoInputSchema = z.looseObject({
   style: z.enum(["anime", "3d_animation", "clay", "comic", "cyberpunk"]).nullable().optional(),
   sync_mode: z.boolean().optional(),
   tail_image_url: z.string().nullable().optional(),
+  task: z.enum(["auto", "reference", "editing", "extension"]).optional(),
   thinking_type: z.enum(["enabled", "disabled", "auto"]).nullable().optional(),
   video_quality: z.enum(["low", "medium", "high", "maximum"]).optional(),
   video_url: z.string().nullable().optional(),

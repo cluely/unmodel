@@ -18,6 +18,8 @@
 //   data/fal/openapi/fal-ai__nano-banana-pro__edit.json
 //   data/fal/openapi/fal-ai__nano-banana__edit.json
 //   data/fal/openapi/fal-ai__qwen-image-edit-2511.json
+//   data/fal/openapi/microsoft__mai-image-2.7__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__edit.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
@@ -223,6 +225,20 @@ export type FalImageEditSchemaChecks = [
   AssertExtends<wire.FalAiQwenImageEdit2511Input["enable_safety_checker"], Gate["enable_safety_checker"]>,
   AssertExtends<wire.FalAiQwenImageEdit2511Input["output_format"], Gate["output_format"]>,
   AssertExtends<wire.FalAiQwenImageEdit2511Input["acceleration"], Gate["acceleration"]>,
+  // microsoft/mai-image-2.7/edit
+  AssertExtends<wire.MicrosoftMaiImage27EditInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.MicrosoftMaiImage27EditInput["image_urls"], Gate["image_urls"]>,
+  AssertExtends<wire.MicrosoftMaiImage27EditInput["resolution"], Gate["resolution"]>,
+  AssertExtends<wire.MicrosoftMaiImage27EditInput["background"], Gate["background"]>,
+  AssertExtends<wire.MicrosoftMaiImage27EditInput["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.MicrosoftMaiImage27EditInput["sync_mode"], Gate["sync_mode"]>,
+  // microsoft/mai-image-2.7/flash/edit
+  AssertExtends<wire.MicrosoftMaiImage27FlashEditInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.MicrosoftMaiImage27FlashEditInput["image_urls"], Gate["image_urls"]>,
+  AssertExtends<wire.MicrosoftMaiImage27FlashEditInput["resolution"], Gate["resolution"]>,
+  AssertExtends<wire.MicrosoftMaiImage27FlashEditInput["background"], Gate["background"]>,
+  AssertExtends<wire.MicrosoftMaiImage27FlashEditInput["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.MicrosoftMaiImage27FlashEditInput["sync_mode"], Gate["sync_mode"]>,
   // openai/gpt-image-2/edit
   AssertExtends<wire.OpenaiGptImage2EditInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.OpenaiGptImage2EditInput["image_urls"], Gate["image_urls"]>,

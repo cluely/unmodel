@@ -330,6 +330,7 @@ const GEMINI_4_LONG_DECODE_GUIDES = {
   "gemini-4-argon": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-argon#long-decodes`,
   "gemini-4-carbon": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-carbon#long-decodes`,
   "gemini-4-hydrogen": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-hydrogen#long-decodes`,
+  "gemini-4-neon": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-neon#long-decodes`,
 } as const satisfies Record<string, string>;
 
 /**
@@ -353,6 +354,7 @@ const GEMINI_4_LONG_DECODE_GUIDES = {
 const GEMINI_4_THINKING_LEVELS = {
   "gemini-4-argon": { levels: ["LOW", "MEDIUM", "HIGH"], source: `${VERTEX_GEMINI_DOCS_URL}/4-argon` },
   "gemini-4-carbon": { levels: ["LOW", "MEDIUM", "HIGH"], source: `${VERTEX_GEMINI_DOCS_URL}/4-carbon` },
+  "gemini-4-neon": { levels: ["LOW", "MEDIUM", "HIGH", "XHIGH"], source: `${VERTEX_GEMINI_DOCS_URL}/4-neon` },
   "gemini-4-hydrogen": {
     levels: ["LOW", "MEDIUM", "HIGH", "XHIGH"],
     source: `${VERTEX_GEMINI_DOCS_URL}/4-hydrogen`,
@@ -392,6 +394,7 @@ const REFUSED_SAMPLING_PARAMS = {
 const IGNORED_SAMPLING_PARAMS = {
   "gemini-4-argon": { params: ["temperature", "topP", "topK"], source: `${VERTEX_GEMINI_DOCS_URL}/4-argon` },
   "gemini-4-carbon": { params: ["temperature", "topP", "topK"], source: `${VERTEX_GEMINI_DOCS_URL}/4-carbon` },
+  "gemini-4-neon": { params: ["temperature", "topP", "topK"], source: `${VERTEX_GEMINI_DOCS_URL}/4-neon` },
   "gemini-4-hydrogen": {
     params: ["temperature", "topP", "topK"],
     source: `${VERTEX_GEMINI_DOCS_URL}/4-hydrogen`,
@@ -447,7 +450,7 @@ function checkGemini4Thinking(
       path: ["generationConfig", "thinkingConfig", "thinkingLevel"],
       model: params.model,
       message:
-        `\`generationConfig.thinkingConfig.thinkingLevel: "${level}"\` is documented on Vertex only for gemini-4-hydrogen; ` +
+        `\`generationConfig.thinkingConfig.thinkingLevel: "${level}"\` is documented on Vertex for gemini-4-hydrogen and gemini-4-neon; ` +
         `"${params.model}"'s page lists ${levels.join(", ")}. No page says it returns an error, so the request is not refused.`,
       meta: { value: level, documented: [...levels], source },
     });

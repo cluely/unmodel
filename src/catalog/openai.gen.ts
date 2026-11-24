@@ -627,6 +627,40 @@ export const models = {
     limit: { context: 1050000, output: 128000, input: 922000 },
     cost: { input: 1, output: 5, cacheRead: 0.05, cacheWrite: 1.25 },
   },
+  "gpt-6.2-astra": {
+    id: "gpt-6.2-astra",
+    name: "GPT-6.2 Astra",
+    family: "gpt-astra",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-05-18",
+    releaseDate: "2026-11-17",
+    lastUpdated: "2026-11-17",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 8, output: 40, cacheRead: 0.4, cacheWrite: 10, longContext: { aboveInputTokens: 272000, rates: { input: 16, output: 60, cacheRead: 0.8, cacheWrite: 20 } } },
+  },
+  "gpt-6.2-sol": {
+    id: "gpt-6.2-sol",
+    name: "GPT-6.2 Sol",
+    family: "gpt-sol",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-06-01",
+    releaseDate: "2026-11-17",
+    lastUpdated: "2026-11-17",
+    modalities: { input: ["text", "image", "pdf"], output: ["text"] },
+    limit: { context: 1050000, output: 128000, input: 922000 },
+    cost: { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5, longContext: { aboveInputTokens: 272000, rates: { input: 4, output: 15, cacheRead: 0.2, cacheWrite: 5 } } },
+  },
   "gpt-daybreak-blue-latest": {
     id: "gpt-daybreak-blue-latest",
     name: "Daybreak Blue",
@@ -880,7 +914,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type OpenaiModelId = keyof typeof models;
-export type OpenaiTextModelId = "chatgpt-image-latest" | "gpt-3.5-turbo" | "gpt-4" | "gpt-4-turbo" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-2024-05-13" | "gpt-4o-2024-08-06" | "gpt-4o-2024-11-20" | "gpt-4o-mini" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.2" | "gpt-5.2-pro" | "gpt-5.3-codex" | "gpt-5.3-codex-spark" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-6-luna" | "gpt-6-sol" | "gpt-6.1-sol" | "gpt-6.1-terra" | "gpt-daybreak-blue-latest" | "gpt-daybreak-red-latest" | "gpt-image-1-mini" | "gpt-image-1.5" | "gpt-realtime-2.1" | "o1" | "o1-pro" | "o3" | "o3-mini" | "o3-pro" | "o4-mini" | "text-embedding-3-large" | "text-embedding-3-small" | "text-embedding-ada-002";
+export type OpenaiTextModelId = "chatgpt-image-latest" | "gpt-3.5-turbo" | "gpt-4" | "gpt-4-turbo" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano" | "gpt-4o" | "gpt-4o-2024-05-13" | "gpt-4o-2024-08-06" | "gpt-4o-2024-11-20" | "gpt-4o-mini" | "gpt-5" | "gpt-5-mini" | "gpt-5-nano" | "gpt-5-pro" | "gpt-5.1" | "gpt-5.2" | "gpt-5.2-pro" | "gpt-5.3-codex" | "gpt-5.3-codex-spark" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5.4-pro" | "gpt-5.5" | "gpt-5.5-pro" | "gpt-5.6" | "gpt-5.6-luna" | "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-6-astra" | "gpt-6-luna" | "gpt-6-sol" | "gpt-6.1-sol" | "gpt-6.1-terra" | "gpt-6.2-astra" | "gpt-6.2-sol" | "gpt-daybreak-blue-latest" | "gpt-daybreak-red-latest" | "gpt-image-1-mini" | "gpt-image-1.5" | "gpt-realtime-2.1" | "o1" | "o1-pro" | "o3" | "o3-mini" | "o3-pro" | "o4-mini" | "text-embedding-3-large" | "text-embedding-3-small" | "text-embedding-ada-002";
 export type OpenaiImageModelId = "chatgpt-image-latest" | "gpt-image-1-mini" | "gpt-image-1.5" | "gpt-image-2";
 export type OpenaiAudioModelId = "gpt-realtime-2.1";
 export type OpenaiVideoModelId = never;

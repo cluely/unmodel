@@ -367,6 +367,41 @@ function requestedModalities(params: GenerateContentBody): string[] {
     .filter((value): value is string => value !== undefined);
 }
 
+/** Gemini 4 Neon migration guide, checked 2026-11-24. */
+function checkNeonConfig(
+  params: GenerateContentBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (stripModelsPrefix(params.model) !== "gemini-4-neon") return;
+  const source = "https://aistudio.google.com/docs/whats-new-gemini-4-neon#migration-checklist";
+  const config = params.generationConfig;
+  for (const param of ["temperature", "topP", "topK"] as const) {
+    const value = config?.[param];
+    if (value === undefined) continue;
+    if (param === "temperature" &&
+        (value < GEMINI_TEMPERATURE_RANGE.min || value > GEMINI_TEMPERATURE_RANGE.max)) continue;
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["generationConfig", param],
+      model: params.model,
+      message: `Gemini 4 Neon ignores in-range custom \`${param}\` values.`,
+      meta: { ignored: true, source },
+    });
+  }
+  if (params.cachedContent !== undefined) {
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["cachedContent"],
+      model: params.model,
+      message: "Gemini 4 Neon supports implicit caching only. Remove `cachedContent`.",
+      meta: { source },
+    });
+  }
+}
+
 function checkGenerationConfigRanges(
   params: GenerateContentBody,
   _info: ModelInfo | undefined,
@@ -978,6 +1013,7 @@ const validator = createValidator<GenerateContentBody, unknown>({
   checks: [
     checkCapabilities,
     checkGenerationConfigRanges,
+    checkNeonConfig,
     checkResponseModalities,
     checkImageGeneration,
     checkSpeechGeneration,

@@ -17,6 +17,8 @@
 //   data/fal/openapi/fal-ai__nano-banana-pro__edit.json
 //   data/fal/openapi/fal-ai__nano-banana__edit.json
 //   data/fal/openapi/fal-ai__qwen-image-edit-2511.json
+//   data/fal/openapi/microsoft__mai-image-2.7__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__edit.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
@@ -54,6 +56,7 @@ import type {
   FalAiNanoBananaEditInput,
   FalAiNanoBananaProEditInput,
   FalAiQwenImageEdit2511Input,
+  MicrosoftMaiImage27EditInput,
   OpenaiGptImage2EditInput,
 } from "./image-edit-wire.gen";
 
@@ -388,6 +391,25 @@ const ROW_f174c0 = {
   },
 } as const;
 
+/**
+ * Shared by 2 endpoints with an identical surface: microsoft/mai-image-2.7/edit,
+ * microsoft/mai-image-2.7/flash/edit.
+ *
+ * The extras are typed from `MicrosoftMaiImage27EditInput`, so the value an editor offers
+ * here and the value `fal.imageEdit` validates are one declaration.
+ */
+const ROW_f81fc4 = {
+  classes: ["imageSizeUnion", "resolutionEnum"],
+  keys: ["prompt", "image_urls", "image_size", "resolution", "background", "output_format", "sync_mode"],
+  sizes: ["square_hd", "portrait_4_3", "landscape_4_3", "portrait_3_2", "landscape_3_2", "portrait_16_9", "landscape_16_9"],
+  pixels: { min: 1, max: 14142 },
+  extras: {
+    resolution: EXTRA as MicrosoftMaiImage27EditInput["resolution"],
+    background: EXTRA as MicrosoftMaiImage27EditInput["background"],
+    sync_mode: EXTRA as MicrosoftMaiImage27EditInput["sync_mode"],
+  },
+} as const;
+
 export const FAL_IMAGE_EDIT_PARAM_SHAPES = {
   "alibaba/qwen-image-3/edit": ROW_ba33e1,
   "bytedance/seedream/v5/pro/edit": ROW_1540d1,
@@ -405,6 +427,8 @@ export const FAL_IMAGE_EDIT_PARAM_SHAPES = {
   "fal-ai/nano-banana-pro/edit": ROW_3512f3,
   "fal-ai/nano-banana/edit": ROW_459272,
   "fal-ai/qwen-image-edit-2511": ROW_5553cd,
+  "microsoft/mai-image-2.7/edit": ROW_f81fc4,
+  "microsoft/mai-image-2.7/flash/edit": ROW_f81fc4,
   "openai/gpt-image-2/edit": ROW_9718c7,
 } as const satisfies Record<string, FalParamShape>;
 
@@ -418,4 +442,4 @@ export const FAL_IMAGE_EDIT_PARAM_SHAPES = {
  * ids remain in the provider-native artifacts.
  */
 
-export const FAL_IMAGE_EDIT_MODELS = ["alibaba/qwen-image-3/edit", "bytedance/seedream/v5/pro/edit", "fal-ai/bytedance/seedream/v4.5/edit", "fal-ai/flux-2-pro/edit", "fal-ai/flux-2/edit", "fal-ai/flux-kontext/dev", "fal-ai/flux-pro/kontext", "fal-ai/flux-pro/kontext/max", "fal-ai/flux-pro/kontext/max/multi", "fal-ai/flux-pro/v1/fill", "fal-ai/flux/dev/image-to-image", "fal-ai/gpt-image-1.5/edit", "fal-ai/nano-banana-2/edit", "fal-ai/nano-banana-pro/edit", "fal-ai/nano-banana/edit", "fal-ai/qwen-image-edit-2511", "openai/gpt-image-2/edit"] as const;
+export const FAL_IMAGE_EDIT_MODELS = ["alibaba/qwen-image-3/edit", "bytedance/seedream/v5/pro/edit", "fal-ai/bytedance/seedream/v4.5/edit", "fal-ai/flux-2-pro/edit", "fal-ai/flux-2/edit", "fal-ai/flux-kontext/dev", "fal-ai/flux-pro/kontext", "fal-ai/flux-pro/kontext/max", "fal-ai/flux-pro/kontext/max/multi", "fal-ai/flux-pro/v1/fill", "fal-ai/flux/dev/image-to-image", "fal-ai/gpt-image-1.5/edit", "fal-ai/nano-banana-2/edit", "fal-ai/nano-banana-pro/edit", "fal-ai/nano-banana/edit", "fal-ai/qwen-image-edit-2511", "microsoft/mai-image-2.7/edit", "microsoft/mai-image-2.7/flash/edit", "openai/gpt-image-2/edit"] as const;

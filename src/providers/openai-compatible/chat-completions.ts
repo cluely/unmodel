@@ -170,6 +170,7 @@ export function checkToolSupport(
 const PART_INPUT_MODALITY = {
   image_url: "image",
   video_url: "video",
+  video: "video",
   input_audio: "audio",
   file: "pdf",
 } as const satisfies Record<string, Modality>;

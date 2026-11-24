@@ -21,6 +21,7 @@ export type {
 /** POST target for chat: {baseUrl}/chat/completions. */
 export const CHAT_COMPLETIONS_URL = chatUrl;
 export { chat, checkChat, estimateChatTokens } from "./chat";
+export type { AlibabaChatBody, AlibabaChatUserMessage, AlibabaVideoPart } from "./chat";
 
 // --- Video (Wan + HappyHorse, DashScope video-synthesis) -------------------
 export {

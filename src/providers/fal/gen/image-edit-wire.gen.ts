@@ -18,6 +18,8 @@
 //   data/fal/openapi/fal-ai__nano-banana-pro__edit.json
 //   data/fal/openapi/fal-ai__nano-banana__edit.json
 //   data/fal/openapi/fal-ai__qwen-image-edit-2511.json
+//   data/fal/openapi/microsoft__mai-image-2.7__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__edit.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
@@ -1133,6 +1135,120 @@ export interface FalAiQwenImageEdit2511Output {
 }
 
 /**
+ * The request body `microsoft/mai-image-2.7/edit` accepts.
+ *
+ * MAI Image 2.7 family, 1K or 2K presets and custom dimensions. Public route verified
+ * 2026-11-24 at https://fal.ai/models/microsoft/mai-image-2.7/edit.
+ *
+ * fal serves this endpoint at two live routes: the published id above, and the internal
+ * alias `fal-ai/mai-image-2.7/edit` its OpenAPI document is written against. unmodel
+ * submits to the published id — that is the one fal documents and the one this catalog is
+ * keyed on.
+ *
+ * Docs: https://fal.ai/models/fal-ai/mai-image-2.7/edit/api
+ */
+export interface MicrosoftMaiImage27EditInput {
+  /** The instruction describing how to edit the input images. */
+  prompt: string;
+  /**
+   * The URLs of the images to edit or reference (up to 5). Carries a image reference — an
+   * https URL or a `data:` URI.
+   */
+  image_urls: string[];
+  /**
+   * The size of the edited image. If not set, the model picks a size close to the input.
+   * Each side must be at least 768 pixels and the total pixel count at most 4,194,304
+   * (2048x2048). Custom sizes are rounded down to a multiple of 16.
+   */
+  image_size?: FalImageSize | "square_hd" | "portrait_4_3" | "landscape_4_3" | "portrait_3_2" | "landscape_3_2" | "portrait_16_9" | "landscape_16_9" | null;
+  /**
+   * Resolution of preset image sizes: "1K" (about 1 megapixel) or "2K" (each side doubled).
+   * Ignored for custom sizes. Default: `"1K"`.
+   */
+  resolution?: "1K" | "2K";
+  /**
+   * Use "transparent" for a transparent background (requires png or webp output). Default:
+   * `"opaque"`.
+   */
+  background?: "opaque" | "transparent";
+  /** The format of the edited image. Default: `"png"`. */
+  output_format?: "jpeg" | "png" | "webp";
+  /**
+   * If `True`, the media will be returned as a data URI and the output data won't be
+   * available in the request history. Default: `false`.
+   */
+  sync_mode?: boolean;
+}
+
+/**
+ * The result document `microsoft/mai-image-2.7/edit` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface MicrosoftMaiImage27EditOutput {
+  /** The generated images. */
+  images: FalImageFile[];
+}
+
+/**
+ * The request body `microsoft/mai-image-2.7/flash/edit` accepts.
+ *
+ * MAI Image 2.7 family, 1K or 2K presets and custom dimensions. Public route verified
+ * 2026-11-24 at https://fal.ai/models/microsoft/mai-image-2.7/flash/edit.
+ *
+ * fal serves this endpoint at two live routes: the published id above, and the internal
+ * alias `fal-ai/mai-image-2.7/flash/edit` its OpenAPI document is written against. unmodel
+ * submits to the published id — that is the one fal documents and the one this catalog is
+ * keyed on.
+ *
+ * Docs: https://fal.ai/models/fal-ai/mai-image-2.7/flash/edit/api
+ */
+export interface MicrosoftMaiImage27FlashEditInput {
+  /** The instruction describing how to edit the input images. */
+  prompt: string;
+  /**
+   * The URLs of the images to edit or reference (up to 5). Carries a image reference — an
+   * https URL or a `data:` URI.
+   */
+  image_urls: string[];
+  /**
+   * The size of the edited image. If not set, the model picks a size close to the input.
+   * Each side must be at least 768 pixels and the total pixel count at most 4,194,304
+   * (2048x2048). Custom sizes are rounded down to a multiple of 16.
+   */
+  image_size?: FalImageSize | "square_hd" | "portrait_4_3" | "landscape_4_3" | "portrait_3_2" | "landscape_3_2" | "portrait_16_9" | "landscape_16_9" | null;
+  /**
+   * Resolution of preset image sizes: "1K" (about 1 megapixel) or "2K" (each side doubled).
+   * Ignored for custom sizes. Default: `"1K"`.
+   */
+  resolution?: "1K" | "2K";
+  /**
+   * Use "transparent" for a transparent background (requires png or webp output). Default:
+   * `"opaque"`.
+   */
+  background?: "opaque" | "transparent";
+  /** The format of the edited image. Default: `"png"`. */
+  output_format?: "jpeg" | "png" | "webp";
+  /**
+   * If `True`, the media will be returned as a data URI and the output data won't be
+   * available in the request history. Default: `false`.
+   */
+  sync_mode?: boolean;
+}
+
+/**
+ * The result document `microsoft/mai-image-2.7/flash/edit` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface MicrosoftMaiImage27FlashEditOutput {
+  /** The generated images. */
+  images: FalImageFile[];
+}
+
+/**
  * The request body `openai/gpt-image-2/edit` accepts.
  *
  * The edit arm of gpt-image-2. Its per-size table INCLUDES one input image, which is why
@@ -1195,7 +1311,7 @@ export interface OpenaiGptImage2EditOutput {
 /**
  * Endpoint id → its request body type.
  *
- * A map rather than a union: a union of 18 object types re-instantiates at every
+ * A map rather than a union: a union of 20 object types re-instantiates at every
  * comparison site, while a keyed lookup resolves in one. The per-endpoint narrowing a
  * validator exposes indexes into this, so adding an endpoint costs one line here and
  * nothing at any call site.
@@ -1218,6 +1334,8 @@ export interface FalImageEditBodyById {
   "fal-ai/nano-banana-pro/edit": FalAiNanoBananaProEditInput;
   "fal-ai/nano-banana/edit": FalAiNanoBananaEditInput;
   "fal-ai/qwen-image-edit-2511": FalAiQwenImageEdit2511Input;
+  "microsoft/mai-image-2.7/edit": MicrosoftMaiImage27EditInput;
+  "microsoft/mai-image-2.7/flash/edit": MicrosoftMaiImage27FlashEditInput;
   "openai/gpt-image-2/edit": OpenaiGptImage2EditInput;
 }
 
@@ -1240,5 +1358,7 @@ export interface FalImageEditResultById {
   "fal-ai/nano-banana-pro/edit": FalAiNanoBananaProEditOutput;
   "fal-ai/nano-banana/edit": FalAiNanoBananaEditOutput;
   "fal-ai/qwen-image-edit-2511": FalAiQwenImageEdit2511Output;
+  "microsoft/mai-image-2.7/edit": MicrosoftMaiImage27EditOutput;
+  "microsoft/mai-image-2.7/flash/edit": MicrosoftMaiImage27FlashEditOutput;
   "openai/gpt-image-2/edit": OpenaiGptImage2EditOutput;
 }

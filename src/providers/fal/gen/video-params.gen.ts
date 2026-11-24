@@ -3,6 +3,9 @@
 // Committed snapshots:
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
@@ -59,6 +62,9 @@ import type { FalParamShape } from "../shape-types";
 import type {
   BytedanceSeedance20ImageToVideoInput,
   BytedanceSeedance20TextToVideoInput,
+  BytedanceSeedance25FlashImageToVideoInput,
+  BytedanceSeedance25FlashReferenceToVideoInput,
+  BytedanceSeedance25FlashTextToVideoInput,
   BytedanceSeedance25ImageToVideoInput,
   BytedanceSeedance25ReferenceToVideoInput,
   BytedanceSeedance25TextToVideoInput,
@@ -451,6 +457,35 @@ const ROW_8216e2 = {
 } as const;
 
 /**
+ * bytedance/seedance-2.5/flash/reference-to-video.
+ *
+ * The extras are typed from `BytedanceSeedance25FlashReferenceToVideoInput`, so the value
+ * an editor offers here and the value `fal.video` validates are one declaration.
+ */
+const ROW_a6e277 = {
+  classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
+  keys: ["prompt", "task", "image_urls", "video_urls", "audio_urls", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "output_format", "return_last_frame", "seed", "end_user_id"],
+  ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+  durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+  durationWire: { "10": "10", "11": "11", "12": "12", "13": "13", "14": "14", "15": "15", "16": "16", "17": "17", "18": "18", "19": "19", "20": "20", "21": "21", "22": "22", "23": "23", "24": "24", "25": "25", "26": "26", "27": "27", "28": "28", "29": "29", "30": "30", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9" },
+  resolutions: ["480p", "720p"],
+  resolutionWire: { "480p": "480p", "720p": "720p" },
+  roles: ["reference"],
+  roleWire: { reference: "image_urls" },
+  videoWire: "video_urls",
+  extras: {
+    task: EXTRA as BytedanceSeedance25FlashReferenceToVideoInput["task"],
+    audio_urls: EXTRA as BytedanceSeedance25FlashReferenceToVideoInput["audio_urls"],
+    generate_audio: EXTRA as BytedanceSeedance25FlashReferenceToVideoInput["generate_audio"],
+    bitrate_mode: EXTRA as BytedanceSeedance25FlashReferenceToVideoInput["bitrate_mode"],
+    codec: EXTRA as BytedanceSeedance25FlashReferenceToVideoInput["codec"],
+    output_format: EXTRA as BytedanceSeedance25FlashReferenceToVideoInput["output_format"],
+    return_last_frame: EXTRA as BytedanceSeedance25FlashReferenceToVideoInput["return_last_frame"],
+    end_user_id: EXTRA as BytedanceSeedance25FlashReferenceToVideoInput["end_user_id"],
+  },
+} as const;
+
+/**
  * fal-ai/kling-video/v2.6/pro/image-to-video.
  *
  * The extras are typed from `FalAiKlingVideoV26ProImageToVideoInput`, so the value an
@@ -506,6 +541,56 @@ const ROW_acd737 = {
     keep_audio: EXTRA as FalAiKlingVideoO3ProVideoToVideoEditInput["keep_audio"],
     elements: EXTRA as FalAiKlingVideoO3ProVideoToVideoEditInput["elements"],
     shot_type: EXTRA as FalAiKlingVideoO3ProVideoToVideoEditInput["shot_type"],
+  },
+} as const;
+
+/**
+ * bytedance/seedance-2.5/flash/text-to-video.
+ *
+ * The extras are typed from `BytedanceSeedance25FlashTextToVideoInput`, so the value an
+ * editor offers here and the value `fal.video` validates are one declaration.
+ */
+const ROW_af72d9 = {
+  classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
+  keys: ["prompt", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "output_format", "return_last_frame", "end_user_id"],
+  ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+  durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+  durationWire: { "10": "10", "11": "11", "12": "12", "13": "13", "14": "14", "15": "15", "16": "16", "17": "17", "18": "18", "19": "19", "20": "20", "21": "21", "22": "22", "23": "23", "24": "24", "25": "25", "26": "26", "27": "27", "28": "28", "29": "29", "30": "30", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9" },
+  resolutions: ["480p", "720p"],
+  resolutionWire: { "480p": "480p", "720p": "720p" },
+  roles: [],
+  extras: {
+    generate_audio: EXTRA as BytedanceSeedance25FlashTextToVideoInput["generate_audio"],
+    bitrate_mode: EXTRA as BytedanceSeedance25FlashTextToVideoInput["bitrate_mode"],
+    codec: EXTRA as BytedanceSeedance25FlashTextToVideoInput["codec"],
+    output_format: EXTRA as BytedanceSeedance25FlashTextToVideoInput["output_format"],
+    return_last_frame: EXTRA as BytedanceSeedance25FlashTextToVideoInput["return_last_frame"],
+    end_user_id: EXTRA as BytedanceSeedance25FlashTextToVideoInput["end_user_id"],
+  },
+} as const;
+
+/**
+ * bytedance/seedance-2.5/flash/image-to-video.
+ *
+ * The extras are typed from `BytedanceSeedance25FlashImageToVideoInput`, so the value an
+ * editor offers here and the value `fal.video` validates are one declaration.
+ */
+const ROW_b1c3e6 = {
+  classes: ["aspectRatioEnum", "durationStringEnum", "resolutionEnum"],
+  keys: ["prompt", "image_url", "end_image_url", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "output_format", "return_last_frame", "end_user_id"],
+  durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+  durationWire: { "10": "10", "11": "11", "12": "12", "13": "13", "14": "14", "15": "15", "16": "16", "17": "17", "18": "18", "19": "19", "20": "20", "21": "21", "22": "22", "23": "23", "24": "24", "25": "25", "26": "26", "27": "27", "28": "28", "29": "29", "30": "30", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9" },
+  resolutions: ["480p", "720p"],
+  resolutionWire: { "480p": "480p", "720p": "720p" },
+  roles: ["first", "last"],
+  roleWire: { first: "image_url", last: "end_image_url" },
+  extras: {
+    generate_audio: EXTRA as BytedanceSeedance25FlashImageToVideoInput["generate_audio"],
+    bitrate_mode: EXTRA as BytedanceSeedance25FlashImageToVideoInput["bitrate_mode"],
+    codec: EXTRA as BytedanceSeedance25FlashImageToVideoInput["codec"],
+    output_format: EXTRA as BytedanceSeedance25FlashImageToVideoInput["output_format"],
+    return_last_frame: EXTRA as BytedanceSeedance25FlashImageToVideoInput["return_last_frame"],
+    end_user_id: EXTRA as BytedanceSeedance25FlashImageToVideoInput["end_user_id"],
   },
 } as const;
 
@@ -804,6 +889,9 @@ const ROW_f7ec6b = {
 export const FAL_VIDEO_PARAM_SHAPES = {
   "bytedance/seedance-2.0/image-to-video": ROW_2c170b,
   "bytedance/seedance-2.0/text-to-video": ROW_8216e2,
+  "bytedance/seedance-2.5/flash/image-to-video": ROW_b1c3e6,
+  "bytedance/seedance-2.5/flash/reference-to-video": ROW_a6e277,
+  "bytedance/seedance-2.5/flash/text-to-video": ROW_af72d9,
   "bytedance/seedance-2.5/image-to-video": ROW_3d92af,
   "bytedance/seedance-2.5/reference-to-video": ROW_d272af,
   "bytedance/seedance-2.5/text-to-video": ROW_e0e300,
@@ -848,4 +936,4 @@ export const FAL_VIDEO_PARAM_SHAPES = {
  * ids remain in the provider-native artifacts.
  */
 
-export const FAL_VIDEO_MODELS = ["bytedance/seedance-2.0/image-to-video", "bytedance/seedance-2.0/text-to-video", "bytedance/seedance-2.5/image-to-video", "bytedance/seedance-2.5/reference-to-video", "bytedance/seedance-2.5/text-to-video", "fal-ai/kling-video/o1/video-to-video/edit", "fal-ai/kling-video/o3/pro/video-to-video/edit", "fal-ai/kling-video/v2.5-turbo/pro/image-to-video", "fal-ai/kling-video/v2.5-turbo/pro/text-to-video", "fal-ai/kling-video/v2.6/pro/image-to-video", "fal-ai/kling-video/v2.6/pro/text-to-video", "fal-ai/kling-video/v3/pro/image-to-video", "fal-ai/kling-video/v3/pro/motion-control", "fal-ai/kling-video/v3/pro/text-to-video", "fal-ai/kling-video/v3/standard/image-to-video", "fal-ai/kling-video/v3/standard/text-to-video", "fal-ai/lightx/relight", "fal-ai/minimax/hailuo-02/pro/image-to-video", "fal-ai/minimax/hailuo-2.3/pro/text-to-video", "fal-ai/pixverse/v6/text-to-video", "fal-ai/veo3.1", "fal-ai/veo3.1/extend-video", "fal-ai/veo3.1/fast", "fal-ai/veo3.1/first-last-frame-to-video", "fal-ai/veo3.1/image-to-video", "fal-ai/veo3.1/reference-to-video", "fal-ai/wan/v2.2-a14b/image-to-video", "fal-ai/wan/v2.2-a14b/text-to-video", "fal-ai/wan/v2.7/image-to-video", "fal-ai/wan/v2.7/text-to-video", "google/gemini-omni-flash", "lightricks/ltx-2.5/text-to-video/pro", "minimax/h3/image-to-video", "minimax/h3/text-to-video", "xai/grok-imagine-video/text-to-video"] as const;
+export const FAL_VIDEO_MODELS = ["bytedance/seedance-2.0/image-to-video", "bytedance/seedance-2.0/text-to-video", "bytedance/seedance-2.5/flash/image-to-video", "bytedance/seedance-2.5/flash/reference-to-video", "bytedance/seedance-2.5/flash/text-to-video", "bytedance/seedance-2.5/image-to-video", "bytedance/seedance-2.5/reference-to-video", "bytedance/seedance-2.5/text-to-video", "fal-ai/kling-video/o1/video-to-video/edit", "fal-ai/kling-video/o3/pro/video-to-video/edit", "fal-ai/kling-video/v2.5-turbo/pro/image-to-video", "fal-ai/kling-video/v2.5-turbo/pro/text-to-video", "fal-ai/kling-video/v2.6/pro/image-to-video", "fal-ai/kling-video/v2.6/pro/text-to-video", "fal-ai/kling-video/v3/pro/image-to-video", "fal-ai/kling-video/v3/pro/motion-control", "fal-ai/kling-video/v3/pro/text-to-video", "fal-ai/kling-video/v3/standard/image-to-video", "fal-ai/kling-video/v3/standard/text-to-video", "fal-ai/lightx/relight", "fal-ai/minimax/hailuo-02/pro/image-to-video", "fal-ai/minimax/hailuo-2.3/pro/text-to-video", "fal-ai/pixverse/v6/text-to-video", "fal-ai/veo3.1", "fal-ai/veo3.1/extend-video", "fal-ai/veo3.1/fast", "fal-ai/veo3.1/first-last-frame-to-video", "fal-ai/veo3.1/image-to-video", "fal-ai/veo3.1/reference-to-video", "fal-ai/wan/v2.2-a14b/image-to-video", "fal-ai/wan/v2.2-a14b/text-to-video", "fal-ai/wan/v2.7/image-to-video", "fal-ai/wan/v2.7/text-to-video", "google/gemini-omni-flash", "lightricks/ltx-2.5/text-to-video/pro", "minimax/h3/image-to-video", "minimax/h3/text-to-video", "xai/grok-imagine-video/text-to-video"] as const;

@@ -18,6 +18,8 @@
 //   data/fal/openapi/fal-ai__nano-banana-pro__edit.json
 //   data/fal/openapi/fal-ai__nano-banana__edit.json
 //   data/fal/openapi/fal-ai__qwen-image-edit-2511.json
+//   data/fal/openapi/microsoft__mai-image-2.7__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__edit.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
@@ -39,8 +41,10 @@ import type { FalEndpointShape } from "../shape-types";
 // Enum vocabularies, hoisted and deduplicated by content: the same list is
 // named by both tables below, and often by several endpoints.
 const E_01cd27 = ["low", "high"] as const;
+const E_0fc622 = ["1K", "2K"] as const;
 const E_1bdef2 = ["1", "2", "3", "4", "5"] as const;
 const E_205460 = ["jpeg", "png", "webp"] as const;
+const E_2257dd = ["square_hd", "portrait_4_3", "landscape_4_3", "portrait_3_2", "landscape_3_2", "portrait_16_9", "landscape_16_9"] as const;
 const E_2493d0 = ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9"] as const;
 const E_32abe4 = ["auto", "1024x1024", "1536x1024", "1024x1536"] as const;
 const E_375a80 = ["auto", "21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16"] as const;
@@ -57,6 +61,7 @@ const E_9373e9 = ["auto", "transparent", "opaque"] as const;
 const E_9f102a = ["low", "medium", "high"] as const;
 const E_a008c0 = ["auto", "21:9", "16:9", "3:2", "4:3", "5:4", "1:1", "4:5", "3:4", "2:3", "9:16", "4:1", "1:4", "8:1", "1:8"] as const;
 const E_a13c1b = ["none", "regular", "high"] as const;
+const E_b4beec = ["opaque", "transparent"] as const;
 const E_b80dce = ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9", "auto_2K", "auto_4K"] as const;
 const E_d2a2cd = ["auto", "low", "medium", "high"] as const;
 const E_ecd06e = ["auto", "match_input", "1:1", "16:9", "21:9", "3:2", "2:3", "4:5", "5:4", "3:4", "4:3", "9:16", "9:21"] as const;
@@ -317,6 +322,30 @@ export const FAL_IMAGE_EDIT_SHAPES = {
       acceleration: { t: "string", def: true, enum: E_a13c1b },
     },
   },
+  "microsoft/mai-image-2.7/edit": {
+    order: ["prompt", "image_urls", "image_size", "resolution", "background", "output_format", "sync_mode"],
+    props: {
+      prompt: { t: "string", req: true, minLen: 1, maxLen: 32000 },
+      image_urls: { t: "array", req: true, minItems: 1, maxItems: 5, items: { t: "string", media: "image" }, media: "image" },
+      image_size: { t: "union", nul: true, size: { presets: E_2257dd, width: { xmin: 0, max: 14142, default: 512 }, height: { xmin: 0, max: 14142, default: 512 } } },
+      resolution: { t: "string", def: true, enum: E_0fc622 },
+      background: { t: "string", def: true, enum: E_b4beec },
+      output_format: { t: "string", def: true, enum: E_205460 },
+      sync_mode: { t: "boolean", def: true },
+    },
+  },
+  "microsoft/mai-image-2.7/flash/edit": {
+    order: ["prompt", "image_urls", "image_size", "resolution", "background", "output_format", "sync_mode"],
+    props: {
+      prompt: { t: "string", req: true, minLen: 1, maxLen: 32000 },
+      image_urls: { t: "array", req: true, minItems: 1, maxItems: 5, items: { t: "string", media: "image" }, media: "image" },
+      image_size: { t: "union", nul: true, size: { presets: E_2257dd, width: { xmin: 0, max: 14142, default: 512 }, height: { xmin: 0, max: 14142, default: 512 } } },
+      resolution: { t: "string", def: true, enum: E_0fc622 },
+      background: { t: "string", def: true, enum: E_b4beec },
+      output_format: { t: "string", def: true, enum: E_205460 },
+      sync_mode: { t: "boolean", def: true },
+    },
+  },
   "openai/gpt-image-2/edit": {
     order: ["prompt", "image_urls", "image_size", "background", "quality", "num_images", "output_format", "sync_mode", "mask_url"],
     props: {
@@ -416,6 +445,16 @@ export const FAL_IMAGE_EDIT_CONSTRAINTS = {
   "fal-ai/qwen-image-edit-2511": {
     output_format: E_205460,
     acceleration: E_a13c1b,
+  },
+  "microsoft/mai-image-2.7/edit": {
+    resolution: E_0fc622,
+    background: E_b4beec,
+    output_format: E_205460,
+  },
+  "microsoft/mai-image-2.7/flash/edit": {
+    resolution: E_0fc622,
+    background: E_b4beec,
+    output_format: E_205460,
   },
   "openai/gpt-image-2/edit": {
     background: E_9373e9,

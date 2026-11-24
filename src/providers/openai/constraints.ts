@@ -797,6 +797,9 @@ export const chatConstraints = {
   "gpt-5.6-terra": { enums: RETENTION_24H_ENUMS },
   "gpt-6-astra": { enums: GPT6_WITHOUT_NONE_ENUMS },
   "gpt-6.1-sol": { enums: GPT6_WITHOUT_NONE_ENUMS },
+  // The GPT-6.2 migration guide lists the same five levels, excluding none and minimal.
+  "gpt-6.2-astra": { enums: GPT6_WITHOUT_NONE_ENUMS },
+  "gpt-6.2-sol": { enums: GPT6_WITHOUT_NONE_ENUMS },
   "gpt-6-sol": { enums: GPT6_ENUMS },
   "gpt-6-luna": { enums: GPT6_ENUMS },
   "gpt-6.1-terra": { enums: GPT6_ENUMS },
@@ -852,6 +855,10 @@ export interface Gpt6ChatRule {
 export const gpt6ChatRules = {
   "gpt-6-astra": { tools: "responses-only", logprobs: "unsupported" },
   "gpt-6.1-sol": { tools: "responses-only" },
+  // GPT-6.2 migration guide (2026-11-24): tools require Responses, and
+  // Chat Completions requests must omit logprobs and top_logprobs.
+  "gpt-6.2-astra": { tools: "responses-only", logprobs: "unsupported" },
+  "gpt-6.2-sol": { tools: "responses-only", logprobs: "unsupported" },
   "gpt-6.1-terra": { tools: "responses-only" },
   "gpt-6-sol": { tools: "effort-none-only", logprobs: "effort-none-only" },
   "gpt-6-luna": { tools: "effort-none-only", logprobs: "effort-none-only" },

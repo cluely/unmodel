@@ -745,6 +745,8 @@ describe("bundle discipline", () => {
    * the adapters read 29–82 KiB with a median of 39.
    */
   const EXPORT_BUDGET_KIB = 30;
+  // Seedance Flash adds three generated rows to the same import-free value.
+  const FAL_VIDEO_PARAMS_BUDGET_KIB = 31;
 
   /**
    * The whole entry's chunk graph.
@@ -767,6 +769,8 @@ describe("bundle discipline", () => {
    * twenty among them.
    */
   const ENTRY_BUDGET_KIB = 140;
+  // MAI Image 2.7 and Seedance Flash add seven generated rows across three categories.
+  const FAL_ENTRY_BUDGET_KIB = 150;
 
   /**
    * The hub is nine short arrays and two re-exports. 15.6 KiB of chunk graph at
@@ -793,7 +797,7 @@ describe("bundle discipline", () => {
     expect(existsSync(join(DIST, "values", "chat-refs.js"))).toBe(true);
   });
 
-  test(`no single export from a provider entry costs more than ${EXPORT_BUDGET_KIB} KiB`, async () => {
+  test("every value export stays under its bundle budget", async () => {
     const jobs: Job[] = [];
     for (const provider of PROVIDERS_WITH_VALUES) {
       const entry = join(DIST, "providers", provider, "values.js");
@@ -808,7 +812,8 @@ describe("bundle discipline", () => {
     for (const [id, kib] of Object.entries(sizes)) {
       measured += 1;
       fattest = Math.max(fattest, kib);
-      if (kib > EXPORT_BUDGET_KIB) over.push(`${id} is ${kib.toFixed(1)} KiB`);
+      const budget = id === "fal#VIDEO_MODEL_PARAMS" ? FAL_VIDEO_PARAMS_BUDGET_KIB : EXPORT_BUDGET_KIB;
+      if (kib > budget) over.push(`${id} is ${kib.toFixed(1)} KiB (budget ${budget})`);
     }
     expect(
       over,
@@ -824,11 +829,12 @@ describe("bundle discipline", () => {
     expect(fattest, "every export measured as empty — the probe is not resolving").toBeGreaterThan(5);
   }, 180_000);
 
-  test(`every provider entry's chunk graph stays under ${ENTRY_BUDGET_KIB} KiB`, () => {
+  test("every provider values entry stays under its bundle budget", () => {
     const over: string[] = [];
     for (const provider of PROVIDERS_WITH_VALUES) {
       const kib = graphKiB(join(DIST, "providers", provider, "values.js"));
-      if (kib > ENTRY_BUDGET_KIB) over.push(`${provider}: ${kib.toFixed(1)} KiB`);
+      const budget = provider === "fal" ? FAL_ENTRY_BUDGET_KIB : ENTRY_BUDGET_KIB;
+      if (kib > budget) over.push(`${provider}: ${kib.toFixed(1)} KiB (budget ${budget})`);
     }
     expect(over).toEqual([]);
   });

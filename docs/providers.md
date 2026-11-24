@@ -134,7 +134,7 @@ LOOKS like a gap is not: ElevenLabs "v3 Conversational" is the realtime
 **Live — STT:** every provider addresses the route as `stt` — openai
 (gpt-transcribe/gpt-4o-transcribe/gpt-4o-mini-transcribe/
 gpt-4o-mini-transcribe-2025-12-15/gpt-4o-transcribe-diarize/whisper-1), assemblyai, cartesia,
-deepgram, elevenlabs (Scribe), gladia, google (19 curated Gemini ids including the dedicated
+deepgram, elevenlabs (Scribe), gladia, google (20 curated Gemini ids including the dedicated
 `gemini-3.5-transcribe`, 6 excluded by name and reason), inworld (base64 audio inline in the
 JSON body; its multipart variant is not validated), mistral
 (Voxtral), revai, soniox, speechmatics, fal (6 hosted endpoints — Wizper, fal's own
@@ -187,12 +187,12 @@ bytedance (`image`, Seedream on BytePlus ModelArk), kling (`image` + `imageOmni`
 (`image`), leonardo (`image`, Lucid / Phoenix / nine more image models — `kino-xl` …
 `lightning-xl` — that add `transparency` and the `user_elements` / `platform_elements` arrays), recraft (`image`), ideogram (v3 `image` + v4 `imageV4`), reve (`image` + `imageV2`), stability (Stable Image `image` / `imageCore` /
 `imageSd3`), luma (Photon `image`), runway (`image`), vidu (`imageFromReference`),
-xai (Grok Imagine `image` at /v1/images/generations), azure (Microsoft Foundry MAI-Image-2.5
-family via the `createAzure(endpoint)` factory — deployment-name model field, so wire
+xai (Grok Imagine `image` at /v1/images/generations), azure (Microsoft Foundry MAI-Image-2.5 and MAI-Image-2.7
+families via the `createAzure({ endpoint })` factory — deployment-name model field, so wire
 validators only, no unified refs, same doctrine as azure chat),
-fal (`image`, 32 hosted endpoints — the FLUX.2 family, Nano Banana 1/2/Pro, GPT Image 1.5/2,
+fal (`image`, 34 hosted endpoints — the FLUX.2 family, Nano Banana 1/2/Pro, GPT Image 1.5/2,
 Seedream 4.5/5 Pro, Ideogram v3/v4, Recraft v3/v4, Krea 2, Kling Image v3, Reve 2.1, Qwen-Image,
-Z-Image, Grok Imagine, Hunyuan Image 3, SD 3.5 Large, FLUX general, MAI-Image-2.5).
+Z-Image, Grok Imagine, Hunyuan Image 3, SD 3.5 Large, FLUX general, and MAI Image 2.5 and 2.7).
 The pack providers also ship a unified adapter at `unmodel/<provider>/unified`, and
 `unmodel/image` carries the ready-made pack over all seventeen of them. "Reve 2.1" needs no
 new ids: Reve's API has no 2.1 version strings — `latest` serves it. Several fal rows are the
@@ -211,7 +211,7 @@ picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
 `imageEditReplaceBackground`), reve (`imageEdit`, `imageEditRemix`), stability
 (`imageEditErase`, `imageEditInpaint`, `imageEditOutpaint`,
 `imageEditSearchAndReplace`, `imageEditSearchAndRecolor`,
-`imageEditRemoveBackground`), luma (`imageEditReframe`), fal (`imageEdit`, 18 hosted
+`imageEditRemoveBackground`), luma (`imageEditReframe`), fal (`imageEdit`, 20 hosted
 endpoints — Nano Banana 1/2/Pro edit, GPT Image 1.5/2 edit, FLUX Kontext / Kontext Max /
 Kontext Multi, FLUX.2 pro/dev edit, FLUX fill and i2i, Seedream 4.5 / 5 Pro edit,
 Qwen-Image-Edit 2511, Qwen Image 3 edit, and the prompt-less FIBO Relight route).
@@ -224,7 +224,7 @@ with no prompt, and this vocabulary has no word for it yet — seventeen of thos
 carry the reason by name in `data/fal/curation.json`'s `excluded.endpoints`, which ships as
 `FAL_EXCLUDED`.
 Remaining: alibaba (Qwen-Image), baidu, tencent (HunyuanImage), minimax, z-ai, nvidia,
-amazon (Titan/Nova); azure MAI `imageEdit` is live (multipart /mai/v1/images/edits).
+amazon (Titan/Nova); azure MAI `imageEdit` sends up to five JPEG or PNG references as repeated `image` parts to `/mai/v1/images/edits`.
 **Excluded (no public API):** midjourney, hidream, pruna, playground, sapiens-ai, eigen-ai,
 deepseek (Janus — weights only).
 
@@ -239,7 +239,7 @@ replacement, `gemini-omni-1.2-flash` — an Interactions API model unmodel does 
 `gemini-omni-flash-preview` is refused by name. Source: the deprecations page's Veo
 "Deprecated models" table, https://ai.google.dev/gemini-api/docs/deprecations, retrieved
 2026-11-12),
-bytedance (`video`, Seedance / Dreamina Seedance), kling (`video` /
+bytedance (`video`, Seedance and Dreamina Seedance, including 2.5 Flash), kling (`video` /
 `videoFromImage` on `POST /v1/videos/*`, plus the EXPERIMENTAL path-addressed
 `videoV3` / `videoV3FromImage` / `videoOmni` — the only family serving Kling 4.0 /
 4.0 Flash), lightricks (LTX-2.5 / LTX-2.3: `video` /
@@ -249,7 +249,7 @@ MiniMax-H3 / -Highspeed / -Lite / -Max), pixverse (`video` + `videoFromImage`), 
 `videoModify` / `videoReframe` / `videoUpscale` / `videoAddAudio`), vidu
 (`video` / `videoFromImage` / `videoFromReference`), alibaba (Wan 3.0/2.x + HappyHorse 1.x
 on DashScope video-synthesis, async create-then-poll), xai (Grok Imagine `video` +
-`videoEdit` + `videoExtend` at /v1/videos/*), fal (`video`, 35 hosted endpoints — Seedance
+`videoEdit` + `videoExtend` at /v1/videos/*), fal (`video`, 38 hosted endpoints — Seedance
 2.0/2.5, Kling v2.5-turbo/v2.6/v3, v3 motion-control and the o1/o3 video edits, MiniMax H3 +
 Hailuo-02 + Hailuo-2.3, Veo 3.1 and its fast / i2v / first-last / extend / reference arms, Wan
 v2.2/v2.7, LTX-2.5, PixVerse v6, Grok Imagine, Gemini Omni Flash, Light-X relight),

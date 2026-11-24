@@ -222,7 +222,7 @@ export interface ChatCompletionsBodyBase<ModelId extends string = string> {
 // The text, audio and file arms are exported for overlays that compose their
 // own user-content union around them (see `createMessagesSchema`).
 export const textPartSchema = z.looseObject({ type: z.literal("text"), text: z.string() });
-const imagePartSchema = z.looseObject({
+export const imagePartSchema = z.looseObject({
   type: z.literal("image_url"),
   image_url: z.looseObject({
     url: z.string(),

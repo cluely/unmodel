@@ -219,6 +219,14 @@ export const availability = {
     "openrouter": "openai/gpt-6.1-terra",
     "vercel": "openai/gpt-6.1-terra",
   },
+  "gpt-6.2-astra": {
+    "openai": "gpt-6.2-astra",
+    "openrouter": "openai/gpt-6.2-astra",
+  },
+  "gpt-6.2-sol": {
+    "openai": "gpt-6.2-sol",
+    "openrouter": "openai/gpt-6.2-sol",
+  },
   "gpt-daybreak-blue-latest": {
     "openai": "gpt-daybreak-blue-latest",
   },

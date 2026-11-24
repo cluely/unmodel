@@ -47,6 +47,9 @@ const PER_MILLION = 1_000_000;
  */
 export function computeCostUSD(cost: ModelCost | undefined, tokens: TokenBreakdown): number | undefined {
   if (!cost) return undefined;
+  if (cost.longContext && (tokens.inputTokens ?? 0) > cost.longContext.aboveInputTokens) {
+    cost = { ...cost, ...cost.longContext.rates };
+  }
 
   let total = 0;
   let priced = false;

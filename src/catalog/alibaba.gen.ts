@@ -875,6 +875,22 @@ export const models = {
     limit: { context: 1000000, output: 131072 },
     cost: { input: 0.15, output: 0.47, cacheRead: 0.016 },
   },
+  "qwen4-max": {
+    id: "qwen4-max",
+    name: "Qwen4 Max",
+    family: "qwen-max",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: false,
+    releaseDate: "2026-11-16",
+    lastUpdated: "2026-11-16",
+    modalities: { input: ["text", "image", "video", "pdf"], output: ["text"] },
+    limit: { context: 1000000, output: 262144 },
+    cost: { input: 1.5, output: 4.5, cacheRead: 0.075, cacheWrite: 1.875 },
+  },
   "qwq-plus": {
     id: "qwq-plus",
     name: "QwQ Plus",
@@ -895,7 +911,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type AlibabaModelId = keyof typeof models;
-export type AlibabaTextModelId = "deepseek-v4-flash-0731" | "glm-5.2" | "kimi-k3" | "qvq-max" | "qwen-flash" | "qwen-max" | "qwen-mt-plus" | "qwen-mt-turbo" | "qwen-omni-turbo" | "qwen-omni-turbo-realtime" | "qwen-plus" | "qwen-plus-character-ja" | "qwen-turbo" | "qwen-vl-max" | "qwen-vl-ocr" | "qwen-vl-plus" | "qwen2-5-omni-7b" | "qwen3-14b" | "qwen3-235b-a22b" | "qwen3-32b" | "qwen3-8b" | "qwen3-asr-flash" | "qwen3-coder-30b-a3b-instruct" | "qwen3-coder-480b-a35b-instruct" | "qwen3-coder-flash" | "qwen3-coder-plus" | "qwen3-livetranslate-flash-realtime" | "qwen3-max" | "qwen3-next-80b-a3b-instruct" | "qwen3-next-80b-a3b-thinking" | "qwen3-omni-flash" | "qwen3-omni-flash-realtime" | "qwen3-vl-235b-a22b" | "qwen3-vl-30b-a3b" | "qwen3-vl-plus" | "qwen3.5-122b-a10b" | "qwen3.5-27b" | "qwen3.5-35b-a3b" | "qwen3.5-397b-a17b" | "qwen3.5-flash" | "qwen3.5-plus" | "qwen3.6-27b" | "qwen3.6-35b-a3b" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max" | "qwen3.8-omni-flash" | "qwq-plus";
+export type AlibabaTextModelId = "deepseek-v4-flash-0731" | "glm-5.2" | "kimi-k3" | "qvq-max" | "qwen-flash" | "qwen-max" | "qwen-mt-plus" | "qwen-mt-turbo" | "qwen-omni-turbo" | "qwen-omni-turbo-realtime" | "qwen-plus" | "qwen-plus-character-ja" | "qwen-turbo" | "qwen-vl-max" | "qwen-vl-ocr" | "qwen-vl-plus" | "qwen2-5-omni-7b" | "qwen3-14b" | "qwen3-235b-a22b" | "qwen3-32b" | "qwen3-8b" | "qwen3-asr-flash" | "qwen3-coder-30b-a3b-instruct" | "qwen3-coder-480b-a35b-instruct" | "qwen3-coder-flash" | "qwen3-coder-plus" | "qwen3-livetranslate-flash-realtime" | "qwen3-max" | "qwen3-next-80b-a3b-instruct" | "qwen3-next-80b-a3b-thinking" | "qwen3-omni-flash" | "qwen3-omni-flash-realtime" | "qwen3-vl-235b-a22b" | "qwen3-vl-30b-a3b" | "qwen3-vl-plus" | "qwen3.5-122b-a10b" | "qwen3.5-27b" | "qwen3.5-35b-a3b" | "qwen3.5-397b-a17b" | "qwen3.5-flash" | "qwen3.5-plus" | "qwen3.6-27b" | "qwen3.6-35b-a3b" | "qwen3.6-flash" | "qwen3.6-max-preview" | "qwen3.6-plus" | "qwen3.7-flash" | "qwen3.7-max" | "qwen3.7-plus" | "qwen3.8-flash" | "qwen3.8-max" | "qwen3.8-omni-flash" | "qwen4-max" | "qwq-plus";
 export type AlibabaImageModelId = never;
 export type AlibabaAudioModelId = "qwen-omni-turbo" | "qwen-omni-turbo-realtime" | "qwen2-5-omni-7b" | "qwen3-livetranslate-flash-realtime" | "qwen3-omni-flash" | "qwen3-omni-flash-realtime";
 export type AlibabaVideoModelId = never;

@@ -214,7 +214,8 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * alone publishes thirty sampler and UV-unwrap parameters and `meshy/v7/*`
    * twenty, so the 3D IR rows are the longest per endpoint in the provider.
    */
-  fal: 620,
+  // Seven new MAI Image and Seedance Flash schemas measure 637.6 KiB on Linux before their custom size check.
+  fal: 650,
   /**
    * The native Tripo provider: two validators, one shared module of enums and
    * cross-field checks, a four-row hand catalog and a credit table. 46.4 KiB
@@ -372,7 +373,8 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
   lightricks: 68,
   "black-forest-labs": 111, // 100.9 measured, 2026-11-13 (97.4 before): the barrel's own growth, no new chunk — outpainting's 4 MP check and seed/webhook deny table, the ultra-finetuned `raw` deny, and their provenance JSDoc; ~10% headroom. macOS figure, flagged for CI confirmation.
   kling: 135,
-  elevenlabs: 222,
+  // The shared token cost tier check takes the Linux graph to 222.1 KiB.
+  elevenlabs: 223,
   minimax: 250,
 };
 
@@ -987,7 +989,8 @@ const IMAGE_PACK_PROVIDERS: string[] = [
  * shared battery now enforces on `google.stt`, the Gemini 4 rules, and the
  * `gemini-3.5-transcribe` curation.
  */
-const STT_PACK_BUDGET_KIB = 790;
+// The Neon catalog row and shared constraints put the Linux graph above 792 KiB.
+const STT_PACK_BUDGET_KIB = 800;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -1689,7 +1692,8 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // tree measured 593.9–679.4 on macOS, none on the co-locating layout. 890
   // stays — the higher of the two spike-derived pins — because that layout is
   // recorded by both sides and a merged graph can only make it larger.
-  lipsync: 890,
+  // With the seven new fal routes the co-locating layout measures 899.9 KiB on Linux.
+  lipsync: 915,
   // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
   // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
   // components — the 3D roster added `ModelUrls`, `BasicAnimations` and their

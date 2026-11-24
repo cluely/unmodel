@@ -193,7 +193,7 @@ export interface GoogleSafetySetting {
 /**
  * `enum (ThinkingLevel)` — "Recommended for Gemini 3 or later models. Use with
  * earlier models results in an error." `XHIGH` ("XHigh thinking level.") is
- * documented on `gemini-4-hydrogen`; see GEMINI_THINKING_LEVELS in
+ * documented on `gemini-4-hydrogen` and `gemini-4-neon`; see GEMINI_THINKING_LEVELS in
  * ./thinking-constraints for the per-model rules.
  */
 export type GoogleThinkingLevel =

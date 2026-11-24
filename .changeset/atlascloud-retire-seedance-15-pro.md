@@ -1,5 +1,5 @@
 ---
-"unmodel": major
+"unmodel": patch
 ---
 
 atlascloud: retire the Seedance v1.5 pro family — Atlas removed it from its catalog
@@ -17,7 +17,9 @@ Retired names (listed here and nowhere else, per the repo's retirement rule):
   `Seedance15ProTextToVideoFastBody`, `Seedance15ProImageToVideoFastBody`
 - Types: `AtlasSeedance15AspectRatio`, `AtlasSeedance15Resolution`, `AtlasSeedance15FastResolution`
 - Constants: `SEEDANCE_15_ASPECT_RATIOS`, `SEEDANCE_15_RESOLUTIONS`, `SEEDANCE_15_FAST_RESOLUTIONS`
-- `camera_fixed` is accepted by no model now; passing it is still a typed refusal.
+- `camera_fixed` is removed from the wire types, schema, and deny tables (no remaining Atlas video
+  model declares it).
 
-`checkDuration` no longer has a range branch: every remaining model publishes a duration enum, so the
-bounds-only path the v1.5-pro family alone used is gone with it.
+Deny and compile messages for `ratio`, `aspect_ratio`, and `seed` now name only the models that
+remain. `checkDuration` no longer has a range branch: every remaining model publishes a duration
+enum, so the bounds-only path the v1.5-pro family alone used is gone with it.

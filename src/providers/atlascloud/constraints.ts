@@ -10,7 +10,7 @@
  * `data/atlascloud/openapi/`, one file per curated id, and
  * `scripts/atlascloud-audit.ts` is what notices when they drift.
  *
- * Ground truth: the 31 snapshots in `data/atlascloud/openapi/`, one per
+ * Ground truth: the 27 snapshots in `data/atlascloud/openapi/`, one per
  * catalogued id, every one re-fetched and diffed canonically against the live
  * document on 2026-11-12. Route and auth prose: ./urls.ts.
  *
@@ -211,8 +211,7 @@ export const VIDEO_SEED_RANGE = { min: -1, max: 4_294_967_295 } as const;
  * `-1` = "let the model choose the length".
  *
  * It is a real enum member on the Seedance 2.x and Wan 3.0 families and it is
- * absent from Seedance v1.5 pro (a plain `[4, 12]` range) and Veo 3.1 (a
- * three-member enum). `unified-video.ts` never invents it: the canonical
+ * absent from Veo 3.1 (a three-member enum). `unified-video.ts` never invents it: the canonical
  * `duration` is "a positive number of seconds" everywhere in this library, so
  * the sentinel is reached wire-side — `atlascloud.video({ duration: -1 })` — or
  * through `providerOptions.atlascloud.duration` from the unified surface.
@@ -235,15 +234,14 @@ export interface VideoShapeRule {
   readonly minDuration: number;
   readonly maxDuration: number;
   /**
-   * The exact `duration` enum, when the schema publishes one, with `-1`
-   * filtered out (it is {@link allowsAutoDuration}'s job). Seedance v1.5 pro
-   * publishes a `[minimum, maximum]` range instead and gets `undefined`.
+   * The exact `duration` enum, with `-1` filtered out (it is
+   * {@link allowsAutoDuration}'s job).
    *
    * EMPTY means the route has no `duration` field at all —
    * `bytedance/seedance-2.5/draft-complete` inherits it from the draft — so
    * the deny table answers for it and `checkDuration` stays silent.
    */
-  readonly durations?: readonly number[];
+  readonly durations: readonly number[];
   /** Whether `duration: -1` ("the model picks") is an enum member. */
   readonly allowsAutoDuration: boolean;
   /** Max `reference_images` / `images` items; 0 when the model has no such field. */
@@ -604,12 +602,12 @@ const VEO_ONLY = {
 } as const;
 
 const RATIO_ABSENT = {
-  ratio: "`ratio` is a Seedance 2.x / Wan 3.0 field; Seedance v1.5 pro and Veo 3.1 spell it `aspect_ratio`",
+  ratio: "`ratio` is a Seedance 2.x / Wan 3.0 field; Veo 3.1 spells it `aspect_ratio`",
 } as const;
 
 const ASPECT_RATIO_ABSENT = {
   aspect_ratio:
-    "`aspect_ratio` is a Seedance v1.5 pro / Veo 3.1 field; the Seedance 2.x and Wan 3.0 models spell it `ratio`",
+    "`aspect_ratio` is a Veo 3.1 field; the Seedance 2.x and Wan 3.0 models spell it `ratio`",
 } as const;
 
 const AUDIO_FIELD_ABSENT = {
@@ -618,10 +616,6 @@ const AUDIO_FIELD_ABSENT = {
 
 const GENERATE_AUDIO_ABSENT = {
   generate_audio: "Wan 3.0 spells its audio toggle `audio`, not `generate_audio`",
-} as const;
-
-const CAMERA_FIXED_ONLY = {
-  camera_fixed: "`camera_fixed` is a Seedance v1.5 pro parameter",
 } as const;
 
 const IMAGES_ONLY = {
@@ -697,7 +691,6 @@ const DRAFT_COMPLETE_ABSENT = [
   "seed",
   "draft",
   "negative_prompt",
-  "camera_fixed",
   "bitrate_mode",
   "omni_reference_task_type",
   "refers",
@@ -727,7 +720,6 @@ const seedance2xDeny: Record<string, DenyRule> = {
   ...denyTable(VEO_ONLY, VIDEO_API_SOURCE),
   ...denyTable(ASPECT_RATIO_ABSENT, VIDEO_API_SOURCE),
   ...denyTable(AUDIO_FIELD_ABSENT, VIDEO_API_SOURCE),
-  ...denyTable(CAMERA_FIXED_ONLY, VIDEO_API_SOURCE),
   ...denyTable(IMAGES_ONLY, VIDEO_API_SOURCE),
   ...denyTable(WAN_REFERENCE_ONLY, VIDEO_API_SOURCE),
   ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
@@ -754,7 +746,6 @@ const wanFamilyDeny: Record<string, DenyRule> = denyReferences({
   ...denyTable(SEEDANCE_25_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_20_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_2X_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(CAMERA_FIXED_ONLY, VIDEO_API_SOURCE),
   ...denyTable(IMAGES_ONLY, VIDEO_API_SOURCE),
   ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
 });
@@ -783,7 +774,6 @@ const veoCommonDeny: Record<string, DenyRule> = denyReferences({
   ...denyTable(SEEDANCE_25_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_20_ONLY, VIDEO_API_SOURCE),
   ...denyTable(SEEDANCE_2X_ONLY, VIDEO_API_SOURCE),
-  ...denyTable(CAMERA_FIXED_ONLY, VIDEO_API_SOURCE),
   ...denyTable(WAN_REFERENCE_ONLY, VIDEO_API_SOURCE),
   ...denyTable(DRAFT_COMPLETE_ONLY, VIDEO_API_SOURCE),
 });

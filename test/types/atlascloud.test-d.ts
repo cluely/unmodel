@@ -3,8 +3,8 @@
  * `bun test` — this file is only type-checked (`bun run check` / tsc
  * --noEmit). Atlas ships no typed client SDK, so these tests exercise the
  * per-model arms, which is where this provider's whole compile-time story is:
- * `model` names the ROUTE as well as the model, so the thirty-one ids are
- * thirty-one param surfaces rather than one narrowed thirty-one ways.
+ * `model` names the ROUTE as well as the model, so the twenty-seven ids are
+ * twenty-seven param surfaces rather than one narrowed twenty-seven ways.
  */
 import {
   video,

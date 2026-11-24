@@ -36,13 +36,13 @@
  * The POST creates a prediction and answers
  * `{ code, message, data: { id, status, outputs } }`. Poll
  * `predictionUrl(id)` (see ./urls.ts, which also records the second spelling
- * nine of these schemas use) until `status` leaves `processing`. Polling is
+ * five of these schemas use) until `status` leaves `processing`. Polling is
  * transport and stays out of unmodel's scope.
  *
  * Auth is `Authorization: Bearer <ATLASCLOUD_API_KEY>` — unmodel never touches
  * keys; add the header yourself when fetching.
  *
- * Wire facts transcribed from the 31 committed snapshots in
+ * Wire facts transcribed from the 27 committed snapshots in
  * `data/atlascloud/openapi/` (each diffed canonically against its live
  * document 2026-11-12) and from https://www.atlascloud.ai/docs/models/video.
  */
@@ -189,11 +189,6 @@ interface NotVeo {
   images?: never;
 }
 
-interface NotCameraFixed {
-  /** No model accepts it. */
-  camera_fixed?: never;
-}
-
 interface NotWan {
   /** Wan 3.0 spells its audio toggle `audio`. */
   audio?: never;
@@ -253,7 +248,6 @@ interface NotDraftComplete {
 
 interface Seedance25Shared
   extends NotVeo,
-    NotCameraFixed,
     NotWan,
     NotSeedance20,
     NotWanReference,
@@ -325,7 +319,6 @@ export interface Seedance25ReferenceToVideoBody extends Seedance25Shared, NoFram
 
 interface Seedance20Shared
   extends NotVeo,
-    NotCameraFixed,
     NotWan,
     NotSeedance25,
     NotWanReference,
@@ -427,7 +420,6 @@ export interface Seedance20FastReferenceToVideoBody extends Seedance20Shared, No
 /** Wan spells the audio toggle `audio` and requires `prompt` on every route. */
 interface WanShared
   extends NotVeo,
-    NotCameraFixed,
     NotSeedance25,
     NotSeedance20,
     NotSeedance2x,
@@ -523,8 +515,7 @@ export interface Wan30PrimeReferenceToVideoBody extends WanReferenceShared {
 // --- Google Veo 3.1 --------------------------------------------------------
 
 interface VeoShared
-  extends NotCameraFixed,
-    NotWan,
+  extends NotWan,
     NotSeedance25,
     NotSeedance20,
     NotSeedance2x,
@@ -634,7 +625,6 @@ export interface Seedance25DraftCompleteBody
   extends NoFrames,
     NoReferenceArrays,
     NotVeo,
-    NotCameraFixed,
     NotWan,
     NotSeedance20,
     NotWanReference,
@@ -772,7 +762,6 @@ const videoSchema = z.looseObject({
   resolution: z.string().optional(),
   ratio: z.string().optional(),
   aspect_ratio: z.string().optional(),
-  camera_fixed: z.boolean().optional(),
   generate_audio: z.boolean().optional(),
   audio: z.boolean().optional(),
   negative_prompt: z.string().optional(),
@@ -845,7 +834,7 @@ function checkDuration(
   const rule = videoShapeRules[params.model];
   if (rule === undefined) return;
   // A route with no `duration` field at all: its deny rule already said so.
-  if (rule.durations?.length === 0) return;
+  if (rule.durations.length === 0) return;
 
   if (duration === AUTO_DURATION) {
     if (rule.allowsAutoDuration) return;
@@ -860,7 +849,7 @@ function checkDuration(
   }
 
   const allowed = rule.durations;
-  if (allowed !== undefined && !allowed.includes(duration)) {
+  if (!allowed.includes(duration)) {
     ctx.report({
       code: "invalid_enum_value",
       path: ["duration"],

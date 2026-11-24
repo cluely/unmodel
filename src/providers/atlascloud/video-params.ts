@@ -14,7 +14,7 @@ import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 import { BITRATE_MODES, OMNI_REFERENCE_TASK_TYPES, VIDEO_OUTPUT_FORMATS } from "./constraints";
 
 /**
- * The thirty ids `unmodel/video` reaches — the `atlascloud/…` ref union.
+ * The twenty-six ids `unmodel/video` reaches — the `atlascloud/…` ref union.
  *
  * These are Atlas's OWN ids, slashes and all, so a unified ref is
  * `"atlascloud/bytedance/seedance-2.5/text-to-video"` and splits on the FIRST
@@ -73,10 +73,10 @@ export const VEO_RATIOS_SHAPES = ["16:9", "9:16"] as const;
 const NO_RATIOS = [] as const;
 
 /**
- * The `-1` sentinel and why `durations` is absent on twenty-two of these rows.
+ * The `-1` sentinel and why `durations` is absent on eighteen of these rows.
  *
- * Atlas publishes `duration` as an ENUM on every family but Seedance v1.5 pro
- * — and the enums are long: `[-1, 4…30]` on Seedance 2.5, `[-1, 2…30]` on Wan
+ * Atlas publishes `duration` as an ENUM on every family — and on Seedance 2.x
+ * and Wan 3.0 the enums are long: `[-1, 4…30]` on Seedance 2.5, `[-1, 2…30]` on Wan
  * 3.0. Spelling twenty-nine literals into a completion list to describe what is
  * really "any integer in a range, plus a sentinel" is the trade
  * `model-params.ts` documents against, so those rows declare no `durations`,
@@ -93,7 +93,7 @@ const NO_RATIOS = [] as const;
  * (`core/unified/derive.ts`) at every provider in the pack. It is reached
  * through `providerOptions.atlascloud.duration`, which is documented on the
  * adapter beside the reason — and `checkDuration` in ./video.ts still gates it
- * per model, so the sentinel is refused on Seedance v1.5 pro and Veo 3.1 where
+ * per model, so the sentinel is refused on Veo 3.1 where
  * the schema does not declare it.
  */
 const SEEDANCE_2X_EXTRAS = {

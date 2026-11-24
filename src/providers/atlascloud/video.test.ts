@@ -58,7 +58,7 @@ describe("the Atlas routes", () => {
     expect(predictionUrl("abc 1")).toBe(
       "https://api.atlascloud.ai/api/v1/model/prediction/abc%201",
     );
-    // Nine of the thirty-one schemas declare `/model/result/{request_id}`
+    // Five of the twenty-seven schemas declare `/model/result/{request_id}`
     // instead; a helper that picked one would be guessing for the other family.
     expect(resultUrl("abc 1")).toBe("https://api.atlascloud.ai/api/v1/model/result/abc%201");
   });

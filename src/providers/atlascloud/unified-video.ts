@@ -63,7 +63,7 @@
  *
  * That reaches the wire verbatim, with no warning, and `checkDuration` in
  * ./video.ts still gates it — accepting it on the families whose schema
- * declares the sentinel and refusing it on Seedance v1.5 pro and Veo 3.1, which
+ * declares the sentinel and refusing it on Veo 3.1, which
  * is one message, in one place, saying which models have it. A sentinel is not
  * a duration, and promoting `-1` into the canonical word would make `duration`
  * mean two things at once at every provider in the pack to serve two of them.
@@ -426,8 +426,8 @@ export const video = {
     }
 
     if (input.duration !== undefined) {
-      // The model's own row answers on the way out: twenty-two of the
-      // thirty publish an enum too long to autocomplete (see
+      // The model's own row answers on the way out: eighteen of the
+      // twenty-six publish an enum too long to autocomplete (see
       // ./video-params.ts) and `checkDuration` quotes it, including the `-1`
       // sentinel rule. The Veo family's three-member enums ARE declared, so
       // they are passed here and refused at compile time as well.
@@ -494,7 +494,7 @@ export const video = {
         ctx.fail({
           code: "unsupported_param",
           path: ["seed"],
-          message: `"${ctx.model}" declares no \`seed\`: the Seedance 2.5 schemas have no seed field, unlike the 2.0 series, Seedance v1.5 pro, Wan 3.0 and Veo 3.1.`,
+          message: `"${ctx.model}" declares no \`seed\`: the Seedance 2.5 schemas have no seed field, unlike the 2.0 series, Wan 3.0 and Veo 3.1.`,
           meta: { source: VIDEO_API_SOURCE },
         });
       } else {
@@ -518,5 +518,5 @@ export const video = {
 // reaches it through `./video`, which is where a model id is looked up — and an
 // adapter leaf that imported it directly would be the barrel trap in miniature:
 // `unmodel/atlascloud/values` re-exports this file's tables for pickers, and
-// that entry must not pay for thirty-one catalog rows to render a dropdown.
+// that entry must not pay for twenty-seven catalog rows to render a dropdown.
 // `./constraints` and `./video-params` are the import-free halves it may reach.

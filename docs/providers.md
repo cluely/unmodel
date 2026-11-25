@@ -11,9 +11,10 @@ provider — not their quality ranking.
   catalog, and quirk constraints only. Own subpath, ~30 lines each.
 - **generated** — per-model constraint data and catalog rows (and, at fal, wire types and schemas)
   emitted by a codegen from the provider's own published OpenAPI or catalog, over a committed
-  snapshot. Behaviour (checks, messages, estimates, docs) is still hand-written beside it. Two
-  providers: **fal** — see [the fal.ai wave](#falai-wave--one-aggregator-ten-verbs) — and
-  **revana** — see [the Revana wave](#revana-wave--one-router-thirteen-addresses).
+  snapshot. Behaviour (checks, messages, estimates, docs) is still hand-written beside it. Three
+  providers: **fal** — see [the fal.ai wave](#falai-wave--one-aggregator-ten-verbs) —
+  **revana** — see [the Revana wave](#revana-wave--one-router-thirteen-addresses) — and
+  **higgsfield** — see [the Higgsfield wave](#higgsfield-wave--one-url-template-four-addresses).
 - **catalog-only** — model metadata available via `unmodel/catalog`; no request validator yet.
 - **excluded** — no public developer API today (noted; revisit when one ships).
 
@@ -1318,6 +1319,174 @@ seen to want one.
 Revana resells weights unmodel already reaches natively — `veo-3.1` is also `google.video`,
 `seedance-2.5` also `bytedance.video`, `elevenlabs-v3` also `elevenlabs.tts` — through a
 different body each time, and nothing is normalised between them (§1).
+
+## Higgsfield wave — one URL template, four addresses
+
+Higgsfield (https://higgsfield.ai) serves its own image and video models — Soul, Marketing
+Studio, Ads Studio, AI Influencer, Cinema Studio, Genjutsu — and hosts third-party ones behind
+the same key: Seedance, Seedream, Kling, Wan, Happy Horse, Qwen Image, MiniMax, LTX, PixVerse,
+MAGI-2, Recraft, Ideogram, Grok Imagine, Z-Image. unmodel serves **every route** — 111
+generation routes and the one training route at landing — on `unmodel/higgsfield`. Tier:
+**generated**. Research: [`docs/research/higgsfield-api-2026-11-24.md`](./research/higgsfield-api-2026-11-24.md).
+
+| address | route | serves |
+|---|---|---|
+| `higgsfield.image` | `POST https://api.higgsfield.ai/{endpoint}` | every route that answers images — 24 |
+| `higgsfield.imageEdit` | 〃 | the image routes that take a picture to edit — 10, a view |
+| `higgsfield.video` | 〃 | every route that answers a video — 87 |
+| `higgsfield.characterTrain` | `POST https://api.higgsfield.ai/v1/custom-references` | Soul ID training |
+
+Base URL `https://api.higgsfield.ai`, no version prefix. Auth is
+`Authorization: Key <KEY_ID>:<KEY_SECRET>` (the legacy `hf-api-key` / `hf-secret` header pair
+is still accepted). Every generation route is asynchronous: the POST answers
+`{ status: "queued", request_id, status_url, cancel_url }`, and the caller polls `status_url` or
+passes `hf_webhook`. **Not exercised against a live key** — unmodel holds no Higgsfield
+credential, so every body, bound and price is the published contract, read 2026-11-24.
+
+**The route is the path, so it is a parameter.** A Higgsfield body has no `model` field: the
+route id (`bytedance/seedance-2.5/text-to-video`) IS the URL path, at any depth. The three
+generation addresses take it as `endpoint` and strip it into `.request.url`, as `fal.*` does,
+and `hf_webhook` likewise becomes the query parameter the API reads it from. Nothing else is
+touched — no key added, removed or defaulted, and an explicit `null` stays one. That is the
+house rule, and here it is load-bearing: an `Idempotency-Key` replay fingerprints the body, and
+"Array order, omitted fields, explicit `null` values, and different URLs do matter".
+`Idempotency-Key` and `Hf-Expires-After` are per-request headers the caller chooses, so they
+are exported names and bounds, not parameters.
+
+**One `video`, no `videoFromImage` or `videoEdit`** — `fal.video`'s argument (decisions.md §2).
+Text-to-video, image-to-video, reference-to-video, motion control, clip editing and clip
+extension are different keys on one route shape whose path is a parameter, and the path's tail
+is not a rule: Higgsfield files `alibaba/happy-horse/text-to-video` under `image2video`.
+`higgsfield.imageEdit` is a *view* over `higgsfield.image` (§4): the routes Higgsfield files
+under `image_edit`, asked to edit. AI Influencer is filed there too and is not in the view —
+its optional `image_url` is an identity photo for a character sheet, recorded in
+`data/higgsfield/curation.json`.
+
+**An id at the "wrong" address is not refused.** Every route is the same URL template, so
+`higgsfield.video({ endpoint: "z-image/turbo", … })` builds a request the API fulfils. The type
+says the id belongs elsewhere (`never`), and the runtime answers a *warning* naming
+`higgsfield.image`. Only the view refuses, which is what makes it a view. For the same reason
+the three addresses share ONE pipeline schema across both output types, and it types no body key
+at all: it settles that `endpoint` and `hf_webhook` are strings, and names every key some route
+declares so that an unknown one can be reported. A finding from that layer fails the request
+whatever `options.severity` says, and the layer also runs for the requests no row covers: an open
+route that does not declare the key (the API ignores it), a route unmodel deliberately does not
+type, and a route id newer than the snapshot. `duration` is a number everywhere it is declared
+today; a typed key would refuse `duration: "5"` on next month's route that takes a string, with no
+override. Every type, `null`, vocabulary and bound is checked per route from the shape rows, where
+the message names the route and cites its page, and where the caller can overrule it for one call.
+
+**A value that cannot be a route id is refused.** `endpoint` is the path after
+`https://api.higgsfield.ai/`: a pasted URL, a leading or trailing slash, a query string or a `..`
+segment builds a URL Higgsfield does not serve, so it is an error at `endpoint` naming the id it
+should have been. A well-formed id unmodel has no row for is a different thing — an
+`unknown_model` warning at `endpoint`, sent as written.
+
+**Strictness is per route, and published.** 54 of the 111 routes declare
+`additionalProperties: false`; on those an undeclared key is an error whose message names the
+per-call override (`{ severity: { unsupported_param: "warning" } }`), because a closed route is
+the one place a stale snapshot can refuse a request the API fulfils — Seedance 2.5's `draft`
+reached the console schema before the docs schema. On the other 57 an undeclared key is sent
+with a warning. Cross-field rules (22 routes carry `if` / `then` / `else`, `allOf`, `anyOf` or
+`not`; a 23rd, Cinema Studio, states its prompt-token rule in prose) are lowered to rule rows, not to hand checks; where the schema's strict reading and the
+server-fills-defaults reading disagree about a request that omits the tested parameter, the
+rule is not enforced for that request.
+
+**Generated from three documented, keyless surfaces.** `scripts/codegen-higgsfield.ts` reads
+the per-route console document (`dash.higgsfield.ai/models/<id>/llms.txt`), the data each
+`open.higgsfield.ai/models/<id>/api-reference` page server-renders, and the docs.higgsfield.ai
+model pages, into `data/higgsfield/routes/`. It does **not** request the console's JSON API
+(`dash.higgsfield.ai/api/v2/app-models`): that surface is undocumented, and
+`open.higgsfield.ai/robots.txt` disallows `/api/` (owner decision, 2026-11-24). Most routes are
+published twice, and where the two schemas differ every differing pointer is decided in
+writing in `data/higgsfield/overlays.json` — there is no default winner.
+`bun run codegen:higgsfield` is offline and in the CI drift check; the weekly
+`codegen-higgsfield-refresh.yml` re-fetches, and fails on purpose when a human has to decide
+something.
+
+**Two deliberate non-uniformities, both owner decisions of 2026-11-24.**
+
+- *Hosted third-party routes ARE served here.* Krea also proxies third-party models and
+  `unmodel/krea` leaves them out ("Those belong to their own providers' catalogs",
+  `src/providers/krea/models.ts`). Higgsfield's are served because they are the roster: 96 of
+  the 111 generation routes are hosted, each publishes its own schema, and a caller holding one
+  Higgsfield key reaches them at Higgsfield's path with Higgsfield's body. What would change
+  it: nothing short of the owner reversing it. Nothing is normalised between
+  `higgsfield/bytedance/seedance-2.5/…` and `bytedance.video` (§1).
+- *`characterTrain` is served, while fal's 57 `training` endpoints stay excluded.* fal's are
+  fine-tunes — a job that produces weights. Soul ID produces an id a generation request
+  passes as `custom_reference_id`; without the address, four Soul routes have a parameter no
+  unmodel call can obtain a value for. It is a new verb (§2: "a new category gets a new
+  verb"), named for what the caller does on the `voiceClone` precedent, and wire-only: one
+  provider, so no unified category (§8).
+
+**Pricing is transcribed from sentences, and most of it is not on `cost`.** Higgsfield
+publishes no machine-readable rate. `data/higgsfield/pricing.json` holds one row per generation
+route — 64 rates and 47 `unpriced` reasons — each with its verbatim quote, and codegen checks
+that the quote is still in the snapshot and that every number is in its own quote.
+
+- `ModelInfo.cost` carries a figure on 18 routes: a flat per-image rate, or a per-second rate
+  billed on the request's own `duration`. Everything keyed by resolution, billed on a source
+  clip or surcharged for some requests is in `HIGGSFIELD_RATES` and resolved per request by
+  `higgsfieldCostUSD`, which answers `undefined` whenever the request does not state what it is
+  priced by. An omitted parameter is priced at its default only where every Higgsfield source
+  that declares it agrees on that default.
+- **Soul is the exception, by owner decision:** "Images cost $0.0938 each at 720p and $0.1875
+  each at 1080p." is keyed by resolution, and `cost.perImage` on the three priced Soul routes
+  carries the **720p** figure, the default. The estimate keys by resolution, and a
+  `batch_size` of 4 has no estimate: no source says how a batch bills.
+- **The console contradicts its own model pages.** Where a route's page data has no pricing
+  paragraph, its console document prints "Public pricing information is not available for
+  this model." — 43 routes, 20 of which state a price on their model page (the three Soul
+  routes, AI Influencer, Ideogram 4.0, Z-Image Turbo, Kling Image 4.0 ×4, Recraft 4.1 ×4,
+  Qwen Image 3 ×2, Seedream 5.0 Pro ×2, Hailuo 2.3 ×2). Contradicting pages are not catalogued
+  (`docs/decisions.md` §11): sixteen of the twenty are `unpriced`, the reason and the page's
+  sentence on the row, and `higgsfieldCostUSD` answers `undefined` for them.
+- **Four of them are catalogued, by owner decision of 2026-11-24:** the three priced Soul
+  routes and AI Influencer. Each carries `contradicted: true` on its rate and a CAVEAT line
+  above its row, `HIGGSFIELD_CONTRADICTED_PRICING_CAVEAT` is the sentence to show beside the
+  figure, and a validated request whose estimate came from one carries an `unconfirmed_cost`
+  warning. The decision is recorded per row (`decided` in `pricing.json`), and codegen stops on
+  a rate at a contradicted route without it. **Open, for the owner:** whether the same ruling
+  extends to the other sixteen; each is one `decided` date away, with its rate still in the
+  row's quote.
+- **Unpriced, with the reason on the row:** sample points ("$0.14 per second at 720p for 1
+  second clips" prices one combination), rates the vendor calls approximate (Genjutsu
+  Restyle), token metering (Cinema Studio, Ads Studio, Marketing Studio), the sixteen
+  contradicted sentences above, and the four routes only the docs publish.
+- Source-billed routes (Genjutsu, Kling motion control) are estimated when the clip's length
+  is declared through `options.media`; the body only links to it.
+
+`HIGGSFIELD_PRICING_CAVEAT` goes beside every figure: these are standard self-serve rates, and
+`POST /estimate/{endpoint}` with the same body answers the account's own amount.
+
+**What is not here, and why.**
+
+- *Unified packs.* The three generated addresses are not yet refs in `unmodel/image`,
+  `unmodel/image-edit` or `unmodel/video`; that lands separately.
+- *Webhook verification.* Deliveries are signed (Standard Webhooks). unmodel ships
+  `WebhookDelivery`, the three header names and `HIGGSFIELD_WEBHOOK_STATUSES`, and no
+  verifier: there is no recorded delivery to pin the `whsec_` decoding or the two-signature
+  rotation against, and `revana.verifyWebhook` exists only because two recorded deliveries
+  settled the equivalent question there. It needs one in `test/fixtures/higgsfield/`.
+- *A checker for a Soul ID character.* Its `failed` carries `fail_reason`, whose type is not
+  published.
+- *`higgsfiled/genjutsu/{motion-transfer,object-swap}/v1.0`* — two misspelled legacy paths
+  that still answer. Excluded in `data/higgsfield/curation.json`; a request naming one is
+  routed, and warned with the recorded reason.
+- *The console's playground presets* (`workflows/*`): pages over a model row, with no path of
+  their own.
+- *The Agent API* (`/v1/agent/sessions`): in the SDKs only, in no documentation page.
+- *The legacy v1 surface* (`/v1/image2video/dop`, `/v1/speak/higgsfield`,
+  `/v1/text2image/soul`, `/v1/job-sets`): named by the JavaScript SDK's v1 client and by no
+  current document.
+- *Four routes are documented and absent from the console* — `higgsfield-ai/soul/cinema` and
+  `minimax/h3/{text-to-video,image-to-video,reference-to-video}`. They are served from their
+  docs schema, unpriced, and whether a self-serve account can reach them is unverified.
+
+Revana resells six of these models (Soul, Soul 2, Soul Cinema, Marketing Studio and the two
+Genjutsu workflows are also `revana.image` / `revana.video` ids) through a different body, and
+nothing is normalised between them (§1).
 
 ## LLM creators without a public API today (catalog-only or excluded)
 

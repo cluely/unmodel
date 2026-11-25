@@ -3,9 +3,9 @@
  * per-route documents, plus three hand-maintained inputs for what those
  * documents cannot say.
  *
- *   bun scripts/codegen-higgsfield.ts             lower the committed data/higgsfield/ inputs and report (no writes)
- *   bun scripts/codegen-higgsfield.ts --refresh   re-fetch the documented sources into data/higgsfield/, then lower
- *   bun scripts/codegen-higgsfield.ts --check     re-fetch and compare against the committed snapshot (network; no writes)
+ *   bun run codegen:higgsfield            regenerate src/providers/higgsfield/gen/ from data/higgsfield/ (offline)
+ *   bun run codegen:higgsfield:refresh    re-fetch the documented sources into data/higgsfield/, then regenerate
+ *   bun run codegen:higgsfield:check      re-fetch and compare against the committed snapshot (network; no writes)
  *
  * ## Why Higgsfield gets a generator
  *
@@ -20,7 +20,7 @@
  *
  * **The generator emits DATA and TYPES-AS-DATA; hand code owns BEHAVIOUR.**
  * `generate()` returns the id lists, one wire interface per route, one shape
- * gate per output type, the per-route shape rows a check battery reads, the
+ * gate for every route, the per-route shape rows a check battery reads, the
  * catalog rows and the rates. It emits no check, no message and no validator.
  *
  * Routes are grouped by what they answer — `image` or `video` — and by nothing
@@ -92,6 +92,13 @@
  * name in their `satisfies` clauses (`../shape-types`, `../pricing-types`). The
  * public declarations are canonical, and `tsc` over the emitted files is what
  * holds the two together.
+ *
+ * ## What it writes
+ *
+ * `src/providers/higgsfield/gen/*.gen.ts`, and nothing else under `src/`. A
+ * file in that directory the run did not produce is removed. CI regenerates
+ * and fails on any difference, so a hand edit to a generated file cannot
+ * survive: fix `data/higgsfield/` or this script and rerun.
  */
 
 import { z } from "zod";
@@ -101,13 +108,11 @@ import {
   irType,
   jsdocText,
   literal,
-  mergeType,
   propKey,
   renderDoc,
   snapshotFileName,
   sorted,
   tsType,
-  zodExpr,
   type Node,
   type Prop,
 } from "./codegen-fal";
@@ -146,6 +151,7 @@ const OPENAPI_PATH = `${DATA_DIR}openapi.json`;
 const CURATION_PATH = `${DATA_DIR}curation.json`;
 const OVERLAYS_PATH = `${DATA_DIR}overlays.json`;
 const PRICING_PATH = `${DATA_DIR}pricing.json`;
+const GEN_DIR = new URL("../src/providers/higgsfield/gen/", import.meta.url).pathname;
 
 function consoleUrl(id: string): string {
   return `${CONSOLE_BASE_URL}/models/${id}/llms.txt`;
@@ -1610,12 +1616,11 @@ export function generate(input: GenerateInput): Map<string, string> {
   const files = new Map<string, string>();
   files.set("endpoints.gen.ts", renderEndpointsFile(models, curation.excluded.routes));
   files.set("pricing.gen.ts", renderPricingFile(models));
+  files.set("input-schema.gen.ts", renderSchemaFile(models));
   for (const verb of VERBS) {
     const slice = models.filter((model) => model.verb === verb);
     if (slice.length === 0) continue;
     files.set(`${verb}-wire.gen.ts`, renderWireFile(verb, slice));
-    files.set(`${verb}-schema.gen.ts`, renderSchemaFile(verb, slice));
-    files.set(`${verb}-check.gen.ts`, renderCheckFile(verb, slice));
     files.set(`${verb}-narrow.gen.ts`, renderNarrowFile(verb, slice));
     files.set(`models-${verb}.gen.ts`, renderModelsFile(verb, slice));
   }
@@ -1631,6 +1636,7 @@ const HEADER = [
   `// Sources: ${CONSOLE_BASE_URL}/models/<id>/llms.txt, ${PAGE_BASE_URL}/models/<id>/api-reference,`,
   `//   ${DOCS_BASE_URL}/models/<family>/<workflow>.md — snapshotted at data/higgsfield/routes/.`,
   "// Hand inputs: data/higgsfield/curation.json, overlays.json, pricing.json.",
+  "// Regenerate with `bun run codegen:higgsfield` (or `bun run codegen:higgsfield:refresh` to re-fetch the snapshots).",
   "",
 ].join("\n");
 
@@ -1800,76 +1806,31 @@ ${models.map((model) => `  ${quote(model.id)}: ${model.typeName};`).join("\n")}
 ${editView}`;
 }
 
-function bareZod(type: string): string {
-  switch (type) {
-    case "string":
-      return "z.string()";
-    case "number":
-      return "z.number()";
-    case "boolean":
-      return "z.boolean()";
-    case "array":
-      return "z.array(z.unknown())";
-    case "object":
-      return "z.looseObject({})";
-    default:
-      return "z.unknown()";
-  }
-}
-
-function renderSchemaFile(verb: Verb, models: readonly RouteModel[]): string {
-  const shapes = `HIGGSFIELD_${verbConst(verb)}_SHAPES`;
+function renderSchemaFile(models: readonly RouteModel[]): string {
   const names = sorted(new Set(models.flatMap((model) => model.order)));
-  const fields = names.map((name) => {
-    const holders = models.filter((model) => model.props[name] !== undefined);
-    const specs = holders.map((model) => model.props[name] as Prop);
-    const nodes = specs.map((spec) => typeNode(spec.node));
-    const distinct = new Set(nodes.map((node) => canonical(node)));
-    const types = new Set(nodes.map((node) => mergeType(node)));
-
-    let expr: string;
-    let comment = "";
-    if (distinct.size === 1) {
-      expr = zodExpr(nodes[0] as Node, noComponents);
-    } else if (types.size === 1) {
-      const type = [...types][0] as string;
-      expr = bareZod(type);
-      comment = renderDoc(
-        [
-          `Every route that takes \`${name}\` types it as ${type}, and they disagree on the details, so the gate`,
-          `takes the bare type and ${shapes} carries each route's own vocabulary and bounds.`,
-        ],
-        "  ",
-      );
-    } else {
-      expr = "z.unknown()";
-      comment = renderDoc(
-        [
-          `\`${name}\` is a different type at different routes —`,
-          `${holders.map((model) => `${mergeType((model.props[name] as Prop).node)} at ${model.id}`).join(", ")}.`,
-          "",
-          "Typed `unknown` here on purpose: a union that accepted both would let a route's wrong-typed value",
-          `through the gate. ${shapes} carries the real type per route.`,
-        ],
-        "  ",
-      );
-    }
-    if (specs.some((spec) => spec.nullable)) expr += ".nullable()";
-    return `${comment}  ${propKey(name)}: ${expr}.optional(),`;
-  });
-
   return `${HEADER}
 ${renderDoc(
   [
-    `The ONE request schema for every Higgsfield route that answers ${verb === "image" ? "images" : "a video"}.`,
+    "The ONE request schema for every Higgsfield route, whatever it answers.",
     "",
-    `One \`z.looseObject\` for the whole address, not ${models.length} per-route schemas: zod objects are built eagerly, and`,
-    "a hundred of them would be constructed on import for the one the caller used.",
+    `One \`z.looseObject\`, not ${models.length} per-route schemas: zod objects are built eagerly, and a hundred of them`,
+    "would be constructed on import for the one the caller used. And one for both output types, not one",
+    "each: every route is the same URL template, so an image route's id handed to `higgsfield.video` still",
+    "builds a request the API fulfils.",
     "",
-    "Every field is optional here and every bound is absent. This schema is the SHAPE gate (is `prompt` a",
-    `string?); what each route requires, ranges and enumerates lives in \`${shapes}\`, where the check`,
-    "battery can name the route and cite its documentation. A vocabulary is in the gate only where every",
-    "route that takes the field publishes the same one.",
+    "It types `endpoint` and `hf_webhook`, the two parameters unmodel reads itself, and NAMES every body",
+    "key some route declares without typing it. The names are what the pipeline's unknown-key warning and",
+    "the battery's \"another route takes this\" message are computed from. A key's JSON type, its `null`, its",
+    "vocabulary and its bounds are per-route facts, in `HIGGSFIELD_IMAGE_SHAPES` and `HIGGSFIELD_VIDEO_SHAPES`,",
+    "where the check battery can name the route and cite its documentation.",
+    "",
+    "A type is deliberately NOT here even where every route that takes the key publishes the same one. The",
+    "schema runs for every request, including the two the rows do not cover: a route that does not declare",
+    "the key and is not `additionalProperties: false` (the API ignores it there), and a route id newer than",
+    "the snapshot. `duration` is a number at every route that declares it today; a `z.number()` here would",
+    "refuse `duration: \"5\"` at next month's route that takes a string, in a failure no per-call severity",
+    "override reaches, with a message naming neither the route nor a source. For a route that has a row the",
+    "type would add nothing: the battery checks every declared key's type per route already.",
     "",
     "`looseObject` because whether a route refuses an undeclared key is a per-route fact",
     "(`additionalProperties`), which the shape rows carry as `closed`.",
@@ -1878,7 +1839,7 @@ ${renderDoc(
 )}
 import { z } from "zod";
 
-export const higgsfield${pascalCase(verb)}InputSchema = z.looseObject({
+export const higgsfieldInputSchema = z.looseObject({
 ${renderDoc(
   [
     "The route to submit to — unmodel's selector, not a body field.",
@@ -1895,57 +1856,8 @@ ${renderDoc(
   ],
   "  ",
 )}  hf_webhook: z.string().optional(),
-${fields.join("\n")}
+${names.map((name) => `  ${propKey(name)}: z.unknown().optional(),`).join("\n")}
 });
-`;
-}
-
-function checkable(node: Node): boolean {
-  switch (node.k) {
-    case "prim":
-      return true;
-    case "nullable":
-      return checkable(node.inner);
-    case "array":
-      return checkable(node.items);
-    default:
-      return false;
-  }
-}
-
-function renderCheckFile(verb: Verb, models: readonly RouteModel[]): string {
-  const gate = `higgsfield${pascalCase(verb)}InputSchema`;
-  const lines: string[] = [];
-  for (const model of models) {
-    const names = model.order.filter((name) => checkable((model.props[name] as Prop).node));
-    if (names.length === 0) continue;
-    lines.push(`  // ${model.id}`);
-    for (const name of names) lines.push(`  AssertExtends<wire.${model.typeName}[${quote(name)}], Gate[${quote(name)}]>,`);
-  }
-  return `${HEADER}
-${renderDoc(
-  [
-    `Schema/wire agreement checks for every Higgsfield ${verb} route — TYPE ONLY, imported by nothing.`,
-    "",
-    `\`${verb}-wire.gen.ts\` and \`${verb}-schema.gen.ts\` render from the same IR through two emitters. This file is`,
-    "the proof they still agree: for every primitive-shaped field, the wire type must be assignable to the",
-    "gate's input, so a field the gate emits as `z.string()` while the wire interface says `number` fails",
-    "`tsc` here instead of shipping a gate that refuses legal bodies. Object-shaped fields are interfaces on",
-    "the wire side and are enforced at run time from the shape rows.",
-  ],
-  "",
-)}
-import type { z } from "zod";
-
-import type { AssertExtends } from "../shape-types";
-import type { ${gate} } from "./${verb}-schema.gen";
-import type * as wire from "./${verb}-wire.gen";
-
-type Gate = z.input<typeof ${gate}>;
-
-export type Higgsfield${pascalCase(verb)}SchemaChecks = [
-${lines.join("\n")}
-];
 `;
 }
 
@@ -2075,6 +1987,23 @@ ${rows}
 `;
 }
 
+/**
+ * The published default of every parameter a rate reads, where EVERY source that declares the parameter
+ * agrees on it. A request that omits `resolution` is billed at the resolution the route defaults to, and
+ * that is a published fact only where the docs and the console state the same one.
+ */
+function rateDefaults(model: RouteModel, row: RateRow): Record<string, string | number | boolean> | undefined {
+  const read = [row.by, row.seconds === "request" ? "duration" : undefined, row.count, row.multipliedBy, ...(row.undefinedWhen ?? []).map((arm) => arm.param)];
+  const out: Record<string, string | number | boolean> = {};
+  for (const name of sorted(new Set(read.filter((param) => param !== undefined)))) {
+    const prop = model.props[name];
+    if (prop === undefined || !prop.hasDefault) continue;
+    const value = prop.default;
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") out[name] = value;
+  }
+  return Object.keys(out).length === 0 ? undefined : out;
+}
+
 function renderPricingFile(models: readonly RouteModel[]): string {
   const rows = models
     .map((model) => {
@@ -2096,6 +2025,7 @@ function renderPricingFile(models: readonly RouteModel[]): string {
         count: row.count,
         multipliedBy: row.multipliedBy,
         undefinedWhen: row.undefinedWhen?.map((arm) => ({ param: arm.param, in: arm.in, minItems: arm.minItems, reason: arm.reason })),
+        defaults: rateDefaults(model, row),
         contradicted: model.contradicted ? true : undefined,
         source: row.source,
         verified: row.verified,
@@ -2113,7 +2043,8 @@ ${renderDoc(
     "",
     "A rate here is NOT a cost. A table needs the request's value of `by`, a per-second rate needs the seconds",
     "it bills, and several quotes price some requests in ways a row cannot state (`undefinedWhen`). Where the",
-    "request leaves any of that open the honest answer is `undefined`. `contradicted` marks a rate the same",
+    "request leaves any of that open the honest answer is `undefined`. `defaults` are the published defaults",
+    "of the parameters a rate reads, where every source agrees on one. `contradicted` marks a rate the same",
     `route's console document denies (“${CONSOLE_NO_PRICING}”).`,
   ],
   "",
@@ -2697,7 +2628,7 @@ async function check(): Promise<void> {
     return;
   }
   console.error(`Drifted from the live documents:\n  ${problems.join("\n  ")}`);
-  console.error("Run `bun scripts/codegen-higgsfield.ts --refresh` and review the diff.");
+  console.error("Run `bun run codegen:higgsfield:refresh` and review the diff.");
   process.exitCode = 1;
 }
 
@@ -2730,8 +2661,18 @@ async function main(): Promise<void> {
     overlays: await readJson(OVERLAYS_PATH),
     pricing: await readJson(PRICING_PATH),
   });
-  const bytes = [...files.values()].reduce((total, content) => total + content.length, 0);
-  console.log(`data/higgsfield/ lowers to ${files.size} files (${Math.round(bytes / 1024)} KiB): ${[...files.keys()].join(", ")}`);
+
+  const { mkdir, readdir, rm } = await import("node:fs/promises");
+  await mkdir(GEN_DIR, { recursive: true });
+  // Stale sweep, scoped to this provider's `gen/` and nothing else.
+  for (const existing of await readdir(GEN_DIR)) {
+    if (existing.endsWith(".gen.ts") && !files.has(existing)) {
+      await rm(`${GEN_DIR}${existing}`);
+      console.log(`Removed stale ${existing}`);
+    }
+  }
+  for (const [name, content] of files) await Bun.write(`${GEN_DIR}${name}`, content);
+  console.log(`Generated ${files.size} files into src/providers/higgsfield/gen/`);
 }
 
 if (import.meta.main) {

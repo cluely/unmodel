@@ -25,8 +25,8 @@ import {
  * only way to test a refusal, because the committed snapshot deliberately
  * contains none.
  *
- * The third runs against the **real committed snapshot**, one test per fact a
- * later commit builds on, naming the route that exercises it. A refresh that
+ * The third runs against the **real committed snapshot**, one test per fact
+ * the provider builds on, naming the route that exercises it. A refresh that
  * changes one of those facts then fails with a message saying which.
  */
 
@@ -343,19 +343,16 @@ const CLIP = route("maker/clip");
 describe("codegen-higgsfield on a mini fixture", () => {
   const files = generate(input([CLIP, STILL]));
 
-  test("emits the id lists, the rates, and five files per output type", () => {
+  test("emits the id lists, the rates, the one gate, and three files per output type", () => {
     expect([...files.keys()]).toEqual([
       "endpoints.gen.ts",
-      "image-check.gen.ts",
       "image-narrow.gen.ts",
-      "image-schema.gen.ts",
       "image-wire.gen.ts",
+      "input-schema.gen.ts",
       "models-image.gen.ts",
       "models-video.gen.ts",
       "pricing.gen.ts",
-      "video-check.gen.ts",
       "video-narrow.gen.ts",
-      "video-schema.gen.ts",
       "video-wire.gen.ts",
     ]);
   });
@@ -371,10 +368,6 @@ describe("codegen-higgsfield on a mini fixture", () => {
       "../pricing-types",
       "../shape-types",
       "./endpoints.gen",
-      "./image-schema.gen",
-      "./image-wire.gen",
-      "./video-schema.gen",
-      "./video-wire.gen",
       "zod",
     ]);
   });
@@ -597,23 +590,22 @@ describe("codegen-higgsfield on a mini fixture", () => {
     expect(out.get("video-wire.gen.ts")).toContain("  prompt: string;");
   });
 
-  test("the gate keeps a vocabulary every route shares, takes the bare type where details differ, and `unknown` where types do", () => {
-    const a = route("maker/a", { schema: properties({ ratio: { type: "string", enum: ["1:1"] }, tier: { type: "string", enum: ["x"] }, elements: { type: "array", items: { type: "string" } }, seed: { type: "integer" } }) });
-    const b = route("maker/b", { schema: properties({ ratio: { type: "string", enum: ["1:1"] }, tier: { type: "string", enum: ["y"] }, elements: { type: "integer" }, seed: { type: ["integer", "null"], maximum: 9 } }) });
-    const gate = generate(input([a, b])).get("video-schema.gen.ts") ?? "";
-    expect(gate).toContain('  ratio: z.enum(["1:1"]).optional(),');
-    expect(gate).toContain("  tier: z.string().optional(),");
-    expect(gate).toContain("  elements: z.unknown().optional(),");
-    expect(gate).toContain("  seed: z.number().nullable().optional(),");
+  test("the gate names every body key and types none of them, even where every route agrees on a type", () => {
+    const nested = { type: "object", required: ["rgb"], properties: { rgb: { type: "array", items: { type: "integer" } } } };
+    const a = route("maker/a", { schema: properties({ ratio: { type: "string", enum: ["1:1"] }, tier: { type: "string", enum: ["x"] }, elements: { type: "array", items: { type: "string" } }, seed: { type: "integer" }, color: nested, urls: { type: "array", items: { type: "string" } } }) });
+    const b = route("maker/b", { schema: properties({ ratio: { type: "string", enum: ["1:1"] }, tier: { type: "string", enum: ["y"] }, elements: { type: "integer" }, seed: { type: ["integer", "null"], maximum: 9 }, color: nested, urls: { type: "array", items: { type: "string" } } }) });
+    const gate = generate(input([a, b])).get("input-schema.gen.ts") ?? "";
+    // A shared type stays out: the gate also runs for a route that does not
+    // declare the key and for an id newer than the snapshot, and a finding
+    // from it cannot be downgraded per call.
+    for (const name of ["color", "elements", "ratio", "seed", "tier", "urls"]) {
+      expect(gate).toContain(`  ${name}: z.unknown().optional(),`);
+    }
     expect(gate).toContain("  endpoint: z.string(),");
     expect(gate).toContain("  hf_webhook: z.string().optional(),");
-  });
-
-  test("the agreement file checks primitive-shaped fields only", () => {
-    const checks = lowered.get("video-check.gen.ts") ?? "";
-    expect(checks).toContain('AssertExtends<wire.MakerAllInput["image_urls"], Gate["image_urls"]>');
-    expect(checks).not.toContain('MakerAllInput["style"]');
-    expect(checks).not.toContain('MakerAllInput["shots"]');
+    const body = gate.slice(gate.indexOf("export const"));
+    expect(body.match(/z\.string\(\)/g)).toHaveLength(2);
+    expect(body).not.toMatch(/z\.(enum|number|boolean|array)\(/);
   });
 
   // -- conditionals -------------------------------------------------------
@@ -857,10 +849,18 @@ describe("codegen-higgsfield pricing rows", () => {
   test("a rate keyed by a field is published as a table and kept off `cost`", () => {
     const out = priced(TABLE);
     expect(rate(out)).toBe(
-      `  "maker/sized": { unit: "per_image", usd: { "720p": 0.0938, "1080p": 0.1875 }, by: "resolution", contradicted: true, source: "${PAGE_URL}", verified: "2026-11-24" },`,
+      `  "maker/sized": { unit: "per_image", usd: { "720p": 0.0938, "1080p": 0.1875 }, by: "resolution", defaults: { resolution: "720p" }, contradicted: true, source: "${PAGE_URL}", verified: "2026-11-24" },`,
     );
     expect(models(out)).not.toContain("cost:");
     expect(prose(out.get("models-image.gen.ts"))).toContain("Not on `cost`: no single figure is right for every request this route takes.");
+  });
+
+  test("a rate carries the default of each parameter it reads, where every source agrees on one, and no other", () => {
+    // `resolution` has a default in the one source that publishes the route; `duration` and `hdr` have none.
+    const out = priced({ ...BASE, unit: "per_second", by: "resolution", usd: { "720p": 0.0938, "1080p": 0.1875 }, seconds: "request", undefinedWhen: [{ param: "hdr", in: [true], changes: "rate", reason: "A surcharge." }] }, { output: "video" });
+    expect(rate(out)).toContain('defaults: { resolution: "720p" }');
+    // `batch_size` is not read by this rate, so its default is not carried either.
+    expect(rate(priced({ ...BASE, quote: "Images cost $0.03 each.", unit: "per_image", usd: 0.03 }, { sentence: "Images cost $0.03 each." }))).not.toContain("defaults:");
   });
 
   test("`catalog` puts the default's figure on `cost`, and only the default every source agrees on", () => {
@@ -1000,6 +1000,7 @@ describe("codegen-higgsfield pricing rows", () => {
 // ---------------------------------------------------------------------------
 
 const DATA_DIR = join(import.meta.dir, "..", "data", "higgsfield");
+const GEN_DIR = join(import.meta.dir, "..", "src", "providers", "higgsfield", "gen");
 
 function readJson(...path: string[]): unknown {
   return JSON.parse(readFileSync(join(DATA_DIR, ...path), "utf8"));
@@ -1163,8 +1164,8 @@ describe("codegen-higgsfield on the committed snapshot", () => {
     expect(shape("minimax/h3-lite/image-to-video")).toContain('{ kind: "atLeastOne", params: [{ name: "image_url" }, { name: "end_image_url" }] }');
   });
 
-  test("`elements` is strings at Kling 3.0 and integers at Kling 4.0, so the gate does not pick one", () => {
-    expect(file("video-schema.gen.ts")).toContain("  elements: z.array(z.unknown()).optional(),");
+  test("`elements` is strings at Kling 3.0 and integers at Kling 4.0, and each route's row says which", () => {
+    expect(file("input-schema.gen.ts")).toContain("  elements: z.unknown().optional(),");
     expect(shape("kling-video/v4.0/reference-to-video")).toContain('elements: { t: "array", maxItems: 7, items: { t: "integer", min: 1 } }');
     expect(shape("kling-video/o3/video-edit")).toContain('elements: { t: "array", minItems: 0, maxItems: 4, items: { t: "string" } }');
   });
@@ -1176,7 +1177,7 @@ describe("codegen-higgsfield on the committed snapshot", () => {
 
   test("Soul: the page's per-resolution rates, the 720p figure on `cost`, and the console's contradiction recorded", () => {
     expect(rate("higgsfield-ai/soul/standard")).toBe(
-      '  "higgsfield-ai/soul/standard": { unit: "per_image", usd: { "720p": 0.0938, "1080p": 0.1875 }, by: "resolution", multipliedBy: "batch_size", contradicted: true, ' +
+      '  "higgsfield-ai/soul/standard": { unit: "per_image", usd: { "720p": 0.0938, "1080p": 0.1875 }, by: "resolution", multipliedBy: "batch_size", defaults: { batch_size: 1, resolution: "720p" }, contradicted: true, ' +
         'source: "https://open.higgsfield.ai/models/higgsfield-ai/soul/standard/api-reference", verified: "2026-11-24" },',
     );
     expect(catalog("higgsfield-ai/soul/standard")).toContain("cost: { perImage: 0.0938 }");
@@ -1237,6 +1238,45 @@ describe("codegen-higgsfield on the committed snapshot", () => {
       const sources = file(name).split("\n").filter((line) => /^   \* Source:/.test(line)).length;
       expect(sources).toBe(rows);
     }
+  });
+
+  test("the committed gen/ directory is exactly what the snapshot generates", () => {
+    expect(readdirSync(GEN_DIR).sort()).toEqual([...files.keys()].sort());
+    for (const [name, content] of files) {
+      expect(readFileSync(join(GEN_DIR, name), "utf8")).toBe(content);
+    }
+  });
+
+  test("one gate serves both output types: a field two of them spell differently is not narrowed to either", () => {
+    // `output_format` is a picture format on Recraft and a container on Seedance 2.5.
+    expect(shape("recraft/v4.1/text-to-image")).toMatch(/output_format: \{ t: "string", enum: E_[0-9a-f]{6} \}/);
+    expect(shape("bytedance/seedance-2.5/text-to-video")).toMatch(/output_format: \{ t: "string", enum: E_[0-9a-f]{6} \}/);
+    expect(file("input-schema.gen.ts")).toContain("  output_format: z.unknown().optional(),");
+    // No type, no `null`, no vocabulary and no nested key anywhere in it:
+    // `seed` is nullable on the Soul routes only, `sound` is `on | off` at
+    // every route that declares it, and both are named and nothing more.
+    expect(file("input-schema.gen.ts")).toContain("  seed: z.unknown().optional(),");
+    expect(file("input-schema.gen.ts")).toContain("  sound: z.unknown().optional(),");
+    const body = file("input-schema.gen.ts");
+    expect(body.slice(body.indexOf("export const"))).not.toMatch(/z\.(enum|record|number|boolean|array)\(|looseObject\(\{ /);
+  });
+
+  test("a conditional's `required` whose agreed default satisfies the branch is `defaulted`, not `required`", () => {
+    // Both sources give `resolution` the default "1080p", one of the two values HDR allows.
+    expect(shape("kling-video/v4.0/text-to-video")).toContain(
+      '{ kind: "when", if: [{ name: "dynamic_range", in: ["hdr"] }], absent: "else", then: { props: { resolution: { in: ["1080p", "4k"] } }, defaulted: { resolution: "1080p" } } }',
+    );
+    expect(file("image-narrow.gen.ts")).toContain('then: { props: { prompt_extend: { in: [true] } }, defaulted: { prompt_extend: true } }');
+  });
+
+  test("Soul Standard: `style_id: null` is the console document's own example, so the row admits it with a warning", () => {
+    expect(shape("higgsfield-ai/soul/standard")).toContain('style_id: { t: "string", nul: true, nulWarn: true, fmt: "uuid" }');
+    expect(file("image-wire.gen.ts")).toMatch(/export interface HiggsfieldAiSoulStandardInput \{[^}]*\n  style_id\?: string \| null;/);
+  });
+
+  test("a rate's defaults are the ones every source agrees on", () => {
+    expect(rate("bytedance/seedance-2.5/text-to-video")).toContain('defaults: { draft: false, duration: 5, resolution: "720p" }');
+    expect(rate("ideogram/v4.0")).not.toContain("defaults:");
   });
 
   test("every curation, overlay and pricing entry carries a reason or quote, a source and a date", () => {

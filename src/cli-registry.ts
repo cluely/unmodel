@@ -69,6 +69,11 @@ export const REGISTRY = {
   // second wire ROUTE at one provider, and fal has one route with a variable
   // path.
   "fal.image": () => import("./providers/fal").then((m) => asCli(m.image)),
+  // Higgsfield is fal's case again: 24 image routes, its own and hosted ones,
+  // behind `POST api.higgsfield.ai/{endpoint}`. The route id is the path, so
+  // `higgsfield.image` takes an `endpoint` param and there is no
+  // `higgsfield.imageSoul` — nothing here names a second wire route.
+  "higgsfield.image": () => import("./providers/higgsfield").then((m) => asCli(m.image)),
   // Revana is the third one-url aggregator, and the one where even the MODEL is
   // not the route: `POST /v1/generations` takes `{ model, input }` for every
   // image, video, speech and music model, and a single id (`nano-banana-pro`)
@@ -90,6 +95,10 @@ export const REGISTRY = {
   // listed under MULTIPART_ONLY below)
   "fal.imageEdit": () => import("./providers/fal").then((m) => asCli(m.imageEdit)),
   "revana.imageEdit": () => import("./providers/revana").then((m) => asCli(m.imageEdit)),
+  // A view, as `revana.imageEdit` is: the ten `higgsfield.image` routes that
+  // take a picture to edit, over the same path and the same check battery
+  // (docs/decisions.md §4).
+  "higgsfield.imageEdit": () => import("./providers/higgsfield").then((m) => asCli(m.imageEdit)),
   "black-forest-labs.imageEditFill": () =>
     import("./providers/black-forest-labs").then((m) => asCli(m.imageEditFill)),
   "black-forest-labs.imageEditExpand": () =>
@@ -177,6 +186,11 @@ export const REGISTRY = {
   // on the request, and a `fal.videoFromImage` address would have to be defined
   // by a list rather than a rule. See src/providers/fal/video.ts.
   "fal.video": () => import("./providers/fal").then((m) => asCli(m.video)),
+  // Higgsfield serves 87 video routes behind ONE address, for the reason
+  // written above `fal.video`: one URL template with a variable path, where
+  // image-to-video, reference-to-video, motion control and clip editing are
+  // keys on one route shape. See src/providers/higgsfield/video.ts.
+  "higgsfield.video": () => import("./providers/higgsfield").then((m) => asCli(m.video)),
   "vidu.video": () => import("./providers/vidu").then((m) => asCli(m.video)),
   "vidu.videoFromImage": () => import("./providers/vidu").then((m) => asCli(m.videoFromImage)),
   "vidu.videoFromReference": () => import("./providers/vidu").then((m) => asCli(m.videoFromReference)),
@@ -379,6 +393,15 @@ export const REGISTRY = {
   // is multipart-only, below).
   "speechify.voiceConsentChallenge": () =>
     import("./providers/speechify").then((m) => asCli(m.voiceConsentChallenge)),
+
+  // Character training — creating a reusable visual identity from sample
+  // images, the picture-side sibling of `voiceClone` above and named the same
+  // way: for what the caller does, never for the product (`soulId`) or the
+  // wire path (`/v1/custom-references`). One provider serves it today, so it
+  // is a wire-only address with no unified category (docs/decisions.md §8).
+  // The samples are URLs, so JSON params can express it.
+  "higgsfield.characterTrain": () =>
+    import("./providers/higgsfield").then((m) => asCli(m.characterTrain)),
 
   // Dubbing — "same clip, new language". No unified category carries it: the
   // house already declined the operation once, by name and with a reason, at

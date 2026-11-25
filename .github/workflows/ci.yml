@@ -32,6 +32,10 @@ jobs:
           # offline. Spec drift is caught weekly by
           # codegen-photoroom-refresh.yml.
           bun run codegen:photoroom
+          # And for src/providers/higgsfield/gen/**: regenerated from the
+          # committed data/higgsfield/ snapshot, offline. Roster drift is
+          # caught weekly by codegen-higgsfield-refresh.yml.
+          bun run codegen:higgsfield
           # `git diff --exit-code` alone misses newly created untracked files
           # (e.g. a snapshot update that adds a new provider's .gen.ts).
           git add -A

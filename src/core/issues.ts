@@ -33,7 +33,15 @@ export type IssueCode =
    * lists those coordinates in `PipelineSpec.mediaPaths`, so a real
    * declaration there is not mistaken for an inert one.
    */
-  | "media_declaration_dropped";
+  | "media_declaration_dropped"
+  /**
+   * `estimate.costUSD` was computed from a rate the provider's own
+   * publications contradict each other on. The figure is a real published
+   * one and the request is unaffected; what is unconfirmed is whether the
+   * account is billed at it. A catalog that carries such a rate says so on
+   * the result, here, rather than leaving it to a comment above the row.
+   */
+  | "unconfirmed_cost";
 
 export interface Issue {
   severity: IssueSeverity;

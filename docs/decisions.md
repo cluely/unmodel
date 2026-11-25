@@ -681,4 +681,51 @@ inpaint, erase, outpaint — which needs a canonical word for a mask before it
 needs an `operation` member; that is a vocabulary decision under §8, not an
 extension of this one. For the unit: a kernel that registered more than one
 adapter per provider, at which point "which operation" could be an adapter
-fact again.
+fact again, and the three limits above go with it. For `prompt` on the removal
+arm: a second removal route that takes one. Bria's
+`/v2/image/edit/remove_background` has an optional `prompt` that narrows what
+the cut keeps (`src/providers/bria/image-edit.ts`), which is one witness; when
+that route gets an address, `prompt?: never` on `ImageEditRemoveBackgroundParams`
+either stays (one witness, an extra on Bria's row) or, with a second, widens —
+a breaking change to the arm, to be made as one.
+
+---
+
+## 11. A price two of the vendor's own pages contradict each other on is not catalogued; the exceptions are the owner's, one route at a time
+
+**Decision.** Where a Higgsfield route's model page states a price and the same
+route's console document prints "Public pricing information is not available
+for this model.", the route is `unpriced`: no `cost` on its catalog row, no
+estimate, the page's sentence kept as the row's quote. That is the standing
+rule for contradicting pages, applied.
+
+**The exception.** The three priced Soul routes and AI Influencer are
+catalogued anyway, by owner decision of 2026-11-24, with the caveat at every
+surface a caller reads a number from: `contradicted: true` on the rate in
+`HIGGSFIELD_RATES`, a CAVEAT line above the catalog row, the exported
+`HIGGSFIELD_CONTRADICTED_PRICING_CAVEAT`, and an `unconfirmed_cost` warning on
+every validated request whose estimate came from such a rate. The Soul figure
+on `cost` is the 720p one, the default every source agrees on.
+
+**How it is held.** Whether a route is contradicted is read off the snapshot by
+codegen, never entered by hand. A rate at a contradicted route must carry
+`decided`, the date of the owner's ruling for that route, in
+`data/higgsfield/pricing.json`, or codegen stops; a `decided` at a route that
+is not contradicted stops it too. `pricing.test.ts` pins the set at those four
+ids.
+
+**Therefore, never:**
+
+- Extend the exception by analogy. Sixteen other routes have the same evidence
+  (Ideogram 4.0, Z-Image Turbo, Kling Image 4.0 ×4, Recraft 4.1 ×4, Qwen Image
+  3 ×2, Seedream 5.0 Pro ×2, Hailuo 2.3 ×2) and are unpriced, because the
+  decision named four routes and "the same evidence" is exactly what the rule
+  says not to catalogue.
+- Return a contradicted figure without the warning, or put the caveat only in
+  a comment above a row: a caller budgeting from `estimate.costUSD` reads the
+  result, not the source.
+
+**What would change this.** The owner ruling on more routes — each is one
+`decided` date in its pricing row, the rate is still in the row's quote. Or
+Higgsfield's console printing a price for the route, at which point the rate is
+not contradicted and `decided` must be deleted (codegen says so).

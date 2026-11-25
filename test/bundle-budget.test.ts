@@ -325,6 +325,39 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * 386 is 351.0 × 1.1, the same multiple as every row above.
    */
   revana: 386,
+  /**
+   * `unmodel/higgsfield` — 341.1 KiB measured at landing, 2026-11-25, on
+   * linux/amd64 (oven/bun:1.3.14 in Docker) and on macOS alike.
+   *
+   * Large for one provider for revana's reason: it is one provider serving 111
+   * generation routes, and nearly every byte past the shared engine is
+   * GENERATED data from Higgsfield's own per-route documents —
+   *
+   * | what | KiB |
+   * |---|---|
+   * | two catalog slices (87 video rows, 24 image), each row under its price quote | 94.4 |
+   * | two shape tables: what each route declares, bounds, enumerates and demands across fields | 85.3 |
+   * | the rate table, one row per route with its `unpriced` reason or `undefinedWhen` arms | 45.1 |
+   * | the id lists, the 111 documentation URLs, the excluded paths | 22.9 |
+   * | the one pipeline schema: `endpoint`, `hf_webhook`, and every route's keys, named and untyped | 5.0 |
+   * | hand code: the check battery (25.5), urls (9.1), pricing (5.8), the four addresses and their factory (16.0), the response checker (4.7), statuses, models | 63.9 |
+   * | the shared engine (pipeline, request, media-declaration lookup, issues) | 20.8 |
+   *
+   * — and all of it is here because this is the barrel. Unlike revana's, the
+   * split a single address buys is only by output type: `higgsfield.image`
+   * does not carry the 87 video rows, but both carry the whole rate table and
+   * the id lists, which the battery reads to tell a foreign id from an unknown
+   * one.
+   *
+   * The catalog slices are the heaviest block because rolldown keeps the JSDoc
+   * above each row: the price quote, its source and date. That is the
+   * provenance HAND_CATALOGS.md asks for, shipped as comments.
+   *
+   * It grows with Higgsfield's roster, by design: the weekly refresh adds rows.
+   *
+   * 376 is 341.1 × 1.1, the same multiple as every row above.
+   */
+  higgsfield: 376,
 
   /**
    * The six entries that carry the **media retarget seam** — `.toApi("fal")`.

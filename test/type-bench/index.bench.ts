@@ -22,6 +22,7 @@ import { bench } from "@ark/attest";
 import { chat } from "../../src/chat/index";
 import { getProviderTyped } from "../../src/catalog/typed.gen";
 import { tts } from "../../src/unified/tts";
+import { imageEdit } from "../../src/unified/image-edit";
 import { image as falImage } from "../../src/providers/fal/image";
 import { video as klingVideo } from "../../src/providers/kling";
 import { video as revanaVideo } from "../../src/providers/revana/video";
@@ -51,6 +52,24 @@ bench("catalog: typed provider access", () => {
 bench("tts: unified pack call", () => {
   return tts.safe({ model: "openai/tts-1", text: "hello", voice: "alloy" });
 }).types([20352, "instantiations"]);
+
+/**
+ * `unmodel/image-edit`: one call against the ready pack.
+ *
+ * Pinned because `ImageEditParams` is a union over the sizing XOR that every
+ * adapter's per-model row narrows again, and the cost of that union is paid
+ * per call site in an editor. A further arm on the union — a second
+ * `operation`, say — multiplies what `ExactKeys` and the per-model narrowing
+ * distribute over, and this is the number that says by how much.
+ */
+bench("image-edit: unified pack call", () => {
+  return imageEdit.safe({
+    operation: "edit",
+    model: "openai/gpt-image-1.5",
+    prompt: "make it winter",
+    image: { file: new Blob([]) },
+  });
+}).types([13345, "instantiations"]);
 
 bench("fal: image pack call", () => {
   return falImage.safe({ endpoint: "fal-ai/flux/dev", prompt: "a lighthouse" });

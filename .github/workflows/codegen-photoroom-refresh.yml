@@ -1,0 +1,101 @@
+name: Codegen refresh (Photoroom)
+
+# Weekly. Photoroom's two routes are typed from its OpenAPI document, and
+# `bun run codegen:photoroom` in ci.yml is offline by design, so this schedule
+# is the only place a new form field, a changed enum or a moved range reaches
+# the library.
+#
+# It matters more here than a field count suggests. `POST /v2/edit` does not
+# refuse a field it does not know — it answers 200 and names the field in a
+# response header — so a table that has fallen behind the API produces no
+# error anywhere: a new field just draws an "unknown field" warning it no
+# longer deserves. And three features (AI Upscale, Text-Guided Segmentation,
+# Templating) ship under "breaking changes with a 2-week notice period".
+#
+# The fetch is keyless: `GET https://image-api.photoroom.com/openapi`. No
+# secret is involved.
+
+on:
+  schedule:
+    - cron: "53 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun install --frozen-lockfile
+
+      # Says whether the document moved, before the refresh rewrites it.
+      - name: Snapshot drift check
+        continue-on-error: true
+        run: bun run codegen:photoroom:check
+
+      # Throws — on purpose — when the document has grown something the
+      # generator does not model: a schema shape it has not seen, a parameter
+      # listed on GET /v2/edit and not on POST with no recorded decision, an
+      # array family whose index spelling nobody wrote down, or an overlay
+      # entry that no longer matches a field.
+      - name: Refresh the Photoroom snapshot and regenerate
+        run: bun run codegen:photoroom:refresh
+
+      - name: Create changeset if the generated surface changed
+        run: |
+          if [ -n "$(git status --porcelain src/providers/photoroom)" ]; then
+            cat > .changeset/photoroom-openapi-refresh.md <<'EOF'
+          ---
+          "unmodel": patch
+          ---
+
+          chore: refresh the Photoroom form-field tables
+          EOF
+          fi
+
+      # NOTE: PRs opened with the default GITHUB_TOKEN do not trigger other
+      # workflows (GitHub Actions limitation), so the CI workflow will NOT run
+      # on this PR and it cannot merge if branch protection requires checks.
+      # Fix: create a PAT or GitHub App token with contents+pull-requests
+      # write access, store it as a repo secret, and pass it via the action's
+      # `token:` input below.
+      - name: Open or update pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: codegen/photoroom-refresh
+          commit-message: "chore: refresh the Photoroom form-field tables"
+          title: "chore: refresh the Photoroom form-field tables"
+          body: |
+            Automated refresh of the committed Photoroom snapshot
+            (`data/photoroom/openapi.json`, with its fetch record in
+            `data/photoroom/snapshot.json`) and everything
+            `scripts/codegen-photoroom.ts` generates from it.
+
+            **Read the `openapi.json` diff, not just the generated one.** The
+            field tables follow the document mechanically, but three things
+            beside them are hand-written from its prose and no generator will
+            carry a change across:
+
+            - the cross-field checks in `src/providers/photoroom/image-edit.ts`,
+              each of which quotes the description it enforces;
+            - the five `pr-*` request headers in
+              `src/providers/photoroom/constants.ts`, which are documented on
+              feature pages and appear in no schema;
+            - `data/photoroom/overlays.json` — which GET-only parameters POST
+              types, how each family writes its key, and what is deprecated or
+              in preview.
+
+            `scripts/codegen-photoroom.test.ts` pins the field counts and the
+            shape census against the snapshot, so it fails on this PR whenever
+            the surface really changed. That is the prompt to update the pins
+            together with whatever above the change touches.
+
+            This PR was created by the scheduled `codegen-photoroom-refresh`
+            workflow. The branch is rolling: subsequent runs update this same
+            PR until it is merged or closed.

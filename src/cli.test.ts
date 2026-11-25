@@ -249,6 +249,29 @@ test("validate --json carries the multipart transport hint", async () => {
   expect(result.note).toContain("unmodel/ideogram");
 });
 
+test("a multipart endpoint that returns headers still carries the multipart hint", async () => {
+  // `photoroom.imageEdit` lifts its `pr-*` feature headers onto
+  // `.request.headers`, so its header map is NOT empty — the hint has to come
+  // from the declared `body: "form"`, not from the map being empty.
+  const { stdout, exitCode } = await runCli(
+    ["validate", "photoroom.imageEdit", "--json"],
+    JSON.stringify({
+      removeBackground: false,
+      "imageFromPrompt.prompt": "three mugs on a table",
+      "pr-ai-background-model-version": "3",
+    }),
+  );
+  expect(exitCode).toBe(0);
+  const result = JSON.parse(stdout) as {
+    request: { headers: Record<string, string> };
+    transport?: string;
+    note?: string;
+  };
+  expect(result.request.headers).toEqual({ "pr-ai-background-model-version": "3" });
+  expect(result.transport).toBe("multipart/form-data");
+  expect(result.note).toContain("unmodel/photoroom");
+});
+
 test("JSON-bodied endpoints carry no multipart hint", async () => {
   const { stdout } = await runCli(
     ["validate", "recraft.image", "--json"],

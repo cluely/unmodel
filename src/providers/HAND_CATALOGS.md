@@ -46,3 +46,9 @@ Rules for kind 2, identical to the codegen contract:
   it does not (`cartesia/voice-clone`, `inworld/voice-design`, …). Every
   synthetic row carries a comment saying it is synthetic and which route it
   addresses, and the validator pins it via `modelId: () => "<id>"`.
+  One route may carry more than one synthetic row when it has more than one
+  documented mode a ref needs to name: `photoroom.imageEdit` (`POST /v2/edit`)
+  resolves `edit-with-ai` when `editWithAI.mode` is set and `image-editing`
+  otherwise, so its `modelId` reads the params instead of returning a constant.
+  The rows of one route must then carry the same rate, or the choice of row
+  would move a price (`photoroom/models.ts`).

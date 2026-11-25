@@ -115,6 +115,12 @@ export const REGISTRY = {
   "bria.imageEdit": () => import("./providers/bria").then((m) => asCli(m.imageEdit)),
   "reve.imageEdit": () => import("./providers/reve").then((m) => asCli(m.imageEdit)),
   "reve.imageEditRemix": () => import("./providers/reve").then((m) => asCli(m.imageEditRemix)),
+  // Multipart, and registered all the same: its file is OPTIONAL. A request
+  // that generates its picture (`imageFromPrompt.prompt`) or fills a template
+  // (`templateId`) is plain JSON-expressible params — the `ideogram.image`
+  // rule. Bare `imageEdit` because `/v2/edit` is Photoroom's primary editing
+  // route; its cut-out-only sibling is under MULTIPART_ONLY below.
+  "photoroom.imageEdit": () => import("./providers/photoroom").then((m) => asCli(m.imageEdit)),
 
   // Video generation and post-production
   "alibaba.video": () => import("./providers/alibaba").then((m) => asCli(m.video)),
@@ -555,6 +561,7 @@ export const MULTIPART_ONLY = {
   "ideogram.imageEditRemix": "unmodel/ideogram",
   "ideogram.imageEditReframe": "unmodel/ideogram",
   "ideogram.imageEditReplaceBackground": "unmodel/ideogram",
+  "photoroom.imageEditRemoveBackground": "unmodel/photoroom",
   "stability.imageEditErase": "unmodel/stability",
   "stability.imageEditInpaint": "unmodel/stability",
   "stability.imageEditOutpaint": "unmodel/stability",

@@ -767,6 +767,14 @@
 			"types": "./dist/providers/perplexity/types.d.ts",
 			"default": "./dist/providers/perplexity/types.js"
 		},
+		"./photoroom": {
+			"types": "./dist/providers/photoroom/index.d.ts",
+			"default": "./dist/providers/photoroom/index.js"
+		},
+		"./photoroom/types": {
+			"types": "./dist/providers/photoroom/types.d.ts",
+			"default": "./dist/providers/photoroom/types.js"
+		},
 		"./pixverse": {
 			"types": "./dist/providers/pixverse/index.d.ts",
 			"default": "./dist/providers/pixverse/index.js"
@@ -1182,6 +1190,9 @@
 		"codegen:revana": "bun scripts/codegen-revana.ts",
 		"codegen:revana:refresh": "bun scripts/codegen-revana.ts --refresh",
 		"codegen:revana:check": "bun scripts/codegen-revana.ts --check",
+		"codegen:photoroom": "bun scripts/codegen-photoroom.ts",
+		"codegen:photoroom:refresh": "bun scripts/codegen-photoroom.ts --refresh",
+		"codegen:photoroom:check": "bun scripts/codegen-photoroom.ts --check",
 		"gen:tts-matrix": "bun scripts/gen-tts-matrix.ts",
 		"audit:atlascloud": "bun scripts/atlascloud-audit.ts",
 		"audit:leaderboard": "bun scripts/leaderboard-audit.ts",

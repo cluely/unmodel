@@ -224,6 +224,7 @@ export const SDK_TARGET_IDS = [
   "openai",
   "openrouter",
   "perplexity",
+  "photoroom",
   "pixverse",
   "recraft",
   "resemble",

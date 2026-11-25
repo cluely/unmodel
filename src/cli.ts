@@ -147,12 +147,17 @@ function lookup<V>(map: Readonly<Record<string, V>>, key: string): V | undefined
 
 /**
  * Endpoints in REGISTRY split three ways: JSON-bodied ones finalize with a
- * `content-type: application/json` header, multipart ones finalize with an
- * intentionally EMPTY header map (the boundary belongs to `FormData`, so the
- * finalizer cannot name a content type), and realtime session configs finalize
- * with a `ws(s)://` url. The validated params look identical in all three
- * cases, so without this note a CLI user has no way to know the body must be
- * posted as `multipart/form-data` — or sent over a socket the CLI never opens.
+ * `content-type: application/json` header, multipart ones finalize with
+ * `body: "form"` and no content type (the boundary belongs to `FormData`, so
+ * the finalizer cannot name one), and realtime session configs finalize with a
+ * `ws(s)://` url. The validated params look identical in all three cases, so
+ * without this note a CLI user has no way to know the body must be posted as
+ * `multipart/form-data` — or sent over a socket the CLI never opens.
+ *
+ * Multipart is read from `body: "form"` first, and from an empty header map
+ * second. The declared framing is the fact; the empty map is only its usual
+ * symptom, and it is not one every multipart endpoint shows —
+ * `photoroom.imageEdit` returns its `pr-*` feature headers there.
  * The endpoints that additionally *require* a Blob are the ones under
  * MULTIPART_ONLY, which the CLI refuses outright.
  */
@@ -164,7 +169,7 @@ function transportHint(target: string, request: RequestMeta | undefined): Transp
       note: `note: realtime session config, not an HTTP body — open ${request.url}; where the API configures by message rather than by query, send the params above as that message. unmodel validates the config only; the socket lifecycle is yours.`,
     };
   }
-  if (Object.keys(request.headers).length > 0) return undefined;
+  if (request.body !== "form" && Object.keys(request.headers).length > 0) return undefined;
   const provider = target.split(".")[0] ?? target;
   return {
     transport: "multipart/form-data",

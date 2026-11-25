@@ -58,6 +58,7 @@
  * than assuming.
  */
 
+import { isMaiImage27, maiImage27PixelRules } from "./mai-image";
 import {
   applyExtras,
   pixelsToRatio,
@@ -144,12 +145,11 @@ type FalImageValidate = CompiledCall<FalImageWire, FalImageResult>["validate"];
 /**
  * `image_size`'s explicit arm, per endpoint.
  *
- * `grid: 1` throughout and not a placeholder: no fal `ImageSize` component
- * publishes a multiple-of rule, so any integer inside the bounds is a legal
- * side, and snapping to a grid this API does not have would cost accuracy for
- * nothing. The bounds themselves come off the endpoint's own schema.
+ * The generic ImageSize schema allows integer dimensions. MAI Image 2.7
+ * documents a 16px grid and a stricter minimum on the endpoints themselves.
  */
 function pixelRules(row: FalImageRow, endpoint: string): PixelRules {
+  if (isMaiImage27(endpoint)) return maiImage27PixelRules(endpoint);
   const rules: PixelRules = { grid: 1, source: FAL_DOC_URLS[endpoint as keyof typeof FAL_DOC_URLS] };
   if (row.pixels?.min !== undefined) (rules as { min?: number }).min = row.pixels.min;
   if (row.pixels?.max !== undefined) (rules as { max?: number }).max = row.pixels.max;
@@ -340,7 +340,7 @@ function applyImageSizeUnion(
     // exists to prevent: the caller asked for 4K and got fal's 512px default
     // with nothing on the record to say so. (BFL's FLUX.2 branch answers the
     // same question the same way, for the same reason.)
-    if (input.resolution === undefined) return;
+    if (input.resolution === undefined || isMaiImage27(ctx.model)) return;
     ctx.from(["image_size", "width"], "resolution");
     ctx.from(["image_size", "height"], "resolution");
     const square = ctx.take(
@@ -366,7 +366,8 @@ function applyImageSizeUnion(
     const wrote = sizingField(sizing);
     ctx.from(["image_size", "width"], wrote === "size" ? "size" : "dimensions.width");
     ctx.from(["image_size", "height"], wrote === "size" ? "size" : "dimensions.height");
-    if (input.resolution !== undefined && !hasClass(row, "resolutionEnum")) {
+    ctx.from(["image_size"], wrote === "size" ? "size" : "dimensions");
+    if (input.resolution !== undefined && (!hasClass(row, "resolutionEnum") || isMaiImage27(ctx.model))) {
       ctx.take(
         redundantTier(
           input.resolution,
@@ -381,8 +382,10 @@ function applyImageSizeUnion(
   // A ratio, with no ratio field to put it in: solve it into pixels at the
   // tier asked for (1k being the vocabulary's default rather than this
   // adapter's opinion).
+  ctx.from(["image_size"], "aspectRatio");
   ctx.from(["image_size", "width"], "aspectRatio");
   ctx.from(["image_size", "height"], "aspectRatio");
+  if (isMaiImage27(ctx.model)) delete body.resolution;
   const pixels = ctx.take(
     toPixels(sizing.aspectRatio, input.resolution ?? "1k", pixelRules(row ?? { classes: [], keys: [] }, ctx.model), {
       path: ["aspectRatio"],

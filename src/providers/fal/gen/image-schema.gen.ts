@@ -30,6 +30,8 @@
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
 //   data/fal/openapi/microsoft__mai-image-2.5.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.7__text-to-image.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -38,7 +40,7 @@
 /**
  * The ONE request schema for every `fal.image` endpoint.
  *
- * One `z.looseObject` for the whole category, not 32 per-endpoint schemas: zod objects are
+ * One `z.looseObject` for the whole category, not 34 per-endpoint schemas: zod objects are
  * built eagerly, and a hundred of them would be constructed on import for the one the
  * caller actually used.
  *
@@ -101,7 +103,13 @@ export const falImageInputSchema = z.looseObject({
    * FAL_IMAGE_SHAPES.
    */
   aspect_ratio: z.string().nullable().optional(),
-  background: z.enum(["auto", "transparent", "opaque"]).optional(),
+  /**
+   * Every `fal.image` endpoint types `background` as string, but they disagree on the
+   * details (fal-ai/gpt-image-1.5, microsoft/mai-image-2.7/flash/text-to-image,
+   * microsoft/mai-image-2.7/text-to-image, openai/gpt-image-2), so the union takes the bare
+   * type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
+   */
+  background: z.string().optional(),
   background_color: falRGBColorSchema.nullable().optional(),
   base_shift: z.number().optional(),
   color_palette: falColorPaletteSchema.nullable().optional(),
@@ -139,7 +147,9 @@ export const falImageInputSchema = z.looseObject({
    * fal-ai/hunyuan-image/v3/text-to-image, union at fal-ai/ideogram/v3, union at
    * fal-ai/qwen-image, union at fal-ai/recraft/v3/text-to-image, union at
    * fal-ai/recraft/v4/text-to-image, union at fal-ai/stable-diffusion-v35-large, union at
-   * fal-ai/z-image/turbo, union at ideogram/v4, union at openai/gpt-image-2.
+   * fal-ai/z-image/turbo, union at ideogram/v4, union at
+   * microsoft/mai-image-2.7/flash/text-to-image, union at
+   * microsoft/mai-image-2.7/text-to-image, union at openai/gpt-image-2.
    *
    * Typed `unknown` here deliberately: a union that accepted both would let an endpoint's
    * wrong-typed value through the shape gate. FAL_IMAGE_SHAPES carries the real type per
@@ -206,6 +216,7 @@ export const falImageInputSchema = z.looseObject({
    * fal-ai/kling-image/v3/text-to-image, fal-ai/nano-banana, fal-ai/nano-banana-2,
    * fal-ai/nano-banana-pro, fal-ai/qwen-image, fal-ai/stable-diffusion-v35-large,
    * fal-ai/z-image/turbo, google/nano-banana-2-lite, ideogram/v4, microsoft/mai-image-2.5,
+   * microsoft/mai-image-2.7/flash/text-to-image, microsoft/mai-image-2.7/text-to-image,
    * openai/gpt-image-2, reve/2.1/text-to-image, xai/grok-imagine-image), so the union takes
    * the bare type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
    */
@@ -222,6 +233,7 @@ export const falImageInputSchema = z.looseObject({
    * fal-ai/recraft/v4/text-to-image, fal-ai/stable-diffusion-v35-large,
    * fal-ai/z-image/turbo, google/nano-banana-2-lite, ideogram/v4,
    * krea/v2/large/text-to-image, krea/v2/medium/text-to-image, microsoft/mai-image-2.5,
+   * microsoft/mai-image-2.7/flash/text-to-image, microsoft/mai-image-2.7/text-to-image,
    * openai/gpt-image-2, reve/2.1/text-to-image, xai/grok-imagine-image), so the union takes
    * the bare type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
    */
@@ -242,8 +254,9 @@ export const falImageInputSchema = z.looseObject({
   /**
    * Every `fal.image` endpoint types `resolution` as string, but they disagree on the
    * details (fal-ai/kling-image/v3/text-to-image, fal-ai/nano-banana-2,
-   * fal-ai/nano-banana-pro, xai/grok-imagine-image), so the union takes the bare type and
-   * the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
+   * fal-ai/nano-banana-pro, microsoft/mai-image-2.7/flash/text-to-image,
+   * microsoft/mai-image-2.7/text-to-image, xai/grok-imagine-image), so the union takes the
+   * bare type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_SHAPES.
    */
   resolution: z.string().optional(),
   /**

@@ -142,7 +142,7 @@ describe("alibaba.chat per-model rules (checked 2026-11-12)", () => {
         expect(r.errors[0]?.code).toBe("unsupported_param");
         expect(r.errors[0]?.path).toEqual(["thinking_budget"]);
       }
-      // Either one alone is fine (thinking_budget is a DashScope extension: unknown_param).
+      // Either one alone is fine.
       expect(safeUnchecked({ model, messages, thinking_budget: 1024 }).ok, model).toBe(true);
     }
     // Not a rule on other families.

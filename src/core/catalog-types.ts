@@ -56,6 +56,11 @@ export interface ModelCost {
   reasoning?: number;
   inputAudio?: number;
   outputAudio?: number;
+  /** Replacement token rates for the entire request above this input count. */
+  longContext?: {
+    aboveInputTokens: number;
+    rates: Pick<ModelCost, "input" | "output" | "cacheRead" | "cacheWrite">;
+  };
   /** USD per 1M input characters — TTS models billed by text length. */
   perMillionCharacters?: number;
   /** USD per minute of audio processed — STT models billed by duration. */

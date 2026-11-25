@@ -7,6 +7,9 @@
 //   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
@@ -155,6 +158,10 @@
 //   data/fal/openapi/meshy__v7__image-to-3d.json
 //   data/fal/openapi/meshy__v7__text-to-3d.json
 //   data/fal/openapi/microsoft__mai-image-2.5.json
+//   data/fal/openapi/microsoft__mai-image-2.7__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.7__text-to-image.json
 //   data/fal/openapi/minimax__h3__image-to-video.json
 //   data/fal/openapi/minimax__h3__text-to-video.json
 //   data/fal/openapi/minimax__music-3.json

@@ -198,14 +198,20 @@ export function generatedImageCount(fields: ImagePricingFields): number {
 
 /**
  * Documented USD per second of OUTPUT video, by model and resolution, for
- * 16:9 output with no reference video ("Price examples", 1544106). The 5s
- * example prices divide exactly by 5.
+ * 16:9 output with no reference video.
  */
 const VIDEO_USD_PER_SECOND: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   // "|Dreamina Seedance 2.5 |* $0.514 per video · $0.103 per second |*
   // $1.156 per video · $0.231 per second |* $2.843 per video · $0.569 per
   // second |" — https://docs.byteplus.com/docs/en/modelark/model-pricing.md, 2026-11-12.
   "dreamina-seedance-2-5-260628": { "480p": 0.103, "720p": 0.231, "1080p": 0.569 },
+  // Flash uses $7 per million tokens and width × height × 24 / 1024 tokens per second.
+  // 16:9 dimensions: https://docs.byteplus.com/docs/en/modelark/create-video-generation-task-api.md
+  // Token price: https://docs.byteplus.com/docs/en/modelark/model-pricing.md (2026-11-24).
+  "dreamina-seedance-2-5-flash-261115": {
+    "480p": (854 * 480 * VIDEO_FPS / 1024) * (7 / 1_000_000),
+    "720p": (1280 * 720 * VIDEO_FPS / 1024) * (7 / 1_000_000),
+  },
   "dreamina-seedance-2-0-260128": { "480p": 0.07, "720p": 0.15, "1080p": 0.37, "4k": 0.78 },
   "dreamina-seedance-2-0-fast-260128": { "480p": 0.06, "720p": 0.12 },
   "dreamina-seedance-2-0-mini-260615": { "480p": 0.04, "720p": 0.08 },
@@ -216,6 +222,7 @@ const VIDEO_USD_PER_SECOND: Readonly<Record<string, Readonly<Record<string, numb
 /** Documented `resolution` default per model. */
 const DEFAULT_RESOLUTION: Readonly<Record<string, string>> = {
   "dreamina-seedance-2-5-260628": "720p",
+  "dreamina-seedance-2-5-flash-261115": "720p",
   "dreamina-seedance-2-0-260128": "720p",
   "dreamina-seedance-2-0-fast-260128": "720p",
   "dreamina-seedance-2-0-mini-260615": "720p",

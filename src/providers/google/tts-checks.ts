@@ -488,8 +488,8 @@ export function checkThinkingConfig(
       path: [...basePath, "thinkingConfig", "thinkingLevel"],
       model,
       message:
-        `\`generationConfig.thinkingConfig.thinkingLevel: "${thinkingLevel}"\` is documented only on ` +
-        `${GEMINI_XHIGH_THINKING_MODEL_IDS.join(", ")}, not on "${model}". ` +
+        `\`generationConfig.thinkingConfig.thinkingLevel: "${thinkingLevel}"\` is documented on ` +
+        `${GEMINI_XHIGH_THINKING_MODEL_IDS.join(", ")}. ` +
         "No page says it returns an error there, so the request is not refused.",
       meta: {
         value: thinkingLevel,

@@ -3,6 +3,9 @@
 // Committed snapshots:
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
@@ -57,6 +60,7 @@ import type { FalEndpointShape } from "../shape-types";
 // named by both tables below, and often by several endpoints.
 const E_043347 = ["enabled", "disabled", "auto"] as const;
 const E_07fbe5 = ["16:9", "4:3", "3:2", "1:1", "2:3", "3:4", "9:16"] as const;
+const E_0c6c55 = ["auto", "H264", "H265"] as const;
 const E_0d1988 = ["auto", "16:9", "9:16"] as const;
 const E_1bee9f = ["16:9", "9:16"] as const;
 const E_1c4d6e = ["auto"] as const;
@@ -80,6 +84,7 @@ const E_a0e24c = ["4s", "6s", "8s"] as const;
 const E_a4e098 = ["auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30"] as const;
 const E_a54268 = ["480P", "768P", "2K", "4K"] as const;
 const E_a6ebe6 = ["720p", "1080p", "4k"] as const;
+const E_ab7ad4 = ["mp4", "mov"] as const;
 const E_b4ace7 = ["customize", "intelligent"] as const;
 const E_b590e1 = ["16:9", "9:16", "1:1"] as const;
 const E_bc20e2 = ["customize"] as const;
@@ -92,6 +97,7 @@ const E_d33d76 = ["auto", "16:9", "9:16", "1:1"] as const;
 const E_d35463 = ["720p", "1080p"] as const;
 const E_d60f26 = ["480p", "720p", "1080p", "4k"] as const;
 const E_d796f4 = ["8s"] as const;
+const E_d9233e = ["auto", "reference", "editing", "extension"] as const;
 const E_e82de1 = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 const E_ee18b7 = ["480p", "580p", "720p"] as const;
 const E_f3cba3 = ["480p", "720p", "1080p"] as const;
@@ -122,6 +128,58 @@ export const FAL_VIDEO_SHAPES = {
       aspect_ratio: { t: "string", def: true, enum: E_856788 },
       generate_audio: { t: "boolean", def: true },
       bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
+      end_user_id: { t: "string", nul: true },
+    },
+  },
+  "bytedance/seedance-2.5/flash/image-to-video": {
+    order: ["prompt", "image_url", "end_image_url", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "output_format", "return_last_frame", "end_user_id"],
+    props: {
+      prompt: { t: "string", nul: true },
+      image_url: { t: "string", req: true, media: "image" },
+      end_image_url: { t: "string", nul: true, media: "image" },
+      resolution: { t: "string", def: true, enum: E_cb3d58 },
+      duration: { t: "string", def: true, enum: E_a4e098 },
+      aspect_ratio: { t: "string", def: true, enum: E_1c4d6e },
+      generate_audio: { t: "boolean", def: true },
+      bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
+      codec: { t: "string", def: true, enum: E_0c6c55 },
+      output_format: { t: "string", def: true, enum: E_ab7ad4 },
+      return_last_frame: { t: "boolean", def: true },
+      end_user_id: { t: "string", nul: true },
+    },
+  },
+  "bytedance/seedance-2.5/flash/reference-to-video": {
+    order: ["prompt", "task", "image_urls", "video_urls", "audio_urls", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "output_format", "return_last_frame", "seed", "end_user_id"],
+    props: {
+      prompt: { t: "string", nul: true },
+      task: { t: "string", def: true, enum: E_d9233e },
+      image_urls: { t: "array", items: { t: "string", media: "image" }, media: "image" },
+      video_urls: { t: "array", items: { t: "string", media: "video" }, media: "video" },
+      audio_urls: { t: "array", items: { t: "string", media: "audio" }, media: "audio" },
+      resolution: { t: "string", def: true, enum: E_cb3d58 },
+      duration: { t: "string", def: true, enum: E_a4e098 },
+      aspect_ratio: { t: "string", def: true, enum: E_856788 },
+      generate_audio: { t: "boolean", def: true },
+      bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
+      codec: { t: "string", def: true, enum: E_0c6c55 },
+      output_format: { t: "string", def: true, enum: E_ab7ad4 },
+      return_last_frame: { t: "boolean", def: true },
+      seed: { t: "integer", nul: true },
+      end_user_id: { t: "string", nul: true },
+    },
+  },
+  "bytedance/seedance-2.5/flash/text-to-video": {
+    order: ["prompt", "resolution", "duration", "aspect_ratio", "generate_audio", "bitrate_mode", "codec", "output_format", "return_last_frame", "end_user_id"],
+    props: {
+      prompt: { t: "string", req: true },
+      resolution: { t: "string", def: true, enum: E_cb3d58 },
+      duration: { t: "string", def: true, enum: E_a4e098 },
+      aspect_ratio: { t: "string", def: true, enum: E_856788 },
+      generate_audio: { t: "boolean", def: true },
+      bitrate_mode: { t: "string", def: true, enum: E_4aec3e },
+      codec: { t: "string", def: true, enum: E_0c6c55 },
+      output_format: { t: "string", def: true, enum: E_ab7ad4 },
+      return_last_frame: { t: "boolean", def: true },
       end_user_id: { t: "string", nul: true },
     },
   },
@@ -587,6 +645,31 @@ export const FAL_VIDEO_CONSTRAINTS = {
     duration: E_5764d4,
     aspect_ratio: E_856788,
     bitrate_mode: E_4aec3e,
+  },
+  "bytedance/seedance-2.5/flash/image-to-video": {
+    resolution: E_cb3d58,
+    duration: E_a4e098,
+    aspect_ratio: E_1c4d6e,
+    bitrate_mode: E_4aec3e,
+    codec: E_0c6c55,
+    output_format: E_ab7ad4,
+  },
+  "bytedance/seedance-2.5/flash/reference-to-video": {
+    task: E_d9233e,
+    resolution: E_cb3d58,
+    duration: E_a4e098,
+    aspect_ratio: E_856788,
+    bitrate_mode: E_4aec3e,
+    codec: E_0c6c55,
+    output_format: E_ab7ad4,
+  },
+  "bytedance/seedance-2.5/flash/text-to-video": {
+    resolution: E_cb3d58,
+    duration: E_a4e098,
+    aspect_ratio: E_856788,
+    bitrate_mode: E_4aec3e,
+    codec: E_0c6c55,
+    output_format: E_ab7ad4,
   },
   "bytedance/seedance-2.5/image-to-video": {
     resolution: E_f3cba3,

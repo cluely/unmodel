@@ -30,6 +30,8 @@
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
 //   data/fal/openapi/microsoft__mai-image-2.5.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.7__text-to-image.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -1879,6 +1881,109 @@ export interface MicrosoftMaiImage25Output {
 }
 
 /**
+ * The request body `microsoft/mai-image-2.7/flash/text-to-image` accepts.
+ *
+ * MAI Image 2.7 family, 1K or 2K presets and custom dimensions. Public route verified
+ * 2026-11-24 at https://fal.ai/models/microsoft/mai-image-2.7/flash/text-to-image.
+ *
+ * fal serves this endpoint at two live routes: the published id above, and the internal
+ * alias `fal-ai/mai-image-2.7/flash` its OpenAPI document is written against. unmodel
+ * submits to the published id — that is the one fal documents and the one this catalog is
+ * keyed on.
+ *
+ * Docs: https://fal.ai/models/fal-ai/mai-image-2.7/flash/api
+ */
+export interface MicrosoftMaiImage27FlashTextToImageInput {
+  /** The text prompt to generate an image from. */
+  prompt: string;
+  /**
+   * The size of the generated image. Each side must be at least 768 pixels and the total
+   * pixel count at most 4,194,304 (2048x2048). Custom sizes are rounded down to a multiple
+   * of 16. Default: `"square_hd"`.
+   */
+  image_size?: FalImageSize | "square_hd" | "portrait_4_3" | "landscape_4_3" | "portrait_3_2" | "landscape_3_2" | "portrait_16_9" | "landscape_16_9";
+  /**
+   * Resolution of preset image sizes: "1K" (about 1 megapixel) or "2K" (each side doubled).
+   * Ignored for custom sizes. Default: `"1K"`.
+   */
+  resolution?: "1K" | "2K";
+  /**
+   * Use "transparent" for a transparent background (requires png or webp output). Default:
+   * `"opaque"`.
+   */
+  background?: "opaque" | "transparent";
+  /** The format of the generated image. Default: `"png"`. */
+  output_format?: "jpeg" | "png" | "webp";
+  /**
+   * If `True`, the media will be returned as a data URI and the output data won't be
+   * available in the request history. Default: `false`.
+   */
+  sync_mode?: boolean;
+}
+
+/**
+ * The result document `microsoft/mai-image-2.7/flash/text-to-image` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface MicrosoftMaiImage27FlashTextToImageOutput {
+  /** The generated images. */
+  images: FalImageFile[];
+}
+
+/**
+ * The request body `microsoft/mai-image-2.7/text-to-image` accepts.
+ *
+ * MAI Image 2.7 family, 1K or 2K presets and custom dimensions. Public route verified
+ * 2026-11-24 at https://fal.ai/models/microsoft/mai-image-2.7/text-to-image.
+ *
+ * fal serves this endpoint at two live routes: the published id above, and the internal
+ * alias `fal-ai/mai-image-2.7` its OpenAPI document is written against. unmodel submits to
+ * the published id — that is the one fal documents and the one this catalog is keyed on.
+ *
+ * Docs: https://fal.ai/models/fal-ai/mai-image-2.7/api
+ */
+export interface MicrosoftMaiImage27TextToImageInput {
+  /** The text prompt to generate an image from. */
+  prompt: string;
+  /**
+   * The size of the generated image. Each side must be at least 768 pixels and the total
+   * pixel count at most 4,194,304 (2048x2048). Custom sizes are rounded down to a multiple
+   * of 16. Default: `"square_hd"`.
+   */
+  image_size?: FalImageSize | "square_hd" | "portrait_4_3" | "landscape_4_3" | "portrait_3_2" | "landscape_3_2" | "portrait_16_9" | "landscape_16_9";
+  /**
+   * Resolution of preset image sizes: "1K" (about 1 megapixel) or "2K" (each side doubled).
+   * Ignored for custom sizes. Default: `"1K"`.
+   */
+  resolution?: "1K" | "2K";
+  /**
+   * Use "transparent" for a transparent background (requires png or webp output). Default:
+   * `"opaque"`.
+   */
+  background?: "opaque" | "transparent";
+  /** The format of the generated image. Default: `"png"`. */
+  output_format?: "jpeg" | "png" | "webp";
+  /**
+   * If `True`, the media will be returned as a data URI and the output data won't be
+   * available in the request history. Default: `false`.
+   */
+  sync_mode?: boolean;
+}
+
+/**
+ * The result document `microsoft/mai-image-2.7/text-to-image` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface MicrosoftMaiImage27TextToImageOutput {
+  /** The generated images. */
+  images: FalImageFile[];
+}
+
+/**
  * The request body `openai/gpt-image-2` accepts.
  *
  * ChatGPT Images 2.0. Priced per size x quality PLUS unbounded token charges, so its
@@ -2019,7 +2124,7 @@ export interface XaiGrokImagineImageOutput {
 /**
  * Endpoint id → its request body type.
  *
- * A map rather than a union: a union of 32 object types re-instantiates at every
+ * A map rather than a union: a union of 34 object types re-instantiates at every
  * comparison site, while a keyed lookup resolves in one. The per-endpoint narrowing a
  * validator exposes indexes into this, so adding an endpoint costs one line here and
  * nothing at any call site.
@@ -2054,6 +2159,8 @@ export interface FalImageBodyById {
   "krea/v2/large/text-to-image": KreaV2LargeTextToImageInput;
   "krea/v2/medium/text-to-image": KreaV2MediumTextToImageInput;
   "microsoft/mai-image-2.5": MicrosoftMaiImage25Input;
+  "microsoft/mai-image-2.7/flash/text-to-image": MicrosoftMaiImage27FlashTextToImageInput;
+  "microsoft/mai-image-2.7/text-to-image": MicrosoftMaiImage27TextToImageInput;
   "openai/gpt-image-2": OpenaiGptImage2Input;
   "reve/2.1/text-to-image": Reve21TextToImageInput;
   "xai/grok-imagine-image": XaiGrokImagineImageInput;
@@ -2090,6 +2197,8 @@ export interface FalImageResultById {
   "krea/v2/large/text-to-image": KreaV2LargeTextToImageOutput;
   "krea/v2/medium/text-to-image": KreaV2MediumTextToImageOutput;
   "microsoft/mai-image-2.5": MicrosoftMaiImage25Output;
+  "microsoft/mai-image-2.7/flash/text-to-image": MicrosoftMaiImage27FlashTextToImageOutput;
+  "microsoft/mai-image-2.7/text-to-image": MicrosoftMaiImage27TextToImageOutput;
   "openai/gpt-image-2": OpenaiGptImage2Output;
   "reve/2.1/text-to-image": Reve21TextToImageOutput;
   "xai/grok-imagine-image": XaiGrokImagineImageOutput;

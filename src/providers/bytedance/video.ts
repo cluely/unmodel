@@ -191,6 +191,15 @@ export interface DreaminaSeedance25Body extends ContentGenerationTasksCore {
   draft?: boolean;
 }
 
+/** BytePlus Seedance 2.5 Flash capability matrix, verified 2026-11-24. */
+export interface DreaminaSeedance25FlashBody
+  extends Omit<DreaminaSeedance25Body, "model" | "content" | "resolution" | "draft"> {
+  model: "dreamina-seedance-2-5-flash-261115";
+  content: ArkOmniContent[];
+  resolution?: "480p" | "720p";
+  draft?: never;
+}
+
 interface Seedance20Fields extends ContentGenerationTasksCore {
   content: ArkOmniContent[];
   /** Synchronized audio in the output. Default true. */
@@ -273,6 +282,7 @@ export interface UnknownVideoModelBody<Model extends string> {
  */
 export type ContentGenerationTasksBody<FutureModel extends string = never> =
   | DreaminaSeedance25Body
+  | DreaminaSeedance25FlashBody
   | DreaminaSeedance20Body
   | DreaminaSeedance20FastBody
   | DreaminaSeedance20MiniBody
@@ -282,6 +292,7 @@ export type ContentGenerationTasksBody<FutureModel extends string = never> =
 
 export interface VideoBodyByModel {
   "dreamina-seedance-2-5-260628": DreaminaSeedance25Body;
+  "dreamina-seedance-2-5-flash-261115": DreaminaSeedance25FlashBody;
   "dreamina-seedance-2-0-260128": DreaminaSeedance20Body;
   "dreamina-seedance-2-0-fast-260128": DreaminaSeedance20FastBody;
   "dreamina-seedance-2-0-mini-260615": DreaminaSeedance20MiniBody;
@@ -745,6 +756,10 @@ function checkDraftTask(
 function estimate(params: AnyContentGenerationTasksBody, info: ModelInfo | undefined) {
   if (info === undefined) return {};
   const record = params as AnyRecord;
+  // The Flash example prices fixed 16:9 output. Input video changes both the
+  // token rate and the token count, so that example cannot price those tasks.
+  if (params.model === "dreamina-seedance-2-5-flash-261115" &&
+      (record["ratio"] !== "16:9" || tallyContent(params).referenceVideo > 0)) return {};
   const costUSD = videoCostUSD(params.model, {
     resolution: typeof record["resolution"] === "string" ? (record["resolution"] as string) : undefined,
     duration: typeof record["duration"] === "number" ? (record["duration"] as number) : undefined,

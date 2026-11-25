@@ -778,14 +778,15 @@ describe("availability — real snapshot invariants", () => {
     // google-vertex slice of that day's snapshot (22 new vertex rows, plus a
     // google-vertex target on every row other providers share with them, e.g.
     // glm-5.2 on 15 tables). The heuristic was checked, not assumed: the new
-    // edges are real same-model merges. Largest table: openrouter, 71.3 KiB.
+    // edges are real same-model merges. The November model additions bring
+    // the largest table (openrouter) to 72.1 KiB.
     const dir = new URL("../src/catalog/availability/", import.meta.url).pathname;
     let total = 0;
     const oversized: string[] = [];
     for (const file of await readdir(dir)) {
       const bytes = (await Bun.file(`${dir}${file}`).text()).length;
       total += bytes;
-      if (bytes > 72 * 1024) oversized.push(`${file} (${bytes} bytes)`);
+      if (bytes > 73 * 1024) oversized.push(`${file} (${bytes} bytes)`);
     }
     expect(oversized).toEqual([]);
     expect(total).toBeLessThan(428 * 1024);

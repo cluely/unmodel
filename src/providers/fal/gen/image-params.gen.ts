@@ -30,6 +30,8 @@
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
 //   data/fal/openapi/microsoft__mai-image-2.5.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.7__text-to-image.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -80,6 +82,7 @@ import type {
   GoogleNanoBanana2LiteInput,
   IdeogramV4Input,
   KreaV2LargeTextToImageInput,
+  MicrosoftMaiImage27FlashTextToImageInput,
   OpenaiGptImage2Input,
 } from "./image-wire.gen";
 
@@ -109,6 +112,25 @@ const ROW_018ee1 = {
   extras: {
     background: EXTRA as FalAiGptImage15Input["background"],
     quality: EXTRA as FalAiGptImage15Input["quality"],
+  },
+} as const;
+
+/**
+ * Shared by 2 endpoints with an identical surface:
+ * microsoft/mai-image-2.7/flash/text-to-image, microsoft/mai-image-2.7/text-to-image.
+ *
+ * The extras are typed from `MicrosoftMaiImage27FlashTextToImageInput`, so the value an
+ * editor offers here and the value `fal.image` validates are one declaration.
+ */
+const ROW_0a3980 = {
+  classes: ["imageSizeUnion", "resolutionEnum"],
+  keys: ["prompt", "image_size", "resolution", "background", "output_format", "sync_mode"],
+  sizes: ["square_hd", "portrait_4_3", "landscape_4_3", "portrait_3_2", "landscape_3_2", "portrait_16_9", "landscape_16_9"],
+  tiers: ["1k", "2k"],
+  tierWire: { "1k": "1K", "2k": "2K" },
+  pixels: { min: 1, max: 14142 },
+  extras: {
+    background: EXTRA as MicrosoftMaiImage27FlashTextToImageInput["background"],
   },
 } as const;
 
@@ -703,6 +725,8 @@ export const FAL_IMAGE_PARAM_SHAPES = {
   "krea/v2/large/text-to-image": ROW_cf6b44,
   "krea/v2/medium/text-to-image": ROW_cf6b44,
   "microsoft/mai-image-2.5": ROW_0bf7e4,
+  "microsoft/mai-image-2.7/flash/text-to-image": ROW_0a3980,
+  "microsoft/mai-image-2.7/text-to-image": ROW_0a3980,
   "openai/gpt-image-2": ROW_632d58,
   "reve/2.1/text-to-image": ROW_764f83,
   "xai/grok-imagine-image": ROW_fe759e,
@@ -717,4 +741,4 @@ export const FAL_IMAGE_PARAM_SHAPES = {
  * ids remain in the provider-native artifacts.
  */
 
-export const FAL_IMAGE_MODELS = ["bytedance/seedream/v5/pro/text-to-image", "fal-ai/bytedance/seedream/v4.5/text-to-image", "fal-ai/flux-2", "fal-ai/flux-2-max", "fal-ai/flux-2-pro", "fal-ai/flux-2/flash", "fal-ai/flux-general", "fal-ai/flux-lora", "fal-ai/flux-pro/v1.1", "fal-ai/flux-pro/v1.1-ultra", "fal-ai/flux/dev", "fal-ai/flux/schnell", "fal-ai/gpt-image-1.5", "fal-ai/hunyuan-image/v3/text-to-image", "fal-ai/ideogram/v3", "fal-ai/kling-image/v3/text-to-image", "fal-ai/nano-banana", "fal-ai/nano-banana-2", "fal-ai/nano-banana-pro", "fal-ai/qwen-image", "fal-ai/recraft/v3/text-to-image", "fal-ai/recraft/v4/text-to-image", "fal-ai/stable-diffusion-v35-large", "fal-ai/z-image/turbo", "google/nano-banana-2-lite", "ideogram/v4", "krea/v2/large/text-to-image", "krea/v2/medium/text-to-image", "microsoft/mai-image-2.5", "openai/gpt-image-2", "reve/2.1/text-to-image", "xai/grok-imagine-image"] as const;
+export const FAL_IMAGE_MODELS = ["bytedance/seedream/v5/pro/text-to-image", "fal-ai/bytedance/seedream/v4.5/text-to-image", "fal-ai/flux-2", "fal-ai/flux-2-max", "fal-ai/flux-2-pro", "fal-ai/flux-2/flash", "fal-ai/flux-general", "fal-ai/flux-lora", "fal-ai/flux-pro/v1.1", "fal-ai/flux-pro/v1.1-ultra", "fal-ai/flux/dev", "fal-ai/flux/schnell", "fal-ai/gpt-image-1.5", "fal-ai/hunyuan-image/v3/text-to-image", "fal-ai/ideogram/v3", "fal-ai/kling-image/v3/text-to-image", "fal-ai/nano-banana", "fal-ai/nano-banana-2", "fal-ai/nano-banana-pro", "fal-ai/qwen-image", "fal-ai/recraft/v3/text-to-image", "fal-ai/recraft/v4/text-to-image", "fal-ai/stable-diffusion-v35-large", "fal-ai/z-image/turbo", "google/nano-banana-2-lite", "ideogram/v4", "krea/v2/large/text-to-image", "krea/v2/medium/text-to-image", "microsoft/mai-image-2.5", "microsoft/mai-image-2.7/flash/text-to-image", "microsoft/mai-image-2.7/text-to-image", "openai/gpt-image-2", "reve/2.1/text-to-image", "xai/grok-imagine-image"] as const;

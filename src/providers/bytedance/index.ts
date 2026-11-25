@@ -29,6 +29,7 @@ export {
 export type {
   ContentGenerationTasksBody,
   DreaminaSeedance25Body,
+  DreaminaSeedance25FlashBody,
   DreaminaSeedance20Body,
   DreaminaSeedance20FastBody,
   DreaminaSeedance20MiniBody,

@@ -3,6 +3,9 @@
 // Committed snapshots:
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
@@ -183,6 +186,294 @@ export interface BytedanceSeedance20TextToVideoOutput {
   video: FalFile;
   /** The seed used for generation. */
   seed: number;
+}
+
+/**
+ * The request body `bytedance/seedance-2.5/flash/image-to-video` accepts.
+ *
+ * Seedance 2.5 Flash, 480p or 720p. Public route verified 2026-11-24 at
+ * https://fal.ai/models/bytedance/seedance-2.5/flash/image-to-video.
+ *
+ * fal serves this endpoint at two live routes: the published id above, and the internal
+ * alias `fal-ai/seedance-2.5/flash/image-to-video` its OpenAPI document is written
+ * against. unmodel submits to the published id — that is the one fal documents and the one
+ * this catalog is keyed on.
+ *
+ * Docs: https://fal.ai/models/fal-ai/seedance-2.5/flash/image-to-video/api
+ */
+export interface BytedanceSeedance25FlashImageToVideoInput {
+  /** The text prompt describing the desired motion and action for the video. */
+  prompt?: string | null;
+  /**
+   * The URL of the starting frame image to animate. Supported formats: JPEG, PNG, WebP, BMP,
+   * TIFF, GIF, HEIC, HEIF. Max 30 MB. Carries a image reference — an https URL or a `data:`
+   * URI.
+   */
+  image_url: string;
+  /**
+   * The URL of the image to use as the last frame of the video. When provided, the generated
+   * video will transition from the starting image to this ending image. Supported formats:
+   * JPEG, PNG, WebP, BMP, TIFF, GIF, HEIC, HEIF. Max 30 MB. Carries a image reference — an
+   * https URL or a `data:` URI.
+   */
+  end_image_url?: string | null;
+  /** Video resolution - 480p for faster generation, 720p for quality. Default: `"720p"`. */
+  resolution?: "480p" | "720p";
+  /**
+   * Duration of the video in seconds. Supports 4 to 30 seconds, or auto to let the model
+   * decide based on the prompt. Default: `"auto"`.
+   */
+  duration?: "auto" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" | "20" | "21" | "22" | "23" | "24" | "25" | "26" | "27" | "28" | "29" | "30";
+  /**
+   * The aspect ratio of the generated video. Always "auto" for image-to-video. Default:
+   * `"auto"`.
+   */
+  aspect_ratio?: "auto";
+  /**
+   * Whether to generate synchronized audio for the video, including sound effects, ambient
+   * sounds, and lip-synced speech. The cost of video generation is the same regardless of
+   * whether audio is generated or not. Default: `true`.
+   */
+  generate_audio?: boolean;
+  /**
+   * Output bitrate mode. 'high' requests a higher-quality, larger-file encode from the
+   * model; 'standard' uses the default bitrate. Default: `"standard"`.
+   */
+  bitrate_mode?: "standard" | "high";
+  /**
+   * 'auto' uses the default video codec; US backend output is kept unchanged. 'H264' and
+   * 'H265' select H.264 and H.265 respectively. Default: `"auto"`.
+   */
+  codec?: "auto" | "H264" | "H265";
+  /**
+   * Output video format. 'mp4' is broadly compatible with browsers, mobile devices and media
+   * players. 'mov' targets professional post-production such as color grading, keying and
+   * compositing, but may not be supported by all players. Default: `"mp4"`.
+   */
+  output_format?: "mp4" | "mov";
+  /**
+   * If true, also return the last frame of the generated video as an image. Default:
+   * `false`.
+   */
+  return_last_frame?: boolean;
+  /** The unique user ID of the end user. */
+  end_user_id?: string | null;
+}
+
+/**
+ * The result document `bytedance/seedance-2.5/flash/image-to-video` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface BytedanceSeedance25FlashImageToVideoOutput {
+  /** The generated video file. */
+  video: FalFile;
+  /** The seed used for generation. */
+  seed: number;
+  /**
+   * The draft ID, or null when draft mode is disabled. Complete this draft within 14 days
+   * using the same account.
+   */
+  draft_id?: string | null;
+  /** The last frame of the generated video, when return_last_frame is true. */
+  last_frame?: FalFile | null;
+}
+
+/**
+ * The request body `bytedance/seedance-2.5/flash/reference-to-video` accepts.
+ *
+ * Seedance 2.5 Flash, 480p or 720p. Public route verified 2026-11-24 at
+ * https://fal.ai/models/bytedance/seedance-2.5/flash/reference-to-video.
+ *
+ * fal serves this endpoint at two live routes: the published id above, and the internal
+ * alias `fal-ai/seedance-2.5/flash/reference-to-video` its OpenAPI document is written
+ * against. unmodel submits to the published id — that is the one fal documents and the one
+ * this catalog is keyed on.
+ *
+ * Docs: https://fal.ai/models/fal-ai/seedance-2.5/flash/reference-to-video/api
+ */
+export interface BytedanceSeedance25FlashReferenceToVideoInput {
+  /** The text prompt used to generate the video. */
+  prompt?: string | null;
+  /**
+   * The type of video generation task. Reference uses the supplied media as guidance.
+   * Editing modifies a reference video and automatically coerces aspect_ratio and duration
+   * to auto. Extension continues a reference video and automatically coerces aspect_ratio to
+   * auto. Auto leaves the task type unset so the model decides it from the prompt and
+   * references. Default: `"reference"`.
+   */
+  task?: "auto" | "reference" | "editing" | "extension";
+  /**
+   * Reference images to guide video generation. Refer to them in the prompt as @Image1,
+   * @Image2, etc. Supported formats: JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, HEIF. Max 30 MB
+   * per image. Up to 10 images. Carries a image reference — an https URL or a `data:` URI.
+   */
+  image_urls?: string[];
+  /**
+   * Reference videos to guide video generation. Refer to them in the prompt as @Video1,
+   * @Video2, etc. Supported formats: MP4, MOV. Up to 5 videos. Each video must be 1.8 to
+   * 30.2 seconds and no larger than 200 MB; combined duration must not exceed 30.2 seconds.
+   * An extension with a single video accepts up to 120 seconds; only its last 30.2 seconds
+   * are sent to the model. Dimensions must be 300 to 6,000 pixels per side, aspect ratio 0.4
+   * to 2.5, and frame rate 24 to 60 FPS. Carries a video reference — an https URL or a
+   * `data:` URI.
+   */
+  video_urls?: string[];
+  /**
+   * Reference audio to guide video generation. Refer to them in the prompt as @Audio1,
+   * @Audio2, etc. Supported formats: MP3, WAV. Up to 5 files. Each file must be 1.8 to 30.2
+   * seconds and no larger than 15 MB; combined duration must not exceed 30.2 seconds.
+   * Carries a audio reference — an https URL or a `data:` URI.
+   */
+  audio_urls?: string[];
+  /** Video resolution - 480p for faster generation, 720p for quality. Default: `"720p"`. */
+  resolution?: "480p" | "720p";
+  /**
+   * Duration of the video in seconds. Supports 4 to 30 seconds, or auto to let the model
+   * decide based on the prompt. Default: `"auto"`.
+   */
+  duration?: "auto" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" | "20" | "21" | "22" | "23" | "24" | "25" | "26" | "27" | "28" | "29" | "30";
+  /**
+   * The aspect ratio of the generated video. Use 16:9 for landscape, 9:16 for
+   * portrait/vertical, 1:1 for square, 21:9 for ultrawide cinematic, or auto to let the
+   * model decide. Default: `"auto"`.
+   */
+  aspect_ratio?: "auto" | "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16";
+  /**
+   * Whether to generate synchronized audio for the video, including sound effects, ambient
+   * sounds, and lip-synced speech. The cost of video generation is the same regardless of
+   * whether audio is generated or not. Default: `true`.
+   */
+  generate_audio?: boolean;
+  /**
+   * Output bitrate mode. 'high' requests a higher-quality, larger-file encode from the
+   * model; 'standard' uses the default bitrate. Default: `"standard"`.
+   */
+  bitrate_mode?: "standard" | "high";
+  /**
+   * 'auto' uses the default video codec; US backend output is kept unchanged. 'H264' and
+   * 'H265' select H.264 and H.265 respectively. Default: `"auto"`.
+   */
+  codec?: "auto" | "H264" | "H265";
+  /**
+   * Output video format. 'mp4' is broadly compatible with browsers, mobile devices and media
+   * players. 'mov' targets professional post-production such as color grading, keying and
+   * compositing, but may not be supported by all players. Default: `"mp4"`.
+   */
+  output_format?: "mp4" | "mov";
+  /**
+   * If true, also return the last frame of the generated video as an image. Default:
+   * `false`.
+   */
+  return_last_frame?: boolean;
+  /**
+   * Random seed for reproducibility. Note that results may still vary slightly even with the
+   * same seed.
+   */
+  seed?: number | null;
+  /** The unique user ID of the end user. */
+  end_user_id?: string | null;
+}
+
+/**
+ * The result document `bytedance/seedance-2.5/flash/reference-to-video` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface BytedanceSeedance25FlashReferenceToVideoOutput {
+  /** The generated video file. */
+  video: FalFile;
+  /** The seed used for generation. */
+  seed: number;
+  /**
+   * The draft ID, or null when draft mode is disabled. Complete this draft within 14 days
+   * using the same account.
+   */
+  draft_id?: string | null;
+  /** The last frame of the generated video, when return_last_frame is true. */
+  last_frame?: FalFile | null;
+}
+
+/**
+ * The request body `bytedance/seedance-2.5/flash/text-to-video` accepts.
+ *
+ * Seedance 2.5 Flash, 480p or 720p. Public route verified 2026-11-24 at
+ * https://fal.ai/models/bytedance/seedance-2.5/flash/text-to-video.
+ *
+ * fal serves this endpoint at two live routes: the published id above, and the internal
+ * alias `fal-ai/seedance-2.5/flash/text-to-video` its OpenAPI document is written against.
+ * unmodel submits to the published id — that is the one fal documents and the one this
+ * catalog is keyed on.
+ *
+ * Docs: https://fal.ai/models/fal-ai/seedance-2.5/flash/text-to-video/api
+ */
+export interface BytedanceSeedance25FlashTextToVideoInput {
+  /** The text prompt used to generate the video. */
+  prompt: string;
+  /** Video resolution - 480p for faster generation, 720p for quality. Default: `"720p"`. */
+  resolution?: "480p" | "720p";
+  /**
+   * Duration of the video in seconds. Supports 4 to 30 seconds, or auto to let the model
+   * decide based on the prompt. Default: `"auto"`.
+   */
+  duration?: "auto" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" | "20" | "21" | "22" | "23" | "24" | "25" | "26" | "27" | "28" | "29" | "30";
+  /**
+   * The aspect ratio of the generated video. Use 16:9 for landscape, 9:16 for
+   * portrait/vertical, 1:1 for square, 21:9 for ultrawide cinematic, or auto to let the
+   * model decide. Default: `"auto"`.
+   */
+  aspect_ratio?: "auto" | "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16";
+  /**
+   * Whether to generate synchronized audio for the video, including sound effects, ambient
+   * sounds, and lip-synced speech. The cost of video generation is the same regardless of
+   * whether audio is generated or not. Default: `true`.
+   */
+  generate_audio?: boolean;
+  /**
+   * Output bitrate mode. 'high' requests a higher-quality, larger-file encode from the
+   * model; 'standard' uses the default bitrate. Default: `"standard"`.
+   */
+  bitrate_mode?: "standard" | "high";
+  /**
+   * 'auto' uses the default video codec; US backend output is kept unchanged. 'H264' and
+   * 'H265' select H.264 and H.265 respectively. Default: `"auto"`.
+   */
+  codec?: "auto" | "H264" | "H265";
+  /**
+   * Output video format. 'mp4' is broadly compatible with browsers, mobile devices and media
+   * players. 'mov' targets professional post-production such as color grading, keying and
+   * compositing, but may not be supported by all players. Default: `"mp4"`.
+   */
+  output_format?: "mp4" | "mov";
+  /**
+   * If true, also return the last frame of the generated video as an image. Default:
+   * `false`.
+   */
+  return_last_frame?: boolean;
+  /** The unique user ID of the end user. */
+  end_user_id?: string | null;
+}
+
+/**
+ * The result document `bytedance/seedance-2.5/flash/text-to-video` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface BytedanceSeedance25FlashTextToVideoOutput {
+  /** The generated video file. */
+  video: FalFile;
+  /** The seed used for generation. */
+  seed: number;
+  /**
+   * The draft ID, or null when draft mode is disabled. Complete this draft within 14 days
+   * using the same account.
+   */
+  draft_id?: string | null;
+  /** The last frame of the generated video, when return_last_frame is true. */
+  last_frame?: FalFile | null;
 }
 
 /**
@@ -2045,7 +2336,7 @@ export interface XaiGrokImagineVideoTextToVideoOutput {
 /**
  * Endpoint id → its request body type.
  *
- * A map rather than a union: a union of 35 object types re-instantiates at every
+ * A map rather than a union: a union of 38 object types re-instantiates at every
  * comparison site, while a keyed lookup resolves in one. The per-endpoint narrowing a
  * validator exposes indexes into this, so adding an endpoint costs one line here and
  * nothing at any call site.
@@ -2053,6 +2344,9 @@ export interface XaiGrokImagineVideoTextToVideoOutput {
 export interface FalVideoBodyById {
   "bytedance/seedance-2.0/image-to-video": BytedanceSeedance20ImageToVideoInput;
   "bytedance/seedance-2.0/text-to-video": BytedanceSeedance20TextToVideoInput;
+  "bytedance/seedance-2.5/flash/image-to-video": BytedanceSeedance25FlashImageToVideoInput;
+  "bytedance/seedance-2.5/flash/reference-to-video": BytedanceSeedance25FlashReferenceToVideoInput;
+  "bytedance/seedance-2.5/flash/text-to-video": BytedanceSeedance25FlashTextToVideoInput;
   "bytedance/seedance-2.5/image-to-video": BytedanceSeedance25ImageToVideoInput;
   "bytedance/seedance-2.5/reference-to-video": BytedanceSeedance25ReferenceToVideoInput;
   "bytedance/seedance-2.5/text-to-video": BytedanceSeedance25TextToVideoInput;
@@ -2092,6 +2386,9 @@ export interface FalVideoBodyById {
 export interface FalVideoResultById {
   "bytedance/seedance-2.0/image-to-video": BytedanceSeedance20ImageToVideoOutput;
   "bytedance/seedance-2.0/text-to-video": BytedanceSeedance20TextToVideoOutput;
+  "bytedance/seedance-2.5/flash/image-to-video": BytedanceSeedance25FlashImageToVideoOutput;
+  "bytedance/seedance-2.5/flash/reference-to-video": BytedanceSeedance25FlashReferenceToVideoOutput;
+  "bytedance/seedance-2.5/flash/text-to-video": BytedanceSeedance25FlashTextToVideoOutput;
   "bytedance/seedance-2.5/image-to-video": BytedanceSeedance25ImageToVideoOutput;
   "bytedance/seedance-2.5/reference-to-video": BytedanceSeedance25ReferenceToVideoOutput;
   "bytedance/seedance-2.5/text-to-video": BytedanceSeedance25TextToVideoOutput;

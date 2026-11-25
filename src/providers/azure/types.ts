@@ -111,4 +111,4 @@ export type ChatBody<ModelId extends string = AzureTextModelId> = ChatCompletion
 export type ImageBody = MaiImagesGenerationsBody;
 
 /** `azure.imageEdit`'s multipart params — POST {endpoint}/mai/v1/images/edits. */
-export type ImageEditBody = MaiImagesEditsBody;
+export type ImageEditBody<Image extends Blob | Blob[] = Blob> = MaiImagesEditsBody<Image>;

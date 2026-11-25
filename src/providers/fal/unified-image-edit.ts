@@ -41,6 +41,7 @@
  * fact, like every other refusal in this file.
  */
 
+import { isMaiImage27, maiImage27PixelRules } from "./mai-image";
 import {
   applyExtras,
   pixelsToRatio,
@@ -145,6 +146,7 @@ function hasClass(row: FalImageEditRow | undefined, name: string): boolean {
 }
 
 function pixelRules(row: FalImageEditRow | undefined, endpoint: string): PixelRules {
+  if (isMaiImage27(endpoint)) return maiImage27PixelRules(endpoint);
   const rules: PixelRules = { grid: 1, source: docUrl(endpoint) };
   if (row?.pixels?.min !== undefined) (rules as { min?: number }).min = row.pixels.min;
   if (row?.pixels?.max !== undefined) (rules as { max?: number }).max = row.pixels.max;
@@ -309,11 +311,13 @@ function applySize(
     }
     if (sizing.kind === "dimensions") {
       const wrote = sizingField(sizing);
+      ctx.from(["image_size"], wrote === "size" ? "size" : "dimensions");
       ctx.from(["image_size", "width"], wrote === "size" ? "size" : "dimensions.width");
       ctx.from(["image_size", "height"], wrote === "size" ? "size" : "dimensions.height");
       body.image_size = { width: sizing.dimensions.width, height: sizing.dimensions.height };
       return;
     }
+    ctx.from(["image_size"], "aspectRatio");
     ctx.from(["image_size", "width"], "aspectRatio");
     ctx.from(["image_size", "height"], "aspectRatio");
     const pixels = ctx.take(

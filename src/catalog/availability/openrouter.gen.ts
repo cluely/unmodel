@@ -430,6 +430,11 @@ export const availability = {
     "openrouter": "google/gemini-4-hydrogen",
     "vercel": { id: "google/gemini-4-hydrogen", narrows: { context: 1000000, drops: ["audio", "video"] } },
   },
+  "google/gemini-4-neon": {
+    "google": "gemini-4-neon",
+    "google-vertex": "gemini-4-neon",
+    "openrouter": "google/gemini-4-neon",
+  },
   "google/gemini-nano-banana-2.1": {
     "google-vertex": "gemini-nano-banana-2.1",
     "openrouter": "google/gemini-nano-banana-2.1",
@@ -1123,6 +1128,14 @@ export const availability = {
   "openai/gpt-6.1-terra-pro": {
     "openrouter": "openai/gpt-6.1-terra-pro",
   },
+  "openai/gpt-6.2-astra": {
+    "openai": "gpt-6.2-astra",
+    "openrouter": "openai/gpt-6.2-astra",
+  },
+  "openai/gpt-6.2-sol": {
+    "openai": "gpt-6.2-sol",
+    "openrouter": "openai/gpt-6.2-sol",
+  },
   "openai/gpt-audio": {
     "openrouter": "openai/gpt-audio",
   },
@@ -1443,6 +1456,10 @@ export const availability = {
     "alibaba": "qwen3.8-omni-flash",
     "openrouter": "qwen/qwen3.8-omni-flash",
     "vercel": { id: "alibaba/qwen3.8-omni-flash", narrows: { drops: ["audio", "video"] } },
+  },
+  "qwen/qwen4-max": {
+    "alibaba": "qwen4-max",
+    "openrouter": "qwen/qwen4-max",
   },
   "recursive/flint-v1.0:free": {
     "openrouter": "recursive/flint-v1.0:free",

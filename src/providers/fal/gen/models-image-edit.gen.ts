@@ -18,6 +18,8 @@
 //   data/fal/openapi/fal-ai__nano-banana-pro__edit.json
 //   data/fal/openapi/fal-ai__nano-banana__edit.json
 //   data/fal/openapi/fal-ai__qwen-image-edit-2511.json
+//   data/fal/openapi/microsoft__mai-image-2.7__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__edit.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
@@ -404,6 +406,42 @@ export const imageEditModels = {
     toolCall: false,
     openWeights: false,
     lastUpdated: "2026-04-21",
+    modalities: { input: ["image", "text"], output: ["image"] },
+    limit: { context: 0 },
+  },
+  /**
+   * UNPRICED. Token billing depends on text and image input tokens and output image tokens.
+   * A flat per-image USD rate would misprice the request.
+   *
+   * Source: https://fal.ai/mai-image-2.7 — verified 2026-11-24. Quote: “Otherwise it is
+   * pay-per-use, billed by tokens.”
+   */
+  "microsoft/mai-image-2.7/edit": {
+    id: "microsoft/mai-image-2.7/edit",
+    name: "MAI-Image-2.7 Edit",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-11-20",
+    modalities: { input: ["image", "text"], output: ["image"] },
+    limit: { context: 0 },
+  },
+  /**
+   * UNPRICED. Token billing depends on text and image input tokens and output image tokens.
+   * A flat per-image USD rate would misprice the request.
+   *
+   * Source: https://fal.ai/mai-image-2.7 — verified 2026-11-24. Quote: “Otherwise it is
+   * pay-per-use, billed by tokens.”
+   */
+  "microsoft/mai-image-2.7/flash/edit": {
+    id: "microsoft/mai-image-2.7/flash/edit",
+    name: "MAI-Image-2.7 Flash Edit",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-11-20",
     modalities: { input: ["image", "text"], output: ["image"] },
     limit: { context: 0 },
   },

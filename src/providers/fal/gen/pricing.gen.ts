@@ -7,6 +7,9 @@
 //   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
@@ -155,6 +158,10 @@
 //   data/fal/openapi/meshy__v7__image-to-3d.json
 //   data/fal/openapi/meshy__v7__text-to-3d.json
 //   data/fal/openapi/microsoft__mai-image-2.5.json
+//   data/fal/openapi/microsoft__mai-image-2.7__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.7__text-to-image.json
 //   data/fal/openapi/minimax__h3__image-to-video.json
 //   data/fal/openapi/minimax__h3__text-to-video.json
 //   data/fal/openapi/minimax__music-3.json
@@ -204,6 +211,9 @@ export const FAL_RATES = {
   "bria/fibo-edit/relight": { unit: "per_image", usd: 0.04, source: "https://fal.ai/models/bria/fibo-edit/relight", verified: "2026-08-27" },
   "bytedance/seedance-2.0/image-to-video": { unit: "conditional", tierKey: "resolution — quoted per 1000 tokens", tiers: [{ when: "per 1000 tokens at 480p, 720p or 1080p", usd: 0.014 }, { when: "per 1000 tokens at 4k", usd: 0.008 }], source: "https://fal.ai/models/bytedance/seedance-2.0/image-to-video", verified: "2026-08-24" },
   "bytedance/seedance-2.0/text-to-video": { unit: "conditional", tierKey: "resolution — quoted per 1000 tokens, with 4k cheaper per token than 1080p", tiers: [{ when: "per 1000 tokens at 480p, 720p or 1080p", usd: 0.014 }, { when: "per 1000 tokens at 4k", usd: 0.008 }], source: "https://fal.ai/models/bytedance/seedance-2.0/text-to-video", verified: "2026-08-24" },
+  "bytedance/seedance-2.5/flash/image-to-video": { unit: "conditional", tierKey: "output pixels and duration", tiers: [{ when: "per 1,000 tokens at 480p or 720p before any input-video multiplier", usd: 0.014 }], source: "https://fal.ai/models/bytedance/seedance-2.5/flash/image-to-video", verified: "2026-11-24" },
+  "bytedance/seedance-2.5/flash/reference-to-video": { unit: "conditional", tierKey: "output pixels and input plus output duration; multiply by 0.614 with video input", tiers: [{ when: "per 1,000 tokens at 480p or 720p before any input-video multiplier", usd: 0.014 }], source: "https://fal.ai/models/bytedance/seedance-2.5/flash/reference-to-video", verified: "2026-11-24" },
+  "bytedance/seedance-2.5/flash/text-to-video": { unit: "conditional", tierKey: "output pixels and duration", tiers: [{ when: "per 1,000 tokens at 480p or 720p before any input-video multiplier", usd: 0.014 }], source: "https://fal.ai/models/bytedance/seedance-2.5/flash/text-to-video", verified: "2026-11-24" },
   "bytedance/seedance-2.5/image-to-video": { unit: "conditional", tierKey: "resolution — quoted per 1000 tokens; input images are not billed", tiers: [{ when: "per 1000 tokens at 480p or 720p", usd: 0.0214 }, { when: "per 1000 tokens at 1080p", usd: 0.0234 }], source: "https://fal.ai/models/bytedance/seedance-2.5/image-to-video", verified: "2026-08-24" },
   "bytedance/seedance-2.5/reference-to-video": { unit: "conditional", tierKey: "resolution, times 0.6 when any video reference is supplied (and then input video seconds are billed too)", tiers: [{ when: "per 1000 tokens at 480p or 720p", usd: 0.0214 }, { when: "per 1000 tokens at 1080p", usd: 0.0234 }, { when: "with video references, roughly per second of generated 720p video", usd: 0.2838 }], source: "https://fal.ai/models/bytedance/seedance-2.5/reference-to-video", verified: "2026-08-24" },
   "bytedance/seedance-2.5/text-to-video": { unit: "conditional", tierKey: "resolution — the rate is quoted per 1000 tokens, and tokens are (width x height x duration x 24) / 1024", tiers: [{ when: "per 1000 tokens at 480p or 720p", usd: 0.0214 }, { when: "per 1000 tokens at 1080p", usd: 0.0234 }], source: "https://fal.ai/models/bytedance/seedance-2.5/text-to-video", verified: "2026-08-24" },
@@ -352,6 +362,10 @@ export const FAL_RATES = {
   "meshy/v7/image-to-3d": { unit: "conditional", tierKey: "texture and `ultra_mode`, plus stacking add-ons for rigging and animation", tiers: [{ when: "per generation, base model with no texture", usd: 0.8 }, { when: "per generation with textures", usd: 1.2 }, { when: "per generation with textures and `ultra_mode`", usd: 1.4 }, { when: "added when auto-rigging is enabled", usd: 0.2 }, { when: "added per animation call", usd: 0.12 }], source: "https://fal.ai/models/meshy/v7/image-to-3d", verified: "2026-08-25" },
   "meshy/v7/text-to-3d": { unit: "conditional", tierKey: "texture and `ultra_mode`, plus stacking add-ons for rigging and animation", tiers: [{ when: "per generation, base model with no texture", usd: 0.8 }, { when: "per generation with textures", usd: 1.2 }, { when: "per generation with textures and `ultra_mode`", usd: 1.4 }, { when: "added when auto-rigging is enabled", usd: 0.2 }, { when: "added per animation call", usd: 0.12 }], source: "https://fal.ai/models/meshy/v7/text-to-3d", verified: "2026-08-25" },
   "microsoft/mai-image-2.5": { unpriced: "fal publishes no rate for the PUBLISHED id: the page at https://fal.ai/models/microsoft/mai-image-2.5 states no price at all, and the internal route fal's own OpenAPI documents shows only the unpopulated $0-per-compute-second billing template — the same template wizper shows. Quoting $0 as a rate would be worse than saying nothing, so estimates for this endpoint return {} with this caveat.", source: "https://fal.ai/models/fal-ai/mai-image-2.5", verified: "2026-08-25" },
+  "microsoft/mai-image-2.7/edit": { unpriced: "Token billing depends on text and image input tokens and output image tokens. A flat per-image USD rate would misprice the request.", source: "https://fal.ai/mai-image-2.7", verified: "2026-11-24" },
+  "microsoft/mai-image-2.7/flash/edit": { unpriced: "Token billing depends on text and image input tokens and output image tokens. A flat per-image USD rate would misprice the request.", source: "https://fal.ai/mai-image-2.7", verified: "2026-11-24" },
+  "microsoft/mai-image-2.7/flash/text-to-image": { unpriced: "Token billing depends on text and image input tokens and output image tokens. A flat per-image USD rate would misprice the request.", source: "https://fal.ai/mai-image-2.7", verified: "2026-11-24" },
+  "microsoft/mai-image-2.7/text-to-image": { unpriced: "Token billing depends on text and image input tokens and output image tokens. A flat per-image USD rate would misprice the request.", source: "https://fal.ai/mai-image-2.7", verified: "2026-11-24" },
   "minimax/h3/image-to-video": { unit: "conditional", tierKey: "resolution", tiers: [{ when: "per second at 480P", usd: 0.05 }, { when: "per second at 768P", usd: 0.06 }, { when: "per second at 2K", usd: 0.13 }, { when: "per second at 4K", usd: 0.16 }], source: "https://fal.ai/models/minimax/h3/image-to-video", verified: "2026-08-24" },
   "minimax/h3/text-to-video": { unit: "conditional", tierKey: "resolution", tiers: [{ when: "per second at 480P", usd: 0.05 }, { when: "per second at 768P", usd: 0.06 }, { when: "per second at 2K", usd: 0.13 }, { when: "per second at 4K", usd: 0.16 }], source: "https://fal.ai/models/minimax/h3/text-to-video", verified: "2026-08-24" },
   "minimax/music-3": { unit: "per_generated_audio_second", usd: 0.002, source: "https://fal.ai/models/minimax/music-3", verified: "2026-08-25" },

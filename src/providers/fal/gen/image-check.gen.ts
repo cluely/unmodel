@@ -30,6 +30,8 @@
 //   data/fal/openapi/krea__v2__large__text-to-image.json
 //   data/fal/openapi/krea__v2__medium__text-to-image.json
 //   data/fal/openapi/microsoft__mai-image-2.5.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.7__text-to-image.json
 //   data/fal/openapi/openai__gpt-image-2.json
 //   data/fal/openapi/reve__2.1__text-to-image.json
 //   data/fal/openapi/xai__grok-imagine-image.json
@@ -331,6 +333,18 @@ export type FalImageSchemaChecks = [
   AssertExtends<wire.MicrosoftMaiImage25Input["aspect_ratio"], Gate["aspect_ratio"]>,
   AssertExtends<wire.MicrosoftMaiImage25Input["output_format"], Gate["output_format"]>,
   AssertExtends<wire.MicrosoftMaiImage25Input["sync_mode"], Gate["sync_mode"]>,
+  // microsoft/mai-image-2.7/flash/text-to-image
+  AssertExtends<wire.MicrosoftMaiImage27FlashTextToImageInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.MicrosoftMaiImage27FlashTextToImageInput["resolution"], Gate["resolution"]>,
+  AssertExtends<wire.MicrosoftMaiImage27FlashTextToImageInput["background"], Gate["background"]>,
+  AssertExtends<wire.MicrosoftMaiImage27FlashTextToImageInput["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.MicrosoftMaiImage27FlashTextToImageInput["sync_mode"], Gate["sync_mode"]>,
+  // microsoft/mai-image-2.7/text-to-image
+  AssertExtends<wire.MicrosoftMaiImage27TextToImageInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.MicrosoftMaiImage27TextToImageInput["resolution"], Gate["resolution"]>,
+  AssertExtends<wire.MicrosoftMaiImage27TextToImageInput["background"], Gate["background"]>,
+  AssertExtends<wire.MicrosoftMaiImage27TextToImageInput["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.MicrosoftMaiImage27TextToImageInput["sync_mode"], Gate["sync_mode"]>,
   // openai/gpt-image-2
   AssertExtends<wire.OpenaiGptImage2Input["prompt"], Gate["prompt"]>,
   AssertExtends<wire.OpenaiGptImage2Input["background"], Gate["background"]>,

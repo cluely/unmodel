@@ -730,6 +730,23 @@ export const models = {
     limit: { context: 1048576, output: 65536 },
     cost: { input: 1.5, output: 7.5, cacheRead: 0.075, inputAudio: 1.5 },
   },
+  "gemini-4-neon": {
+    id: "gemini-4-neon",
+    name: "Gemini 4 Neon",
+    family: "gemini",
+    attachment: true,
+    reasoning: true,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: false,
+    openWeights: false,
+    knowledge: "2026-03",
+    releaseDate: "2026-11-18",
+    lastUpdated: "2026-11-18",
+    modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
+    limit: { context: 1048576, output: 65536 },
+    cost: { input: 3, output: 15, cacheRead: 0.15, inputAudio: 3 },
+  },
   "gemini-embedding-001": {
     id: "gemini-embedding-001",
     name: "Gemini Embedding 001",
@@ -1106,7 +1123,7 @@ export const models = {
 } as const satisfies Record<string, ModelInfo>;
 
 export type GoogleVertexModelId = keyof typeof models;
-export type GoogleVertexTextModelId = "claude-fable-5-1@default" | "claude-fable-5-2@default" | "claude-fable-5@default" | "claude-haiku-4-5@20251001" | "claude-haiku-5-5@default" | "claude-opus-4-1@20250805" | "claude-opus-4-5@20251101" | "claude-opus-4-6@default" | "claude-opus-4-7@default" | "claude-opus-4-8@default" | "claude-opus-4@20250514" | "claude-opus-5-5@default" | "claude-opus-5@default" | "claude-sonnet-4-5@20250929" | "claude-sonnet-4-6@default" | "claude-sonnet-4@20250514" | "claude-sonnet-5-5@default" | "claude-sonnet-5@default" | "codestral-2" | "deepseek-ai/deepseek-v3.1-maas" | "deepseek-ai/deepseek-v3.2-maas" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-image" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-4-argon" | "gemini-4-carbon" | "gemini-4-hydrogen" | "gemini-embedding-001" | "gemini-nano-banana-2.1" | "google/gemma-4-26b-a4b-it-maas" | "meta/llama-3.3-70b-instruct-maas" | "meta/llama-4-maverick-17b-128e-instruct-maas" | "meta/llama-4-scout-17b-16e-instruct-maas" | "mistral-medium-3" | "mistral-small-2503" | "moonshotai/kimi-k2-thinking-maas" | "openai/gpt-oss-120b-maas" | "openai/gpt-oss-20b-maas" | "qwen/qwen3-235b-a22b-instruct-2507-maas" | "xai/grok-4.1-fast-non-reasoning" | "xai/grok-4.1-fast-reasoning" | "xai/grok-4.20-non-reasoning" | "xai/grok-4.20-reasoning" | "xai/grok-4.3" | "xai/grok-4.6" | "xai/grok-4.7" | "zai-org/glm-4.7-maas" | "zai-org/glm-5-maas" | "zai-org/glm-5.2-maas";
+export type GoogleVertexTextModelId = "claude-fable-5-1@default" | "claude-fable-5-2@default" | "claude-fable-5@default" | "claude-haiku-4-5@20251001" | "claude-haiku-5-5@default" | "claude-opus-4-1@20250805" | "claude-opus-4-5@20251101" | "claude-opus-4-6@default" | "claude-opus-4-7@default" | "claude-opus-4-8@default" | "claude-opus-4@20250514" | "claude-opus-5-5@default" | "claude-opus-5@default" | "claude-sonnet-4-5@20250929" | "claude-sonnet-4-6@default" | "claude-sonnet-4@20250514" | "claude-sonnet-5-5@default" | "claude-sonnet-5@default" | "codestral-2" | "deepseek-ai/deepseek-v3.1-maas" | "deepseek-ai/deepseek-v3.2-maas" | "gemini-2.5-flash" | "gemini-2.5-flash-image" | "gemini-2.5-flash-lite" | "gemini-2.5-pro" | "gemini-3-flash-preview" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite" | "gemini-3.1-flash-lite-image" | "gemini-3.1-pro-preview" | "gemini-3.1-pro-preview-customtools" | "gemini-3.5-flash" | "gemini-3.5-flash-lite" | "gemini-3.6-flash" | "gemini-3.7-flash" | "gemini-3.8-flash" | "gemini-4-argon" | "gemini-4-carbon" | "gemini-4-hydrogen" | "gemini-4-neon" | "gemini-embedding-001" | "gemini-nano-banana-2.1" | "google/gemma-4-26b-a4b-it-maas" | "meta/llama-3.3-70b-instruct-maas" | "meta/llama-4-maverick-17b-128e-instruct-maas" | "meta/llama-4-scout-17b-16e-instruct-maas" | "mistral-medium-3" | "mistral-small-2503" | "moonshotai/kimi-k2-thinking-maas" | "openai/gpt-oss-120b-maas" | "openai/gpt-oss-20b-maas" | "qwen/qwen3-235b-a22b-instruct-2507-maas" | "xai/grok-4.1-fast-non-reasoning" | "xai/grok-4.1-fast-reasoning" | "xai/grok-4.20-non-reasoning" | "xai/grok-4.20-reasoning" | "xai/grok-4.3" | "xai/grok-4.6" | "xai/grok-4.7" | "zai-org/glm-4.7-maas" | "zai-org/glm-5-maas" | "zai-org/glm-5.2-maas";
 export type GoogleVertexImageModelId = "gemini-2.5-flash-image" | "gemini-3-pro-image" | "gemini-3.1-flash-image" | "gemini-3.1-flash-lite-image" | "gemini-nano-banana-2.1";
 export type GoogleVertexAudioModelId = "gemini-2.5-flash-tts" | "gemini-2.5-pro-tts";
 export type GoogleVertexVideoModelId = never;

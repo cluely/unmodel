@@ -461,6 +461,16 @@ export const videoShapeRules: Readonly<Partial<Record<string, VideoShapeRule>>> 
     // https://docs.byteplus.com/docs/en/modelark/create-video-generation-task-api.md, 2026-11-12.
     supportsDraft: true,
   },
+  "dreamina-seedance-2-5-flash-261115": {
+    ...SEEDANCE_20_SHAPE,
+    // Seedance 2.5 Flash column of VIDEO_DRAFT_SOURCE, 2026-11-24.
+    maxDuration: 30,
+    maxReferenceImages: 10,
+    maxReferenceVideos: 5,
+    maxReferenceAudio: 5,
+    supportsAudioOnlyReference: true,
+    forcesAdaptiveRatioForImageToVideo: true,
+  },
   "dreamina-seedance-2-0-260128": SEEDANCE_20_SHAPE,
   "dreamina-seedance-2-0-fast-260128": SEEDANCE_20_SHAPE,
   "dreamina-seedance-2-0-mini-260615": SEEDANCE_20_SHAPE,
@@ -557,6 +567,16 @@ export const videoConstraints: Readonly<
       omni_reference_task_type: OMNI_REFERENCE_TASK_TYPES,
       // "flex … Dreamina Seedance 2.5 and Dreamina Seedance 2.0 series models
       // are not currently supported."
+      service_tier: ["default"],
+    },
+  },
+  "dreamina-seedance-2-5-flash-261115": {
+    deny: { ...seedance2xDeny, ...denyTable(DRAFT_ONLY, VIDEO_DRAFT_SOURCE) },
+    enums: {
+      resolution: ["480p", "720p"],
+      ratio: VIDEO_RATIOS,
+      output_format: VIDEO_OUTPUT_FORMATS,
+      omni_reference_task_type: OMNI_REFERENCE_TASK_TYPES,
       service_tier: ["default"],
     },
   },

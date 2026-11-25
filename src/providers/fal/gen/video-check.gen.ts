@@ -3,6 +3,9 @@
 // Committed snapshots:
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
@@ -79,6 +82,46 @@ export type FalVideoSchemaChecks = [
   AssertExtends<wire.BytedanceSeedance20TextToVideoInput["generate_audio"], Gate["generate_audio"]>,
   AssertExtends<wire.BytedanceSeedance20TextToVideoInput["bitrate_mode"], Gate["bitrate_mode"]>,
   AssertExtends<wire.BytedanceSeedance20TextToVideoInput["end_user_id"], Gate["end_user_id"]>,
+  // bytedance/seedance-2.5/flash/image-to-video
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["image_url"], Gate["image_url"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["end_image_url"], Gate["end_image_url"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["resolution"], Gate["resolution"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["duration"], Gate["duration"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["aspect_ratio"], Gate["aspect_ratio"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["generate_audio"], Gate["generate_audio"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["bitrate_mode"], Gate["bitrate_mode"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["codec"], Gate["codec"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["return_last_frame"], Gate["return_last_frame"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashImageToVideoInput["end_user_id"], Gate["end_user_id"]>,
+  // bytedance/seedance-2.5/flash/reference-to-video
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["task"], Gate["task"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["image_urls"], Gate["image_urls"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["video_urls"], Gate["video_urls"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["audio_urls"], Gate["audio_urls"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["resolution"], Gate["resolution"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["duration"], Gate["duration"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["aspect_ratio"], Gate["aspect_ratio"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["generate_audio"], Gate["generate_audio"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["bitrate_mode"], Gate["bitrate_mode"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["codec"], Gate["codec"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["return_last_frame"], Gate["return_last_frame"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["seed"], Gate["seed"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashReferenceToVideoInput["end_user_id"], Gate["end_user_id"]>,
+  // bytedance/seedance-2.5/flash/text-to-video
+  AssertExtends<wire.BytedanceSeedance25FlashTextToVideoInput["prompt"], Gate["prompt"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashTextToVideoInput["resolution"], Gate["resolution"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashTextToVideoInput["duration"], Gate["duration"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashTextToVideoInput["aspect_ratio"], Gate["aspect_ratio"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashTextToVideoInput["generate_audio"], Gate["generate_audio"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashTextToVideoInput["bitrate_mode"], Gate["bitrate_mode"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashTextToVideoInput["codec"], Gate["codec"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashTextToVideoInput["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashTextToVideoInput["return_last_frame"], Gate["return_last_frame"]>,
+  AssertExtends<wire.BytedanceSeedance25FlashTextToVideoInput["end_user_id"], Gate["end_user_id"]>,
   // bytedance/seedance-2.5/image-to-video
   AssertExtends<wire.BytedanceSeedance25ImageToVideoInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.BytedanceSeedance25ImageToVideoInput["image_url"], Gate["image_url"]>,

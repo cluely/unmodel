@@ -39,7 +39,7 @@
  * - `openrouter.chat` → `ChatBody`
  */
 
-import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
+import type { OpenRouterChatBody } from "./wire";
 import type { OpenrouterTextModelId } from "../../catalog/openrouter.gen";
 
 export type {
@@ -65,6 +65,7 @@ export type {
   ChatUserContentPart,
   ChatTextPart,
   ChatImagePart,
+  ChatVideoUrlPart,
   ChatAudioPart,
   ChatFilePart,
   ChatRefusalPart,
@@ -90,4 +91,5 @@ export type {
 // Pure type aliases: no rename, no runtime, no cost.
 // ---------------------------------------------------------------------------
 
-export type ChatBody<ModelId extends string = OpenrouterTextModelId> = ChatCompletionsBodyBase<ModelId>;
+export type ChatBody<ModelId extends string = OpenrouterTextModelId> = OpenRouterChatBody<ModelId>;
+export type { OpenRouterUserMessage } from "./wire";

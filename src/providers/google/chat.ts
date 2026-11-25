@@ -1,3 +1,4 @@
+import { neonBillableInputTokens } from "./thinking-constraints";
 import { constraintsFor, createValidator, type PipelineContext } from "../../core/pipeline";
 import {
   JSON_HEADERS,
@@ -365,6 +366,52 @@ function requestedModalities(params: GenerateContentBody): string[] {
   return requested
     .map((value) => normalizeModality(value))
     .filter((value): value is string => value !== undefined);
+}
+
+/** Gemini 4 Neon migration guide, checked 2026-11-24. */
+function checkNeonConfig(
+  params: GenerateContentBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (stripModelsPrefix(params.model) !== "gemini-4-neon") return;
+  const source = "https://aistudio.google.com/docs/whats-new-gemini-4-neon#migration-checklist";
+  const config = params.generationConfig;
+  for (const param of ["temperature", "topP", "topK"] as const) {
+    const value = config?.[param];
+    if (value === undefined) continue;
+    if (param === "temperature" &&
+        (value < GEMINI_TEMPERATURE_RANGE.min || value > GEMINI_TEMPERATURE_RANGE.max)) continue;
+    if ((param === "topP" && (value < 0 || value > 1)) ||
+        (param === "topK" && value < 1)) {
+      ctx.report({
+        code: "invalid_enum_value",
+        path: ["generationConfig", param],
+        model: params.model,
+        message: param === "topP" ? "Gemini 4 Neon requires topP between 0 and 1." : "Gemini 4 Neon requires a positive topK.",
+        meta: { value, source },
+      });
+      continue;
+    }
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["generationConfig", param],
+      model: params.model,
+      message: `Gemini 4 Neon ignores in-range custom \`${param}\` values.`,
+      meta: { ignored: true, source },
+    });
+  }
+  if (params.cachedContent !== undefined) {
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["cachedContent"],
+      model: params.model,
+      message: "Gemini 4 Neon supports implicit caching only. Remove `cachedContent`.",
+      meta: { source },
+    });
+  }
 }
 
 function checkGenerationConfigRanges(
@@ -872,7 +919,10 @@ function estimate(params: GenerateContentBody, info: ModelInfo | undefined, ctx:
 
   // Worst case: the model produces the full requested/possible output.
   const outputTokens = params.generationConfig?.maxOutputTokens ?? info?.limit.output ?? 0;
-  const costUSD = computeCostUSD(info?.cost, { inputTokens, outputTokens });
+  const billedInput = info?.id === "gemini-4-neon"
+    ? neonBillableInputTokens(inputTokens, outputTokens)
+    : inputTokens;
+  const costUSD = computeCostUSD(info?.cost, { inputTokens: billedInput, outputTokens });
   return costUSD === undefined ? { inputTokens } : { inputTokens, costUSD };
 }
 
@@ -978,6 +1028,7 @@ const validator = createValidator<GenerateContentBody, unknown>({
   checks: [
     checkCapabilities,
     checkGenerationConfigRanges,
+    checkNeonConfig,
     checkResponseModalities,
     checkImageGeneration,
     checkSpeechGeneration,

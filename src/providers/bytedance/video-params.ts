@@ -13,9 +13,10 @@ import { EXTRA } from "../../core/unified/derive";
 import type { VideoModelParamTable } from "../../core/unified/vocabulary/video";
 import { OMNI_REFERENCE_TASK_TYPES } from "./constraints";
 
-/** The six catalogued ids on this route — the `bytedance/…` ref union. */
+/** The catalogued ids on this route form the `bytedance/…` ref union. */
 export const MODELS = [
   "dreamina-seedance-2-5-260628",
+  "dreamina-seedance-2-5-flash-261115",
   "dreamina-seedance-2-0-260128",
   "dreamina-seedance-2-0-fast-260128",
   "dreamina-seedance-2-0-mini-260615",
@@ -90,6 +91,13 @@ export const BYTEDANCE_VIDEO_MODEL_PARAMS = {
       ...AUDIO_2X_EXTRAS,
       omni_reference_task_type: EXTRA as (typeof OMNI_REFERENCE_TASK_TYPES)[number],
       draft: EXTRA as boolean,
+    },
+  },
+  "dreamina-seedance-2-5-flash-261115": {
+    ...SEEDANCE_2_0_SMALL_ROW,
+    extras: {
+      ...AUDIO_2X_EXTRAS,
+      omni_reference_task_type: EXTRA as (typeof OMNI_REFERENCE_TASK_TYPES)[number],
     },
   },
   "dreamina-seedance-2-0-260128": {

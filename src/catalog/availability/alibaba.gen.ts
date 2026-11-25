@@ -287,6 +287,10 @@ export const availability = {
     "openrouter": "qwen/qwen3.8-omni-flash",
     "vercel": { id: "alibaba/qwen3.8-omni-flash", narrows: { drops: ["audio", "video"] } },
   },
+  "qwen4-max": {
+    "alibaba": "qwen4-max",
+    "openrouter": { id: "qwen/qwen4-max", narrows: { drops: ["pdf"] } },
+  },
   "qwq-plus": {
     "alibaba": "qwq-plus",
   },

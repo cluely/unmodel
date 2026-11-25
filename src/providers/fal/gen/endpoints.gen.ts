@@ -7,6 +7,9 @@
 //   data/fal/openapi/bria__fibo-edit__relight.json
 //   data/fal/openapi/bytedance__seedance-2.0__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.0__text-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__image-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__reference-to-video.json
+//   data/fal/openapi/bytedance__seedance-2.5__flash__text-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__image-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__reference-to-video.json
 //   data/fal/openapi/bytedance__seedance-2.5__text-to-video.json
@@ -155,6 +158,10 @@
 //   data/fal/openapi/meshy__v7__image-to-3d.json
 //   data/fal/openapi/meshy__v7__text-to-3d.json
 //   data/fal/openapi/microsoft__mai-image-2.5.json
+//   data/fal/openapi/microsoft__mai-image-2.7__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__text-to-image.json
+//   data/fal/openapi/microsoft__mai-image-2.7__text-to-image.json
 //   data/fal/openapi/minimax__h3__image-to-video.json
 //   data/fal/openapi/minimax__h3__text-to-video.json
 //   data/fal/openapi/minimax__music-3.json
@@ -205,7 +212,7 @@ export const FAL_AVATAR_ENDPOINTS = [
 
 export type FalAvatarEndpointId = (typeof FAL_AVATAR_ENDPOINTS)[number];
 
-/** Every fal endpoint unmodel serves as `fal.image` — 32 of them. */
+/** Every fal endpoint unmodel serves as `fal.image` — 34 of them. */
 export const FAL_IMAGE_ENDPOINTS = [
   "bytedance/seedream/v5/pro/text-to-image",
   "fal-ai/bytedance/seedream/v4.5/text-to-image",
@@ -236,6 +243,8 @@ export const FAL_IMAGE_ENDPOINTS = [
   "krea/v2/large/text-to-image",
   "krea/v2/medium/text-to-image",
   "microsoft/mai-image-2.5",
+  "microsoft/mai-image-2.7/flash/text-to-image",
+  "microsoft/mai-image-2.7/text-to-image",
   "openai/gpt-image-2",
   "reve/2.1/text-to-image",
   "xai/grok-imagine-image",
@@ -243,7 +252,7 @@ export const FAL_IMAGE_ENDPOINTS = [
 
 export type FalImageEndpointId = (typeof FAL_IMAGE_ENDPOINTS)[number];
 
-/** Every fal endpoint unmodel serves as `fal.imageEdit` — 18 of them. */
+/** Every fal endpoint unmodel serves as `fal.imageEdit` — 20 of them. */
 export const FAL_IMAGE_EDIT_ENDPOINTS = [
   "alibaba/qwen-image-3/edit",
   "bria/fibo-edit/relight",
@@ -262,6 +271,8 @@ export const FAL_IMAGE_EDIT_ENDPOINTS = [
   "fal-ai/nano-banana-pro/edit",
   "fal-ai/nano-banana/edit",
   "fal-ai/qwen-image-edit-2511",
+  "microsoft/mai-image-2.7/edit",
+  "microsoft/mai-image-2.7/flash/edit",
   "openai/gpt-image-2/edit",
 ] as const;
 
@@ -394,10 +405,13 @@ export const FAL_UPSCALE_ENDPOINTS = [
 
 export type FalUpscaleEndpointId = (typeof FAL_UPSCALE_ENDPOINTS)[number];
 
-/** Every fal endpoint unmodel serves as `fal.video` — 35 of them. */
+/** Every fal endpoint unmodel serves as `fal.video` — 38 of them. */
 export const FAL_VIDEO_ENDPOINTS = [
   "bytedance/seedance-2.0/image-to-video",
   "bytedance/seedance-2.0/text-to-video",
+  "bytedance/seedance-2.5/flash/image-to-video",
+  "bytedance/seedance-2.5/flash/reference-to-video",
+  "bytedance/seedance-2.5/flash/text-to-video",
   "bytedance/seedance-2.5/image-to-video",
   "bytedance/seedance-2.5/reference-to-video",
   "bytedance/seedance-2.5/text-to-video",
@@ -443,6 +457,9 @@ export const FAL_ENDPOINTS = [
   "bria/fibo-edit/relight",
   "bytedance/seedance-2.0/image-to-video",
   "bytedance/seedance-2.0/text-to-video",
+  "bytedance/seedance-2.5/flash/image-to-video",
+  "bytedance/seedance-2.5/flash/reference-to-video",
+  "bytedance/seedance-2.5/flash/text-to-video",
   "bytedance/seedance-2.5/image-to-video",
   "bytedance/seedance-2.5/reference-to-video",
   "bytedance/seedance-2.5/text-to-video",
@@ -591,6 +608,10 @@ export const FAL_ENDPOINTS = [
   "meshy/v7/image-to-3d",
   "meshy/v7/text-to-3d",
   "microsoft/mai-image-2.5",
+  "microsoft/mai-image-2.7/edit",
+  "microsoft/mai-image-2.7/flash/edit",
+  "microsoft/mai-image-2.7/flash/text-to-image",
+  "microsoft/mai-image-2.7/text-to-image",
   "minimax/h3/image-to-video",
   "minimax/h3/text-to-video",
   "minimax/music-3",
@@ -627,6 +648,9 @@ export const FAL_ENDPOINT_VERBS = {
   "bria/fibo-edit/relight": "imageEdit",
   "bytedance/seedance-2.0/image-to-video": "video",
   "bytedance/seedance-2.0/text-to-video": "video",
+  "bytedance/seedance-2.5/flash/image-to-video": "video",
+  "bytedance/seedance-2.5/flash/reference-to-video": "video",
+  "bytedance/seedance-2.5/flash/text-to-video": "video",
   "bytedance/seedance-2.5/image-to-video": "video",
   "bytedance/seedance-2.5/reference-to-video": "video",
   "bytedance/seedance-2.5/text-to-video": "video",
@@ -775,6 +799,10 @@ export const FAL_ENDPOINT_VERBS = {
   "meshy/v7/image-to-3d": "threeD",
   "meshy/v7/text-to-3d": "threeD",
   "microsoft/mai-image-2.5": "image",
+  "microsoft/mai-image-2.7/edit": "imageEdit",
+  "microsoft/mai-image-2.7/flash/edit": "imageEdit",
+  "microsoft/mai-image-2.7/flash/text-to-image": "image",
+  "microsoft/mai-image-2.7/text-to-image": "image",
   "minimax/h3/image-to-video": "video",
   "minimax/h3/text-to-video": "video",
   "minimax/music-3": "music",
@@ -816,6 +844,9 @@ export const FAL_DOC_URLS = {
   "bria/fibo-edit/relight": "https://fal.ai/models/bria/fibo-edit/relight/api",
   "bytedance/seedance-2.0/image-to-video": "https://fal.ai/models/fal-ai/seedance-2/image-to-video/api",
   "bytedance/seedance-2.0/text-to-video": "https://fal.ai/models/fal-ai/seedance-2/text-to-video/api",
+  "bytedance/seedance-2.5/flash/image-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/flash/image-to-video/api",
+  "bytedance/seedance-2.5/flash/reference-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/flash/reference-to-video/api",
+  "bytedance/seedance-2.5/flash/text-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/flash/text-to-video/api",
   "bytedance/seedance-2.5/image-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/image-to-video/api",
   "bytedance/seedance-2.5/reference-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/reference-to-video/api",
   "bytedance/seedance-2.5/text-to-video": "https://fal.ai/models/fal-ai/seedance-2.5/text-to-video/api",
@@ -964,6 +995,10 @@ export const FAL_DOC_URLS = {
   "meshy/v7/image-to-3d": "https://fal.ai/models/fal-ai/meshy/v7/image-to-3d/api",
   "meshy/v7/text-to-3d": "https://fal.ai/models/fal-ai/meshy/v7/text-to-3d/api",
   "microsoft/mai-image-2.5": "https://fal.ai/models/fal-ai/mai-image-2.5/api",
+  "microsoft/mai-image-2.7/edit": "https://fal.ai/models/fal-ai/mai-image-2.7/edit/api",
+  "microsoft/mai-image-2.7/flash/edit": "https://fal.ai/models/fal-ai/mai-image-2.7/flash/edit/api",
+  "microsoft/mai-image-2.7/flash/text-to-image": "https://fal.ai/models/fal-ai/mai-image-2.7/flash/api",
+  "microsoft/mai-image-2.7/text-to-image": "https://fal.ai/models/fal-ai/mai-image-2.7/api",
   "minimax/h3/image-to-video": "https://fal.ai/models/fal-ai/minimax_h3/image-to-video/api",
   "minimax/h3/text-to-video": "https://fal.ai/models/fal-ai/minimax_h3/text-to-video/api",
   "minimax/music-3": "https://fal.ai/models/fal-ai/minimax-music-3/api",
@@ -1005,6 +1040,9 @@ export const FAL_REQUIRED_PROBES = {
   "bria/fibo-edit/relight": ["image_url", "light_direction", "light_type"],
   "bytedance/seedance-2.0/image-to-video": ["prompt", "image_url"],
   "bytedance/seedance-2.0/text-to-video": ["prompt"],
+  "bytedance/seedance-2.5/flash/image-to-video": ["image_url"],
+  "bytedance/seedance-2.5/flash/reference-to-video": [],
+  "bytedance/seedance-2.5/flash/text-to-video": ["prompt"],
   "bytedance/seedance-2.5/image-to-video": ["prompt", "image_url"],
   "bytedance/seedance-2.5/reference-to-video": ["prompt"],
   "bytedance/seedance-2.5/text-to-video": ["prompt"],
@@ -1153,6 +1191,10 @@ export const FAL_REQUIRED_PROBES = {
   "meshy/v7/image-to-3d": ["image_url"],
   "meshy/v7/text-to-3d": ["prompt"],
   "microsoft/mai-image-2.5": ["prompt"],
+  "microsoft/mai-image-2.7/edit": ["prompt", "image_urls"],
+  "microsoft/mai-image-2.7/flash/edit": ["prompt", "image_urls"],
+  "microsoft/mai-image-2.7/flash/text-to-image": ["prompt"],
+  "microsoft/mai-image-2.7/text-to-image": ["prompt"],
   "minimax/h3/image-to-video": ["prompt"],
   "minimax/h3/text-to-video": ["prompt"],
   "minimax/music-3": ["prompt", "lyrics"],

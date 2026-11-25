@@ -267,6 +267,8 @@ export interface PixelRules {
   grid: number;
   /** Per-dimension floor, in pixels. */
   min?: number;
+  /** Keep the requested ratio when the nominal tier would fall below min. */
+  scaleToMinimum?: boolean;
   /** Per-dimension ceiling, in pixels. */
   max?: number;
   source?: string;
@@ -312,7 +314,9 @@ export function toPixels(
   const requested = ratioValue(parsed);
   const grid = Math.max(1, Math.trunc(rules.grid));
 
-  const idealHeight = Math.sqrt(area / requested);
+  const tierHeight = Math.sqrt(area / requested);
+  const minimum = rules.scaleToMinimum === true ? Math.ceil((rules.min ?? 0) / grid) * grid : 0;
+  const idealHeight = Math.max(tierHeight, minimum, minimum / requested);
   const height = snap(idealHeight, grid, rules);
   const width = snap(requested * idealHeight, grid, rules);
   if (width <= 0 || height <= 0) {
@@ -322,6 +326,15 @@ export function toPixels(
         `\`${paramOf(ctx)}\` ${ratio} at ${tier} does not fit this model's ` +
         `${grid}px grid within ${rules.min ?? 0}–${rules.max ?? "∞"}px per side.`,
       meta: { ratio, tier, grid, min: rules.min, max: rules.max },
+    });
+  }
+
+  if (idealHeight > tierHeight) {
+    ctx.warn({
+      code: "approximated_param",
+      path: [...ctx.path],
+      message: `The model's ${minimum}px minimum side requires ${width}×${height} at aspect ratio ${ratio}.`,
+      meta: { ratio, tier, width, height, min: minimum },
     });
   }
 

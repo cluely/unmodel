@@ -18,13 +18,15 @@
 //   data/fal/openapi/fal-ai__nano-banana-pro__edit.json
 //   data/fal/openapi/fal-ai__nano-banana__edit.json
 //   data/fal/openapi/fal-ai__qwen-image-edit-2511.json
+//   data/fal/openapi/microsoft__mai-image-2.7__edit.json
+//   data/fal/openapi/microsoft__mai-image-2.7__flash__edit.json
 //   data/fal/openapi/openai__gpt-image-2__edit.json
 // Regenerate with `bun run codegen:fal` (or `bun run codegen:fal:refresh` to re-fetch the snapshots).
 
 /**
  * The ONE request schema for every `fal.imageEdit` endpoint.
  *
- * One `z.looseObject` for the whole category, not 18 per-endpoint schemas: zod objects are
+ * One `z.looseObject` for the whole category, not 20 per-endpoint schemas: zod objects are
  * built eagerly, and a hundred of them would be constructed on import for the one the
  * caller actually used.
  *
@@ -63,7 +65,13 @@ export const falImageEditInputSchema = z.looseObject({
    */
   aspect_ratio: z.string().nullable().optional(),
   audio_url: z.string().nullable().optional(),
-  background: z.enum(["auto", "transparent", "opaque"]).optional(),
+  /**
+   * Every `fal.imageEdit` endpoint types `background` as string, but they disagree on the
+   * details (fal-ai/gpt-image-1.5/edit, microsoft/mai-image-2.7/edit,
+   * microsoft/mai-image-2.7/flash/edit, openai/gpt-image-2/edit), so the union takes the
+   * bare type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_EDIT_SHAPES.
+   */
+  background: z.string().optional(),
   enable_prompt_expansion: z.boolean().optional(),
   enable_safety_checker: z.boolean().optional(),
   enable_web_search: z.boolean().optional(),
@@ -81,7 +89,8 @@ export const falImageEditInputSchema = z.looseObject({
    * alibaba/qwen-image-3/edit, union at bytedance/seedream/v5/pro/edit, union at
    * fal-ai/bytedance/seedream/v4.5/edit, union at fal-ai/flux-2-pro/edit, union at
    * fal-ai/flux-2/edit, string at fal-ai/gpt-image-1.5/edit, union at
-   * fal-ai/qwen-image-edit-2511, union at openai/gpt-image-2/edit.
+   * fal-ai/qwen-image-edit-2511, union at microsoft/mai-image-2.7/edit, union at
+   * microsoft/mai-image-2.7/flash/edit, union at openai/gpt-image-2/edit.
    *
    * Typed `unknown` here deliberately: a union that accepted both would let an endpoint's
    * wrong-typed value through the shape gate. FAL_IMAGE_EDIT_SHAPES carries the real type
@@ -103,6 +112,7 @@ export const falImageEditInputSchema = z.looseObject({
    * fal-ai/bytedance/seedream/v4.5/edit, fal-ai/flux-2-pro/edit, fal-ai/flux-2/edit,
    * fal-ai/flux-pro/kontext/max/multi, fal-ai/gpt-image-1.5/edit, fal-ai/nano-banana-2/edit,
    * fal-ai/nano-banana-pro/edit, fal-ai/nano-banana/edit, fal-ai/qwen-image-edit-2511,
+   * microsoft/mai-image-2.7/edit, microsoft/mai-image-2.7/flash/edit,
    * openai/gpt-image-2/edit), so the union takes the bare type and the exact vocabulary is
    * enforced per endpoint from FAL_IMAGE_EDIT_SHAPES.
    */
@@ -146,8 +156,9 @@ export const falImageEditInputSchema = z.looseObject({
    * fal-ai/flux-pro/kontext, fal-ai/flux-pro/kontext/max, fal-ai/flux-pro/kontext/max/multi,
    * fal-ai/flux-pro/v1/fill, fal-ai/flux/dev/image-to-image, fal-ai/gpt-image-1.5/edit,
    * fal-ai/nano-banana-2/edit, fal-ai/nano-banana-pro/edit, fal-ai/nano-banana/edit,
-   * fal-ai/qwen-image-edit-2511, openai/gpt-image-2/edit), so the union takes the bare type
-   * and the exact vocabulary is enforced per endpoint from FAL_IMAGE_EDIT_SHAPES.
+   * fal-ai/qwen-image-edit-2511, microsoft/mai-image-2.7/edit,
+   * microsoft/mai-image-2.7/flash/edit, openai/gpt-image-2/edit), so the union takes the
+   * bare type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_EDIT_SHAPES.
    */
   output_format: z.string().optional(),
   pdf_url: z.string().nullable().optional(),
@@ -159,6 +170,7 @@ export const falImageEditInputSchema = z.looseObject({
    * fal-ai/flux-pro/kontext/max/multi, fal-ai/flux-pro/v1/fill,
    * fal-ai/flux/dev/image-to-image, fal-ai/gpt-image-1.5/edit, fal-ai/nano-banana-2/edit,
    * fal-ai/nano-banana-pro/edit, fal-ai/nano-banana/edit, fal-ai/qwen-image-edit-2511,
+   * microsoft/mai-image-2.7/edit, microsoft/mai-image-2.7/flash/edit,
    * openai/gpt-image-2/edit), so the union takes the bare type and the exact vocabulary is
    * enforced per endpoint from FAL_IMAGE_EDIT_SHAPES.
    */
@@ -171,8 +183,10 @@ export const falImageEditInputSchema = z.looseObject({
   quality: z.string().optional(),
   /**
    * Every `fal.imageEdit` endpoint types `resolution` as string, but they disagree on the
-   * details (fal-ai/nano-banana-2/edit, fal-ai/nano-banana-pro/edit), so the union takes the
-   * bare type and the exact vocabulary is enforced per endpoint from FAL_IMAGE_EDIT_SHAPES.
+   * details (fal-ai/nano-banana-2/edit, fal-ai/nano-banana-pro/edit,
+   * microsoft/mai-image-2.7/edit, microsoft/mai-image-2.7/flash/edit), so the union takes
+   * the bare type and the exact vocabulary is enforced per endpoint from
+   * FAL_IMAGE_EDIT_SHAPES.
    */
   resolution: z.string().optional(),
   resolution_mode: z.enum(["auto", "match_input", "1:1", "16:9", "21:9", "3:2", "2:3", "4:5", "5:4", "3:4", "4:3", "9:16", "9:21"]).optional(),

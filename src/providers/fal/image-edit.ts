@@ -52,6 +52,7 @@ import type { ValidateResult } from "../../core/result";
 import type { ModelInfo } from "../../core/catalog-types";
 import type { EndpointConstraints } from "../../core/constraint-types";
 import { runFalChecks } from "./checks";
+import { checkMaiImage27 } from "./mai-image";
 import { falCostUSD } from "./pricing";
 import { falQueueUrl } from "./urls";
 import {
@@ -88,16 +89,18 @@ type FalSdkTargets<B> = { fal: () => { input: B } };
 
 function checkAll(
   params: FalImageEditParams,
-  _info: ModelInfo | undefined,
+  info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
+  const body = params as Readonly<Record<string, unknown>>;
   runFalChecks(
     params.endpoint,
     FAL_IMAGE_EDIT_SHAPES,
     FAL_DOC_URLS,
-    params as Readonly<Record<string, unknown>>,
+    body,
     ctx,
   );
+  if (info !== undefined) checkMaiImage27(params.endpoint, body, ctx);
 }
 
 function estimate(params: FalImageEditParams) {

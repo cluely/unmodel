@@ -80,14 +80,14 @@ export interface AzureConfig {
 export interface AzureProvider extends OpenAICompatibleProvider<AzureTextModelId> {
   /**
    * Validates params for POST {endpoint}/mai/v1/images/generations (the MAI
-   * image models: MAI-Image-2.5 family and MAI-Image-2e). JSON endpoint.
+   * image models: MAI-Image-2.5 and 2.7 families and MAI-Image-2e). JSON endpoint.
    */
   image: AzureMaiImage;
   /** {endpoint}/mai/v1/images/generations. */
   imageUrl: string;
   /**
-   * Validates params for POST {endpoint}/mai/v1/images/edits (2.5 family
-   * only — MAI-Image-2e is text-to-image only). Multipart endpoint: send
+   * Validates params for POST {endpoint}/mai/v1/images/edits (2.5 and 2.7
+   * families). Multipart endpoint: send
    * `toMaiEditFormData(validated)` as the fetch body, never JSON.
    */
   imageEdit: AzureMaiImageEdit;
@@ -170,6 +170,7 @@ export {
   MAI_IMAGE_EDIT_MODEL_IDS,
   MAI_IMAGE_MIN_DIMENSION,
   MAI_IMAGE_MAX_TOTAL_PIXELS,
+  MAI_IMAGE_2_7_MAX_TOTAL_PIXELS,
   MAI_IMAGE_PROMPT_MAX_TOKENS,
 } from "./mai-image-models";
 export type { AzureMaiImageModelId, AzureMaiImageEditModelId } from "./mai-image-models";

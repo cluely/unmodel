@@ -42,7 +42,8 @@
  * - `alibaba.tts` → `TtsBody` (DashScope multimodal-generation)
  */
 
-import type { ChatCompletionsBodyBase } from "../openai-compatible/wire";
+import type { AlibabaChatBody } from "./chat";
+export type { AlibabaChatBody, AlibabaChatUserMessage, AlibabaVideoPart } from "./chat";
 import type { AlibabaTextModelId } from "../../catalog/alibaba.gen";
 import type { VideoSynthesisParams } from "./video";
 import type { TtsGenerationParams } from "./tts";
@@ -117,6 +118,6 @@ export type {
 // Pure type aliases: no rename, no runtime, no cost.
 // ---------------------------------------------------------------------------
 
-export type ChatBody<ModelId extends string = AlibabaTextModelId> = ChatCompletionsBodyBase<ModelId>;
+export type ChatBody<ModelId extends string = AlibabaTextModelId> = AlibabaChatBody<ModelId>;
 export type VideoBody = VideoSynthesisParams;
 export type TtsBody = TtsGenerationParams;

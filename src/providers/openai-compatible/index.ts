@@ -121,6 +121,10 @@ export interface OpenAICompatibleConfigBase<
    * everyone else pays nothing.
    */
   decoders?: ChatFinalizeSpec["decoders"];
+  /** Destination shape check for provider-specific extensions. */
+  targetValidation?: ChatFinalizeSpec["targetValidation"];
+  /** Billing reference when the overlay accepts video with unknown token cost. */
+  unpricedVideo?: string;
   /**
    * The loose top-level body schema, for an overlay whose wire is wider than
    * the shared dialect (minimax's `video_url` user content parts). Build it
@@ -334,6 +338,7 @@ export function createOpenAICompatible<
     ...(config.constraints !== undefined && { constraints: config.constraints }),
     ...(config.familyRules !== undefined && { familyRules: config.familyRules }),
     ...(config.fixedSampling !== undefined && { fixedSampling: config.fixedSampling }),
+    ...(config.unpricedVideo !== undefined && { unpricedVideo: config.unpricedVideo }),
   };
 
   const validator = createValidator<ChatCompletionsBodyBase, unknown>({
@@ -355,6 +360,7 @@ export function createOpenAICompatible<
       },
       ...(config.availability !== undefined && { availability: config.availability }),
       ...(config.decoders !== undefined && { decoders: config.decoders }),
+      ...(config.targetValidation !== undefined && { targetValidation: config.targetValidation }),
     }),
   });
 

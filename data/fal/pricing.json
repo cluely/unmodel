@@ -173,6 +173,45 @@
       "verified": "2026-08-24",
       "quote": "Your request will cost $0.014 per 1000 tokens for 480p, 720p and 1080p. Your request will cost $0.008 per 1000 tokens for 4k . The number of tokens is given by (height of output video * width of output video * duration * 24) / 1024."
     },
+    "bytedance/seedance-2.5/flash/image-to-video": {
+      "unit": "conditional",
+      "tierKey": "output pixels and duration",
+      "tiers": [
+        {
+          "when": "per 1,000 tokens at 480p or 720p before any input-video multiplier",
+          "usd": 0.014
+        }
+      ],
+      "source": "https://fal.ai/models/bytedance/seedance-2.5/flash/image-to-video",
+      "verified": "2026-11-24",
+      "quote": "Your request will cost $0.014 per 1,000 tokens."
+    },
+    "bytedance/seedance-2.5/flash/reference-to-video": {
+      "unit": "conditional",
+      "tierKey": "output pixels and input plus output duration; multiply by 0.614 with video input",
+      "tiers": [
+        {
+          "when": "per 1,000 tokens at 480p or 720p before any input-video multiplier",
+          "usd": 0.014
+        }
+      ],
+      "source": "https://fal.ai/models/bytedance/seedance-2.5/flash/reference-to-video",
+      "verified": "2026-11-24",
+      "quote": "Your request will cost $0.014 per 1,000 tokens."
+    },
+    "bytedance/seedance-2.5/flash/text-to-video": {
+      "unit": "conditional",
+      "tierKey": "output pixels and duration",
+      "tiers": [
+        {
+          "when": "per 1,000 tokens at 480p or 720p before any input-video multiplier",
+          "usd": 0.014
+        }
+      ],
+      "source": "https://fal.ai/models/bytedance/seedance-2.5/flash/text-to-video",
+      "verified": "2026-11-24",
+      "quote": "Your request will cost $0.014 per 1,000 tokens."
+    },
     "bytedance/seedance-2.5/image-to-video": {
       "unit": "conditional",
       "tierKey": "resolution — quoted per 1000 tokens; input images are not billed",
@@ -2029,6 +2068,30 @@
       "source": "https://fal.ai/models/fal-ai/mai-image-2.5",
       "verified": "2026-08-25",
       "quote": "Your request will cost $0 per compute second."
+    },
+    "microsoft/mai-image-2.7/edit": {
+      "unpriced": "Token billing depends on text and image input tokens and output image tokens. A flat per-image USD rate would misprice the request.",
+      "source": "https://fal.ai/mai-image-2.7",
+      "verified": "2026-11-24",
+      "quote": "Otherwise it is pay-per-use, billed by tokens."
+    },
+    "microsoft/mai-image-2.7/flash/edit": {
+      "unpriced": "Token billing depends on text and image input tokens and output image tokens. A flat per-image USD rate would misprice the request.",
+      "source": "https://fal.ai/mai-image-2.7",
+      "verified": "2026-11-24",
+      "quote": "Otherwise it is pay-per-use, billed by tokens."
+    },
+    "microsoft/mai-image-2.7/flash/text-to-image": {
+      "unpriced": "Token billing depends on text and image input tokens and output image tokens. A flat per-image USD rate would misprice the request.",
+      "source": "https://fal.ai/mai-image-2.7",
+      "verified": "2026-11-24",
+      "quote": "Otherwise it is pay-per-use, billed by tokens."
+    },
+    "microsoft/mai-image-2.7/text-to-image": {
+      "unpriced": "Token billing depends on text and image input tokens and output image tokens. A flat per-image USD rate would misprice the request.",
+      "source": "https://fal.ai/mai-image-2.7",
+      "verified": "2026-11-24",
+      "quote": "Otherwise it is pay-per-use, billed by tokens."
     },
     "minimax/h3/image-to-video": {
       "unit": "conditional",

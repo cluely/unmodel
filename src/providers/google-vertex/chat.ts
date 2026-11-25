@@ -13,6 +13,7 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCostUSD } from "../../core/cost";
 import { estimateToolDefinitionTokens, PER_MESSAGE_TOKEN_OVERHEAD } from "../../core/tokens";
 import { GEMINI_IMAGE_TOKENS } from "../google";
+import { neonBillableInputTokens } from "../google/thinking-constraints";
 import type { GoogleContent, GoogleThinkingLevel, GoogleTool } from "../google/wire";
 import { models } from "../../catalog/google-vertex.gen";
 import { createToApi } from "../../core/translate/retarget";
@@ -330,6 +331,7 @@ const GEMINI_4_LONG_DECODE_GUIDES = {
   "gemini-4-argon": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-argon#long-decodes`,
   "gemini-4-carbon": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-carbon#long-decodes`,
   "gemini-4-hydrogen": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-hydrogen#long-decodes`,
+  "gemini-4-neon": `${VERTEX_GUIDES_DOCS_URL}/gemini-4-neon#long-decodes`,
 } as const satisfies Record<string, string>;
 
 /**
@@ -353,6 +355,7 @@ const GEMINI_4_LONG_DECODE_GUIDES = {
 const GEMINI_4_THINKING_LEVELS = {
   "gemini-4-argon": { levels: ["LOW", "MEDIUM", "HIGH"], source: `${VERTEX_GEMINI_DOCS_URL}/4-argon` },
   "gemini-4-carbon": { levels: ["LOW", "MEDIUM", "HIGH"], source: `${VERTEX_GEMINI_DOCS_URL}/4-carbon` },
+  "gemini-4-neon": { levels: ["LOW", "MEDIUM", "HIGH", "XHIGH"], source: `${VERTEX_GEMINI_DOCS_URL}/4-neon` },
   "gemini-4-hydrogen": {
     levels: ["LOW", "MEDIUM", "HIGH", "XHIGH"],
     source: `${VERTEX_GEMINI_DOCS_URL}/4-hydrogen`,
@@ -392,6 +395,7 @@ const REFUSED_SAMPLING_PARAMS = {
 const IGNORED_SAMPLING_PARAMS = {
   "gemini-4-argon": { params: ["temperature", "topP", "topK"], source: `${VERTEX_GEMINI_DOCS_URL}/4-argon` },
   "gemini-4-carbon": { params: ["temperature", "topP", "topK"], source: `${VERTEX_GEMINI_DOCS_URL}/4-carbon` },
+  "gemini-4-neon": { params: ["temperature", "topP", "topK"], source: `${VERTEX_GEMINI_DOCS_URL}/4-neon` },
   "gemini-4-hydrogen": {
     params: ["temperature", "topP", "topK"],
     source: `${VERTEX_GEMINI_DOCS_URL}/4-hydrogen`,
@@ -447,9 +451,52 @@ function checkGemini4Thinking(
       path: ["generationConfig", "thinkingConfig", "thinkingLevel"],
       model: params.model,
       message:
-        `\`generationConfig.thinkingConfig.thinkingLevel: "${level}"\` is documented on Vertex only for gemini-4-hydrogen; ` +
+        `\`generationConfig.thinkingConfig.thinkingLevel: "${level}"\` is documented on Vertex for gemini-4-hydrogen and gemini-4-neon; ` +
         `"${params.model}"'s page lists ${levels.join(", ")}. No page says it returns an error, so the request is not refused.`,
       meta: { value: level, documented: [...levels], source },
+    });
+  }
+}
+
+/** Neon-specific errors documented in the Vertex migration guide. */
+function checkNeonConfig(
+  params: VertexGenerateContentBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (stripModelPath(params.model) !== "gemini-4-neon") return;
+  const source = "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/guides/gemini-4-neon";
+  const config = params.generationConfig;
+  for (const param of ["frequencyPenalty", "presencePenalty", "candidateCount"] as const) {
+    const value = config?.[param];
+    if (value === undefined || (param === "candidateCount" && value <= 1)) continue;
+    ctx.report({
+      code: "unsupported_param",
+      path: ["generationConfig", param],
+      model: params.model,
+      message: param === "candidateCount"
+        ? "Gemini 4 Neon on Vertex supports a single candidate."
+        : `Gemini 4 Neon on Vertex rejects \`${param}\`. Remove it.`,
+      meta: { value, source },
+    });
+  }
+  if (params.contents.at(-1)?.role === "model") {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["contents", params.contents.length - 1, "role"],
+      model: params.model,
+      message: "Gemini 4 Neon on Vertex does not accept a final model turn. End the request with a user turn.",
+      meta: { source },
+    });
+  }
+  if (params.cachedContent !== undefined) {
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["cachedContent"],
+      model: params.model,
+      message: "Gemini 4 Neon on Vertex supports implicit caching only. Remove cachedContent.",
+      meta: { source },
     });
   }
 }
@@ -610,7 +657,10 @@ function estimate(params: VertexGenerateContentBody, info: ModelInfo | undefined
 
   // Worst case: the model produces the full requested/possible output.
   const outputTokens = params.generationConfig?.maxOutputTokens ?? info?.limit.output ?? 0;
-  const costUSD = computeCostUSD(info?.cost, { inputTokens, outputTokens });
+  const billedInput = info?.id === "gemini-4-neon"
+    ? neonBillableInputTokens(inputTokens, outputTokens)
+    : inputTokens;
+  const costUSD = computeCostUSD(info?.cost, { inputTokens: billedInput, outputTokens });
   return costUSD === undefined ? { inputTokens } : { inputTokens, costUSD };
 }
 
@@ -747,6 +797,7 @@ export function createChat(config: GoogleVertexConfig): GoogleVertexChat {
       checkCapabilities,
       checkMediaModalities,
       checkGemini4Thinking,
+      checkNeonConfig,
       checkSamplingParams,
     ],
     estimate,

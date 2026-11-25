@@ -53,6 +53,26 @@
  * exists, a top-level `model` property that curation has not allow-listed, and
  * any property named `endpoint` (which would collide with unmodel's route
  * pseudo-param). A generator that guesses is worse than one that stops.
+ *
+ * ## What another generator may import
+ *
+ * `generate`, `GenerateInput` and `snapshotFileName` are fal's own entry points.
+ * Every other export is the dialect-neutral core: the lowering IR (`Node`,
+ * `Prop`, `PrimType`), its renderers (`tsType`, `zodExpr`, `irType`,
+ * `mergeType`, `propKey`), the small pure helpers, and the canonical-vocabulary
+ * matchers with their guard (`canonicalRatios`, `RATIOS_THAT_ARE_NOT_SHAPES`,
+ * `assertRatiosComplete`, `canonicalTier`, `canonicalVideoTier`,
+ * `durationSeconds`). They read no fal document and emit no fal identifier, and
+ * their doc comments state a contract any JSON-Schema source can meet — where
+ * one names fal, it is citing fal's roster as the evidence for a rule, not
+ * scoping the rule to fal. A generator for another source lowers its own
+ * dialect INTO this IR and renders it with the same functions: one definition
+ * of what a `Node` prints as, not one per provider. Both renderers take the
+ * component namer as a plain `(hash) => string` for that reason: a source with
+ * its own naming passes its own. Everything that knows fal's dialect
+ * (`lowerNode`, `ComponentRegistry`, `classifyShapes`, the file renderers)
+ * stays private, and importing this module runs nothing: `import.meta.main`
+ * guards `main`.
  */
 
 import { z } from "zod";
@@ -273,7 +293,7 @@ const snapshotSchema = z.looseObject({
 // ---------------------------------------------------------------------------
 
 /** Canonical JSON — key order removed, so two schemas compare on content. */
-function canonical(value: unknown): string {
+export function canonical(value: unknown): string {
   return JSON.stringify(sortKeysDeep(value));
 }
 
@@ -286,7 +306,7 @@ function canonical(value: unknown): string {
  * A hash whose algorithm can change under you is a rename waiting to happen in
  * every generated file at once.
  */
-function hash6(text: string): string {
+export function hash6(text: string): string {
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i += 1) {
     h ^= text.charCodeAt(i);
@@ -295,7 +315,7 @@ function hash6(text: string): string {
   return h.toString(16).padStart(8, "0").slice(2);
 }
 
-function sorted<T>(values: Iterable<T>): T[] {
+export function sorted<T>(values: Iterable<T>): T[] {
   return [...values].sort((a, b) => (String(a) < String(b) ? -1 : String(a) > String(b) ? 1 : 0));
 }
 
@@ -310,7 +330,7 @@ export function snapshotFileName(endpointId: string): string {
  * eight-space indents — so the whitespace collapse is not cosmetic: without it
  * a generated doc comment inherits an indentation the file does not have.
  */
-function jsdocText(text: string): string {
+export function jsdocText(text: string): string {
   return text.replace(/\s+/g, " ").replace(/\*\//g, "*⁄").trim();
 }
 
@@ -323,7 +343,7 @@ function jsdocText(text: string): string {
  * break; an entry that starts with whitespace or a bullet is emitted verbatim
  * (that is how a pricing tier table keeps one rate per line).
  */
-function renderDoc(lines: readonly string[], indent: string, width = 88): string {
+export function renderDoc(lines: readonly string[], indent: string, width = 88): string {
   const blocks: Array<{ verbatim: boolean; text: string }> = [];
   let paragraph: string[] = [];
   const flush = (): void => {
@@ -369,7 +389,7 @@ function renderDoc(lines: readonly string[], indent: string, width = 88): string
 }
 
 /** Renders a JS value literal (used for `default:` in docs, never for types). */
-function literal(value: unknown): string {
+export function literal(value: unknown): string {
   return JSON.stringify(value);
 }
 
@@ -377,21 +397,22 @@ function literal(value: unknown): string {
 // The lowering IR
 //
 // One node kind per construct the table models. Anything else is a hard error
-// at the point it is met, so `unknown` in this union always means "fal itself
-// declared nothing", never "the generator gave up".
+// at the point it is met, so `unknown` in this union always means "the source
+// schema itself declared nothing", never "the generator gave up".
 // ---------------------------------------------------------------------------
 
-type PrimType = "string" | "number" | "integer" | "boolean";
+export type PrimType = "string" | "number" | "integer" | "boolean";
 
-type Node =
+export type Node =
   | {
       k: "prim";
       t: PrimType;
       enum?: readonly (string | number)[];
       /**
-       * The enum is a SUGGESTION, not a closed set — fal spells this
-       * `anyOf: [{enum: [...]}, {type: "string"}]`, i.e. "these values, or any
-       * other string". An unlisted value is a warning, never a refusal.
+       * The enum is a SUGGESTION, not a closed set: "these values, or any
+       * other value of this type". An unlisted value is a warning, never a
+       * refusal. Which source spelling means this is the lowering's call —
+       * fal's is `anyOf: [{enum: [...]}, {type: "string"}]`.
        */
       open?: true;
       min?: number;
@@ -414,17 +435,17 @@ type Node =
   | { k: "union"; arms: Node[] }
   | { k: "unknown" };
 
-interface Prop {
+export interface Prop {
   node: Node;
   /** In the schema's own `required` list. */
   required: boolean;
-  /** `anyOf[T, null]` — an explicit `null` is accepted on the wire. */
+  /** An explicit `null` is accepted on the wire (JSON Schema's `anyOf[T, null]`). */
   nullable: boolean;
-  /** fal fills this in, so omitting it is always safe. */
+  /** The source schema declares a `default`: the provider fills it in, so omitting it is always safe. */
   hasDefault: boolean;
   default?: unknown;
   description?: string;
-  /** `ui.field` — fal's own hint that this string carries a media reference. */
+  /** The source's own hint that this string carries a media reference — fal's `ui.field`. */
   media?: string;
 }
 
@@ -862,47 +883,47 @@ function lowerNode(schema: Schema, pointer: string, ctx: LowerCtx, deps: Set<str
 // Rendering the IR: TypeScript types, zod expressions, the compact runtime IR
 // ---------------------------------------------------------------------------
 
-function tsType(node: Node, registry: ComponentRegistry): string {
+export function tsType(node: Node, componentTypeName: (hash: string) => string): string {
   switch (node.k) {
     case "prim": {
       if (node.enum !== undefined) {
         const listed = node.enum.map((value) => literal(value)).join(" | ");
         // The open-enum tail keeps completions (the listed values are what an
-        // editor offers) without closing a set fal left open.
+        // editor offers) without closing a set the provider left open.
         if (node.open !== true) return listed;
         return `${listed} | (${node.t === "string" ? "string" : "number"} & {})`;
       }
       return node.t === "boolean" ? "boolean" : node.t === "string" ? "string" : "number";
     }
     case "array": {
-      const inner = tsType(node.items, registry);
+      const inner = tsType(node.items, componentTypeName);
       return /[ |]/.test(inner) ? `(${inner})[]` : `${inner}[]`;
     }
     case "nullable": {
-      const inner = tsType(node.inner, registry);
+      const inner = tsType(node.inner, componentTypeName);
       return /[ |]/.test(inner) ? `(${inner}) | null` : `${inner} | null`;
     }
     case "ref":
-      return registry.name(node.hash);
+      return componentTypeName(node.hash);
     case "record":
-      return `Record<string, ${tsType(node.values, registry)}>`;
+      return `Record<string, ${tsType(node.values, componentTypeName)}>`;
     case "object":
       return `{ ${node.order
         .map((name) => {
           const prop = node.props[name] as Prop;
-          const type = tsType(prop.node, registry) + (prop.nullable ? " | null" : "");
+          const type = tsType(prop.node, componentTypeName) + (prop.nullable ? " | null" : "");
           return `${propKey(name)}${prop.required ? "" : "?"}: ${type}`;
         })
         .join("; ")} }`;
     case "union":
-      return node.arms.map((arm) => tsType(arm, registry)).join(" | ");
+      return node.arms.map((arm) => tsType(arm, componentTypeName)).join(" | ");
     case "unknown":
       return "unknown";
   }
 }
 
 /** A property key, quoted only when it is not a bare identifier. */
-function propKey(name: string): string {
+export function propKey(name: string): string {
   return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : quote(name);
 }
 
@@ -912,16 +933,16 @@ function propKey(name: string): string {
  * **Enums yes, bounds no.** The generated schema is a SHAPE gate — one
  * `z.looseObject` per category — and a value outside an enum is a wrong type,
  * so enums belong here. A number outside `[1, 50]` is the right type with the
- * wrong value: that is a per-endpoint fact, it lives in `FAL_<V>_SHAPES`, and
- * the hand check battery is what turns it into a message naming the endpoint's
- * own documented ceiling. Putting bounds in both places would give one
+ * wrong value: that is a per-endpoint fact, it lives in the generated
+ * per-endpoint shape table (fal's `FAL_<V>_SHAPES`), and the hand check battery
+ * is what turns it into a message naming the endpoint's own documented ceiling. Putting bounds in both places would give one
  * violation two voices.
  */
-function zodExpr(node: Node, componentSchemaName: (hash: string) => string): string {
+export function zodExpr(node: Node, componentSchemaName: (hash: string) => string): string {
   switch (node.k) {
     case "prim": {
       if (node.enum !== undefined) {
-        // An OPEN enum is a bare type here: fal accepts any string, so a
+        // An OPEN enum is a bare type here: the provider accepts any value, so a
         // `z.enum` would refuse values the endpoint takes. The listed values
         // survive in the IR, where the check battery downgrades an unlisted
         // one to a warning instead of an error.
@@ -958,8 +979,8 @@ function zodExpr(node: Node, componentSchemaName: (hash: string) => string): str
   }
 }
 
-/** The `t` field of a `FalPropSpec` — the IR's coarse type tag. */
-function irType(node: Node): string {
+/** The IR's coarse type tag — the `t` a generated per-endpoint prop spec carries (fal's `FalPropSpec`). */
+export function irType(node: Node): string {
   switch (node.k) {
     case "prim":
       return node.t;
@@ -979,7 +1000,7 @@ function irType(node: Node): string {
 }
 
 /** The type tag two endpoints must agree on for a category-wide zod type. */
-function mergeType(node: Node): string {
+export function mergeType(node: Node): string {
   const tag = irType(node);
   return tag === "integer" ? "number" : tag;
 }
@@ -1431,7 +1452,7 @@ function renderSharedFile(registry: ComponentRegistry, sources: readonly string[
       .map((propName) => {
         const prop = component.model.props[propName] as Prop;
         const doc = propDoc(prop, "  ");
-        const type = tsType(prop.node, registry) + (prop.nullable ? " | null" : "");
+        const type = tsType(prop.node, (hash) => registry.name(hash)) + (prop.nullable ? " | null" : "");
         return `${doc}  ${propKey(propName)}${prop.required ? "" : "?"}: ${type};`;
       })
       .join("\n");
@@ -1525,7 +1546,7 @@ function renderWireFile(verb: Verb, models: readonly EndpointModel[], registry: 
     const fields = model.order
       .map((propName) => {
         const prop = model.props[propName] as Prop;
-        const type = tsType(prop.node, registry) + (prop.nullable ? " | null" : "");
+        const type = tsType(prop.node, (hash) => registry.name(hash)) + (prop.nullable ? " | null" : "");
         return `${propDoc(prop, "  ")}  ${propKey(propName)}${prop.required ? "" : "?"}: ${type};`;
       })
       .join("\n");
@@ -2168,8 +2189,12 @@ const TEXT_PARAM_IS_CANONICAL: ReadonlySet<Verb> = new Set<Verb>([
   "upscale",
 ]);
 
-/** fal's `resolution` vocabulary onto the canonical tiers. `0.5K` has none. */
-function canonicalTier(value: string): string | undefined {
+/**
+ * A `resolution` enum member spelled `<n>K`, onto the canonical image tiers
+ * `1k` / `2k` / `4k`, case-insensitively. Any other scale has no canonical
+ * tier (fal's `0.5K`), and neither has any other spelling.
+ */
+export function canonicalTier(value: string): string | undefined {
   const match = /^([0-9.]+)k$/i.exec(value.trim());
   if (match === null) return undefined;
   const scale = Number(match[1]);
@@ -2181,50 +2206,67 @@ function canonicalTier(value: string): string | undefined {
  *
  * The pattern MIRRORS the core's own definition of a ratio spelling —
  * `RATIO_SPELLING` at src/core/unified/derive.ts:118 — minus the separator
- * alternatives (`x`, `*`, `×`) fal never emits. Decimals are the half that
- * matters: `krea/v2/{large,medium}/text-to-image` publish `"2.35:1"` and
- * `xai/grok-imagine-image` publishes `"19.5:9"` and `"9:19.5"`, and an
- * integers-only pattern deleted all three — refusing, at both type and run
- * time, a shape the endpoint declares. `parseRatio`/`toRatioEnum` already
+ * alternatives (`x`, `*`, `×`), which no snapshot this runs over emits;
+ * {@link assertRatiosComplete} stops codegen the day one does. Decimals are
+ * the half that matters. On fal, `krea/v2/{large,medium}/text-to-image` publish
+ * `"2.35:1"` and `xai/grok-imagine-image` publishes `"19.5:9"` and `"9:19.5"`,
+ * and an integers-only pattern deleted all three — refusing, at both type and
+ * run time, a shape the endpoint declares. `parseRatio`/`toRatioEnum` already
  * reduce decimals (the hand-written krea adapter says so in prose at
  * src/providers/krea/unified.ts:63), so the values only have to survive to
  * reach them.
  *
- * ## The one refusal, and why it stays
+ * ## What it refuses, and why that stays
  *
- * `"auto"` is not a shape. `AspectRatio` (src/core/unified/vocabulary/common.ts:44)
- * is `AspectRatioPreset | (\`${number}:${number}\` & {})` — there is no
- * canonical word for "you decide", exactly as `durationSeconds` below refuses
- * `"auto"` because it is not a length. Admitting it would also let
- * `pixelsToRatio` snap a pixel pair onto a value that names no geometry.
+ * Only a member that names no geometry: {@link RATIOS_THAT_ARE_NOT_SHAPES}
+ * lists each one with its reason. The argument is made from the canonical
+ * vocabulary, so it holds for every provider that spells the member.
+ * `AspectRatio` (src/core/unified/vocabulary/common.ts:44) is
+ * `AspectRatioPreset | (\`${number}:${number}\` & {})` — there is no canonical
+ * word for "you decide", exactly as `durationSeconds` below refuses `"auto"`
+ * because it is not a length. Admitting one would also let `pixelsToRatio`
+ * snap a pixel pair onto a value that names no geometry.
  *
- * It costs a caller almost nothing: `"auto"` is the schema DEFAULT on 17 of
- * the 20 rows whose `aspect_ratio` enum offers it (the nano-banana family and
- * its edit routes, mai-image-2.5, reve, seedance 2.0/2.5, veo3.1, wan), so omitting
- * `aspectRatio` already sends it. On the three text-to-image nano-banana rows
- * where the default is `"1:1"` and `"auto"` is a genuinely distinct choice,
- * `providerOptions.fal.aspect_ratio` reaches the wire as written, and the raw
- * `fal.image` surface takes it directly. A vocabulary with a gap beats one
- * that lies. The rule is listed with the other general lowering rules in
- * data/fal/overlays.json's `$comment`, which is where a rule true of fal
- * generally rather than of one endpoint belongs.
+ * A refused member is never unreachable: `providerOptions.<provider>` carries
+ * the wire parameter as written, and the provider's raw substrate address
+ * takes it directly. A vocabulary with a gap beats one that lies.
  *
- * {@link assertRatiosComplete} is what keeps this filter honest: anything it
- * drops that is not on the recorded refusal list fails codegen.
+ * fal's measure of the cost, as the worked example: `"auto"` is the schema
+ * DEFAULT on 17 of the 20 fal rows whose `aspect_ratio` enum offers it (the
+ * nano-banana family and its edit routes, mai-image-2.5, reve, seedance
+ * 2.0/2.5, veo3.1, wan), so omitting `aspectRatio` already sends it; on the
+ * three text-to-image nano-banana rows where the default is `"1:1"`, it is
+ * `providerOptions.fal.aspect_ratio`. fal lists the rule with its other
+ * general lowering rules in data/fal/overlays.json's `$comment`.
+ *
+ * ## The filter is half of a pair
+ *
+ * On its own this DROPS silently. A caller that reads a CLOSED enum through it
+ * must pass the result to {@link assertRatiosComplete}, which fails codegen on
+ * anything dropped that is not a recorded refusal. Skipping the guard can turn
+ * a ratio the API accepts into a refusal at the unified layer.
  */
-function canonicalRatios(values: readonly (string | number)[]): string[] {
+export function canonicalRatios(values: readonly (string | number)[]): string[] {
   return values.filter(
     (value): value is string => typeof value === "string" && /^\d+(?:\.\d+)?:\d+(?:\.\d+)?$/.test(value),
   );
 }
 
 /**
- * The `aspect_ratio` enum members that are deliberately NOT canonical ratios.
+ * The `aspect_ratio` enum members that are deliberately NOT canonical ratios,
+ * for every generated provider.
  *
- * One member, one reason, argued in {@link canonicalRatios}. Everything else a
- * closed `aspect_ratio` enum publishes must reach the row.
+ * A member belongs here only when `AspectRatio` has no word for what it means
+ * — a reason drawn from the canonical vocabulary, never from one provider's
+ * roster, because the set governs every provider's drop list. Each member
+ * carries its own reason:
+ *
+ * - `"auto"` — "you decide": it names no geometry (argued in
+ *   {@link canonicalRatios}).
+ *
+ * Everything else a closed `aspect_ratio` enum publishes must reach the row.
  */
-const RATIOS_THAT_ARE_NOT_SHAPES: ReadonlySet<string> = new Set(["auto"]);
+export const RATIOS_THAT_ARE_NOT_SHAPES: ReadonlySet<string> = new Set(["auto"]);
 
 /**
  * Wire enum → row completeness, in the direction no preset sweep can run.
@@ -2240,6 +2282,10 @@ const RATIOS_THAT_ARE_NOT_SHAPES: ReadonlySet<string> = new Set(["auto"]);
  * An OPEN enum is exempt on purpose — there the list is a set of presets
  * rather than a limit, and `ratioFreeform` already says so.
  *
+ * `provider` is the name the message gives the publisher of the enum; the
+ * remedy it prints is the same for every provider, because the pattern and
+ * the refusal list are shared.
+ *
  * {@link assertCodecsComplete} is the same guard at `output_format`, written
  * from this template.
  *
@@ -2250,26 +2296,31 @@ const RATIOS_THAT_ARE_NOT_SHAPES: ReadonlySet<string> = new Set(["auto"]);
  * member the same way. `"auto"` at `duration` and `768P`/`2K` at `resolution`
  * are already-argued refusals that such a guard would have to carry.
  */
-function assertRatiosComplete(endpointId: string, members: readonly (string | number)[], ratios: readonly string[]): void {
+export function assertRatiosComplete(
+  provider: string,
+  endpointId: string,
+  members: readonly (string | number)[],
+  ratios: readonly string[],
+): void {
   for (const member of members) {
     const value = String(member);
     if (ratios.includes(value) || RATIOS_THAT_ARE_NOT_SHAPES.has(value)) continue;
     throw new Error(
       `${endpointId}: \`aspect_ratio\` enum member ${quote(value)} reached neither the row's canonical ratios ` +
         `(${ratios.map(quote).join(", ") || "none"}) nor the recorded refusals ` +
-        `(${[...RATIOS_THAT_ARE_NOT_SHAPES].map(quote).join(", ")}). A shape fal publishes and unmodel drops is ` +
-        "a compile error and a runtime refusal for a request fal accepts — widen `canonicalRatios`, or record " +
+        `(${[...RATIOS_THAT_ARE_NOT_SHAPES].map(quote).join(", ")}). A shape ${provider} publishes and unmodel drops is ` +
+        `a compile error and a runtime refusal for a request ${provider} accepts — widen \`canonicalRatios\`, or record ` +
         "the refusal in RATIOS_THAT_ARE_NOT_SHAPES with the reason.",
     );
   }
 }
 
 /**
- * fal's `resolution` vocabulary onto the canonical VIDEO tiers.
+ * A `resolution` enum member onto the canonical VIDEO tiers.
  *
  * Exact spellings only, case-insensitively — `"480P"` is `480p` and `"4K"` is
  * `4k`, and that is the whole of the mapping. The refusals are the interesting
- * half: `minimax/h3` offers `"768P"` and `"2K"`, `wan/v2.2-a14b` offers
+ * half, and fal's roster shows them: `minimax/h3` offers `"768P"` and `"2K"`, `wan/v2.2-a14b` offers
  * `"580p"`, `pixverse/v6` offers `"360p"` and `"540p"`, and none of those is a
  * canonical `VideoResolution`. Rounding `"768P"` to `720p` would send a caller
  * who asked for 720p a taller frame and say nothing about it, and rounding
@@ -2278,7 +2329,7 @@ function assertRatiosComplete(endpointId: string, members: readonly (string | nu
  * cannot express by name, and a caller who wants 768P writes it through
  * `providerOptions`. A vocabulary that lies is worse than one with gaps.
  */
-function canonicalVideoTier(value: string): string | undefined {
+export function canonicalVideoTier(value: string): string | undefined {
   const normalized = value.trim().toLowerCase();
   return normalized === "480p" ||
     normalized === "720p" ||
@@ -2293,7 +2344,7 @@ function canonicalVideoTier(value: string): string | undefined {
  * The seconds a `duration` enum member means, or `undefined` when it means
  * something else.
  *
- * Three spellings across this roster and one non-answer: kling writes `"5"`,
+ * Three spellings across fal's roster and one non-answer: kling writes `"5"`,
  * veo3.1 writes `"8s"`, wan writes the integer `5`, and seedance and ltx-2.5
  * both offer `"auto"` — "you decide" — which is not a length and must not
  * become one. `lightricks/ltx-2.5/text-to-video/pro` is the sharpest case: its
@@ -2301,7 +2352,7 @@ function canonicalVideoTier(value: string): string | undefined {
  * arrive as a mixed array and the filter is what keeps `"auto"` out of a
  * `readonly number[]`.
  */
-function durationSeconds(value: string | number): number | undefined {
+export function durationSeconds(value: string | number): number | undefined {
   if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
   const match = /^(\d+(?:\.\d+)?)s?$/i.exec(value.trim());
   if (match === null) return undefined;
@@ -3139,7 +3190,7 @@ function unifiedRow(verb: Verb, model: EndpointModel): UnifiedRow {
     if (aspect.node.open === true) (row as { ratioFreeform?: true }).ratioFreeform = true;
     // …and a CLOSED enum is a limit, so every member of it has to be accounted
     // for. See assertRatiosComplete.
-    else assertRatiosComplete(model.id, aspect.node.enum, ratios);
+    else assertRatiosComplete("fal", model.id, aspect.node.enum, ratios);
   }
 
   // `tiers` types the canonical `resolution` field, so it is only meaningful

@@ -1226,3 +1226,90 @@ in the design stage were compared with the snapshot field by field: schema,
 pricing paragraph, price sentence, output type, operation types, release date
 and description. All agree, apart from number formatting on two Soul V2
 defaults (`1.0` in the API's JSON, `1` in the document).
+
+## 11. What typing the catalog found (2026-11-24)
+
+Findings from lowering all 111 generation routes and writing the validators
+over them. Nothing here was sent to the API; each is a fact about the published
+documents, read off `data/higgsfield/`.
+
+**Strictness, on the schemas unmodel resolves.** 54 routes are
+`additionalProperties: false` and 57 are not. (§10's 51 / 6 / 51 counts the
+console's 108 documents; the three `minimax/h3/*` routes only the docs publish
+are closed, and `higgsfield-ai/soul/cinema` is not.) The validators follow the
+route: an undeclared key is an error on a closed route and a warning on the
+rest.
+
+**A route id is the path, at every address.** Every generation route is the
+same URL template, so an image route's id handed to the video address builds a
+request the API fulfils. Two consequences for the library:
+
+- A known id at the other wide address is a warning naming the right one, not
+  a refusal. The picture-editing view is the one address that refuses.
+- The two output types cannot have separate shape gates. Three keys are
+  declared on both sides with different details: `output_format` (`jpg | png |
+  webp` on Recraft, `mp4 | mov` on Seedance 2.5), `seed` and `image_url`
+  (nullable on image routes only). One gate over all 111 routes names every key
+  and types none — also the keys whose declaring routes agree on a type, a
+  vocabulary or a nested shape (`duration`, `sound`, `tier`, `camera_*`,
+  `trait_variants`, …) — and the per-route rows carry everything. The gate runs
+  for an open route that does not declare the key, for an excluded id and for
+  an id newer than the snapshot, its findings cannot be downgraded per call,
+  and none of those requests is bound by another route's type or vocabulary.
+
+**Cross-field rules.** 23 routes carry 25 rules: 11 "at least one of", 13
+conditionals, and the one prompt-token rule stated in prose (Cinema Studio).
+Of the conditionals, 9 test a parameter their `if` also requires, 2 are
+satisfied by a default every source agrees on (AI Influencer's two `tier`
+rules), and 2 are not enforced for a request that omits the tested parameter
+(`multi_shots` on `kling-video/o3/first-last-frame` and `…/image-reference`:
+the strict reading would demand `multi_prompt` from every request that leaves
+`multi_shots` out, and the published default is `false`). §8 gains a question:
+does the server fill defaults before it evaluates a conditional?
+
+**`format: "uri"` does not say `https`.** 156 parameters across the roster are
+`format: "uri"`, and only 6 also carry a pattern that requires `http(s)`
+(`^https://…` on five MAGI-2 parameters, `^https?://` on Ads Studio's
+`image_urls`). The pages say inputs are "a public HTTPS URL"; the schemas do not
+enforce it. So a string that is not a URI at all is refused, and a URI of
+another scheme — a `data:` URI — is reported and sent. Whether the API fetches
+or refuses a `data:` URI is a §8 question.
+
+**Patterns.** Four distinct `pattern` values, all valid JavaScript regular
+expressions (the generator asserts it): `\S` on 17 prompts, the two URL
+patterns above, and `^#[0-9a-fA-F]{6}$` on AI Influencer's `body_color`.
+`multipleOf: 0.01` appears on 11 `cfg_scale` parameters (Kling); a float
+remainder is not safe to refuse on, so a value off the step is reported.
+
+**Defaults every source agrees on.** The docs and the console disagree on six
+defaults (§5 #3–#6), which is why unmodel assumes none in general. For pricing
+the question is narrower, and the answer is better than §5 suggests: every
+parameter that selects a rate (`resolution`) and
+every `duration` a per-second rate multiplies has a default that every source
+declaring it agrees on. 56 of the 64 rate rows carry at least one such
+default, so a request that leaves `resolution` out is priced at the route's
+own default and not left unpriced.
+
+**What reaches a caller as a price.** 64 routes have a rate and 47 a recorded
+reason for having none. 18 catalog rows carry `cost`. Eight routes bill a
+source clip (Genjutsu ×2, Kling motion control ×4, Kling O3 / Omni video-edit),
+and six of them are estimable once the caller declares the clip's duration;
+the two video-edit routes are not, because their quote prices two output
+resolutions the route has no parameter for. That is true of all eight Kling O3
+and Omni routes.
+
+**The SDK and the webhook.** `@higgsfield/client@0.2.6`'s v2 `subscribe`
+types `webhook` as `{ url: string; secret: string }` and reads only `url`
+(`dist/v2/client.js`: `encodeURIComponent(webhook.url)`); `secret` belongs to
+the legacy v1 envelope. Soul ID training is `createSoulId(data)` on the v1
+client, which posts `data` unchanged to `/v1/custom-references`.
+
+**Credential names.** The docs' SDK page names `HF_CREDENTIALS` (JavaScript)
+and `HF_KEY` (Python) for the `KEY_ID:KEY_SECRET` pair
+(https://docs.higgsfield.ai/docs/how-to/sdk.md); the JavaScript client reads
+either, then falls back to `HF_API_KEY` + `HF_API_SECRET` (`dist/auth.js`).
+
+**`GET /models/higgsfield/ai-influencer/options`, re-read keyless.** 28
+categories; per option `img`, `color` and `slot` are `string | null`, `tiers`
+is `string[] | null`, `exclusive` is a boolean, and a category's `max` is an
+integer — the types `AiInfluencerOptions` carries.

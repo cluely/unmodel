@@ -91,6 +91,10 @@ const EXPECTED_IDS: readonly string[] = [
   "groq.chat",
   "heygen.avatar",
   "heygen.lipsync",
+  "higgsfield.characterTrain",
+  "higgsfield.image",
+  "higgsfield.imageEdit",
+  "higgsfield.video",
   "huggingface.chat",
   "hume.sts",
   "hume.tts",
@@ -285,6 +289,11 @@ const IMAGE_GENERATION_IDS: readonly string[] = [
   // ROUTE at one provider, and fal has one route with a variable path.
   "fal.image",
   "google.image",
+  // ONE id for 24 routes, for `fal.image`'s reason: the route id is the URL
+  // path (`POST api.higgsfield.ai/{endpoint}`), so it is a parameter and not
+  // an address. `higgsfield.imageEdit` is a narrower VIEW of it over the same
+  // path (docs/decisions.md §4), not a qualified sibling.
+  "higgsfield.image",
   "ideogram.image",
   "ideogram.imageV4",
   "kling.image",
@@ -329,6 +338,8 @@ test("the image-generation endpoints all use the uniform `image` verb", () => {
     "bria.imageGenerateLite",
     "bytedance.imageGenerations",
     "google.generateImages",
+    "higgsfield.generate",
+    "higgsfield.soul",
     "ideogram.generate",
     "ideogram.generateV4",
     "kling.imageGenerations",
@@ -390,6 +401,14 @@ const VIDEO_IDS: readonly string[] = [
   // `unified-video.ts` reads; see src/providers/fal/video.ts.
   "fal.video",
   "google.video",
+  // ONE id for 87 routes and NO qualified sibling, which is `fal.video`'s case
+  // exactly: one URL template with a variable path, where text-to-video,
+  // image-to-video, reference-to-video, motion control, clip editing and clip
+  // extension are different keys on one route shape. The path's tail is not a
+  // rule either — Higgsfield files `alibaba/happy-horse/text-to-video` under
+  // `image2video` — so a `higgsfield.videoFromImage` or `higgsfield.videoEdit`
+  // would have to be defined by a list.
+  "higgsfield.video",
   "kling.video",
   "kling.videoFromImage",
   "kling.videoOmni",
@@ -436,11 +455,14 @@ test("the video-category endpoints all use the uniform `video` verb", () => {
   // ref a caller reaches for first is the same word everywhere.
   const providers = [...new Set(VIDEO_IDS.map((id) => id.split(".")[0] as string))].sort();
   for (const provider of providers) expect(VIDEO_IDS).toContain(`${provider}.video`);
-  expect(providers).toHaveLength(13);
+  expect(providers).toHaveLength(14);
 
   const retired = [
     "bytedance.contentGenerationTasks",
     "google.generateVideos",
+    "higgsfield.genjutsu",
+    "higgsfield.videoEdit",
+    "higgsfield.videoFromImage",
     "kling.imageToVideo",
     "kling.imageToVideoV3",
     "kling.omniVideo",
@@ -603,6 +625,33 @@ test("the voice-creation endpoints use the uniform verbs", () => {
     "minimax.voiceCloning",
     "speechify.voices",
   ];
+  for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
+});
+
+/**
+ * Character training — the one address whose verb no other provider has yet.
+ *
+ * `POST /v1/custom-references` creates a reusable identity (a Soul ID) from
+ * sample images. No existing verb covers that: it returns no picture, so it is
+ * not an `image…` route, and the registry has no other training address (fal's
+ * training endpoints are an excluded category, docs/providers.md). §2 has a
+ * new category take a new verb chosen the way the others were, for what the
+ * caller does — `voiceClone` is the structural precedent, a reusable identity
+ * made from samples. The product name (`soulId`) and the wire path
+ * (`customReferences`) never became addresses.
+ */
+const CHARACTER_TRAIN_IDS: readonly string[] = ["higgsfield.characterTrain"];
+
+test("the character-training endpoint uses the category's own verb", () => {
+  for (const id of CHARACTER_TRAIN_IDS) {
+    expect(EXPECTED_IDS).toContain(id);
+    expect(id.split(".")[1] ?? "").toBe("characterTrain");
+  }
+  // Every `characterTrain` in the registry is listed here: a second provider's
+  // arrives as a witness, not unannounced.
+  expect(EXPECTED_IDS.filter((id) => id.endsWith(".characterTrain"))).toEqual([...CHARACTER_TRAIN_IDS]);
+
+  const retired = ["higgsfield.soulId", "higgsfield.customReferences", "higgsfield.characterCreate", "higgsfield.characterClone"];
   for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
 });
 
@@ -1106,6 +1155,7 @@ const IMAGE_EDIT_IDS: readonly string[] = [
   "black-forest-labs.imageEditVto",
   "bria.imageEdit",
   "fal.imageEdit",
+  "higgsfield.imageEdit",
   "ideogram.imageEdit",
   "ideogram.imageEditReframe",
   "ideogram.imageEditRemix",
@@ -1140,6 +1190,7 @@ test("the image-edit endpoints all use the uniform `imageEdit` verb", () => {
     "black-forest-labs",
     "bria",
     "fal",
+    "higgsfield",
     "ideogram",
     "luma",
     "openai",
@@ -1149,10 +1200,10 @@ test("the image-edit endpoints all use the uniform `imageEdit` verb", () => {
     "reve",
     "stability",
   ]);
-  // The nine whose primary route is "prompt + one image, no mask" address it
+  // The ten whose primary route is "prompt + one image, no mask" address it
   // as bare `imageEdit` — which is the ref `unmodel/image-edit` reaches for,
   // and therefore the half of the law with teeth.
-  for (const provider of ["black-forest-labs", "bria", "fal", "ideogram", "openai", "photoroom", "recraft", "revana", "reve"]) {
+  for (const provider of ["black-forest-labs", "bria", "fal", "higgsfield", "ideogram", "openai", "photoroom", "recraft", "revana", "reve"]) {
     expect(IMAGE_EDIT_IDS).toContain(`${provider}.imageEdit`);
   }
 

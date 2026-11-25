@@ -25,6 +25,7 @@ import { tts } from "../../src/unified/tts";
 import { imageEdit } from "../../src/unified/image-edit";
 import { image as falImage } from "../../src/providers/fal/image";
 import { video as klingVideo } from "../../src/providers/kling";
+import { video as higgsfieldVideo } from "../../src/providers/higgsfield/video";
 import { video as revanaVideo } from "../../src/providers/revana/video";
 import { videoQueue as revanaVideoQueue } from "../../src/providers/revana/video-queue";
 
@@ -166,3 +167,23 @@ bench("revana: the same call on the queue route", () => {
     audio: true,
   });
 }).types([28293, "instantiations"]);
+
+/**
+ * Higgsfield: one call at an address serving 87 routes, typed from the one
+ * route the call names.
+ *
+ * Pinned because the arm is a three-way conditional — own id, another
+ * address's id, an id with no row — in front of a by-id lookup into 87
+ * generated interfaces. The lookup is what keeps it cheap (the generator
+ * emits a map, not a union); an arm that distributed over the id union, or a
+ * `HiggsfieldEndpointId` test spelled as a union of object types, would show
+ * up here first.
+ */
+bench("higgsfield: a video call narrowed by its route", () => {
+  return higgsfieldVideo.safe({
+    endpoint: "bytedance/seedance-2.5/text-to-video",
+    prompt: "a fox",
+    resolution: "720p",
+    duration: 5,
+  });
+}).types([3747, "instantiations"]);

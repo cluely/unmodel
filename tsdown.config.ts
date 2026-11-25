@@ -124,6 +124,8 @@ export default defineConfig({
     "providers/google-vertex/types": "src/providers/google-vertex/types.ts",
     "providers/groq/index": "src/providers/groq/index.ts",
     "providers/groq/types": "src/providers/groq/types.ts",
+    "providers/higgsfield/index": "src/providers/higgsfield/index.ts",
+    "providers/higgsfield/types": "src/providers/higgsfield/types.ts",
     "providers/huggingface/index": "src/providers/huggingface/index.ts",
     "providers/huggingface/types": "src/providers/huggingface/types.ts",
     "providers/hume/index": "src/providers/hume/index.ts",

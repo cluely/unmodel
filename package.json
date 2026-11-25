@@ -455,6 +455,14 @@
 			"types": "./dist/providers/groq/types.d.ts",
 			"default": "./dist/providers/groq/types.js"
 		},
+		"./higgsfield": {
+			"types": "./dist/providers/higgsfield/index.d.ts",
+			"default": "./dist/providers/higgsfield/index.js"
+		},
+		"./higgsfield/types": {
+			"types": "./dist/providers/higgsfield/types.d.ts",
+			"default": "./dist/providers/higgsfield/types.js"
+		},
 		"./huggingface": {
 			"types": "./dist/providers/huggingface/index.d.ts",
 			"default": "./dist/providers/huggingface/index.js"
@@ -1201,6 +1209,9 @@
 		"codegen:photoroom": "bun scripts/codegen-photoroom.ts",
 		"codegen:photoroom:refresh": "bun scripts/codegen-photoroom.ts --refresh",
 		"codegen:photoroom:check": "bun scripts/codegen-photoroom.ts --check",
+		"codegen:higgsfield": "bun scripts/codegen-higgsfield.ts",
+		"codegen:higgsfield:refresh": "bun scripts/codegen-higgsfield.ts --refresh",
+		"codegen:higgsfield:check": "bun scripts/codegen-higgsfield.ts --check",
 		"gen:tts-matrix": "bun scripts/gen-tts-matrix.ts",
 		"audit:atlascloud": "bun scripts/atlascloud-audit.ts",
 		"audit:leaderboard": "bun scripts/leaderboard-audit.ts",
@@ -1221,6 +1232,7 @@
 		"@ark/attest": "^0.56.3",
 		"@changesets/cli": "^3.0.0",
 		"@google/genai": "^2.17.0",
+		"@higgsfield/client": "^0.2.6",
 		"@types/bun": "latest",
 		"openai": "^7.4.0",
 		"publint": "^0.3.23",

@@ -1,0 +1,122 @@
+name: Codegen refresh (Higgsfield)
+
+# Weekly. Higgsfield is one URL template in front of more than a hundred routes,
+# its own and hosted ones, and the roster moves weekly — MAGI-2's release date
+# was the day this integration was researched. `bun run codegen:higgsfield` in
+# ci.yml is offline by design, so this schedule is the only place a new route, a
+# changed schema or a moved price sentence reaches the library.
+#
+# Every fetch is keyless and of a PUBLIC page: the per-route console document
+# (dash.higgsfield.ai/models/<id>/llms.txt), the docs.higgsfield.ai model
+# pages, and each open.higgsfield.ai/models/<id>/api-reference page. The first
+# two are documents Higgsfield publishes for reading. The third is read from
+# the data the page server-renders into its HTML, whose serialisation is the
+# site framework's and not a documented format: a framework change there stops
+# this job at the parser (`readPageValue`), for every route at once. The
+# console's undocumented JSON API is not requested (open.higgsfield.ai/robots.txt
+# disallows /api/). No secret is involved.
+
+on:
+  schedule:
+    - cron: "23 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: bun install --frozen-lockfile
+
+      # Says which routes were added, removed or changed, before the refresh
+      # rewrites them. A changed data/higgsfield/openapi.json is the one a
+      # human has to read: src/providers/higgsfield/request-wire.ts is
+      # hand-transcribed from it and from the pages around it.
+      - name: Snapshot drift check
+        continue-on-error: true
+        run: bun run codegen:higgsfield:check
+
+      # Throws — on purpose — when the documents have grown something the
+      # generator does not model or a human has not filed: a schema keyword or
+      # a conditional outside the modelled patterns, a media-looking parameter,
+      # a new pointer where the docs and the console disagree, a route with no
+      # pricing row, or a price sentence that no longer matches its row's quote.
+      - name: Refresh Higgsfield snapshots and regenerate
+        run: bun run codegen:higgsfield:refresh
+
+      # The refresh writes the snapshots BEFORE it generates, and stops in
+      # generation when a hand file needs a decision — so on that failure the
+      # tree holds exactly what moved upstream, and no pull request carries it.
+      # Kept, so the person fixing the hand file reads the diff instead of
+      # re-crawling a third party's site to reproduce it.
+      - name: Keep the refreshed snapshots when the refresh stops
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: higgsfield-snapshots
+          path: data/higgsfield/
+          retention-days: 14
+
+      - name: Create changeset if the generated surface changed
+        run: |
+          if [ -n "$(git status --porcelain src/providers/higgsfield)" ]; then
+            cat > .changeset/higgsfield-catalog-refresh.md <<'EOF'
+          ---
+          "unmodel": patch
+          ---
+
+          chore: refresh the Higgsfield route catalog
+          EOF
+          fi
+
+      # NOTE: PRs opened with the default GITHUB_TOKEN do not trigger other
+      # workflows (GitHub Actions limitation), so the CI workflow will NOT run
+      # on this PR and it cannot merge if branch protection requires checks.
+      # Fix: create a PAT or GitHub App token with contents+pull-requests
+      # write access, store it as a repo secret, and pass it via the action's
+      # `token:` input below.
+      - name: Open or update pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: codegen/higgsfield-refresh
+          commit-message: "chore: refresh the Higgsfield route catalog"
+          title: "chore: refresh the Higgsfield route catalog"
+          body: |
+            Automated refresh of the committed Higgsfield snapshots
+            (`data/higgsfield/routes/*.json`, `manifest.json`, `openapi.json`)
+            and everything `scripts/codegen-higgsfield.ts` generates from them.
+
+            **Three files are NOT refreshed here**, because no document states
+            what they hold: `data/higgsfield/curation.json` (the hand-written
+            route, the view exclusions, the excluded paths),
+            `data/higgsfield/overlays.json` (every pointer where the docs and
+            the console schemas disagree, and the rules stated only in prose)
+            and `data/higgsfield/pricing.json` (every rate, transcribed from a
+            sentence).
+
+            **This job fails on purpose** when a human has to decide something:
+            a route's price sentence changed (its row's quote is no longer in
+            the snapshot), a new route has no pricing row, the two schemas of a
+            route now disagree at a pointer nobody resolved, or a new route
+            carries a conditional or a media parameter the generator does not
+            model. With a roster this active, expect that most weeks. The run's
+            `higgsfield-snapshots` artifact is the refreshed `data/higgsfield/`
+            as it stood when the job stopped; diff it against the tree, fix the
+            hand file the message names and re-run.
+
+            **If `openapi.json` changed, re-read
+            `src/providers/higgsfield/request-wire.ts`**: the response shapes
+            are hand-transcribed, and no generator carries a renamed field
+            across. A changed `routes/v1__custom-references.json` fails
+            `character-train.test.ts` until `character-train.ts` is re-read.
+
+            This PR was created by the scheduled `codegen-higgsfield-refresh`
+            workflow. The branch is rolling: subsequent runs update this same
+            PR until it is merged or closed.

@@ -200,6 +200,7 @@ export const SDK_TARGET_IDS = [
   "google-vertex",
   "groq",
   "heygen",
+  "higgsfield",
   "huggingface",
   "hume",
   "ideogram",

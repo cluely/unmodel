@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.png" width="720" alt="The OpenAI SDK types image generation with one flat union: it compiles quality: 'hd' on gpt-image-2 (400 at runtime) and refuses output_format: 'gif' on gpt-image-2.6-sunburst; unmodel enforces exact per-model types">
+  <img src="assets/hero-gpt-image.png" width="720" alt="The OpenAI SDK types image generation with one flat union: it compiles quality: 'hd' on gpt-image-2 (400 at runtime) and refuses output_format: 'gif' on gpt-image-2.6-sunburst; unmodel enforces exact per-model types">
 </p>
 
 unmodel checks your request against what the provider actually accepts before it leaves the process, compiles optional cross-provider params to real wire bodies, and checks raw responses for truncation, refusals, usage, and catalog-priced cost. It never sends a request and never sees a credential.

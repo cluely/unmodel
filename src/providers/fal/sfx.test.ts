@@ -66,9 +66,10 @@ describe("routing", () => {
   });
 
   test("the vendor-namespaced ids route to the PUBLISHED id", () => {
-    // Three of the five vendors namespace their own ids rather than sitting
-    // under `fal-ai/` — the `ideogram/v4` precedent, several categories over.
+    // Four of the curated endpoints namespace their own vendor ids rather than
+    // sitting under `fal-ai/` — the `ideogram/v4` precedent, several categories over.
     for (const endpoint of [
+      "elevenlabs/sound-effects/v3",
       "sonilo/v1.1/text-to-sound-effects",
       "cassetteai/sound-effects-generator",
       "mirelo-ai/sfx1.6/text-to-audio",
@@ -79,9 +80,10 @@ describe("routing", () => {
     }
   });
 
-  test("the six endpoints are the curated roster, and every one is catalogued", () => {
+  test("the seven endpoints are the curated roster, and every one is catalogued", () => {
     expect([...FAL_SFX_ENDPOINTS].sort()).toEqual([
       "cassetteai/sound-effects-generator",
+      "elevenlabs/sound-effects/v3",
       "fal-ai/elevenlabs/sound-effects/v2",
       "fal-ai/stable-audio-3/small/sfx/base/text-to-audio",
       "fal-ai/stable-audio-3/small/sfx/text-to-audio",
@@ -154,6 +156,7 @@ describe("the length", () => {
     );
     expect(table).toEqual({
       "cassetteai/sound-effects-generator": { range: [1, 30], int: true, default: undefined },
+      "elevenlabs/sound-effects/v3": { range: [0.5, 30], int: false, default: undefined },
       "fal-ai/elevenlabs/sound-effects/v2": { range: [0.5, 22], int: false, default: undefined },
       "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": {
         range: [1, 120],
@@ -224,6 +227,23 @@ describe("the ElevenLabs route is a NARROWED resale", () => {
     );
     expect(SHAPES["fal-ai/elevenlabs/sound-effects/v2"]?.props["model_id"]).toBeUndefined();
   });
+  test("v3 restores the 30-second cap while keeping the 450-character text cap", () => {
+    expect(ROWS["elevenlabs/sound-effects/v3"]?.durationRange).toEqual([0.5, 30]);
+    expect(
+      sfx.safe({
+        endpoint: "elevenlabs/sound-effects/v3",
+        text: PROMPT,
+        duration_seconds: 30,
+        enable_safety_checker: true,
+      } as never).ok,
+    ).toBe(true);
+    expect(
+      sfx.safe({
+        endpoint: "elevenlabs/sound-effects/v3",
+        text: "x".repeat(451),
+      } as never).ok,
+    ).toBe(false);
+  });
 });
 
 describe("the encoding", () => {
@@ -233,6 +253,7 @@ describe("the encoding", () => {
     );
     expect(table).toEqual({
       "cassetteai/sound-effects-generator": null,
+      "elevenlabs/sound-effects/v3": "output_format",
       "fal-ai/elevenlabs/sound-effects/v2": "output_format",
       "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": "output_format",
       "fal-ai/stable-audio-3/small/sfx/text-to-audio": "output_format",

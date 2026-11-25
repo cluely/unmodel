@@ -710,7 +710,7 @@ rejects. `eleven_text_to_sound_v2` is the server default and deprecated, removal
 rate; the endpoint answers raw audio bytes plus a `character-cost` header, so there is no
 response checker.
 
-**fal — `fal.sfx`, 6 endpoints from five vendors.** ElevenLabs Sound Effects v2, Sonilo v1.1,
+**fal — `fal.sfx`, 7 endpoints from five vendors.** ElevenLabs Sound Effects v2 and v3, Sonilo v1.1,
 CassetteAI, Mirelo SFX 1.6, and both arms of Stable Audio 3 Small SFX. fal files every one of
 them under `text-to-audio` — the same category it files Lyria under — which is exactly why the
 verb is curated rather than read off fal's own listing.
@@ -1201,7 +1201,7 @@ leaves rather than whole validators.
 | `unmodel/video` | `video`, `createVideo` | 15 | alibaba, atlascloud, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, revana, runway, vidu, xai |
 | `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 6 | black-forest-labs, fal, ideogram, openai, recraft, revana — the six whose primary editing route is *image + prompt, no mask* |
 | `unmodel/music` | `music`, `createMusic` | 6 | elevenlabs, fal, google, mureka, revana, stability |
-| `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (2 models, `POST /v1/sound-generation`), fal (6 endpoints from five vendors, ElevenLabs' own among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
+| `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (2 models, `POST /v1/sound-generation`), fal (7 endpoints from five vendors, ElevenLabs' v2 and v3 among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 5 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), revana (1 curated model on the one route it serves every media model from), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
 | `unmodel/avatar` | `avatar`, `createAvatar` | 5 | fal (8 endpoints; the still-driven twin of lipsync), heygen (`avatar_iv`, the one engine that renders raw image input — Avatar V and Avatar III do not), revana (4 curated models, every one still-driven, with `prompt` as a per-model extra), sync (`sync-3` alone, the same id its lipsync adapter serves — here the split is the tag on the input item), veed (`fabric-1.0`, the one route in the category with a REQUIRED extra the vocabulary has no word for) |
 | `unmodel/upscale` | `upscale`, `createUpscale` | 3 | fal (11 endpoints, seven taking a still and four taking a clip), revana (1 model, a still, no multiplier), topaz (18 models over two routes, stills only, multipart bodies) |

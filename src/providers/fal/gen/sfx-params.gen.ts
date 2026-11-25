@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/cassetteai__sound-effects-generator.json
+//   data/fal/openapi/elevenlabs__sound-effects__v3.json
 //   data/fal/openapi/fal-ai__elevenlabs__sound-effects__v2.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__base__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__text-to-audio.json
@@ -28,6 +29,7 @@
 
 import type { FalParamShape } from "../shape-types";
 import type {
+  ElevenlabsSoundEffectsV3Input,
   FalAiElevenlabsSoundEffectsV2Input,
   FalAiStableAudio3SmallSfxBaseTextToAudioInput,
   MireloAiSfx16TextToAudioInput,
@@ -106,6 +108,29 @@ const ROW_342834 = {
   },
 } as const;
 
+/**
+ * elevenlabs/sound-effects/v3.
+ *
+ * The extras are typed from `ElevenlabsSoundEffectsV3Input`, so the value an editor offers
+ * here and the value `fal.sfx` validates are one declaration.
+ */
+const ROW_4660af = {
+  classes: ["fixedGeometry"],
+  keys: ["text", "enable_safety_checker", "duration_seconds", "prompt_influence", "output_format", "loop"],
+  textWire: "text",
+  formatWire: "output_format",
+  codecs: ["mp3", "opus", "pcm_alaw", "pcm_mulaw", "pcm_s16le"],
+  codecValues: { mp3: "mp3_44100_128", opus: "opus_48000_32", pcm_alaw: "alaw_8000", pcm_mulaw: "ulaw_8000", pcm_s16le: "pcm_8000" },
+  lengthWire: "duration_seconds",
+  durationRange: [0.5, 30],
+  bounds: { duration_seconds: { min: 0.5, max: 30 } },
+  extras: {
+    enable_safety_checker: EXTRA as ElevenlabsSoundEffectsV3Input["enable_safety_checker"],
+    prompt_influence: EXTRA as ElevenlabsSoundEffectsV3Input["prompt_influence"],
+    loop: EXTRA as ElevenlabsSoundEffectsV3Input["loop"],
+  },
+} as const;
+
 /** sonilo/v1.1/text-to-sound-effects. */
 const ROW_798636 = {
   classes: ["durationNumber"],
@@ -155,6 +180,7 @@ const ROW_96408f = {
 
 export const FAL_SFX_PARAM_SHAPES = {
   "cassetteai/sound-effects-generator": ROW_2bf141,
+  "elevenlabs/sound-effects/v3": ROW_4660af,
   "fal-ai/elevenlabs/sound-effects/v2": ROW_22229f,
   "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": ROW_96408f,
   "fal-ai/stable-audio-3/small/sfx/text-to-audio": ROW_96408f,
@@ -171,4 +197,4 @@ export const FAL_SFX_PARAM_SHAPES = {
  * ids remain in the provider-native artifacts.
  */
 
-export const FAL_SFX_MODELS = ["cassetteai/sound-effects-generator", "fal-ai/elevenlabs/sound-effects/v2", "fal-ai/stable-audio-3/small/sfx/base/text-to-audio", "fal-ai/stable-audio-3/small/sfx/text-to-audio", "mirelo-ai/sfx1.6/text-to-audio", "sonilo/v1.1/text-to-sound-effects"] as const;
+export const FAL_SFX_MODELS = ["cassetteai/sound-effects-generator", "elevenlabs/sound-effects/v3", "fal-ai/elevenlabs/sound-effects/v2", "fal-ai/stable-audio-3/small/sfx/base/text-to-audio", "fal-ai/stable-audio-3/small/sfx/text-to-audio", "mirelo-ai/sfx1.6/text-to-audio", "sonilo/v1.1/text-to-sound-effects"] as const;

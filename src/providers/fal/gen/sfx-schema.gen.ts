@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/cassetteai__sound-effects-generator.json
+//   data/fal/openapi/elevenlabs__sound-effects__v3.json
 //   data/fal/openapi/fal-ai__elevenlabs__sound-effects__v2.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__base__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__text-to-audio.json
@@ -12,7 +13,7 @@
 /**
  * The ONE request schema for every `fal.sfx` endpoint.
  *
- * One `z.looseObject` for the whole category, not 6 per-endpoint schemas: zod objects are
+ * One `z.looseObject` for the whole category, not 7 per-endpoint schemas: zod objects are
  * built eagerly, and a hundred of them would be constructed on import for the one the
  * caller actually used.
  *
@@ -51,6 +52,12 @@ export const falSfxInputSchema = z.looseObject({
    * vocabulary is enforced per endpoint from FAL_SFX_SHAPES.
    */
   duration: z.number().optional(),
+  /**
+   * Every `fal.sfx` endpoint types `duration_seconds` as number, but they disagree on the
+   * details (elevenlabs/sound-effects/v3, fal-ai/elevenlabs/sound-effects/v2), so the union
+   * takes the bare type and the exact vocabulary is enforced per endpoint from
+   * FAL_SFX_SHAPES.
+   */
   duration_seconds: z.number().nullable().optional(),
   enable_prompt_expansion: z.boolean().optional(),
   enable_safety_checker: z.boolean().optional(),
@@ -61,7 +68,7 @@ export const falSfxInputSchema = z.looseObject({
   num_samples: z.number().optional(),
   /**
    * Every `fal.sfx` endpoint types `output_format` as string, but they disagree on the
-   * details (fal-ai/elevenlabs/sound-effects/v2,
+   * details (elevenlabs/sound-effects/v3, fal-ai/elevenlabs/sound-effects/v2,
    * fal-ai/stable-audio-3/small/sfx/base/text-to-audio,
    * fal-ai/stable-audio-3/small/sfx/text-to-audio), so the union takes the bare type and the
    * exact vocabulary is enforced per endpoint from FAL_SFX_SHAPES.

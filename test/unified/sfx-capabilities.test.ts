@@ -84,7 +84,7 @@ const TABLE: Readonly<Record<string, Capability>> = {
     bitrateAt: undefined,
     extras: ["loop", "prompt_influence"],
   },
-  // ---- ElevenLabs, resold by fal — the NARROWED twin --------------------
+  // ---- ElevenLabs, resold by fal — the NARROWED twins -------------------
   "fal/elevenlabs-v2": {
     ref: "fal/fal-ai/elevenlabs/sound-effects/v2",
     // Same wire name, and that is where the agreement stops.
@@ -96,6 +96,17 @@ const TABLE: Readonly<Record<string, Capability>> = {
     format: { at: "output_format", kind: "composite", codecs: COMPOSITE },
     bitrateAt: undefined,
     extras: ["loop", "prompt_influence"],
+  },
+  "fal/elevenlabs-v3": {
+    ref: "fal/elevenlabs/sound-effects/v3",
+    promptAt: "text",
+    // Restores the native 30s ceiling while still capping `text` at 450 chars
+    // and keeping `output_format` in the body (19 values, no `wav_*`).
+    duration: { at: "duration_seconds", min: 0.5, max: 30, int: false },
+    durationAbsent: "model-picks",
+    format: { at: "output_format", kind: "composite", codecs: COMPOSITE },
+    bitrateAt: undefined,
+    extras: ["enable_safety_checker", "loop", "prompt_influence"],
   },
   // ---- Sonilo — the first witness that absence means a NUMBER -----------
   "fal/sonilo": {

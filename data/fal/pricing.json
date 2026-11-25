@@ -312,6 +312,13 @@
       "verified": "2026-08-31",
       "quote": "Your request will cost $0.01 per generation."
     },
+    "elevenlabs/sound-effects/v3": {
+      "unit": "per_generated_audio_second",
+      "usd": 0.002,
+      "source": "https://fal.ai/models/elevenlabs/sound-effects/v3/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Price: $0.002 per seconds"
+    },
     "fal-ai/ace-step": {
       "unit": "per_generated_audio_second",
       "usd": 0.0002,

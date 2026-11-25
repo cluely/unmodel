@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/cassetteai__sound-effects-generator.json
+//   data/fal/openapi/elevenlabs__sound-effects__v3.json
 //   data/fal/openapi/fal-ai__elevenlabs__sound-effects__v2.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__base__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__text-to-audio.json
@@ -35,6 +36,13 @@ export type FalSfxSchemaChecks = [
   // cassetteai/sound-effects-generator
   AssertExtends<wire.CassetteaiSoundEffectsGeneratorInput["prompt"], Gate["prompt"]>,
   AssertExtends<wire.CassetteaiSoundEffectsGeneratorInput["duration"], Gate["duration"]>,
+  // elevenlabs/sound-effects/v3
+  AssertExtends<wire.ElevenlabsSoundEffectsV3Input["text"], Gate["text"]>,
+  AssertExtends<wire.ElevenlabsSoundEffectsV3Input["enable_safety_checker"], Gate["enable_safety_checker"]>,
+  AssertExtends<wire.ElevenlabsSoundEffectsV3Input["duration_seconds"], Gate["duration_seconds"]>,
+  AssertExtends<wire.ElevenlabsSoundEffectsV3Input["prompt_influence"], Gate["prompt_influence"]>,
+  AssertExtends<wire.ElevenlabsSoundEffectsV3Input["output_format"], Gate["output_format"]>,
+  AssertExtends<wire.ElevenlabsSoundEffectsV3Input["loop"], Gate["loop"]>,
   // fal-ai/elevenlabs/sound-effects/v2
   AssertExtends<wire.FalAiElevenlabsSoundEffectsV2Input["text"], Gate["text"]>,
   AssertExtends<wire.FalAiElevenlabsSoundEffectsV2Input["duration_seconds"], Gate["duration_seconds"]>,

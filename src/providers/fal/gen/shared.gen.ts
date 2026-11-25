@@ -16,6 +16,7 @@
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__text-to-image.json
 //   data/fal/openapi/cassetteai__sound-effects-generator.json
+//   data/fal/openapi/elevenlabs__sound-effects__v3.json
 //   data/fal/openapi/fal-ai__ace-step.json
 //   data/fal/openapi/fal-ai__aura-sr.json
 //   data/fal/openapi/fal-ai__bytedance__omnihuman__v1.5.json

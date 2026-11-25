@@ -30,6 +30,7 @@ type PackRefs = UnifiedRef<typeof elevenlabsSfx | typeof falSfx>;
 
 expectAssignable<PackRefs>("elevenlabs/eleven_text_to_sound_v2");
 expectAssignable<PackRefs>("elevenlabs/eleven_text_to_sound_v3");
+expectAssignable<PackRefs>("fal/elevenlabs/sound-effects/v3");
 expectAssignable<PackRefs>("fal/fal-ai/elevenlabs/sound-effects/v2");
 expectAssignable<PackRefs>("fal/sonilo/v1.1/text-to-sound-effects");
 expectAssignable<PackRefs>("fal/cassetteai/sound-effects-generator");
@@ -138,6 +139,7 @@ function extraTests(): void {
   // `loop` is the word the two-witness rule kept out of the vocabulary. It is
   // still fully typed and fully reachable — as this vendor's own extra.
   sfx({ model: "elevenlabs/eleven_text_to_sound_v2", prompt: PROMPT, loop: true });
+  sfx({ model: "fal/elevenlabs/sound-effects/v3", prompt: PROMPT, loop: true, enable_safety_checker: true });
   sfx({ model: "fal/fal-ai/elevenlabs/sound-effects/v2", prompt: PROMPT, loop: true });
   // @ts-expect-error — and nowhere else: Sonilo publishes no loop switch.
   sfx({ model: "fal/sonilo/v1.1/text-to-sound-effects", prompt: PROMPT, loop: true });

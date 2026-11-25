@@ -16,6 +16,7 @@
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__text-to-image.json
 //   data/fal/openapi/cassetteai__sound-effects-generator.json
+//   data/fal/openapi/elevenlabs__sound-effects__v3.json
 //   data/fal/openapi/fal-ai__ace-step.json
 //   data/fal/openapi/fal-ai__aura-sr.json
 //   data/fal/openapi/fal-ai__bytedance__omnihuman__v1.5.json
@@ -310,9 +311,10 @@ export const FAL_MUSIC_ENDPOINTS = [
 
 export type FalMusicEndpointId = (typeof FAL_MUSIC_ENDPOINTS)[number];
 
-/** Every fal endpoint unmodel serves as `fal.sfx` — 6 of them. */
+/** Every fal endpoint unmodel serves as `fal.sfx` — 7 of them. */
 export const FAL_SFX_ENDPOINTS = [
   "cassetteai/sound-effects-generator",
+  "elevenlabs/sound-effects/v3",
   "fal-ai/elevenlabs/sound-effects/v2",
   "fal-ai/stable-audio-3/small/sfx/base/text-to-audio",
   "fal-ai/stable-audio-3/small/sfx/text-to-audio",
@@ -466,6 +468,7 @@ export const FAL_ENDPOINTS = [
   "bytedance/seedream/v5/pro/edit",
   "bytedance/seedream/v5/pro/text-to-image",
   "cassetteai/sound-effects-generator",
+  "elevenlabs/sound-effects/v3",
   "fal-ai/ace-step",
   "fal-ai/aura-sr",
   "fal-ai/bytedance/omnihuman/v1.5",
@@ -657,6 +660,7 @@ export const FAL_ENDPOINT_VERBS = {
   "bytedance/seedream/v5/pro/edit": "imageEdit",
   "bytedance/seedream/v5/pro/text-to-image": "image",
   "cassetteai/sound-effects-generator": "sfx",
+  "elevenlabs/sound-effects/v3": "sfx",
   "fal-ai/ace-step": "music",
   "fal-ai/aura-sr": "upscale",
   "fal-ai/bytedance/omnihuman/v1.5": "avatar",
@@ -853,6 +857,7 @@ export const FAL_DOC_URLS = {
   "bytedance/seedream/v5/pro/edit": "https://fal.ai/models/fal-ai/seedream-5-pro/edit/api",
   "bytedance/seedream/v5/pro/text-to-image": "https://fal.ai/models/fal-ai/seedream-5-pro/text-to-image/api",
   "cassetteai/sound-effects-generator": "https://fal.ai/models/CassetteAI/sound-effects-generator/api",
+  "elevenlabs/sound-effects/v3": "https://fal.ai/models/fal-ai/elevenlabs/sound-effects/v3/api",
   "fal-ai/ace-step": "https://fal.ai/models/fal-ai/ace-step/api",
   "fal-ai/aura-sr": "https://fal.ai/models/fal-ai/aura-sr/api",
   "fal-ai/bytedance/omnihuman/v1.5": "https://fal.ai/models/fal-ai/bytedance/omnihuman/v1.5/api",
@@ -1049,6 +1054,7 @@ export const FAL_REQUIRED_PROBES = {
   "bytedance/seedream/v5/pro/edit": ["prompt", "image_urls"],
   "bytedance/seedream/v5/pro/text-to-image": ["prompt"],
   "cassetteai/sound-effects-generator": ["prompt", "duration"],
+  "elevenlabs/sound-effects/v3": ["text"],
   "fal-ai/ace-step": ["tags"],
   "fal-ai/aura-sr": ["image_url"],
   "fal-ai/bytedance/omnihuman/v1.5": ["image_url", "audio_url"],

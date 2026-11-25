@@ -16,6 +16,7 @@
 //   data/fal/openapi/bytedance__seedream__v5__pro__edit.json
 //   data/fal/openapi/bytedance__seedream__v5__pro__text-to-image.json
 //   data/fal/openapi/cassetteai__sound-effects-generator.json
+//   data/fal/openapi/elevenlabs__sound-effects__v3.json
 //   data/fal/openapi/fal-ai__ace-step.json
 //   data/fal/openapi/fal-ai__aura-sr.json
 //   data/fal/openapi/fal-ai__bytedance__omnihuman__v1.5.json
@@ -220,6 +221,7 @@ export const FAL_RATES = {
   "bytedance/seedream/v5/pro/edit": { unit: "conditional", tierKey: "output pixel area (<=1536x1536 vs 1536x1536..2048x2048), plus an additive surcharge per input image beyond the first", tiers: [{ when: "output image of total area <= 1536x1536 pixels", usd: 0.0675 }, { when: "output image with area between 1536x1536 and 2048x2048 pixels", usd: 0.135 }, { when: "additive, per output image, for each additional input image beyond the first", usd: 0.0045 }], source: "https://fal.ai/models/bytedance/seedream/v5/pro/edit", verified: "2026-08-24" },
   "bytedance/seedream/v5/pro/text-to-image": { unit: "conditional", tierKey: "total pixel area of the generated image", tiers: [{ when: "images of total area <= 1536x1536 pixels", usd: 0.0675 }, { when: "images with area between 1536x1536 and 2048x2048 pixels", usd: 0.135 }], source: "https://fal.ai/models/bytedance/seedream/v5/pro/text-to-image", verified: "2026-08-24" },
   "cassetteai/sound-effects-generator": { unit: "per_generation", usd: 0.01, source: "https://fal.ai/models/cassetteai/sound-effects-generator", verified: "2026-08-31" },
+  "elevenlabs/sound-effects/v3": { unit: "per_generated_audio_second", usd: 0.002, source: "https://fal.ai/models/elevenlabs/sound-effects/v3/llms.txt", verified: "2026-11-24" },
   "fal-ai/ace-step": { unit: "per_generated_audio_second", usd: 0.0002, source: "https://fal.ai/models/fal-ai/ace-step", verified: "2026-08-25" },
   "fal-ai/aura-sr": { unpriced: "Billed per COMPUTE second, not per unit of input or output: the price depends on how long fal's GPU took, which no request body can predict. The page's own compute-second figure reads $0, which is an unpopulated billing template rather than a free tier — quoting it as a rate would be worse than saying nothing. Same shape as fal-ai/wizper.", source: "https://fal.ai/models/fal-ai/aura-sr", verified: "2026-08-25" },
   "fal-ai/bytedance/omnihuman/v1.5": { unit: "per_second", usd: 0.16, source: "https://fal.ai/models/fal-ai/bytedance/omnihuman/v1.5", verified: "2026-08-24" },

@@ -1,5 +1,5 @@
 /**
- * `unmodel/sfx` → fal, across 6 endpoints from five vendors.
+ * `unmodel/sfx` → fal, across 7 endpoints from five vendors.
  *
  * # The length is the category, and its ABSENCE is what the row is for
  *

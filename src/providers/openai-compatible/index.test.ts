@@ -31,6 +31,19 @@ const catalog = {
     modalities: { input: ["text"], output: ["text"] },
     limit: { context: 1000, output: 256 },
   },
+  "tiny-audio": {
+    id: "tiny-audio",
+    name: "Tiny Audio",
+    attachment: false,
+    reasoning: false,
+    toolCall: true,
+    structuredOutput: true,
+    temperature: true,
+    openWeights: true,
+    modalities: { input: ["text", "audio"], output: ["text", "audio"] },
+    limit: { context: 1000, output: 256 },
+    cost: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1.25, inputAudio: 4, outputAudio: 8 },
+  },
 } as const satisfies Record<string, ModelInfo>;
 
 type AcmeModelId = keyof typeof catalog;
@@ -398,6 +411,78 @@ describe("createOpenAICompatible checkChat", () => {
     expect(report.usage).toEqual({});
     expect(report.finishReason).toBeUndefined();
     expect(report.costUSD).toBeUndefined();
+  });
+
+  test("prompt_tokens_details.audio_tokens re-rates at inputAudio while keeping usage raw", () => {
+    const report = acme.checkChat({
+      model: "tiny-audio",
+      choices: [{ finish_reason: "stop" }],
+      usage: {
+        prompt_tokens: 1_000_000,
+        completion_tokens: 0,
+        prompt_tokens_details: { cached_tokens: 0, audio_tokens: 400_000 },
+      },
+    });
+    expect(report.usage.inputTokens).toBe(1_000_000);
+    // 600k text at $1/M + 400k audio at $4/M
+    expect(report.costUSD).toBeCloseTo(2.2, 10);
+  });
+
+  test("audio prompt tokens fall back to cost.input when the model has no inputAudio rate", () => {
+    const withAudio = acme.checkChat({
+      model: "tiny-chat",
+      usage: {
+        prompt_tokens: 1_000_000,
+        completion_tokens: 0,
+        prompt_tokens_details: { audio_tokens: 400_000 },
+      },
+    });
+    const withoutAudio = acme.checkChat({
+      model: "tiny-chat",
+      usage: { prompt_tokens: 1_000_000, completion_tokens: 0 },
+    });
+    expect(withAudio.costUSD).toBeCloseTo(1, 10);
+    expect(withAudio.costUSD).toBe(withoutAudio.costUSD);
+  });
+
+  test("mixed cached, cache-write, and audio prompt tokens price each bucket once", () => {
+    const report = acme.checkChat({
+      model: "tiny-audio",
+      usage: {
+        prompt_tokens: 1_000_000,
+        completion_tokens: 0,
+        prompt_tokens_details: {
+          cached_tokens: 200_000,
+          cache_write_tokens: 100_000,
+          audio_tokens: 300_000,
+        },
+      },
+    });
+    // 400k fresh ($1) + 200k cached ($0.10) + 100k cacheWrite ($1.25) + 300k audio ($4)
+    expect(report.costUSD).toBeCloseTo(0.4 + 0.02 + 0.125 + 1.2, 10);
+  });
+
+  test("completion_tokens_details.audio_tokens re-rates at outputAudio and falls back to output", () => {
+    const audioModel = acme.checkChat({
+      model: "tiny-audio",
+      usage: {
+        prompt_tokens: 0,
+        completion_tokens: 1_000_000,
+        completion_tokens_details: { audio_tokens: 250_000 },
+      },
+    });
+    // 750k text output at $2/M + 250k audio output at $8/M
+    expect(audioModel.costUSD).toBeCloseTo(1.5 + 2, 10);
+
+    const textOnlyModel = acme.checkChat({
+      model: "tiny-chat",
+      usage: {
+        prompt_tokens: 0,
+        completion_tokens: 1_000_000,
+        completion_tokens_details: { audio_tokens: 250_000 },
+      },
+    });
+    expect(textOnlyModel.costUSD).toBeCloseTo(2, 10);
   });
 });
 

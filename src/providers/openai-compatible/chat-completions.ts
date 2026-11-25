@@ -5,7 +5,7 @@ import type { AiSdkChatResult } from "../../core/translate/ai-sdk";
 import { createAiSdkChat } from "../../core/translate/ai-sdk";
 import type { DialectId } from "../../core/translate/endpoints";
 import type { ChatIR } from "../../core/translate/ir";
-import { createToApi, type Decoder } from "../../core/translate/retarget";
+import { createToApi, type Decoder, type RetargetSpec } from "../../core/translate/retarget";
 import type { Warn } from "../../core/translate/warnings";
 import { targetValidationFor } from "../../retarget/target-constraints";
 import { encodeOpenAIChat } from "./interop";
@@ -110,6 +110,8 @@ export interface ChatConstraintSpec {
   familyRules?: readonly FamilyRule[];
   /** What `temperature: false` means on this API; `"rejected"` when omitted. */
   fixedSampling?: FixedSampling;
+  /** Billing reference when the overlay accepts video but cannot estimate its tokens. */
+  unpricedVideo?: string;
 }
 
 /**
@@ -164,8 +166,8 @@ export function checkToolSupport(
 
 /**
  * Input modality each non-text user content part kind requires. `video_url`
- * is not a shared-dialect part: only an overlay whose own schema admits it
- * (minimax) ever reaches this check with one, and there the catalog decides.
+ * is an overlay-specific part. For overlays that accept it, the catalog
+ * decides which models can receive it.
  */
 const PART_INPUT_MODALITY = {
   image_url: "image",
@@ -523,6 +525,21 @@ export function createChatEstimate(
   ctx: PipelineContext,
 ) => ValidateEstimate {
   return (params, info, ctx) => {
+    const source = spec.unpricedVideo;
+    if (source !== undefined && params.messages.some(({ role, content }) =>
+      role === "user" && Array.isArray(content) &&
+      content.some(({ type }: { type: string }) => type === "video" || type === "video_url")
+    )) {
+      ctx.report({
+        code: "unsupported_param",
+        severity: ctx.options.maxCostUSD === undefined ? "warning" : "error",
+        path: ["messages"],
+        model: params.model,
+        message: "Video token cost depends on the extracted frames. Unmodel cannot verify a cost estimate or maxCostUSD for this request.",
+        meta: { source },
+      });
+      return {};
+    }
     const inputTokens = estimateChatTokens(params, ctx.tokenizer, (detail) =>
       imageTokensFor(spec, params.model, detail),
     );
@@ -606,6 +623,8 @@ export interface ChatFinalizeSpec {
    * written for.
    */
   encode?: (body: ChatCompletionsBodyBase, warn: Warn) => ChatIR;
+  /** Destination schema for overlays whose accepted parts extend the dialect. */
+  targetValidation?: RetargetSpec<ChatCompletionsBodyBase, ChatIR>["targetValidation"];
 }
 
 /**
@@ -632,9 +651,9 @@ export interface ChatFinalizeSpec {
  * so the leaf split is what makes the wiring legal. Both are enforced by
  * `test/import-graph.test.ts`.
  *
- * The schema half stays off deliberately: a same-dialect hop returns the
- * source body with one string replaced, and that body already passed this very
- * schema, so it would be a pure no-op with a zod parse's cost. The catalog
+ * The schema half defaults to off: a standard same-dialect hop only respells
+ * the model id. An overlay that admits provider-specific content can supply
+ * destination schemas. The catalog
  * layers (2 and 4 — `unknown_model`, `over_context`, `over_budget`) stay off
  * too, since they need the target's full generated catalog; the documented
  * escape hatch for those is to compose with the destination's own validator.
@@ -655,7 +674,7 @@ export function createChatFinalize(
           availability,
           encode,
           ...(spec.decoders !== undefined && { decoders: spec.decoders }),
-          targetValidation: targetValidationFor,
+          targetValidation: spec.targetValidation ?? targetValidationFor,
         });
   const toAiSdk = createAiSdkChat<ChatCompletionsBodyBase>({
     endpoint: spec.endpoint,

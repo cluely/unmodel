@@ -105,13 +105,25 @@ export type FalVideoParams = FalVideoArm<FalVideoEndpointId | (string & {})>;
 type FalSdkTargets<B> = { fal: () => { input: B } };
 
 function checkAll(params: FalVideoParams, _info: ModelInfo | undefined, ctx: PipelineContext): void {
+  const body = params as Readonly<Record<string, unknown>>;
   runFalChecks(
     params.endpoint,
     FAL_VIDEO_SHAPES,
     FAL_DOC_URLS,
-    params as Readonly<Record<string, unknown>>,
+    body,
     ctx,
   );
+  if (params.endpoint !== "bytedance/seedance-2.5/flash/reference-to-video") return;
+  const { task, video_urls } = body;
+  if ((task === "editing" || task === "extension") && (!Array.isArray(video_urls) || video_urls.length === 0)) {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["video_urls"],
+      model: params.endpoint,
+      message: `Seedance 2.5 Flash requires a source video for ${task}.`,
+      meta: { source: "https://fal.ai/models/bytedance/seedance-2.5/flash/reference-to-video/api" },
+    });
+  }
 }
 
 function estimate(params: FalVideoParams) {

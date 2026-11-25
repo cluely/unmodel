@@ -25,7 +25,7 @@ export interface TokenBreakdown {
    * between re-rating and ignoring it is not a rounding error.
    */
   audioInputTokens?: number;
-  /** Tokens written to provider cache (billed at cacheWrite rate). */
+  /** Input tokens in the separate cache-write billing bucket, excluded from inputTokens. */
   cacheWriteTokens?: number;
   /**
    * Reasoning tokens. Only billed when the catalog carries a distinct
@@ -47,7 +47,8 @@ const PER_MILLION = 1_000_000;
  */
 export function computeCostUSD(cost: ModelCost | undefined, tokens: TokenBreakdown): number | undefined {
   if (!cost) return undefined;
-  if (cost.longContext && (tokens.inputTokens ?? 0) > cost.longContext.aboveInputTokens) {
+  const totalInput = (tokens.inputTokens ?? 0) + (tokens.cacheWriteTokens ?? 0);
+  if (cost.longContext && totalInput > cost.longContext.aboveInputTokens) {
     cost = { ...cost, ...cost.longContext.rates };
   }
 

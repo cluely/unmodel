@@ -1381,7 +1381,7 @@ export const models = {
     releaseDate: "2026-11-18",
     lastUpdated: "2026-11-18",
     modalities: { input: ["text", "image", "video", "audio", "pdf"], output: ["text"] },
-    limit: { context: 1048576, output: 65536 },
+    limit: { context: 1048576, output: 943718 },
     cost: { input: 3, output: 15, cacheRead: 0.15, cacheWrite: 0.083333, reasoning: 15, inputAudio: 3 },
   },
   "google/gemini-nano-banana-2.1": {
@@ -3829,7 +3829,7 @@ export const models = {
     lastUpdated: "2026-11-17",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
-    cost: { input: 8, output: 40, cacheRead: 0.4, cacheWrite: 10 },
+    cost: { input: 8, output: 40, cacheRead: 0.4, cacheWrite: 10, longContext: { aboveInputTokens: 272000, rates: { input: 16, output: 60, cacheRead: 0.8, cacheWrite: 20 } } },
   },
   "openai/gpt-6.2-sol": {
     id: "openai/gpt-6.2-sol",
@@ -3846,7 +3846,7 @@ export const models = {
     lastUpdated: "2026-11-17",
     modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     limit: { context: 1050000, output: 128000, input: 922000 },
-    cost: { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5 },
+    cost: { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5, longContext: { aboveInputTokens: 272000, rates: { input: 4, output: 15, cacheRead: 0.2, cacheWrite: 5 } } },
   },
   "openai/gpt-audio": {
     id: "openai/gpt-audio",

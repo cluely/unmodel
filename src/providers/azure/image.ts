@@ -156,6 +156,23 @@ export function checkMaiDimensions(
   }
 }
 
+function checkBackground(
+  params: MaiImagesGenerationsBody,
+  info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.background === undefined || info?.id === "MAI-Image-2.7" ||
+      info?.id === "MAI-Image-2.7-Flash") return;
+  ctx.report({
+    code: "unsupported_param",
+    severity: "warning",
+    path: ["background"],
+    model: params.model,
+    message: "Foundry documents background controls for MAI-Image-2.7 and MAI-Image-2.7-Flash deployments.",
+    meta: { source: MAI_IMAGE_DOCS },
+  });
+}
+
 /**
  * The one `.toSdk("azure")` target for this endpoint — Microsoft documents the
  * /mai/ surface as raw REST (no official SDK models it), so this is the wire
@@ -193,7 +210,7 @@ export function createMaiImage(endpoint: string): AzureMaiImage {
     schema: imageSchema,
     modelId: (params) => params.model,
     catalog: createDeploymentCatalog(maiImageModels),
-    checks: [checkMaiDimensions],
+    checks: [checkMaiDimensions, checkBackground],
     finalize: (params) => {
       const body = { ...params };
       return toValidated(body, { url, method: "POST", headers: JSON_HEADERS }, {

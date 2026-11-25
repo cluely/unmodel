@@ -19,10 +19,15 @@
 
 import { z } from "zod";
 import { createOpenAICompatible } from "../openai-compatible";
+import { targetValidationFor } from "../../retarget/target-constraints";
+import type { TargetEndpoint } from "../../core/translate/endpoints";
+import type { TargetValidation } from "../../core/translate/retarget";
 import {
   audioPartSchema,
   createChatCompletionsSchema,
   createMessagesSchema,
+  createVideoUrlMessagesSchema,
+  messagesSchema,
   filePartSchema,
   imagePartSchema,
   textPartSchema,
@@ -60,9 +65,9 @@ export interface AlibabaChatUserMessage extends Omit<ChatUserMessage, "content">
 export interface AlibabaChatBody<ModelId extends string = AlibabaTextModelId>
   extends Omit<ChatCompletionsBodyBase<ModelId>, "messages"> {
   messages: Array<Exclude<ChatMessage, ChatUserMessage> | AlibabaChatUserMessage>;
-  enable_thinking?: boolean;
-  thinking_budget?: number;
-  preserve_thinking?: boolean;
+  enable_thinking?: boolean | null;
+  thinking_budget?: number | null;
+  preserve_thinking?: boolean | null;
 }
 
 const videoOptions = {
@@ -93,9 +98,9 @@ const userContentSchema = z.union([
 
 const chatSchema: StandardSchemaV1 = createChatCompletionsSchema({
   messages: createMessagesSchema(userContentSchema),
-  enable_thinking: z.boolean().optional(),
-  thinking_budget: z.number().optional(),
-  preserve_thinking: z.boolean().optional(),
+  enable_thinking: z.boolean().nullable().optional(),
+  thinking_budget: z.number().nullable().optional(),
+  preserve_thinking: z.boolean().nullable().optional(),
 });
 
 /** The Chat Completions reference: per-model `reasoning_effort` ladders and tool-call notes. */
@@ -192,6 +197,20 @@ const chatConstraints: Readonly<Partial<Record<string, EndpointConstraints>>> = 
   },
 };
 
+const VIDEO_DOCS = "https://docs.modelstudio.console.alibabacloud.com/en/model-studio/vision";
+
+const standardTargetShape = z.looseObject({ messages: messagesSchema });
+const openRouterTargetShape = z.looseObject({ messages: createVideoUrlMessagesSchema() });
+
+function alibabaTargetValidation(endpoint: TargetEndpoint): TargetValidation | undefined {
+  const constraints = targetValidationFor(endpoint);
+  if (endpoint.provider === "alibaba" || endpoint.dialect !== "openai-chat") return constraints;
+  return {
+    ...constraints,
+    schema: endpoint.provider === "openrouter" ? openRouterTargetShape : standardTargetShape,
+  };
+}
+
 export const { chat, chatUrl, checkChat, estimateChatTokens } =
   createOpenAICompatible<
     AlibabaTextModelId,
@@ -211,8 +230,47 @@ export const { chat, chatUrl, checkChat, estimateChatTokens } =
     schema: chatSchema,
     availability,
     constraints: chatConstraints,
-    extraChecks: [checkThinkingBudgetPairing, checkOmniJsonSchema],
+    extraChecks: [checkThinkingBudgetPairing, checkOmniJsonSchema, checkVideoParts],
+    unpricedVideo: VIDEO_DOCS,
+    targetValidation: alibabaTargetValidation,
   });
+
+function checkVideoParts(
+  params: AlibabaChatBody<string>,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (params.model !== "qwen4-max") return;
+  params.messages.forEach((message, messageIndex) => {
+    if (message.role !== "user" || !Array.isArray(message.content)) return;
+    message.content.forEach((part, partIndex) => {
+      if (part.type !== "video" && part.type !== "video_url") return;
+      const path = ["messages", messageIndex, "content", partIndex];
+      function invalid(field: string, message: string): void {
+        ctx.report({ code: "invalid_shape", path: [...path, field], model: params.model,
+          message, meta: { source: CHAT_DOCS } });
+      }
+
+      if (part.type === "video") {
+        const inlineFrames = part.video.filter((frame) => frame.startsWith("data:")).length;
+        if (inlineFrames > 250) invalid("video", "Qwen4-Max accepts up to 250 inline video frames.");
+        if ((inlineFrames === 0 && part.video.length < 4) || part.video.length > 8_000) {
+          invalid("video", "Qwen4-Max needs 4 to 8,000 video frames when supplied as public URLs.");
+        }
+      }
+      if (part.min_pixels !== undefined && part.min_pixels < 4_096) {
+        invalid("min_pixels", "Qwen4-Max requires at least 4096 for min_pixels on video.");
+      }
+      if (part.max_pixels !== undefined &&
+          (part.max_pixels > 2_048_000 || part.max_pixels < (part.min_pixels ?? 0))) {
+        invalid("max_pixels", "Qwen4-Max requires max_pixels to be at most 2048000 and at least min_pixels on video.");
+      }
+      if (part.total_pixels !== undefined && part.total_pixels > 268_435_456) {
+        invalid("total_pixels", "Qwen4-Max allows at most 268435456 for total_pixels on video.");
+      }
+    });
+  });
+}
 
 /** `reasoning_effort` + the DashScope `thinking_budget` extension is a 400 on Qwen3.8 and Qwen4-Max. */
 function checkThinkingBudgetPairing(

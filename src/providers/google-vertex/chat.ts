@@ -13,6 +13,7 @@ import type { EndpointConstraints } from "../../core/constraint-types";
 import { computeCostUSD } from "../../core/cost";
 import { estimateToolDefinitionTokens, PER_MESSAGE_TOKEN_OVERHEAD } from "../../core/tokens";
 import { GEMINI_IMAGE_TOKENS } from "../google";
+import { neonBillableInputTokens } from "../google/thinking-constraints";
 import type { GoogleContent, GoogleThinkingLevel, GoogleTool } from "../google/wire";
 import { models } from "../../catalog/google-vertex.gen";
 import { createToApi } from "../../core/translate/retarget";
@@ -457,6 +458,49 @@ function checkGemini4Thinking(
   }
 }
 
+/** Neon-specific errors documented in the Vertex migration guide. */
+function checkNeonConfig(
+  params: VertexGenerateContentBody,
+  _info: ModelInfo | undefined,
+  ctx: PipelineContext,
+): void {
+  if (stripModelPath(params.model) !== "gemini-4-neon") return;
+  const source = "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/guides/gemini-4-neon";
+  const config = params.generationConfig;
+  for (const param of ["frequencyPenalty", "presencePenalty", "candidateCount"] as const) {
+    const value = config?.[param];
+    if (value === undefined || (param === "candidateCount" && value <= 1)) continue;
+    ctx.report({
+      code: "unsupported_param",
+      path: ["generationConfig", param],
+      model: params.model,
+      message: param === "candidateCount"
+        ? "Gemini 4 Neon on Vertex supports a single candidate."
+        : `Gemini 4 Neon on Vertex rejects \`${param}\`. Remove it.`,
+      meta: { value, source },
+    });
+  }
+  if (params.contents.at(-1)?.role === "model") {
+    ctx.report({
+      code: "invalid_shape",
+      path: ["contents", params.contents.length - 1, "role"],
+      model: params.model,
+      message: "Gemini 4 Neon on Vertex does not accept a final model turn. End the request with a user turn.",
+      meta: { source },
+    });
+  }
+  if (params.cachedContent !== undefined) {
+    ctx.report({
+      code: "unsupported_param",
+      severity: "warning",
+      path: ["cachedContent"],
+      model: params.model,
+      message: "Gemini 4 Neon on Vertex supports implicit caching only. Remove cachedContent.",
+      meta: { source },
+    });
+  }
+}
+
 /** Sampling fields a model page says the API refuses (an error) or ignores (a warning). */
 function checkSamplingParams(
   params: VertexGenerateContentBody,
@@ -613,7 +657,10 @@ function estimate(params: VertexGenerateContentBody, info: ModelInfo | undefined
 
   // Worst case: the model produces the full requested/possible output.
   const outputTokens = params.generationConfig?.maxOutputTokens ?? info?.limit.output ?? 0;
-  const costUSD = computeCostUSD(info?.cost, { inputTokens, outputTokens });
+  const billedInput = info?.id === "gemini-4-neon"
+    ? neonBillableInputTokens(inputTokens, outputTokens)
+    : inputTokens;
+  const costUSD = computeCostUSD(info?.cost, { inputTokens: billedInput, outputTokens });
   return costUSD === undefined ? { inputTokens } : { inputTokens, costUSD };
 }
 
@@ -750,6 +797,7 @@ export function createChat(config: GoogleVertexConfig): GoogleVertexChat {
       checkCapabilities,
       checkMediaModalities,
       checkGemini4Thinking,
+      checkNeonConfig,
       checkSamplingParams,
     ],
     estimate,

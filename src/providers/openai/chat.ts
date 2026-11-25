@@ -253,6 +253,15 @@ function checkGpt6ChatRules(
   const rule = gpt6RuleFor(params.model);
   if (rule === undefined) return;
   const atNone = params.reasoning_effort === "none";
+  if (rule.flex === false && params.service_tier === "flex") {
+    ctx.report({
+      code: "unsupported_param",
+      path: ["service_tier"],
+      model: params.model,
+      message: "GPT-6.2 Astra and Sol do not support Flex processing. Use Standard or Fast.",
+      meta: { source: LATEST_MODEL_GUIDE_DOCS },
+    });
+  }
 
   const toolsPath =
     params.tools !== undefined && params.tools.length > 0

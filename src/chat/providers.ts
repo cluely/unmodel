@@ -31,7 +31,7 @@ import { chat as nebiusChat } from "../providers/nebius";
 import { chat as novitaAiChat } from "../providers/novita-ai";
 import { chat as nvidiaChat } from "../providers/nvidia";
 import { chat as openaiChat } from "../providers/openai/chat";
-import { chat as openrouterChat } from "../providers/openrouter";
+import { chat as openrouterChat, type OpenRouterUnifiedChat } from "../providers/openrouter";
 import { chat as perplexityChat } from "../providers/perplexity";
 import { chat as revanaChat } from "../providers/revana/chat";
 import { chat as sarvamChat } from "../providers/sarvam";
@@ -43,6 +43,11 @@ import { chat as upstageChat } from "../providers/upstage";
 import { chat as vercelChat } from "../providers/vercel";
 import { chat as xaiChat } from "../providers/xai/chat";
 import { chat as zhipuaiChat } from "../providers/zhipuai";
+
+// The unified compiler supplies the shared dialect body. The native validator
+// also accepts video_url, but carrying its input type through every registry
+// lookup makes unrelated unified calls instantiate the wider message union.
+const openrouterForUnified: OpenRouterUnifiedChat = openrouterChat;
 
 /** Provider id -> the exact validator exported by that provider subpath. */
 export const CHAT_PROVIDER_VALIDATORS = {
@@ -67,7 +72,7 @@ export const CHAT_PROVIDER_VALIDATORS = {
   "novita-ai": novitaAiChat,
   nvidia: nvidiaChat,
   openai: openaiChat,
-  openrouter: openrouterChat,
+  openrouter: openrouterForUnified,
   perplexity: perplexityChat,
   revana: revanaChat,
   sarvam: sarvamChat,

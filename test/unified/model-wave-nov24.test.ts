@@ -2,11 +2,12 @@ import { expect, test } from "bun:test";
 import { chat, chatProfiles } from "../../src/chat";
 import { chat as openaiChat, checkChat } from "../../src/providers/openai";
 import { chat as alibabaChat, type AlibabaChatUserMessage } from "../../src/providers/alibaba";
+import { chat as routerChat, checkChat as checkRouterChat } from "../../src/providers/openrouter";
 import { chat as googleChat } from "../../src/providers/google";
 import { createGoogleVertex } from "../../src/providers/google-vertex";
 import { video as bytePlusVideo } from "../../src/providers/bytedance";
-import { createAzure, toMaiEditFormData } from "../../src/providers/azure";
-import { image as falImage, video as falVideo } from "../../src/providers/fal";
+import { createAzure, toMaiEditFormData, type MaiImagesEditsBody } from "../../src/providers/azure";
+import { image as falImage, imageEdit as falImageEdit, video as falVideo } from "../../src/providers/fal";
 import { image } from "../../src/unified/image";
 import { imageEdit } from "../../src/unified/image-edit";
 import { video } from "../../src/unified/video";
@@ -35,10 +36,15 @@ test.each([
     model,
     usage: { prompt_tokens: 272_000, completion_tokens: 1_000 },
   }).costUSD).toBeCloseTo(base, 8);
+  const usage = { prompt_tokens: 300_000, completion_tokens: 1_000 };
+  expect(checkChat({ model, usage }).costUSD).toBeCloseTo(long, 8);
+  expect(checkRouterChat({ model: `openai/${model}`, usage }).costUSD).toBeCloseTo(long, 8);
   expect(checkChat({
     model,
-    usage: { prompt_tokens: 300_000, completion_tokens: 1_000 },
-  }).costUSD).toBeCloseTo(long, 8);
+    usage: { ...usage, prompt_tokens_details: { cache_write_tokens: 50_000 } },
+  }).costUSD).toBeCloseTo(model === "gpt-6.2-astra" ? 5.06 : 1.265, 8);
+  expect(openaiChat.safe({ model, messages: [...messages], service_tier: "flex" }).ok).toBe(false);
+  expect(openaiChat.safe({ model, messages: [...messages], service_tier: "default" }).ok).toBe(true);
 });
 
 test("Gemini 4 Neon supports XHIGH and long decode on Gemini and Vertex", () => {
@@ -88,7 +94,9 @@ test("Qwen4-Max is discoverable and accepts Alibaba's video wire shapes", () => 
   const result = alibabaChat.safe(params);
   expect(result.ok).toBe(true);
   if (result.ok) expect(JSON.stringify(result.params)).toBe(JSON.stringify(params));
-  expect(result.warnings).toEqual([]);
+  expect(result.warnings.map((issue) => issue.code)).toEqual(["unsupported_param"]);
+  if (result.ok) expect(result.estimate.costUSD).toBeUndefined();
+  expect(alibabaChat.safe(params, { maxCostUSD: 0.01 }).ok).toBe(false);
   expect(alibabaChat.safe({ ...params, reasoning_effort: "high" }).ok).toBe(false);
   expect(alibabaChat.safe({ ...params, model: "qwen-plus" }).ok).toBe(false);
 });
@@ -106,7 +114,8 @@ test("BytePlus Seedance 2.5 Flash reaches the shared video entry with its docume
   const content = [{ type: "text", text: "A kite" }] as const;
   const typical = bytePlusVideo.safe({ model, content: [...content], ratio: "16:9", duration: 5 });
   const adaptive = bytePlusVideo.safe({ model, content: [...content], duration: 5 });
-  expect(typical.ok && typical.estimate.costUSD).toBe(0.75);
+  expect(typical.ok && typical.estimate.costUSD).toBeCloseTo(0.756, 8);
+  expect(bytePlusVideo.safe({ model, content: [...content], ratio: "16:9", duration: 5 }, { maxCostUSD: 0.755 }).ok).toBe(false);
   expect(adaptive.ok && adaptive.estimate.costUSD).toBeUndefined();
   const unchecked = bytePlusVideo.safe as (params: unknown) => { ok: boolean };
   for (const fields of [{ draft: true }, { resolution: "1080p" }, { duration: 31 }]) {
@@ -174,4 +183,105 @@ test.each(["MAI-Image-2.7", "MAI-Image-2.7-Flash"] as const)("Azure %s supports 
   expect(edit.warnings).toEqual([]);
   if (edit.ok) expect(toMaiEditFormData(edit.params).getAll("image")).toHaveLength(2);
   expect(azure.imageEdit.safe({ model: deployment, prompt: "A kite", image: Array(6).fill(png) }).ok).toBe(false);
+});
+
+test("Neon validates provider restrictions and prices continuation input", () => {
+  const params = { model: "gemini-4-neon" as const, contents };
+  const vertex = createGoogleVertex({ project: "example", location: "global" });
+  for (const generationConfig of [{ topP: 2 }, { topK: -5 }]) {
+    expect(googleChat.safe({ ...params, generationConfig }).ok).toBe(false);
+  }
+  for (const generationConfig of [{ candidateCount: 2 }, { frequencyPenalty: 1 }, { presencePenalty: 1 }]) {
+    expect(vertex.chat.safe({ ...params, generationConfig }).ok).toBe(false);
+  }
+  const prefill = { role: "model" as const, parts: [{ text: "It is a" }] };
+  expect(vertex.chat.safe({ ...params, contents: [...contents, prefill] }).ok).toBe(false);
+  expect(vertex.chat.safe({ ...params, contents: [...contents, prefill, ...contents] }).ok).toBe(true);
+  const cache = vertex.chat.safe({ ...params, cachedContent: "projects/example/locations/global/cachedContents/1" });
+  expect(cache.warnings.map((issue) => issue.path)).toContainEqual(["cachedContent"]);
+  const long = { ...params, generationConfig: { maxOutputTokens: 200_000 } };
+  const tokenizer = { count: () => 996 };
+  const estimate = googleChat.safe(long, { tokenizer });
+  expect(estimate.ok && estimate.estimate.inputTokens).toBe(1_000);
+  expect(estimate.ok && estimate.estimate.costUSD).toBeCloseTo(4.191648, 8);
+  expect(googleChat.safe(long, { tokenizer, maxCostUSD: 3.01 }).ok).toBe(false);
+  expect(vertex.chat.safe(long, { tokenizer, maxCostUSD: 3.01 }).ok).toBe(false);
+  expect(chat.safe({ model: "openrouter/google/gemini-4-neon", messages: [...messages], maxOutputTokens: 100_000 }).ok).toBe(true);
+});
+
+test("Qwen video validation respects each host's wire format", () => {
+  const videoUrl = "https://example.com/kite.mp4";
+  const file = { type: "video_url", video_url: { url: videoUrl } } as const;
+  const model = "qwen4-max";
+  function params<Part extends typeof file | { type: "video"; video: string[] }>(part: Part) {
+    return { model, messages: [{ role: "user" as const, content: [part] }] };
+  }
+  expect(alibabaChat.safe(params({ type: "video", video: [imageUrl] })).ok).toBe(false);
+  for (const part of [
+    { ...file, min_pixels: 100 },
+    { ...file, max_pixels: 99_999_999 },
+    { ...file, min_pixels: 10_000, max_pixels: 5_000 },
+    { ...file, total_pixels: 999_999_999 },
+  ]) {
+    expect(alibabaChat.safe(params(part)).ok).toBe(false);
+  }
+  const frames = alibabaChat(params({ type: "video", video: Array(4).fill(imageUrl) }));
+  expect(frames.toApiSafe("openrouter").ok).toBe(false);
+  const routed = alibabaChat(params(file)).toApi("openrouter");
+  expect(routerChat.safe({ ...routed, model: "qwen/qwen4-max" }).ok).toBe(true);
+  const direct = routerChat.safe({ ...params(file), model: "qwen/qwen4-max" });
+  expect(direct.ok && direct.params.messages[0]?.content).toEqual([file]);
+
+  const compatible = alibabaChat.safe({
+    model: "qwen3.8-max", messages: [...messages],
+    thinking_budget: null, enable_thinking: null, preserve_thinking: null,
+  });
+  expect(compatible.ok).toBe(true);
+});
+
+test("fal Seedance requires a source for edits and compiles a URL into video_urls", () => {
+  const endpoint = "bytedance/seedance-2.5/flash/reference-to-video";
+  const url = "https://example.com/kite.mp4";
+  for (const task of ["editing", "extension"] as const) {
+    expect(falVideo.safe({ endpoint, prompt: "A kite", task }).ok).toBe(false);
+    expect(falVideo.safe({ endpoint, prompt: "A kite", task, video_urls: [] }).ok).toBe(false);
+    expect(falVideo.safe({ endpoint, prompt: "A kite", task, video_urls: [url] }).ok).toBe(true);
+  }
+  const compiled = video({
+    model: `fal/${endpoint}`, prompt: "A kite", video: { kind: "url", url },
+  });
+  expect(JSON.parse(JSON.stringify(compiled)).video_urls).toEqual([url]);
+});
+
+test.each(["", "flash/"] as const)("MAI Image 2.7 %s solves ratios above its minimum side", (tier) => {
+  const endpoint = `microsoft/mai-image-2.7/${tier}` as const;
+  const model = `fal/${endpoint}text-to-image` as const;
+  const prompt = "A kite";
+  for (const [aspectRatio, width, height] of [
+    ["21:9", 1792, 768], ["9:21", 768, 1792], ["2:1", 1536, 768], ["1:2", 768, 1536],
+  ] as const) {
+    const generated = image({ model, prompt, aspectRatio });
+    const edited = imageEdit({
+      model: `fal/${endpoint}edit`, operation: "edit", prompt,
+      image: { kind: "url", url: imageUrl }, aspectRatio,
+    });
+    expect(JSON.parse(JSON.stringify(generated)).image_size).toEqual({ width, height });
+    expect(JSON.parse(JSON.stringify(edited)).image_size).toEqual({ width, height });
+  }
+  expect(falImage.safe({ endpoint: `${endpoint}text-to-image`, prompt, image_size: { width: 640 } }).ok).toBe(false);
+  expect(falImageEdit.safe({ endpoint: `${endpoint}edit`, prompt, image_urls: [imageUrl], image_size: {} }).ok).toBe(false);
+  expect(image.safe({ model, prompt, dimensions: { width: 1024, height: 1024 }, resolution: "2k" }).ok).toBe(false);
+  const unchecked = image.safe as (params: unknown) => { ok: boolean };
+  expect(unchecked({ model, prompt, size: "1024x1024", resolution: "2k" }).ok).toBe(false);
+  expect(image.safe({ model, prompt, size: "square_hd", resolution: "2k" }).ok).toBe(true);
+});
+
+test("Azure keeps the single-image body type and flags unsupported backgrounds", () => {
+  const azure = createAzure({ endpoint: "https://example.services.ai.azure.com" });
+  const png = new Blob(["kite"], { type: "image/png" });
+  const body: MaiImagesEditsBody = { model: "MAI-Image-2.5", prompt: "A kite", image: png };
+  expect(body.image.size).toBe(4);
+  expect(azure.imageEdit(body).image).toBe(png);
+  expect(azure.image.safe({ model: body.model, prompt: body.prompt, background: "transparent" }).warnings
+    .map((issue) => issue.path)).toContainEqual(["background"]);
 });

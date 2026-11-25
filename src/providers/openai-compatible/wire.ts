@@ -35,6 +35,12 @@ export interface ChatImagePart {
   prompt_cache_breakpoint?: ChatPromptCacheBreakpoint;
 }
 
+/** URL-shaped video parts are available on select OpenAI-compatible providers. */
+export interface ChatVideoUrlPart {
+  type: "video_url";
+  video_url: { url: string; processing?: string };
+}
+
 export interface ChatAudioPart {
   type: "input_audio";
   input_audio: {
@@ -312,6 +318,23 @@ export function createMessagesSchema(userContent: z.ZodType) {
       ]),
     )
     .superRefine(refineMessageSequence);
+}
+
+/** Provider overlay for the Chat Completions `video_url` shape. */
+export function createVideoUrlMessagesSchema() {
+  return createMessagesSchema(z.union([
+    z.string(),
+    z.array(z.discriminatedUnion("type", [
+      textPartSchema,
+      imagePartSchema,
+      audioPartSchema,
+      filePartSchema,
+      z.looseObject({
+        type: z.literal("video_url"),
+        video_url: z.looseObject({ url: z.string(), processing: z.string().optional() }),
+      }),
+    ])),
+  ]));
 }
 
 /** The shared dialect's `messages` schema. */

@@ -10,7 +10,12 @@
  * `unknown_param` warning, which is the intended behavior for
  * router-specific extensions.
  */
-import { createOpenAICompatible } from "../openai-compatible";
+import type { ModelInfo } from "../../core/catalog-types";
+import { createOpenAICompatible, type OpenAICompatibleChat } from "../openai-compatible";
+import {
+  createChatCompletionsSchema,
+  createVideoUrlMessagesSchema,
+} from "../openai-compatible/wire";
 // The two cross-dialect codecs this overlay's availability data actually
 // reaches. Import-graph rule 3: an endpoint module may import another
 // provider's `interop.ts` and nothing else of theirs, so this costs the two
@@ -23,13 +28,19 @@ import { decodeGemini } from "../google/interop";
 import { models, provider } from "../../catalog/openrouter.gen";
 import type { OpenrouterTextModelId } from "../../catalog/openrouter.gen";
 import { availability } from "../../catalog/availability/openrouter.gen";
+import type { OpenRouterChatBody } from "./wire";
+
+/** The standard body emitted by the unified chat compiler. */
+export type OpenRouterUnifiedChat = OpenAICompatibleChat<OpenrouterTextModelId, typeof availability, "openrouter">;
 
 const { chat, chatUrl, checkChat, estimateChatTokens } =
-  createOpenAICompatible<OpenrouterTextModelId, typeof availability, "openrouter">({
+  createOpenAICompatible<OpenrouterTextModelId, typeof availability, "openrouter", Record<string, ModelInfo>, OpenRouterChatBody>({
     id: provider.id,
     // Generated from models.dev: https://openrouter.ai/api/v1
     baseUrl: provider.api,
     catalog: models,
+    schema: createChatCompletionsSchema({ messages: createVideoUrlMessagesSchema() }),
+    unpricedVideo: "https://openrouter.ai/docs/guides/overview/multimodal/videos",
     availability,
     // 21 models in the generated table are also served by google
     // (gemini dialect) and 3 by anthropic (messages dialect).

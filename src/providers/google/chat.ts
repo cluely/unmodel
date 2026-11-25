@@ -1,3 +1,4 @@
+import { neonBillableInputTokens } from "./thinking-constraints";
 import { constraintsFor, createValidator, type PipelineContext } from "../../core/pipeline";
 import {
   JSON_HEADERS,
@@ -381,6 +382,17 @@ function checkNeonConfig(
     if (value === undefined) continue;
     if (param === "temperature" &&
         (value < GEMINI_TEMPERATURE_RANGE.min || value > GEMINI_TEMPERATURE_RANGE.max)) continue;
+    if ((param === "topP" && (value < 0 || value > 1)) ||
+        (param === "topK" && value < 1)) {
+      ctx.report({
+        code: "invalid_enum_value",
+        path: ["generationConfig", param],
+        model: params.model,
+        message: param === "topP" ? "Gemini 4 Neon requires topP between 0 and 1." : "Gemini 4 Neon requires a positive topK.",
+        meta: { value, source },
+      });
+      continue;
+    }
     ctx.report({
       code: "unsupported_param",
       severity: "warning",
@@ -907,7 +919,10 @@ function estimate(params: GenerateContentBody, info: ModelInfo | undefined, ctx:
 
   // Worst case: the model produces the full requested/possible output.
   const outputTokens = params.generationConfig?.maxOutputTokens ?? info?.limit.output ?? 0;
-  const costUSD = computeCostUSD(info?.cost, { inputTokens, outputTokens });
+  const billedInput = info?.id === "gemini-4-neon"
+    ? neonBillableInputTokens(inputTokens, outputTokens)
+    : inputTokens;
+  const costUSD = computeCostUSD(info?.cost, { inputTokens: billedInput, outputTokens });
   return costUSD === undefined ? { inputTokens } : { inputTokens, costUSD };
 }
 

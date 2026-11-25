@@ -111,3 +111,16 @@ export const GEMINI_4_MODEL_IDS = ["gemini-4-argon", "gemini-4-carbon", "gemini-
  * `estimate()` bills.
  */
 export const GEMINI_LONG_DECODE_MAX_OUTPUT_TOKENS = 1_048_576;
+
+
+/**
+ * Neon long decodes re-prefill the original prompt and all preceding output
+ * on every 65,536-token segment. Estimate the uncached Standard cost.
+ * https://aistudio.google.com/docs/long-decode?generate-content=true#count-tokens
+ */
+export function neonBillableInputTokens(inputTokens: number, outputTokens: number): number {
+  const segmentTokens = 65_536;
+  const precedingSegments = Math.max(0, Math.ceil(outputTokens / segmentTokens) - 1);
+  return (precedingSegments + 1) * inputTokens +
+    segmentTokens * precedingSegments * (precedingSegments + 1) / 2;
+}

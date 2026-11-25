@@ -160,9 +160,14 @@ function renderCost(model: RawModel, providerId: string): string | undefined {
   push("reasoning", cost.reasoning);
   push("inputAudio", cost.input_audio);
   push("outputAudio", cost.output_audio);
-  if (providerId === "openai" && (model.id === "gpt-6.2-astra" || model.id === "gpt-6.2-sol")) {
-    // OpenAI applies the higher rates to the whole request above 272K input tokens.
-    // Both model pages document the same threshold and rate structure.
+  const openaiId = providerId === "openai"
+    ? model.id
+    : providerId === "openrouter" && model.id.startsWith("openai/")
+      ? model.id.slice("openai/".length)
+      : undefined;
+  if (openaiId === "gpt-6.2-astra" || openaiId === "gpt-6.2-sol") {
+    // OpenAI's model pages and OpenRouter's endpoint pricing apply the higher
+    // rates to the whole request above 272K input tokens.
     const [tier] = z.tuple([rawLongContextTierSchema]).parse(cost["tiers"]);
     fields.push(
       `longContext: { aboveInputTokens: ${tier.tier.size}, rates: { input: ${num(tier.input)}, output: ${num(tier.output)}, cacheRead: ${num(tier.cache_read)}, cacheWrite: ${num(tier.cache_write)} } }`,
@@ -731,6 +736,12 @@ export function generate(
       .join("\n");
     throw new Error(`models.dev snapshot failed validation:\n${details}`);
   }
+
+  // models.dev lists Neon's 65,536-token single-segment limit on OpenRouter.
+  // OpenRouter also routes to long decode with a 943,718-token limit (2026-11-24).
+  // https://openrouter.ai/api/v1/models/google/gemini-4-neon/endpoints
+  const neon = parsed.data["openrouter"]?.models["google/gemini-4-neon"];
+  if (neon?.limit.output === 65_536) neon.limit.output = 943_718;
 
   const providers = Object.values(parsed.data).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const files = new Map<string, string>();

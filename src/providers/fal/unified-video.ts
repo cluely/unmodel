@@ -362,7 +362,7 @@ function applyMedia(
     } else {
       ctx.from([wire], "video");
       const uri = ctx.take(toMediaUri(input.video, { path: ["video"], warn: ctx.warn }));
-      if (uri !== undefined) writeMedia(body, wire, uri);
+      if (uri !== undefined) writeMedia(body, wire, wire === "video_urls" ? [uri] : uri);
     }
   }
 

@@ -69,7 +69,7 @@ export const MAI_IMAGE_EDIT_FORMATS = ["jpeg", "png"] as const;
  * The documented multipart fields of `POST /mai/v1/images/edits` — see the
  * module JSDoc for why there is no `mask`, `image[]`, `n` or `width`/`height`.
  */
-export interface MaiImagesEditsBody {
+export interface MaiImagesEditsBody<Image extends Blob | Blob[] = Blob> {
   /**
    * The **deployment name** you assigned when you deployed the model. The
    * edit-capable canonical names autocomplete; any deployment
@@ -82,8 +82,10 @@ export interface MaiImagesEditsBody {
   /**
    * One to five JPEG or PNG reference images. Each uses an `image` part.
    */
-  image: Blob | Blob[];
+  image: Image;
 }
+
+type MaiImageEditInput = MaiImagesEditsBody<Blob | Blob[]>;
 
 const imageEditSchema = z.looseObject({
   model: z.string(),
@@ -97,7 +99,7 @@ const imageEditSchema = z.looseObject({
  * image-to-image row) gets a hard refusal here rather than the service's 400.
  */
 function checkEditCapableModel(
-  params: MaiImagesEditsBody,
+  params: MaiImageEditInput,
   info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -126,7 +128,7 @@ function formatOf(blob: Blob): string | undefined {
  * (never from sniffed bytes); an unlabeled Blob makes no claim and passes.
  */
 function checkImageFormat(
-  params: MaiImagesEditsBody,
+  params: MaiImageEditInput,
   _info: ModelInfo | undefined,
   ctx: PipelineContext,
 ): void {
@@ -150,7 +152,7 @@ function checkImageFormat(
  * `prompt` as string parts and one `image` part per Blob. Nullish values are
  * omitted so the API can use its defaults.
  */
-export function toMaiEditFormData(params: MaiImagesEditsBody): FormData {
+export function toMaiEditFormData(params: MaiImageEditInput): FormData {
   const form = new FormData();
   for (const [key, value] of Object.entries(params)) {
     if (value == null) continue;
@@ -177,12 +179,12 @@ type AzureMaiSdkTargets<B> = { azure: () => B };
 
 /** The validator surface `createAzure` binds to one resource endpoint. */
 export interface AzureMaiImageEdit {
-  <T extends MaiImagesEditsBody>(
-    params: T & ExactKeys<T, MaiImagesEditsBody>,
+  <T extends MaiImageEditInput>(
+    params: T & ExactKeys<T, MaiImageEditInput>,
     options?: ValidateOptions<T>,
   ): ValidatedForm<T, AzureMaiSdkTargets<T>>;
-  safe<T extends MaiImagesEditsBody>(
-    params: T & ExactKeys<T, MaiImagesEditsBody>,
+  safe<T extends MaiImageEditInput>(
+    params: T & ExactKeys<T, MaiImageEditInput>,
     options?: ValidateOptions<T>,
   ): ValidateResult<ValidatedForm<T, AzureMaiSdkTargets<T>>>;
   constraintsFor(modelId: string): EndpointConstraints[];
@@ -197,7 +199,7 @@ export interface AzureMaiImageEdit {
  */
 export function createMaiImageEdit(endpoint: string): AzureMaiImageEdit {
   const url = azureMaiImagesEditsUrl(endpoint);
-  const validator = createValidator<MaiImagesEditsBody, unknown>({
+  const validator = createValidator<MaiImageEditInput, unknown>({
     endpoint: "azure.imageEdit",
     schema: imageEditSchema,
     modelId: (params) => params.model,

@@ -14,14 +14,15 @@
  * `{ data }` or `{ url }` at Black Forest Labs, `{ file }` or `{ url }` at
  * Recraft — and which are legal is decided by the route, at compile time, by the
  * adapter's `imageInputs`. Putting `image` in `canonical.json` would force a
- * case to be single-shape, which would mean four providers could never appear in
- * one matrix at all.
+ * case to be single-shape, which would mean the pack's providers could never
+ * all appear in one matrix.
  *
  * ## Blobs, and how a fixture holds one
  *
- * Three of the four routes are multipart, so their compiled params contain a
- * live `Blob` — which `JSON.stringify` renders as `{}`, and which no fixture
- * file can hold. The runner therefore does the same two substitutions the
+ * Five of the nine providers post multipart (openai, ideogram, photoroom and
+ * stability always, recraft when the picture is a `Blob`), so their compiled
+ * params contain a live `Blob` — which `JSON.stringify` renders as `{}`, and
+ * which no fixture file can hold. The runner therefore does the same two substitutions the
  * transcribe matrix does:
  *
  * - **in**: `"image": { "file": "@blob" }` becomes a real `Blob` built here,
@@ -31,8 +32,8 @@
  *
  * So the committed body is the *shape* of the multipart form — every field
  * exact, the picture identified by size and type — which is as much as a JSON
- * fixture can honestly assert about bytes, and strictly more than skipping three
- * of the four providers would.
+ * fixture can honestly assert about bytes, and strictly more than skipping the
+ * multipart providers would.
  *
  * ## What is asserted
  *
@@ -210,8 +211,8 @@ describe("the matrix itself", () => {
       .filter(([, seen]) => seen.size < 2)
       .map(([provider]) => provider);
     expect(thin).toEqual([]);
-    // Unlike transcribe, there is no unreachable provider here: all four
-    // adapters accept at least one shape a canonical request can carry.
+    // Unlike transcribe, there is no unreachable provider here: every adapter
+    // in the pack accepts at least one shape a canonical request can carry.
     expect([...cases.keys()].sort()).toEqual([...imageEdit.providers]);
   });
 

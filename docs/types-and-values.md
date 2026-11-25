@@ -71,11 +71,11 @@ export const prompt = {
 } satisfies ChatParams;
 ```
 
-The hub deliberately does **not** aggregate provider wire types. The 79 provider entries carry ~2,470 type exports. One module naming all of them is a ~3.9 MB declaration graph every consumer parses to reach one interface — measured against a real build, as the union of all 79 entries' transitive `.d.ts` files. Import the provider you actually call.
+The hub deliberately does **not** aggregate provider wire types. The 82 provider entries carry ~2,970 type exports. One module naming all of them is a ~5.2 MB declaration graph every consumer parses to reach one interface — measured against a real build, as the union of all 82 entries' transitive `.d.ts` files. Import the provider you actually call.
 
 Three properties are tested rather than promised, in `test/types-entries.test.ts` against a real build:
 
-- **zero runtime**: every one of the 80 entries emits an empty JavaScript module.
+- **zero runtime**: every one of the 83 entries emits an empty JavaScript module.
 - **complete**: every endpoint id the CLI can validate has a `<Endpoint>Body` type on its provider's entry, so no endpoint ships with types a release behind.
 - **packaged**: every entry has its `exports` subpath and its build entry.
 
@@ -112,7 +112,7 @@ SPEECH_VOICES === TTS_MODEL_PARAMS["gpt-4o-mini-tts"].voices;            // true
 GEMINI_TTS_VOICES === GOOGLE["gemini-2.5-flash-preview-tts"].voices;     // true
 ```
 
-Each entry exports three uniform names per category it serves: `<CATEGORY>_MODEL_PARAMS`, `<CATEGORY>_MODELS`, and `<CATEGORY>_FORMAT_SPEC` where the category has an audio format spec. Prefixes are `IMAGE_`, `IMAGE_EDIT_`, `VIDEO_`, `TTS_`, `STT_`, `MUSIC_`, `VOICE_CLONE_`, `VOICE_DESIGN_`. Next to those sit the provider's own lists under their own names (`GEMINI_TTS_VOICES`, `GPT_IMAGE_2_SIZES`, `BFL_ASPECT_RATIOS`, `RECRAFT_V3_STYLES`, `KLING_ASPECT_RATIOS`, …). Those are aliases of the same objects the uniform names reach, not a second source of truth, so there is never a question of which one is current. 48 providers ship a values entry: exactly the ones with a unified adapter.
+Each entry exports three uniform names per category it serves: `<CATEGORY>_MODEL_PARAMS`, `<CATEGORY>_MODELS`, and `<CATEGORY>_FORMAT_SPEC` where the category has an audio format spec. Prefixes are `IMAGE_`, `IMAGE_EDIT_`, `VIDEO_`, `TTS_`, `STT_`, `MUSIC_`, `VOICE_CLONE_`, `VOICE_DESIGN_`. Next to those sit the provider's own lists under their own names (`GEMINI_TTS_VOICES`, `GPT_IMAGE_2_SIZES`, `BFL_ASPECT_RATIOS`, `RECRAFT_V3_STYLES`, `KLING_ASPECT_RATIOS`, …). Those are aliases of the same objects the uniform names reach, not a second source of truth, so there is never a question of which one is current. 51 providers ship a values entry: exactly the ones with a unified adapter.
 
 The tables are **the same objects the adapter compiles with**, re-exported not copied, so a picker and the request it builds cannot disagree. `test/values-entries.test.ts` asserts that by reference (`===`), not deep equality.
 
@@ -141,7 +141,7 @@ What this costs, measured against a real build, per export, with a tree-shaking 
 | --- | --- |
 | any one array from `unmodel/values` | 0.2–1.5 KiB |
 | the median export of a provider entry | ~1 KiB |
-| the most expensive one (`unmodel/runway/values`) | 19.4 KiB |
+| the most expensive one (`VIDEO_MODEL_PARAMS` from `unmodel/fal/values`) | 30.4 KiB |
 | `CHAT_MODEL_REFS` | 49 KiB, hence its own subpath |
 
 That is the point of the layout. The per-model tables live on import-free `<category>-params.ts` leaves the adapter also reads, so importing one voice list does not pull that provider's validator, zod schema or catalog. Before that split the same measurement read 30–82 KiB.

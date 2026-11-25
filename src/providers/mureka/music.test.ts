@@ -671,4 +671,23 @@ describe("mureka unified music adapter", () => {
     expect(failures.some((f) => f.path[0] === "instrumental_id")).toBe(true);
     expect("instrumental_id" in call.params).toBe(false);
   });
+
+  test("styles fails and is stripped on both the song and instrumental routes", () => {
+    for (const extra of [{ lyrics: LYRICS }, { instrumental: true }]) {
+      const { ctx, failures } = fakeCtx("mureka-9.5");
+      const call = musicAdapter.compile(
+        {
+          model: "mureka/mureka-9.5",
+          prompt: "lo-fi",
+          styles: ["pop"],
+          ...extra,
+        } as unknown as MusicParams,
+        ctx,
+      );
+      expect(failures.map((f) => f.path)).toEqual([["styles"]]);
+      expect(failures[0]?.code).toBe("unsupported_param");
+      expect(failures[0]?.message).toContain("POST /v1/song/easy-generate");
+      expect("styles" in (call.params as Record<string, unknown>)).toBe(false);
+    }
+  });
 });

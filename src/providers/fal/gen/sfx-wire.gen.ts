@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/cassetteai__sound-effects-generator.json
+//   data/fal/openapi/elevenlabs__sound-effects__v3.json
 //   data/fal/openapi/fal-ai__elevenlabs__sound-effects__v2.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__base__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__text-to-audio.json
@@ -52,6 +53,58 @@ export interface CassetteaiSoundEffectsGeneratorInput {
 export interface CassetteaiSoundEffectsGeneratorOutput {
   /** The generated SFX. */
   audio_file: FalFile;
+}
+
+/**
+ * The request body `elevenlabs/sound-effects/v3` accepts.
+ *
+ * ElevenLabs Sound Effects v3, resold — fal's published replacement for
+ * `fal-ai/elevenlabs/sound-effects/v2` (retires 2027-02-01), vendor-namespaced while its
+ * OpenAPI documents `/fal-ai/elevenlabs/sound-effects/v3`. Restores the 30-second duration
+ * cap of the native `/v1/sound-generation` route and adds `enable_safety_checker`, while
+ * still narrowing `text` to 450 characters, placing `output_format` in the body (19
+ * values, no `wav_*`), and omitting `model_id`.
+ *
+ * fal serves this endpoint at two live routes: the published id above, and the internal
+ * alias `fal-ai/elevenlabs/sound-effects/v3` its OpenAPI document is written against.
+ * unmodel submits to the published id — that is the one fal documents and the one this
+ * catalog is keyed on.
+ *
+ * Docs: https://fal.ai/models/fal-ai/elevenlabs/sound-effects/v3/api
+ */
+export interface ElevenlabsSoundEffectsV3Input {
+  /** The text describing the sound effect to generate. */
+  text: string;
+  /**
+   * Check input content for safety. Disabling requires account authorization. Default:
+   * `true`.
+   */
+  enable_safety_checker?: boolean;
+  /** Duration in seconds (0.5-30). If None, optimal duration will be determined from prompt. */
+  duration_seconds?: number | null;
+  /**
+   * How closely to follow the prompt (0-1). Higher values mean less variation. Default:
+   * `0.3`.
+   */
+  prompt_influence?: number;
+  /**
+   * Output format of the generated audio. Formatted as codec_sample_rate_bitrate. Default:
+   * `"mp3_44100_128"`.
+   */
+  output_format?: "mp3_22050_32" | "mp3_44100_32" | "mp3_44100_64" | "mp3_44100_96" | "mp3_44100_128" | "mp3_44100_192" | "pcm_8000" | "pcm_16000" | "pcm_22050" | "pcm_24000" | "pcm_44100" | "pcm_48000" | "ulaw_8000" | "alaw_8000" | "opus_48000_32" | "opus_48000_64" | "opus_48000_96" | "opus_48000_128" | "opus_48000_192";
+  /** Whether to create a sound effect that loops smoothly. Default: `false`. */
+  loop?: boolean;
+}
+
+/**
+ * The result document `elevenlabs/sound-effects/v3` produces.
+ *
+ * This is the body of the queue RESULT, fetched from the `response_url` a submit returns —
+ * not the body of the submit response itself, which is the queue envelope.
+ */
+export interface ElevenlabsSoundEffectsV3Output {
+  /** The generated sound effect audio file in MP3 format. */
+  audio: FalFile;
 }
 
 /**
@@ -317,13 +370,14 @@ export interface SoniloV11TextToSoundEffectsOutput {
 /**
  * Endpoint id → its request body type.
  *
- * A map rather than a union: a union of 6 object types re-instantiates at every comparison
+ * A map rather than a union: a union of 7 object types re-instantiates at every comparison
  * site, while a keyed lookup resolves in one. The per-endpoint narrowing a validator
  * exposes indexes into this, so adding an endpoint costs one line here and nothing at any
  * call site.
  */
 export interface FalSfxBodyById {
   "cassetteai/sound-effects-generator": CassetteaiSoundEffectsGeneratorInput;
+  "elevenlabs/sound-effects/v3": ElevenlabsSoundEffectsV3Input;
   "fal-ai/elevenlabs/sound-effects/v2": FalAiElevenlabsSoundEffectsV2Input;
   "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": FalAiStableAudio3SmallSfxBaseTextToAudioInput;
   "fal-ai/stable-audio-3/small/sfx/text-to-audio": FalAiStableAudio3SmallSfxTextToAudioInput;
@@ -334,6 +388,7 @@ export interface FalSfxBodyById {
 /** Endpoint id → its result document type. */
 export interface FalSfxResultById {
   "cassetteai/sound-effects-generator": CassetteaiSoundEffectsGeneratorOutput;
+  "elevenlabs/sound-effects/v3": ElevenlabsSoundEffectsV3Output;
   "fal-ai/elevenlabs/sound-effects/v2": FalAiElevenlabsSoundEffectsV2Output;
   "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": FalAiStableAudio3SmallSfxBaseTextToAudioOutput;
   "fal-ai/stable-audio-3/small/sfx/text-to-audio": FalAiStableAudio3SmallSfxTextToAudioOutput;

@@ -152,6 +152,11 @@
       "textParam": "prompt",
       "note": "CassetteAI SFX. The one endpoint in this roster whose `duration` is REQUIRED (integer, 1–30) — which is why `unmodel/sfx` has a per-model required arm at all: everywhere else omitting the length is legal and means the provider's own default."
     },
+    "elevenlabs/sound-effects/v3": {
+      "verb": "sfx",
+      "textParam": "text",
+      "note": "ElevenLabs Sound Effects v3, resold — fal's published replacement for `fal-ai/elevenlabs/sound-effects/v2` (retires 2027-02-01), vendor-namespaced while its OpenAPI documents `/fal-ai/elevenlabs/sound-effects/v3`. Restores the 30-second duration cap of the native `/v1/sound-generation` route and adds `enable_safety_checker`, while still narrowing `text` to 450 characters, placing `output_format` in the body (19 values, no `wav_*`), and omitting `model_id`."
+    },
     "fal-ai/ace-step": {
       "verb": "music",
       "textParam": "tags",

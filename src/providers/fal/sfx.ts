@@ -1,5 +1,5 @@
 /**
- * `fal.sfx` — sound-effect generation across fal's queue, at 6 endpoints.
+ * `fal.sfx` — sound-effect generation across fal's queue, at 7 endpoints.
  *
  * `POST https://queue.fal.run/{endpoint}`, flat JSON body,
  * `Authorization: Key <FAL_KEY>`.

@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/cassetteai__sound-effects-generator.json
+//   data/fal/openapi/elevenlabs__sound-effects__v3.json
 //   data/fal/openapi/fal-ai__elevenlabs__sound-effects__v2.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__base__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__text-to-audio.json
@@ -40,6 +41,25 @@ export const sfxModels = {
     toolCall: false,
     openWeights: false,
     lastUpdated: "2026-04-26",
+    modalities: { input: ["text"], output: ["audio"] },
+    limit: { context: 0 },
+  },
+  /**
+   * $0.002 per generated audio second. Not on `cost`: ModelCost has no
+   * `per_generated_audio_second` unit and forcing this into one of the four it does have
+   * would ship a number that is wrong for most requests.
+   *
+   * Source: https://fal.ai/models/elevenlabs/sound-effects/v3/llms.txt — verified
+   * 2026-11-24. Quote: “Price: $0.002 per seconds”
+   */
+  "elevenlabs/sound-effects/v3": {
+    id: "elevenlabs/sound-effects/v3",
+    name: "ElevenLabs Sound Effects V3",
+    attachment: false,
+    reasoning: false,
+    toolCall: false,
+    openWeights: false,
+    lastUpdated: "2026-11-18",
     modalities: { input: ["text"], output: ["audio"] },
     limit: { context: 0 },
   },

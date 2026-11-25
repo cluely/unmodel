@@ -61,7 +61,7 @@ describe("the pack", () => {
 
   test("the two adapters are the pack, and each can be built alone", () => {
     expect(elevenlabsAdapter.models).toHaveLength(2);
-    expect(falAdapter.models).toHaveLength(6);
+    expect(falAdapter.models).toHaveLength(7);
     expect([...createSfx([elevenlabsAdapter]).providers]).toEqual(["elevenlabs"]);
     expect([...createSfx([falAdapter]).providers]).toEqual(["fal"]);
   });

@@ -67,7 +67,7 @@ function base(ref: string): Record<string, unknown> {
 }
 
 test("the sweep walks every ref the pack ships", () => {
-  expect(refs.length).toBe(8);
+  expect(refs.length).toBe(9);
   expect(new Set(refs).size).toBe(refs.length);
   for (const ref of refs) expect(ROWS[modelOf(ref)], ref).toBeDefined();
 });
@@ -92,6 +92,7 @@ test("only CassetteAI requires a second field, and that field is the length", ()
   );
   expect(beyondPrompt).toEqual({
     "cassetteai/sound-effects-generator": ["duration"],
+    "elevenlabs/sound-effects/v3": [],
     "fal-ai/elevenlabs/sound-effects/v2": [],
     "fal-ai/stable-audio-3/small/sfx/base/text-to-audio": [],
     "fal-ai/stable-audio-3/small/sfx/text-to-audio": [],

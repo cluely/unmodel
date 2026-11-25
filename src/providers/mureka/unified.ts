@@ -18,8 +18,8 @@
  * split is enforced here at compile time, always with the route named: the
  * song-only controls (`lyrics`, `gender`, `reference_id`, `vocal_id`,
  * `melody_id`) fail on the instrumental route, `instrumental_id` fails on both
- * sung routes, and `gender`/`melody_id` fail on the prompt-to-song route,
- * which has neither.
+ * sung routes, `styles` fails on the song and instrumental routes, and
+ * `gender`/`melody_id` fail on the prompt-to-song route, which has neither.
  *
  * PROMPT CAP WART: the effective cap on the canonical `prompt` is
  * route-dependent — 2000 characters on the prompt-to-song route, 1024 on the
@@ -137,6 +137,13 @@ function compileSong(
     delete (body as Record<string, unknown>).instrumental_id;
   }
 
+  refuseStyles(
+    body as unknown as Record<string, unknown>,
+    ctx,
+    "POST /v1/song/generate",
+    "drop the `lyrics` extra",
+  );
+
   return { params: body, validate: songValidator.safe as MurekaValidate };
 }
 
@@ -167,6 +174,13 @@ function compileInstrumental(
     });
     delete loose[field];
   }
+
+  refuseStyles(
+    loose,
+    ctx,
+    "POST /v1/instrumental/generate",
+    "drop `instrumental: true` (and omit `lyrics`)",
+  );
 
   return { params: body, validate: instrumentalValidator.safe as MurekaValidate };
 }
@@ -200,6 +214,30 @@ function compileFromPrompt(
   }
 
   return { params: body, validate: fromPromptValidator.safe as MurekaValidate };
+}
+
+/**
+ * `styles` on a route that does not take it. `SongEasyGenerateReq` is the only
+ * Mureka body with `styles`, so the refusal names it on both sibling routes.
+ */
+function refuseStyles(
+  loose: Record<string, unknown>,
+  ctx: CompileContext<MusicParams>,
+  route: string,
+  howToSelect: string,
+): void {
+  const value = loose.styles;
+  if (value === undefined) return;
+  ctx.fail({
+    code: "unsupported_param",
+    path: ["styles"],
+    message:
+      `\`styles\` belongs to the prompt-to-song route (POST /v1/song/easy-generate) — ` +
+      `${route} does not take it. Remove it, or ${howToSelect} to compile to ` +
+      "POST /v1/song/easy-generate.",
+    meta: { value, source: EASY_GENERATE_DOCS },
+  });
+  delete loose.styles;
 }
 
 /**

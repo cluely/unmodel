@@ -129,6 +129,14 @@
       "status": "active",
       "updated_at": "2026-04-26T21:42:30.607Z"
     },
+    "elevenlabs/sound-effects/v3": {
+      "category": "text-to-audio",
+      "display_name": "ElevenLabs Sound Effects V3",
+      "file": "openapi/elevenlabs__sound-effects__v3.json",
+      "sha256": "11f410e0be04a89c1a7cfe80630fd7ae11a5fa9cd45f627a0ddd7fdf9e777284",
+      "status": "active",
+      "updated_at": "2026-11-18T21:48:11.751Z"
+    },
     "fal-ai/ace-step": {
       "category": "text-to-audio",
       "display_name": "ACE Step",

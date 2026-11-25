@@ -2,6 +2,7 @@
 // Source: https://api.fal.ai/v1/models?endpoint_id=<id>&expand=openapi-3.0
 // Committed snapshots:
 //   data/fal/openapi/cassetteai__sound-effects-generator.json
+//   data/fal/openapi/elevenlabs__sound-effects__v3.json
 //   data/fal/openapi/fal-ai__elevenlabs__sound-effects__v2.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__base__text-to-audio.json
 //   data/fal/openapi/fal-ai__stable-audio-3__small__sfx__text-to-audio.json
@@ -36,6 +37,17 @@ export const FAL_SFX_SHAPES = {
     props: {
       prompt: { t: "string", req: true },
       duration: { t: "integer", req: true, min: 1, max: 30 },
+    },
+  },
+  "elevenlabs/sound-effects/v3": {
+    order: ["text", "enable_safety_checker", "duration_seconds", "prompt_influence", "output_format", "loop"],
+    props: {
+      text: { t: "string", req: true, maxLen: 450 },
+      enable_safety_checker: { t: "boolean", def: true },
+      duration_seconds: { t: "number", nul: true, min: 0.5, max: 30 },
+      prompt_influence: { t: "number", def: true, min: 0, max: 1 },
+      output_format: { t: "string", def: true, enum: E_5c90ee },
+      loop: { t: "boolean", def: true },
     },
   },
   "fal-ai/elevenlabs/sound-effects/v2": {
@@ -111,6 +123,9 @@ export const FAL_SFX_SHAPES = {
  */
 export const FAL_SFX_CONSTRAINTS = {
   "cassetteai/sound-effects-generator": {},
+  "elevenlabs/sound-effects/v3": {
+    output_format: E_5c90ee,
+  },
   "fal-ai/elevenlabs/sound-effects/v2": {
     output_format: E_5c90ee,
   },

@@ -995,6 +995,109 @@ declare const file: Blob;
 imageEdit({ model: "photoroom/edit-with-ai", operation: "edit", prompt: "x", image: { file }, providerOptions: { photoroom: { referenceBox: "¦" } } });`);
     expect([...values].sort()).toEqual(["originalImage", "subjectBox"]);
   });
+
+  /**
+   * The operation is a fact of the MODEL's row, and the editor has to say so at
+   * the keystroke: a discriminant that offered both members everywhere would
+   * compile a removal at an edit model and leave the refusal to run time.
+   */
+  test("operation completes exactly what the ref's model serves", () => {
+    const at = (model: string): string[] =>
+      completionsAt(`import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+imageEdit({ model: "${model}", image: { file }, operation: "¦" });`);
+    expect(at("stability/stable-image-remove-background")).toEqual(["removeBackground"]);
+    expect(at("photoroom/remove-background")).toEqual(["removeBackground"]);
+    expect(at("openai/gpt-image-2")).toEqual(["edit"]);
+    expect(at("photoroom/edit-with-ai")).toEqual(["edit"]);
+  });
+
+  test("a ref the types cannot read is offered both operations, by what the request carries", () => {
+    // Both arms are live, and the language service discriminates on the words
+    // already written: a request with a sentence can only be an edit, and one
+    // without can only be a removal (an edit requires its `prompt`).
+    const at = (words: string): string[] =>
+      completionsAt(`import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+declare const chosen: string;
+imageEdit({ model: chosen, image: { file }, ${words}operation: "¦" });`);
+    expect(at(`prompt: "x", `)).toEqual(["edit"]);
+    expect(at("")).toEqual(["removeBackground"]);
+    const dynamic = (body: string): string[] =>
+      semanticErrorsIn(`import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+declare const chosen: string;
+imageEdit({ model: chosen, image: { file }, ${body} });`);
+    expect(dynamic(`operation: "edit", prompt: "x"`)).toEqual([]);
+    expect(dynamic(`operation: "removeBackground"`)).toEqual([]);
+    expect(dynamic(`operation: "removeBackground", prompt: "x"`).length).toBeGreaterThan(0);
+  });
+
+  test("the edit words are errors at a removal ref, and required words stay required at an edit ref", () => {
+    const removal = (extra: string): string => `import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+imageEdit({ model: "stability/stable-image-remove-background", operation: "removeBackground", image: { file }${extra} });`;
+    expect(semanticErrorsIn(removal(""))).toEqual([]);
+    expect(semanticErrorsIn(removal(`, outputFormat: "webp"`))).toEqual([]);
+    for (const word of [
+      `prompt: "x"`,
+      "seed: 1",
+      "strength: 0.5",
+      "n: 2",
+      `size: "1024x1024"`,
+      `aspectRatio: "1:1"`,
+      "dimensions: { width: 512, height: 512 }",
+    ]) {
+      expect(semanticErrorsIn(removal(`, ${word}`)).length, word).toBeGreaterThan(0);
+    }
+
+    // The other direction: the wrong operation at each kind of ref, and an edit
+    // with no sentence.
+    const call = (body: string): string => `import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+imageEdit({ ${body}, image: { file } });`;
+    expect(
+      semanticErrorsIn(call(`model: "stability/stable-image-remove-background", operation: "edit", prompt: "x"`))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      semanticErrorsIn(call(`model: "openai/gpt-image-2", operation: "removeBackground"`)).length,
+    ).toBeGreaterThan(0);
+    expect(semanticErrorsIn(call(`model: "openai/gpt-image-2", operation: "edit"`)).length)
+      .toBeGreaterThan(0);
+    expect(semanticErrorsIn(call(`model: "openai/gpt-image-2", operation: "edit", prompt: "x"`)))
+      .toEqual([]);
+  });
+
+  test("photoroom: the removal extras are offered at the removal ref and nowhere else", () => {
+    const keys = (model: string, operation: string): string[] =>
+      completionsAt(`import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+imageEdit({ model: "${model}", operation: "${operation}", image: { file }, ¦ });`);
+    const removal = keys("photoroom/remove-background", "removeBackground");
+    for (const extra of ["bg_color", "channels", "crop", "despill", "outputFormat"]) {
+      expect(removal, extra).toContain(extra);
+    }
+    const edit = keys("photoroom/edit-with-ai", "edit");
+    for (const extra of ["bg_color", "channels", "crop", "despill"]) {
+      expect(edit, extra).not.toContain(extra);
+    }
+    expect(edit).toContain("prompt");
+
+    const crop = completionsAt(`import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+imageEdit({ model: "photoroom/remove-background", operation: "removeBackground", image: { file }, crop: "¦" });`);
+    expect([...crop].sort()).toEqual(["false", "true"]);
+  });
+
+  test("photoroom/remove-background: the bucket completes `/v1/segment`'s `size`", () => {
+    // The route's `size` is a named downscale and its name is the canonical
+    // word for a shape, so it cannot be an extra — it is typed in the bucket.
+    const values = completionsAt(`import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+imageEdit({ model: "photoroom/remove-background", operation: "removeBackground", image: { file }, providerOptions: { photoroom: { size: "¦" } } });`);
+    expect([...values].sort()).toEqual(["full", "hd", "medium", "preview"]);
+  });
 });
 
 /**

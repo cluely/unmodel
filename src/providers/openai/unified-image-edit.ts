@@ -166,7 +166,7 @@ export const imageEdit = {
         source: EDIT_DOCS,
         hint:
           "`/v1/images/edits` does the masked operations too, through the `mask` part — which has " +
-          "no canonical field in v1 and is one `providerOptions.openai` key away.",
+          "no canonical field and is one `providerOptions.openai` key away.",
       }),
     );
 

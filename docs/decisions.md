@@ -581,3 +581,104 @@ about it — which would be a new return shape, not a severity flag on the
 existing one. For `outcome`: a provider whose terminal status is *not*
 expressible in its own vocabulary, so there is nothing for `finishReason` to
 mirror.
+
+---
+
+## 10. `imageEdit.operation` has two members; which one a model serves is a fact of its row
+
+**Decision.** `unmodel/image-edit` speaks two operations: `"edit"` (change the
+picture the way `prompt` says) and `"removeBackground"` (return the subject on
+a transparent background; no prompt). `ImageEditParams` is the union of the two
+operations' arms. Which operation a **model** serves is declared on its
+`modelParams` row as `operations`, and an absent `operations` means `["edit"]`.
+
+**The witnesses** (§8 — two independent providers, or it is not vocabulary):
+
+| Word | stability `…/edit/remove-background` | photoroom `/v1/segment` | Verdict |
+|---|---|---|---|
+| `image` | `image` (Blob) | `image_file` (Blob) | canonical |
+| `outputFormat` | `output_format`: `png` \| `webp` | `format`: `png` \| `jpg` \| `webp` | canonical — union over intersection: stability refuses `jpeg` by name |
+| background colour | — | `bg_color` | one witness → a per-model extra |
+| output size | — | `size`: `preview` / `medium` / `hd` / `full` | one witness → `providerOptions.photoroom.size` (the name is the canonical word for a shape, so it cannot be an extra) |
+| mask-only output, crop, despill | — | `channels`, `crop`, `despill` | one witness each → extras |
+| `prompt`, `strength`, `n`, `seed`, `size`, `aspectRatio`, `dimensions` | — | — | no witness; typed `never` on the arm |
+
+Photoroom's `/v2/edit` `background.color` is not a second witness for
+`bg_color`: it is the same vendor, and agreement with yourself is not
+corroboration.
+
+**Why the arm declares seven `?: never` keys.** They are load-bearing twice.
+`ExactKeys` reads `keyof` the vocabulary, and `keyof` a union is only the keys
+*every* member declares — an arm that merely left `prompt` out would stop
+`prompt` being a known key on the edit arm too. And they are what makes
+`prompt` on a removal a compile error instead of a field that is silently
+dropped. A JavaScript caller gets the run-time half: `unsupported_param` at the
+word, from the adapter.
+
+**Why the unit is the model row and not the adapter.** The kernel registers
+one adapter per provider, and Photoroom serves `"edit"` at
+`photoroom/edit-with-ai` and `"removeBackground"` at
+`photoroom/remove-background`. An adapter-wide list (the shape `imageInputs`
+has) would let the wrong pairing compile. The row is where `unmodel/3d` already
+puts the same kind of fact (`ThreeDModelParams.inputs`). One table, two
+enforcement points: `ImageEditOperationArms` types the caller's `operation`
+from the row, and `resolveImageEditOperation` in `core/unified/image-edit-operations.ts` refuses from the
+same row — `imageEditOperations` is the only place "absent means `["edit"]`" is
+written as a value. The row type lives in `vocabulary/image-edit.ts`, not
+beside the other categories' rows in `vocabulary/model-params.ts`: that module
+is in every pack's declaration graph, and naming the operation arms there put
+this whole vocabulary into thirteen packs that never edit a picture (13.6 KiB
+of declarations each, measured).
+
+**Why this was declined before, and why that no longer holds.** The arm was
+turned down on a cost argument: a second arm would cross the three-arm
+`size` / `aspectRatio` / `dimensions` XOR into six, and force `prompt` off the
+shared base, at the price of editor latency. The removal arm has no shape to
+choose, so it does **not** cross the XOR: the union is four arms, not six.
+`prompt` did leave the shared base. The cost is measured rather than argued:
+an `imageEdit()` call against the ready pack went from 13,674 type
+instantiations to 14,983 (+9.6%) when the arm landed, 544 of that being an
+eighth adapter joining the pack rather than the arm. `test/type-bench` pins a
+pack call of each operation ("image-edit: unified pack call" and its
+`removeBackground` twin), so a fifth arm, or an arm that does cross the XOR,
+shows up as a number. The pins are the live figures and move whenever an
+adapter joins the pack; the two quoted here are the arm's own before and after.
+
+**Therefore, never:**
+
+- Add a word to the removal arm on one provider's field. A second vendor's
+  background colour would make `backgroundColor` vocabulary; until then
+  `bg_color` is Photoroom's extra.
+- Give an operation its own entry point (`unmodel/remove-background`). The
+  discriminant exists so that an operation joins this category without a new
+  pack, a new kernel category and a second copy of the `image` narrowing.
+- Put `operations` on the adapter, or default it per provider. The default is
+  per row and it is `["edit"]`.
+- Compile a removal to a route that also edits because it happens to default to
+  a cut-out. `photoroom/remove-background` is `/v1/segment`, not a bare
+  `/v2/edit` call, which would cost five times as much for the same picture.
+- Make an operation member out of one vendor's task menu. fal's
+  `fal-ai/image-editing/*` routes (`broccoli-haircut`, `youtube-thumbnails`, …)
+  stay excluded: a per-route menu is not a vocabulary and has one witness.
+
+**Known limits of the per-row unit**, each a consequence of one adapter per
+provider and none of them a bug to fix in an adapter:
+
+- *The result is not narrowed by the ref.* A unified call's result type is read
+  per provider, so at a Photoroom ref it is the union of the two routes'
+  results and reaching a field of one form takes an `in` check, although the
+  row that narrows the input already says which route the ref compiles to.
+- *`providerOptions.photoroom` is the fields of both forms.* A `/v1/segment`
+  field written in the bucket at an edit ref compiles; the route's own
+  validator then reports it as `unknown_param`, and `/v2/edit` bills the call
+  and ignores the field.
+- *A union of refs defeats the operation typing.* `model: A | B`, where the two
+  serve different operations, takes either operation at compile time, like a
+  dynamic ref; the run-time refusal from the same row is what answers.
+
+**What would change this.** A third operation that needs a second picture —
+inpaint, erase, outpaint — which needs a canonical word for a mask before it
+needs an `operation` member; that is a vocabulary decision under §8, not an
+extension of this one. For the unit: a kernel that registered more than one
+adapter per provider, at which point "which operation" could be an adapter
+fact again.

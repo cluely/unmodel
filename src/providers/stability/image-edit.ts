@@ -52,7 +52,7 @@ import {
   STABILITY_OUTPUT_FORMATS,
   type StabilityStylePreset,
   type StabilityOutputFormat,
-} from "./image";
+} from "./constraints";
 
 const EDIT_BASE_URL = "https://api.stability.ai/v2beta/stable-image/edit";
 

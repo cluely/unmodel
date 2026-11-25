@@ -46,6 +46,7 @@ import type {
   TtsDeliveryKind,
   VideoResolution,
 } from "./vocabulary/common";
+import type { ImageEditOperation } from "./vocabulary/image-edit";
 import type { AudioInputKind, TimestampGranularity } from "./vocabulary/stt";
 import type { VoiceSampleKind, VoiceVisibility } from "./vocabulary/voice-clone";
 
@@ -196,6 +197,20 @@ export const VOICE_VISIBILITIES = [
   "unlisted",
   "public",
 ] as const satisfies readonly VoiceVisibility[];
+
+// ---------------------------------------------------------------------------
+// Image editing
+// ---------------------------------------------------------------------------
+
+/**
+ * The operations `unmodel/image-edit` speaks. Which of them a given model
+ * serves is that model's row at `unmodel/<provider>/values` —
+ * `IMAGE_EDIT_MODEL_PARAMS[model].operations`, where absent means `["edit"]`.
+ */
+export const IMAGE_EDIT_OPERATIONS = [
+  "edit",
+  "removeBackground",
+] as const satisfies readonly ImageEditOperation[];
 
 // ---------------------------------------------------------------------------
 // The params vocabulary itself

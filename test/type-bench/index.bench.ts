@@ -69,7 +69,29 @@ bench("image-edit: unified pack call", () => {
     prompt: "make it winter",
     image: { file: new Blob([]) },
   });
-}).types([13345, "instantiations"]);
+}).types([14983, "instantiations"]);
+
+/**
+ * The same pack, the other operation.
+ *
+ * `operation: "removeBackground"` is the arm `docs/decisions.md` §10 records as
+ * once declined on editor latency, so its cost is a pinned number rather than
+ * an argument. Both calls are pinned at the figure measured with the arm in
+ * place, so the 20% gate has its whole width for the next change. The arm and
+ * the eighth adapter that serves it took the edit call above from 13,674
+ * instantiations to 14,983 (+9.6%), 544 of that the adapter joining the pack
+ * and the rest the arm itself; this call costs the same as that one to within
+ * 70. The arm does not cross the sizing XOR — a removal has no shape to choose
+ * — which is why neither figure doubled. An arm that did cross it, or a third
+ * operation, moves both.
+ */
+bench("image-edit: unified pack call, removeBackground", () => {
+  return imageEdit.safe({
+    operation: "removeBackground",
+    model: "stability/stable-image-remove-background",
+    image: { file: new Blob([]) },
+  });
+}).types([14918, "instantiations"]);
 
 bench("fal: image pack call", () => {
   return falImage.safe({ endpoint: "fal-ai/flux/dev", prompt: "a lighthouse" });

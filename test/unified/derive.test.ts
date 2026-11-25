@@ -61,6 +61,10 @@ import {
   VIDEO_ROUTE_LABELS,
   type DeriveContext,
 } from "../../src/core/unified/derive";
+import {
+  imageEditOperations,
+  resolveImageEditOperation,
+} from "../../src/core/unified/image-edit-operations";
 
 /** A context that records what was warned, so both halves are assertable. */
 function ctxAt(...path: Array<string | number>): DeriveContext & {
@@ -1544,6 +1548,60 @@ describe("resolveOperation", () => {
     expect(resolveOperation("edit", both, ctxAt("operation")).value).toBe("edit");
     expect(resolveOperation("inpaint", both, ctxAt("operation")).value).toBe("inpaint");
     expect(resolveOperation("outpaint", both, ctxAt("operation")).value).toBeUndefined();
+  });
+});
+
+describe("imageEditOperations · resolveImageEditOperation", () => {
+  const TABLE = {
+    "edits-by-default": { ratios: [] },
+    "edits-by-name": { operations: ["edit"] },
+    removes: { operations: ["removeBackground"] },
+  } as const;
+
+  test("a row with no `operations` serves an edit, and only an edit", () => {
+    expect(imageEditOperations(TABLE, "edits-by-default")).toEqual(["edit"]);
+    expect(imageEditOperations(TABLE, "edits-by-name")).toEqual(["edit"]);
+    expect(imageEditOperations(TABLE, "removes")).toEqual(["removeBackground"]);
+  });
+
+  test("a model the table does not list gets every operation any row serves", () => {
+    expect([...imageEditOperations(TABLE, "newer-than-the-snapshot")].sort()).toEqual([
+      "edit",
+      "removeBackground",
+    ]);
+    // …and a table of edit rows offers an unknown model an edit, nothing more.
+    expect(imageEditOperations({ a: {}, b: { sizes: ["auto"] } }, "c")).toEqual(["edit"]);
+    // An inherited key is not a row.
+    expect([...imageEditOperations(TABLE, "constructor")].sort()).toEqual([
+      "edit",
+      "removeBackground",
+    ]);
+  });
+
+  test("the row decides what is refused, and the message names what it serves", () => {
+    expect(
+      resolveImageEditOperation("removeBackground", TABLE, "removes", ctxAt("operation")).value,
+    ).toBe("removeBackground");
+    expect(
+      resolveImageEditOperation("edit", TABLE, "edits-by-default", ctxAt("operation")).value,
+    ).toBe("edit");
+
+    const wrong = resolveImageEditOperation("edit", TABLE, "removes", ctxAt("operation"), {
+      hint: "Try X.",
+    });
+    expect(wrong.value).toBeUndefined();
+    expect(wrong.issues[0]!.code).toBe("invalid_enum_value");
+    expect(wrong.issues[0]!.message).toContain('"removeBackground"');
+    expect(wrong.issues[0]!.message).toEndWith("Try X.");
+    expect(wrong.issues[0]!.meta).toMatchObject({ allowed: ["removeBackground"], value: "edit" });
+
+    const other = resolveImageEditOperation(
+      "removeBackground",
+      TABLE,
+      "edits-by-default",
+      ctxAt("operation"),
+    );
+    expect(other.issues[0]!.meta).toMatchObject({ allowed: ["edit"], value: "removeBackground" });
   });
 });
 

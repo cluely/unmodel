@@ -453,7 +453,7 @@ describe("the never-published lists are published now", () => {
 // ---------------------------------------------------------------------------
 
 describe("unmodel/values — the canonical hub", () => {
-  test("it publishes the ten canonical arrays, and each is non-empty and unique", async () => {
+  test("it publishes the canonical arrays, and each is non-empty and unique", async () => {
     const hub = (await import(join(ROOT, "src", "values", "index.ts"))) as Record<string, unknown>;
     const expected: Readonly<Record<string, number>> = {
       ASPECT_RATIO_PRESETS: 9,
@@ -466,6 +466,7 @@ describe("unmodel/values — the canonical hub", () => {
       TIMESTAMP_GRANULARITIES: 4,
       AUDIO_INPUT_KINDS: 4,
       TTS_DELIVERY_KINDS: 5,
+      IMAGE_EDIT_OPERATIONS: 2,
     };
     const problems: string[] = [];
     for (const [name, size] of Object.entries(expected)) {

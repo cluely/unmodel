@@ -38,8 +38,15 @@ import {
 import {
   EDIT_URL,
   imageEdit as photoroomImageEdit,
+  imageEditRemoveBackground as photoroomRemoveBackground,
+  SEGMENT_URL,
   toFormData as photoroomFormData,
 } from "../../src/providers/photoroom";
+import {
+  imageEditRemoveBackground as stabilityRemoveBackground,
+  STABLE_IMAGE_REMOVE_BACKGROUND_URL,
+  toFormData as stabilityFormData,
+} from "../../src/providers/stability";
 import {
   imageEditGenerateBackground,
   imageEditInpaint,
@@ -53,7 +60,7 @@ const png = (bytes = 64): Blob => new Blob([new Uint8Array(bytes)], { type: "ima
 const URL_IMAGE = "https://example.com/street.png";
 
 describe("the pack", () => {
-  test("registers exactly the seven image-edit providers, sorted", () => {
+  test("registers exactly the eight image-edit providers, sorted", () => {
     expect([...imageEdit.providers]).toEqual([
       "black-forest-labs",
       // fal contributes 17 editing endpoints — more than the other four
@@ -63,18 +70,22 @@ describe("the pack", () => {
       "fal",
       "ideogram",
       "openai",
-      // One ref, `photoroom/edit-with-ai`: the single mode of a forty-feature
-      // route that is a picture and a sentence.
+      // Two refs, one per operation: `photoroom/edit-with-ai`, the single mode
+      // of a forty-feature route that is a picture and a sentence, and
+      // `photoroom/remove-background`.
       "photoroom",
       "recraft",
       "revana",
+      // One ref and one operation: `removeBackground`. Its five other edit
+      // routes are mask- or search-driven.
+      "stability",
     ]);
   });
 
   test("a provider outside the pack is structural, not a validation error", () => {
     const request = {
       operation: "edit",
-      model: "stability/stable-image-erase",
+      model: "luma/photon-1",
       prompt: PROMPT,
       image: { file: png() },
     } as const;
@@ -82,7 +93,7 @@ describe("the pack", () => {
     const result = imageEdit.safe(request as never);
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.errors[0]!.meta).toMatchObject({ structural: true, provider: "stability" });
+    expect(result.errors[0]!.meta).toMatchObject({ structural: true, provider: "luma" });
   });
 
   test("a model the adapter does not list warns but still compiles", () => {
@@ -820,7 +831,7 @@ describe("photoroom: Edit With AI, and nothing else on the route", () => {
       "editWithAI.seed": 7,
       "export.format": "webp",
     });
-    expect(params.imageFile).toBe(file);
+    expect("imageFile" in params && params.imageFile).toBe(file);
     expect(params.request.url).toBe(EDIT_URL);
     expect(params.request.body).toBe("form");
     // No content-type: `fetch` derives the multipart boundary. And no `pr-*`
@@ -992,6 +1003,7 @@ describe("photoroom: Edit With AI, and nothing else on the route", () => {
       return result.errors[0]!.message;
     };
     expect(refused({ strength: 0.5 })).toContain("steered by `editWithAI.prompt` alone");
+    expect(refused({ strength: 0.5 })).toContain("neither Photoroom route");
     expect(refused({ n: 2 })).toContain("issue N requests");
     // The three shape words share one reason, and it names the field that
     // LOOKS like the answer and is not.
@@ -1002,7 +1014,10 @@ describe("photoroom: Edit With AI, and nothing else on the route", () => {
     ]) {
       const message = refused(shape);
       expect(message).toContain("1K (`1024x1024`)");
-      expect(message).toContain("`outputSize` is the CANVAS");
+      expect(message).toContain("is the CANVAS");
+      // …and the one on the sibling route, because the same sentence is quoted
+      // to a caller of `photoroom/remove-background`.
+      expect(message).toContain("named downscale");
     }
   });
 
@@ -1041,6 +1056,261 @@ describe("photoroom: Edit With AI, and nothing else on the route", () => {
       ["unknown_param", ["editWithAI.sead"]],
     ]);
     expect(result.warnings[0]!.message).toContain("`pr-unsupported-attributes`");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// operation: "removeBackground" — two providers, two forms
+// ---------------------------------------------------------------------------
+
+describe("removeBackground: stability", () => {
+  const base = {
+    operation: "removeBackground",
+    model: "stability/stable-image-remove-background",
+  } as const;
+
+  test("the body is the two-field form, ending in the route's own ValidatedForm", () => {
+    const file = png();
+    const params = imageEdit({ ...base, image: { file }, outputFormat: "webp" });
+    const body: Record<string, unknown> = { ...params };
+    expect(body).toEqual({ image: file, output_format: "webp" });
+    expect(params.request.url).toBe(STABLE_IMAGE_REMOVE_BACKGROUND_URL);
+    expect(params.request.body).toBe("form");
+    expect(params.request.headers).toEqual({});
+    expect(params.warnings).toEqual([]);
+
+    // Byte for byte what the wire-exact validator returns for the same form.
+    const direct = stabilityRemoveBackground({ image: file, output_format: "webp" });
+    expect(body).toEqual({ ...direct });
+    expect(params.request).toEqual(direct.request);
+    expect(formFields(stabilityFormData(params))).toEqual({ image: "@file", output_format: "webp" });
+  });
+
+  test("the estimate is the route's 5 credits", () => {
+    const result = imageEdit.safe({ ...base, image: { file: png() } });
+    expect(result.ok && result.estimate?.costUSD).toBeCloseTo(0.05, 6);
+  });
+
+  test("`jpeg` is refused by name: the route returns an alpha channel", () => {
+    const result = imageEdit.safe({ ...base, image: { file: png() }, outputFormat: "jpeg" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["invalid_enum_value", ["outputFormat"]],
+    ]);
+    const issue = result.errors[0]!;
+    expect(issue.message).toContain("returns an alpha channel");
+    expect(issue.message).toContain("JPEG cannot carry one");
+    expect(issue.meta).toMatchObject({ allowed: ["png", "webp"], value: "jpeg" });
+  });
+
+  test("`operation: \"edit\"` is refused naming the wire-only routes that take a prompt", () => {
+    const result = imageEdit.safe({
+      operation: "edit",
+      model: base.model,
+      prompt: PROMPT,
+      image: { file: png() },
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const operation = result.errors.find((issue) => issue.path[0] === "operation");
+    expect(operation?.code).toBe("invalid_enum_value");
+    expect(operation?.meta).toMatchObject({ allowed: ["removeBackground"], value: "edit" });
+    expect(operation?.message).toContain("`stability.imageEditInpaint`");
+    expect(operation?.message).toContain("`stability.imageEditSearchAndReplace`");
+    // The sentence has nowhere to go either, and is reported at its own name.
+    const prompt = result.errors.find((issue) => issue.path[0] === "prompt");
+    expect(prompt?.code).toBe("unsupported_param");
+    expect(prompt?.message).toContain("takes `image` and `output_format` and nothing else");
+  });
+
+  test.each([
+    ["{ url }", { url: URL_IMAGE }],
+    ["{ data }", { data: "aVZCT1J3MEtHZ28=" }],
+  ])("%s is refused naming the multipart part", (_label, image) => {
+    const result = imageEdit.safe({ ...base, image } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["image"]],
+    ]);
+    expect(result.errors[0]!.message).toContain("it takes { file }");
+    expect(result.errors[0]!.message).toContain("its `image` part");
+  });
+
+  test("the escape hatch reaches the wire, and the route's own schema still checks it", () => {
+    const result = imageEdit.safe({
+      ...base,
+      image: { file: png() },
+      providerOptions: { stability: { output_format: "jpeg" } },
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => issue.path)).toEqual([["output_format"]]);
+  });
+});
+
+describe("removeBackground: photoroom", () => {
+  test("an id outside a synthetic-id adapter's list is refused, not sent and priced as whichever route the operation picks", () => {
+    const edit = imageEdit.safe({ operation: "edit", model: "photoroom/remove-backgroud", prompt: PROMPT, image: { file: png() } } as never);
+    if (edit.ok) throw new Error("expected a refusal");
+    expect(edit.errors.map((issue) => [issue.code, issue.path])).toEqual([["invalid_enum_value", ["model"]]]);
+    expect(edit.errors[0]?.message).toBe(
+      "`photoroom/remove-backgroud` is not a Photoroom ref. Photoroom's routes take no model field, so the refs are " +
+        "unmodel's names for them: `photoroom/edit-with-ai` and `photoroom/remove-background`.",
+    );
+    const removal = imageEdit.safe({ operation: "removeBackground", model: "stability/some-new-thing", image: { file: png() } } as never);
+    if (removal.ok) throw new Error("expected a refusal");
+    expect(removal.errors.map((issue) => [issue.code, issue.path])).toEqual([["invalid_enum_value", ["model"]]]);
+  });
+
+  const base = { operation: "removeBackground", model: "photoroom/remove-background" } as const;
+
+  test("the body is the `/v1/segment` form, ending in that route's own ValidatedForm", () => {
+    const file = png();
+    const params = imageEdit({
+      ...base,
+      image: { file },
+      outputFormat: "webp",
+      bg_color: "#FF00FF",
+      crop: "true",
+    });
+    const body: Record<string, unknown> = { ...params };
+    expect(body).toEqual({ image_file: file, format: "webp", bg_color: "#FF00FF", crop: "true" });
+    expect(params.request.url).toBe(SEGMENT_URL);
+    expect(params.request.body).toBe("form");
+    expect(params.request.headers).toEqual({});
+    expect(params.warnings).toEqual([]);
+
+    const direct = photoroomRemoveBackground({
+      image_file: file,
+      format: "webp",
+      bg_color: "#FF00FF",
+      crop: "true",
+    });
+    expect(body).toEqual({ ...direct });
+    expect(params.request).toEqual(direct.request);
+    expect(formFields(photoroomFormData(params))).toEqual({
+      image_file: "@file",
+      format: "webp",
+      bg_color: "#FF00FF",
+      crop: "true",
+    });
+  });
+
+  test("`jpeg` is written `jpg`, the route's own spelling, with nothing warned", () => {
+    const result = imageEdit.safe({ ...base, image: { file: png() }, outputFormat: "jpeg" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((result.params as unknown as { format: string }).format).toBe("jpg");
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("the estimate is `/v1/segment`'s $0.02, a fifth of the edit route's", () => {
+    const removal = imageEdit.safe({ ...base, image: { file: png() } });
+    expect(removal.ok && removal.estimate?.costUSD).toBeCloseTo(0.02, 6);
+    const edit = imageEdit.safe({
+      operation: "edit",
+      model: "photoroom/edit-with-ai",
+      prompt: PROMPT,
+      image: { file: png() },
+    });
+    expect(edit.ok && edit.estimate?.costUSD).toBeCloseTo(0.1, 6);
+  });
+
+  test("the route's `size` rides in the bucket, because the canonical word is a shape", () => {
+    const params = imageEdit({
+      ...base,
+      image: { file: png() },
+      providerOptions: { photoroom: { size: "hd" } },
+    });
+    expect((params as unknown as { size: string }).size).toBe("hd");
+
+    const canonical = imageEdit.safe({ ...base, image: { file: png() }, size: "hd" } as never);
+    expect(canonical.ok).toBe(false);
+    if (canonical.ok) return;
+    expect(canonical.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["size"]],
+    ]);
+    expect(canonical.errors[0]!.message).toContain("`providerOptions.photoroom`");
+  });
+
+  test("`prompt` and `seed` are refused naming the ref that does read them", () => {
+    for (const word of ["prompt", "seed"] as const) {
+      const result = imageEdit.safe({
+        ...base,
+        image: { file: png() },
+        [word]: word === "prompt" ? PROMPT : 7,
+      } as never);
+      expect(result.ok, word).toBe(false);
+      if (result.ok) continue;
+      expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+        ["unsupported_param", [word]],
+      ]);
+      expect(result.errors[0]!.message).toContain("`photoroom/edit-with-ai`");
+    }
+  });
+
+  test("each ref refuses the other's operation, naming both", () => {
+    for (const [model, operation, allowed] of [
+      ["photoroom/remove-background", "edit", "removeBackground"],
+      ["photoroom/edit-with-ai", "removeBackground", "edit"],
+    ] as const) {
+      const result = imageEdit.safe({
+        operation,
+        model,
+        ...(operation === "edit" && { prompt: PROMPT }),
+        image: { file: png() },
+      } as never);
+      expect(result.ok, model).toBe(false);
+      if (result.ok) continue;
+      const issue = result.errors.find((each) => each.path[0] === "operation");
+      expect(issue?.code, model).toBe("invalid_enum_value");
+      expect(issue?.meta).toMatchObject({ allowed: [allowed], value: operation });
+      expect(issue?.message).toContain("`photoroom/edit-with-ai` serves");
+      expect(issue?.message).toContain("`photoroom/remove-background` serves");
+    }
+  });
+
+  test.each([
+    ["{ url }", { url: URL_IMAGE }],
+    ["{ data }", { data: "aVZCT1J3MEtHZ28=" }],
+  ])("%s is refused naming the multipart part and the base64 body that is not addressed", (_label, image) => {
+    const result = imageEdit.safe({ ...base, image } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["image"]],
+    ]);
+    const message = result.errors[0]!.message;
+    expect(message).toContain("it takes { file }");
+    expect(message).toContain("multipart `image_file` part");
+    expect(message).toContain("`image_file_b64`");
+  });
+
+  test("the provider's own findings arrive at the canonical name", () => {
+    // "Maximum File Size: 50MB", reported where the caller put the picture.
+    const tooBig = imageEdit.safe({ ...base, image: { file: png(50 * 1024 * 1024 + 1) } });
+    expect(tooBig.ok).toBe(false);
+    if (tooBig.ok) return;
+    expect(tooBig.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["media_too_large", ["image"]],
+    ]);
+  });
+
+  test("an `/v2/edit` field in the bucket of a removal is the route's own unknown-field warning", () => {
+    // The bucket is typed from both forms; which half a request may carry is
+    // the ref's, and `/v1/segment`'s validator is what says so.
+    const result = imageEdit.safe({
+      ...base,
+      image: { file: png() },
+      providerOptions: { photoroom: { padding: 0.1 } },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unknown_param", ["padding"]],
+    ]);
   });
 });
 

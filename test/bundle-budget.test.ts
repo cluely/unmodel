@@ -1315,8 +1315,23 @@ const TTS_PACK_PROVIDERS: string[] = [
  * adapter (5.5) and its params leaf (0.4). No generation module and no second
  * catalog joined; the composition assertions below still hold. 850 is the
  * measurement × 1.1.
+ *
+ * **Bumped 850 → 900 for `operation: "removeBackground"`**: 814.6 KiB measured,
+ * 2026-11-25, identical on macOS and on linux/amd64 Docker builds
+ * (oven/bun:1.3.14), up 43.3 from 771.3. Read off the `//#region` blocks:
+ * Stability is 23.8 of it — `image-edit.ts` (10.5: one module holds all six
+ * edit validators, and the pack calls one), its hand catalog (7.3), the adapter
+ * (4.2), the shared enums on `constraints.ts` (1.1) and the params leaf (0.7).
+ * Photoroom's second route is 12.4 — `/v1/segment`'s validator (5.1), its
+ * generated zod leaves (1.0), and the adapter and params leaf growing to serve
+ * two operations (4.2 + 2.1). The rest is `core/unified/image-edit-
+ * operations.ts` (2.2, in this pack's graph and no other's), the pack module's
+ * own header (1.3), and 1.2 of reworded exclusion reasons and notes at fal and
+ * recraft. No generation module and no second catalog joined: Stability's
+ * `image.ts` stays out, which the composition test below pins. 900 is the
+ * measurement × 1.1.
  */
-const IMAGE_EDIT_PACK_BUDGET_KIB = 850;
+const IMAGE_EDIT_PACK_BUDGET_KIB = 900;
 
 /**
  * The one generated catalog this pack legitimately reaches.
@@ -1328,7 +1343,7 @@ const IMAGE_EDIT_PACK_BUDGET_KIB = 850;
  */
 const IMAGE_EDIT_PACK_CATALOGS: string[] = ["src/catalog/openai.gen.ts"];
 
-/** The seven providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
+/** The eight providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
 const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
   "black-forest-labs",
   "fal",
@@ -1337,6 +1352,7 @@ const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
   "photoroom",
   "recraft",
   "revana",
+  "stability",
 ];
 
 /**
@@ -1679,6 +1695,78 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
  * layout above included, and each is **flagged for CI confirmation** per the
  * Linux-figure rule in CLAUDE.md. The packs this wave does not touch keep
  * their pins, `sfx`'s included.
+ *
+ * ## Re-measured on Linux for `imageEdit.operation` (2026-11-24)
+ *
+ * All fourteen were measured rather than the one pack that gained an adapter,
+ * because where the row type is declared decides whether the change reaches
+ * one pack or all of them (see `sts` below). linux/amd64 Docker
+ * (oven/bun:1.3.14), KiB; three builds of the commit before, sixty-four of
+ * this tree:
+ *
+ * | pack | before, low–high | after, low–high | pin |
+ * |---|---|---|---|
+ * | `image` | 1448.3–1501.2 | 1430.7–1610.1 | 1650 → 1775 |
+ * | `image-edit` | 817.8–853.1 | 825.5–1010.4 | 1660 |
+ * | `video` | 1287.6–1431.3 | 1270.1–1507.3 | 1880 |
+ * | `lipsync` | 594.2–647.0 | 594.2–682.1, and 955.2 on six builds | 890 → 1055 |
+ * | `avatar` | 604.3–653.7 | 600.9–688.7, and 965.4 on two | 905 → 1065 |
+ * | `upscale` | 600.4–635.7 | 582.9–670.8, and 943.9 on one | 830 → 1040 |
+ * | `3d` | 524.3–559.6 | 506.8–594.7 | 650 → 655 |
+ * | `tts` | 1285.9–1311.8 | 1268.4–1408.3 | 2320 |
+ * | `stt` | 984.6–1080.6 | 982.2–1102.1 | 2450 |
+ * | `music` | 654.6–732.0 | 637.4–732.0 | 1360 |
+ * | `sfx` | 463.1–544.0 | 445.6–544.0 | 590 |
+ * | `sts` | 366.2–366.4 | 366.2–366.4 | 420 |
+ * | `voice-clone` | 479.7–503.8 | 479.3–503.8 | 1690 |
+ * | `voice-design` | 437.9–505.3 | 437.7–505.3 | 1470 |
+ *
+ * `sts` is the row to read first: it does not move between builds, and it did
+ * not move with this change. That is by construction. The operation arms and
+ * the image-edit row type are declared in `vocabulary/image-edit.ts`, not
+ * beside the other categories' rows in `vocabulary/model-params.ts`, which
+ * every pack's declaration reaches. Declared there, `model-params.d.ts` names
+ * the arms and pulls `vocabulary/image-edit.d.ts` into every graph: **+13.6
+ * KiB on all fourteen packs**, measured (`sts` 366.4 → 380.0, `voice-clone`
+ * 479.7 → 493.3).
+ *
+ * What does move is `image-edit` — Stability's adapter, the six edit routes'
+ * wire types it shares a module with, and the two operation arms — and,
+ * through the layout, the entries that can land in its chunk. A pin moves here
+ * only where this change raised the highest figure and that figure x 1.1
+ * clears the old pin; `sfx` tops out at the same 544.0 on both sides and keeps
+ * its pin.
+ *
+ * `lipsync`, `avatar` and `upscale` are pinned from the co-locating layout
+ * recorded above — the small pack's entry declaration in the chunk that holds
+ * `unmodel/image-edit`'s, so the walker counts that whole graph. It was drawn
+ * for each of the three in these sixty-four builds, nine builds in all, and
+ * each time the entry measures what `image-edit` does on that build to within
+ * a KiB (`lipsync` 955.2 beside 955.9, `avatar` 965.4 beside 966.2, `upscale`
+ * 943.9 beside 944.6). Those three pins are therefore a bound on image-edit's
+ * graph, not on the pack's own: on the other fifty-five builds the three sit
+ * at 583–689, well under them. What catches one of the three acquiring a
+ * module is the composition, twin and spread assertions on their JS below,
+ * not these numbers.
+ *
+ * ### On the November model wave (rebased 2026-11-25)
+ *
+ * The sixty-four builds above were of this change on the tree before the
+ * November model wave, whose seven fal routes are in the `image`,
+ * `image-edit` and `video` graphs, and were not repeated. Eight Linux builds
+ * of this change on that wave measured `image` 1460.5–1559.3, `image-edit`
+ * 903.3–1025.4 and `video` 1320.1–1545.6 — the last two already past the
+ * table's highs — and `avatar` drew the co-locating layout once, at 977.9
+ * beside image-edit's 978.7. Eight builds do not find a high, so each high is
+ * carried over: the table's, plus what the low end moved (29.8, 77.8 and
+ * 50.0, which a sample this small overstates). That is 1639.9, 1088.2 and
+ * 1557.3.
+ *
+ * `image` is re-pinned from it, 1775 → 1805. `lipsync`, `avatar`, `upscale`
+ * and `3d` are pinned at 1200, which is image-edit's carried high x 1.1 and
+ * not the one figure each happened to draw: on the co-locating layout an
+ * entry measures what `image-edit` does on that build, whichever build it is.
+ * `video` and `image-edit` stay under the pins they had.
  */
 const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Bumped 1260 → 1490 by the revana wave: 1354.7 at the highest (see "These
@@ -1689,7 +1777,12 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // of the merged tree measured 1447.9–1497.4 on macOS, over BOTH sides' pins
   // on two of them — revana's picture slice and the wave's rows in one graph.
   // 1650 is the maximum x 1.1.
-  image: 1650,
+  //
+  // 1650 → 1775 for `imageEdit.operation`: 1610.1 at the highest of sixty-four
+  // Linux builds (see "Re-measured on Linux" above), which left the old pin
+  // 2.5% of headroom; 1775 is that x 1.1. 1805 with the November model wave's
+  // routes in the graph (see "On the November model wave" above).
+  image: 1805,
   "image-edit": 1660,
   video: 1880,
   // The three fal-only packs, and the cheapest declarations in the table.
@@ -1733,7 +1826,14 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // declaration graph does on that build, and ten Linux builds of this tree
   // put that graph at 812.4–963.0 (2026-11-25). 1060 is the high x 1.1.
   // `avatar`, `upscale` and `3d` draw the same layout and carry the same bound.
-  lipsync: 1060,
+  //
+  // 1060 → 1200 for `imageEdit.operation`: 594.2–682.1 on the usual layouts,
+  // and 955.2 on the co-locating one, drawn on six of sixty-four Linux builds
+  // before those seven fal routes were in the tree (see "Re-measured on
+  // Linux" above). That layout counts image-edit's graph for this entry, and
+  // the graph grew. 1200 is the bound "On the November model wave" derives
+  // for the three packs that draw it.
+  lipsync: 1200,
   // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
   // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
   // components — the 3D roster added `ModelUrls`, `BasicAnimations` and their
@@ -1777,7 +1877,12 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   //
   // 905 → 1060 with photoroom in `unmodel/image-edit`: lipsync's bound, for
   // the layout that counts image-edit's graph for this entry.
-  avatar: 1060,
+  //
+  // 1060 → 1200 for `imageEdit.operation`, with its twin: 600.9–688.7 on the
+  // usual layouts, and 965.4 on the co-locating one, drawn on two of sixty-four
+  // Linux builds before the November model wave (see "Re-measured on Linux"
+  // above). 1200 is the bound "On the November model wave" derives.
+  avatar: 1200,
   // Bumped 450 → 560 by the Topaz wave: 508.8 measured, the largest jump of the
   // three and the one with a real cause rather than a chunking artefact. Topaz
   // brings FIFTEEN rows whose `extras` are hand-transcribed per-model settings
@@ -1797,7 +1902,13 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   //
   // 830 → 1060 with photoroom in `unmodel/image-edit`: lipsync's bound, for
   // the layout that counts image-edit's graph for this entry.
-  upscale: 1060,
+  //
+  // 1060 → 1200 for `imageEdit.operation`: 582.9–670.8 on the usual layouts,
+  // and 943.9 on the layout that co-locates this entry with image-edit's,
+  // drawn on one of sixty-four Linux builds before the November model wave
+  // (see "Re-measured on Linux" above). 1200 is the bound "On the November
+  // model wave" derives.
+  upscale: 1200,
   // `unmodel/3d`: 534.1 measured. The most expensive of the four small packs
   // and the only one with two providers, which is most of the difference — the
   // `tripo3d` half brings four literal model ids, two quality ladders and its
@@ -1807,7 +1918,11 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // 650 → 1060 with photoroom in `unmodel/image-edit`: lipsync's bound. This
   // entry draws the co-locating layout too — 913.3 on a Linux build of the
   // commit before this one, over the 650 it had.
-  "3d": 1060,
+  //
+  // 1060 → 1200 for `imageEdit.operation`: 594.7 at the highest of sixty-four
+  // Linux builds on the usual layouts (559.6 of three before), and 1200 the
+  // bound "On the November model wave" derives for the co-locating one.
+  "3d": 1200,
   tts: 2320,
   stt: 2450,
   music: 1360,
@@ -3440,7 +3555,7 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
    * that can never call it, without changing a single import in
    * `src/unified/image-edit.ts`.
    */
-  test("it reaches exactly the seven image-edit providers, through their adapters", () => {
+  test("it reaches exactly the eight image-edit providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("image-edit"));
     expect(modules).toContain("src/unified/image-edit.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -3454,7 +3569,7 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
     ].sort();
     expect(providers).toEqual(IMAGE_EDIT_PACK_PROVIDERS);
 
-    // Six of the seven serve more than one category, so their adapters are
+    // Seven of the eight serve more than one category, so their adapters are
     // suffixed leaves and the barrel is never in this graph. Photoroom serves
     // this category alone, so its `unified.ts` IS the adapter. Which is which
     // is read off disk by {@link splitProviders}, so a provider that grows a
@@ -3503,6 +3618,12 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
     // type-only import makes, measured.
     expect(modules).not.toContain("src/providers/openai/image.ts");
     expect(modules).not.toContain("src/providers/recraft/image.ts");
+    // Stability's edit routes share `style_preset` and `output_format` with its
+    // generation routes, and read both from the import-free
+    // `stability/constraints.ts` — which is what keeps three generation
+    // validators out of a pack that only removes a background.
+    expect(modules).not.toContain("src/providers/stability/image.ts");
+    expect(modules).toContain("src/providers/stability/constraints.ts");
   });
 
   test("its graph carries exactly one catalog, and no chat or speech surface", () => {
@@ -3518,7 +3639,7 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
     expect(modules).toContain("src/core/pipeline.ts");
   });
 
-  test("the image and image-edit packs share four providers and no endpoints", () => {
+  test("the image and image-edit packs share providers and no endpoints", () => {
     const edit = sourceModulesOf(unifiedEntry("image-edit"));
     const generate = sourceModulesOf(unifiedEntry("image"));
     expect(edit).not.toContain("src/unified/image.ts");
@@ -3607,8 +3728,17 @@ describe("type-only entries", () => {
    * is this file's ~10% convention already — because a 0.4% drift is not a
    * reason to loosen a budget. The 1.5 is atlascloud's four ids reaching the
    * video vocabulary; the hub gained no module.
+   *
+   * **Bumped 425 → 470 for `imageEdit.operation`**: 426.5 KiB on linux/amd64
+   * Docker (oven/bun:1.3.14), identical on sixty-four builds and on macOS, up
+   * 5.0 from 421.5. The hub gained no module — 40 before and after — and the whole
+   * difference is one declaration, read off the regions:
+   * `vocabulary/image-edit.d.ts`, which now declares the two operation arms,
+   * the words they share, the per-model row that says which a model serves,
+   * and the widened `ImageEditParamsFor` / `ImageEditAdapterFor`, each with
+   * its note. 470 is the measurement x 1.1.
    */
-  const TYPES_HUB_DECLARATION_BUDGET_KIB = 425;
+  const TYPES_HUB_DECLARATION_BUDGET_KIB = 470;
 
   const typesEntry = (provider: string): string =>
     join(DIST, "providers", provider, "types.d.ts");

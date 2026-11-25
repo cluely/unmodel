@@ -22,9 +22,11 @@
  * {@link VIDEO_RESOLUTIONS}, {@link IMAGE_OUTPUT_FORMATS},
  * {@link OUTPUT_DELIVERIES}, {@link AUDIO_FORMAT_CODECS},
  * {@link AUDIO_CONTAINERS}, {@link TIMESTAMP_GRANULARITIES},
- * {@link AUDIO_INPUT_KINDS} and {@link TTS_DELIVERY_KINDS} (the five ways a
+ * {@link AUDIO_INPUT_KINDS}, {@link TTS_DELIVERY_KINDS} (the five ways a
  * speech endpoint answers; which one a provider uses is its own `TTS_DELIVERY`
- * at `unmodel/<provider>/values`) — plus {@link CANONICAL_KEY_LISTS} (the exact
+ * at `unmodel/<provider>/values`) and {@link IMAGE_EDIT_OPERATIONS} (what
+ * `unmodel/image-edit` can be asked to do; which of them a model serves is its
+ * row's `operations`, absent meaning `["edit"]`) — plus {@link CANONICAL_KEY_LISTS} (the exact
  * params each category accepts, which is the list the kernel's envelope check
  * enforces) and {@link CHAT_PROVIDERS} — plus {@link CHAT_AUTH}, which names
  * the header each of those providers wants its credential in (a header name,
@@ -67,6 +69,7 @@ export {
   AUDIO_CONTAINERS,
   AUDIO_FORMAT_CODECS,
   AUDIO_INPUT_KINDS,
+  IMAGE_EDIT_OPERATIONS,
   IMAGE_OUTPUT_FORMATS,
   OUTPUT_DELIVERIES,
   RESOLUTION_TIERS,

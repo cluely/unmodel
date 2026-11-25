@@ -10,7 +10,7 @@ One import per category, one camelCase vocabulary, `"provider/model"` refs. Ever
 | [Text to speech](#text-to-speech) | `unmodel/tts` | `unmodel/openai`, `unmodel/elevenlabs`, `unmodel/deepgram` |
 | [Speech to text](#speech-to-text) | `unmodel/stt` | `unmodel/openai`, `unmodel/deepgram`, `unmodel/assemblyai` |
 | [Image generation](#image-generation) | `unmodel/image` | `unmodel/openai`, `unmodel/google`, `unmodel/black-forest-labs` |
-| [Image editing](#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram`, `unmodel/photoroom` |
+| [Image editing](#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram`, `unmodel/photoroom`, `unmodel/stability` |
 | [Video generation](#video-generation) | `unmodel/video` | `unmodel/openai`, `unmodel/google`, `unmodel/runway` |
 | [Lipsync](#lipsync) | `unmodel/lipsync` | `unmodel/fal`, `unmodel/sync` |
 | [Avatar](#avatar) | `unmodel/avatar` | `unmodel/fal`, `unmodel/sync` |
@@ -157,7 +157,7 @@ await fetch(request.request.url, {
 
 Source inputs narrow by route. OpenAI takes `{ file }`, FLUX Kontext takes `{ data }` or `{ url }`. Masked and specialized edits live on provider subpaths.
 
-Seven providers are in the pack: black-forest-labs, fal, ideogram, openai, photoroom, recraft, revana. The same request at Photoroom compiles to its flat multipart form, whose field names carry dots:
+Eight providers are in the pack: black-forest-labs, fal, ideogram, openai, photoroom, recraft, revana, stability. The same request at Photoroom compiles to its flat multipart form, whose field names carry dots:
 
 ```ts
 import { toFormData } from "unmodel/photoroom";
@@ -179,6 +179,39 @@ await fetch(request.request.url, {
 ```
 
 `photoroom/edit-with-ai` is one mode of Photoroom's `POST /v2/edit`. The adapter writes `removeBackground: false` because the route's default returns a cut-out of the edit. Reference pictures and every other field of the route go through `providerOptions.photoroom`, which is typed from the whole form; `{ url }` is refused, because Photoroom fetches a URL only on `GET /v2/edit`.
+
+### Removing a background
+
+`operation` has a second member. `"removeBackground"` cuts the subject out and takes no prompt:
+
+```ts
+import { toFormData } from "unmodel/stability";
+
+const request = imageEdit({
+  operation: "removeBackground",
+  model: "stability/stable-image-remove-background",
+  image: { file: source },
+  outputFormat: "webp",
+});
+// → { image: source, output_format: "webp" }
+
+await fetch(request.request.url, {
+  method: request.request.method,
+  headers: { authorization: `Bearer ${process.env.STABILITY_API_KEY ?? ""}`, accept: "image/*" },
+  body: toFormData(request),
+});
+```
+
+Which operation a model serves is a fact of the model, so the type follows the ref:
+
+```ts
+imageEdit({ operation: "removeBackground", model: "photoroom/remove-background", image: { file: source }, bg_color: "white" }); // ✅
+imageEdit({ operation: "removeBackground", model: "photoroom/edit-with-ai", image: { file: source } });                        // ❌ TypeScript error
+imageEdit({ operation: "removeBackground", model: "photoroom/remove-background", image: { file: source }, prompt: "..." });   // ❌ TypeScript error
+imageEdit({ operation: "removeBackground", model: "openai/gpt-image-1.5", image: { file: source } });                          // ❌ TypeScript error
+```
+
+The same removal lands on two different forms: `image` and `output_format` at Stability, `image_file` and `format` at Photoroom (where `outputFormat: "jpeg"` is written `jpg`; Stability refuses it, because its route returns an alpha channel). Photoroom's `bg_color`, `channels`, `crop` and `despill` are per-model extras. `IMAGE_EDIT_OPERATIONS` at `unmodel/values` lists the operations, and each provider's `IMAGE_EDIT_MODEL_PARAMS[model].operations` at `unmodel/<provider>/values` says which one a model serves — absent means `["edit"]`.
 
 ## Video generation
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { generate, snapshotFileName } from "./codegen-fal";
+import { assertRatiosComplete, generate, snapshotFileName } from "./codegen-fal";
 import { sortKeysDeep } from "./emit";
 
 /**
@@ -727,7 +727,11 @@ describe("codegen-fal: the fixture", () => {
 
     // Anything else the filter would drop names itself, the endpoint and both lists.
     expect(withRatios(["16:9", "portrait"])).toThrow(
-      /acme\/alpha: `aspect_ratio` enum member "portrait" reached neither.*"auto"/s,
+      /acme\/alpha: `aspect_ratio` enum member "portrait" reached neither.*"auto".*A shape fal publishes.*a request fal accepts/s,
+    );
+    // The guard is shared: the publisher it names is the caller's, never fal by default.
+    expect(() => assertRatiosComplete("acme", "acme/alpha", ["16:9", "portrait"], ["16:9"])).toThrow(
+      /A shape acme publishes.*a request acme accepts/s,
     );
 
     // An OPEN enum is exempt: there the list is a set of presets, not a limit.

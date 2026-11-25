@@ -1,0 +1,58 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "duration": {
+          "default": 10,
+          "description": "Requested output duration in seconds, from 3 to 20.",
+          "maximum": 20,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "minLength": 1,
+          "type": "string"
+        },
+        "prompt": {
+          "default": "",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Kling 4.0 Flash",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v4.0-flash/image-to-video/llms.txt"
+  },
+  "docs": null,
+  "id": "kling-video/v4.0-flash/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Animate one image as the first frame of a 720p video with Kling 4.0 Flash. Add an optional prompt and choose a duration from 3 to 20 seconds. Output dimensions follow the input image.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.094 per second at 720p, for 3, 10 or 20 second clips.",
+    "released_on": "2026-11-04",
+    "title": "Kling 4.0 Flash",
+    "url": "https://open.higgsfield.ai/models/kling-video/v4.0-flash/image-to-video/api-reference",
+    "variant_title": "Image to Video"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "console": {
+    "category": "video2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "draft_id": {
+          "description": "request_id of an owned completed Seedance 2.5 sale draft.",
+          "format": "uuid",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "1080p"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "draft_id"
+      ],
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Seedance 2.5",
+    "url": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/finalize-draft/llms.txt"
+  },
+  "docs": null,
+  "id": "bytedance/seedance-2.5/finalize-draft",
+  "page": {
+    "availability_state": "available",
+    "company": "bytedance",
+    "description": "Finalize a completed Seedance 2.5 draft at 1080p using its request_id.",
+    "input_types": [],
+    "operation_type": "video2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-07-01",
+    "title": "Seedance 2.5",
+    "url": "https://open.higgsfield.ai/models/bytedance/seedance-2.5/finalize-draft/api-reference",
+    "variant_title": "Finalize Draft"
+  }
+}

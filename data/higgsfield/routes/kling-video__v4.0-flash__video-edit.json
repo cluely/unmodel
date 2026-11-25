@@ -1,0 +1,94 @@
+{
+  "console": {
+    "category": "video2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "21:9",
+            "16:9",
+            "9:16",
+            "1:1",
+            "adaptive"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 10,
+          "description": "Requested output duration in seconds, from 3 to 20.",
+          "maximum": 20,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "minLength": 1,
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 10,
+          "type": "array"
+        },
+        "prompt": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p"
+          ],
+          "type": "string"
+        },
+        "video_url": {
+          "format": "uri",
+          "minLength": 1,
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 5,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_url"
+      ],
+      "type": "object"
+    },
+    "pricing": "720p: $0.063 per billable second. Billable duration = output duration + max(total input video duration, output duration). Total input duration includes the base video and video references; explicit clips longer than 20 seconds are trimmed before measurement.",
+    "title": "Kling 4.0 Flash",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v4.0-flash/video-edit/llms.txt"
+  },
+  "docs": null,
+  "id": "kling-video/v4.0-flash/video-edit",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Edit a base video with Kling 4.0 Flash using a text prompt and optional image or video references. Generate 720p output from 3 to 20 seconds. Combined input video duration must be 3 to 20 seconds.",
+    "input_types": [
+      "text",
+      "image",
+      "video"
+    ],
+    "operation_type": "video2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-11-04",
+    "title": "Kling 4.0 Flash",
+    "url": "https://open.higgsfield.ai/models/kling-video/v4.0-flash/video-edit/api-reference",
+    "variant_title": "Video Edit"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "21:9",
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 30,
+          "minimum": 4,
+          "type": "integer"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "maxLength": 8192,
+          "pattern": "^https://[^/\\s?#]+(?:[/?#]\\S*)?$",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "image_url": {
+          "format": "uri",
+          "maxLength": 8192,
+          "pattern": "^https://[^/\\s?#]+(?:[/?#]\\S*)?$",
+          "type": "string"
+        },
+        "prompt": {
+          "maxLength": 15000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "type": "object"
+    },
+    "pricing": "USD 0.08/sec. 1 concurrent generation per account across all MAGI-2 modes. Contact sales to increase the limit.",
+    "title": "MAGI-2",
+    "url": "https://dash.higgsfield.ai/models/sand/magi-2/image-to-video/llms.txt"
+  },
+  "docs": null,
+  "id": "sand/magi-2/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "sand-ai",
+    "description": "Animate a still image into a 1080p video, with an optional final frame to guide the ending. Add a prompt to describe the motion and choose a duration from 4 to 30 seconds, with optional generated audio.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-11-24",
+    "title": "MAGI-2",
+    "url": "https://open.higgsfield.ai/models/sand/magi-2/image-to-video/api-reference",
+    "variant_title": "Image to Video"
+  }
+}

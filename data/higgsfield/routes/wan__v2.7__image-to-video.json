@@ -1,0 +1,152 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "audio_url": {
+          "format": "uri",
+          "title": "Audio URL",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 2,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "negative_prompt": {
+          "default": "",
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "title": "Wan 2.6 Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.0750; 1080p: $0.1125. Total price = selected rate × output duration in seconds.",
+    "title": "Wan 2.7",
+    "url": "https://dash.higgsfield.ai/models/wan/v2.7/image-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "audio_url": {
+          "format": "uri",
+          "title": "Audio URL",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 2,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "negative_prompt": {
+          "default": "",
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "title": "Wan 2.6 Playground",
+      "type": "object"
+    },
+    "title": "Wan 2.7 — Image to video",
+    "url": "https://docs.higgsfield.ai/docs/models/wan-2-7/image-to-video.md",
+    "usage_notes": [
+      "The prompt is optional. end\\_image\\_url supplies a last frame, and audio\\_url can supply driving audio."
+    ]
+  },
+  "id": "wan/v2.7/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "Wan 2.7 - Image to Video. Configured Alibaba route; cloned from wan-27/image-to-video.",
+    "input_types": [
+      "text",
+      "image",
+      "audio"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-04-01",
+    "title": "Wan 2.7",
+    "url": "https://open.higgsfield.ai/models/wan/v2.7/image-to-video/api-reference",
+    "variant_title": "Image to Video"
+  }
+}

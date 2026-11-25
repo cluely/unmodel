@@ -1,0 +1,73 @@
+{
+  "console": {
+    "category": "video2video",
+    "input_schema": {
+      "additionalProperties": true,
+      "properties": {
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Image Urls",
+          "type": "array"
+        },
+        "prompt": {
+          "default": "",
+          "maxLength": 10000,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "480p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "video_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Video Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "video_url",
+        "image_urls"
+      ],
+      "title": "ObjectSwapParams",
+      "type": "object"
+    },
+    "pricing": "Price per second (output): 480p — $0.0739; 720p — $0.1471; 1080p — $0.2936.",
+    "title": "Genjutsu Light",
+    "url": "https://dash.higgsfield.ai/models/higgsfield/genjutsu-light/object-swap/v1.0/llms.txt"
+  },
+  "docs": null,
+  "id": "higgsfield/genjutsu-light/object-swap/v1.0",
+  "page": {
+    "availability_state": "available",
+    "company": "higgsfield",
+    "description": "Replace objects, characters or clothes using reference images. Uses the first 15 seconds of the source video and preserves source audio.",
+    "input_types": [
+      "text",
+      "image",
+      "video"
+    ],
+    "operation_type": "video2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-10-20",
+    "title": "Genjutsu Light",
+    "url": "https://open.higgsfield.ai/models/higgsfield/genjutsu-light/object-swap/v1.0/api-reference",
+    "variant_title": "Object Swap"
+  }
+}

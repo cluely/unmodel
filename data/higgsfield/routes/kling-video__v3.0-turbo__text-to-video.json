@@ -1,0 +1,117 @@
+{
+  "console": {
+    "category": "text2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Kling 3.0 Turbo",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.0839; 1080p: $0.1049. Total price = selected rate × output duration in seconds.",
+    "title": "Kling 3.0 Turbo",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v3.0-turbo/text-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Kling 3.0 Turbo",
+      "type": "object"
+    },
+    "title": "Kling 3.0 — Turbo · Text to video",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-3/turbo-text-to-video.md",
+    "usage_notes": [
+      "duration accepts integers from 3 to 15 seconds. resolution accepts 720p or 1080p and defaults to 720p.",
+      "This endpoint has no sound, multi\\_shots, elements, or last-frame field.",
+      "aspect\\_ratio accepts 16:9, 9:16, or 1:1 and defaults to 16:9.",
+      "Keep prompt within 3,072 characters; longer prompts are truncated."
+    ]
+  },
+  "id": "kling-video/v3.0-turbo/text-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Kling 3.0 Turbo generates videos from text prompts, allowing customization of duration (3 to 15 seconds), resolution (720p or 1080p), and aspect ratio (16:9, 9:16, or 1:1). This variant focuses on efficient text-to-video creation with flexible output settings.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-06-01",
+    "title": "Kling 3.0 Turbo",
+    "url": "https://open.higgsfield.ai/models/kling-video/v3.0-turbo/text-to-video/api-reference",
+    "variant_title": "Text to Video (Turbo)"
+  }
+}

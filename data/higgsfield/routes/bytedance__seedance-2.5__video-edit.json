@@ -1,0 +1,179 @@
+{
+  "console": {
+    "category": "video2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "audio_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
+        },
+        "bitrate_mode": {
+          "default": "high",
+          "enum": [
+            "standard",
+            "high"
+          ],
+          "type": "string"
+        },
+        "draft": {
+          "default": false,
+          "description": "Generate a 480p MP4 draft with standard bitrate for later finalization.",
+          "type": "boolean"
+        },
+        "generate_audio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "minItems": 1,
+          "type": "array"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "video_url": {
+          "format": "uri",
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_url"
+      ],
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 480p: $0.1387; 720p: $0.3264; 1080p: $0.7858. The edited video duration is determined from the primary input video and rounded up to a whole second. Total price = selected rate × that duration in seconds; input duration is not added again.",
+    "title": "Seedance 2.5",
+    "url": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/video-edit/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "audio_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
+        },
+        "bitrate_mode": {
+          "default": "high",
+          "enum": [
+            "standard",
+            "high"
+          ],
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "minItems": 1,
+          "type": "array"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "video_url": {
+          "format": "uri",
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_url"
+      ],
+      "type": "object"
+    },
+    "title": "Seedance 2.5 — Video edit",
+    "url": "https://docs.higgsfield.ai/docs/models/seedance-2-5/video-edit.md",
+    "usage_notes": [
+      "Use publicly accessible media URLs; asset:// references are rejected for these endpoints.",
+      "The source video\\_url counts toward the 10-video limit, so include at most 9 additional video\\_urls. At most 50 media items are accepted across the source video and all reference arrays.",
+      "Videos and audio may be trimmed or padded during preprocessing to fit their respective 30-second total budgets. Output framing follows the source video.",
+      "Do not send duration: this endpoint derives output duration from the processed source video. The main video is normalized to at least 4 seconds."
+    ]
+  },
+  "id": "bytedance/seedance-2.5/video-edit",
+  "page": {
+    "availability_state": "available",
+    "company": "bytedance",
+    "description": "Generate videos from text, images, video, and audio references, with clips up to 30 seconds.\nAnimate images, edit or extend existing footage, and generate audio alongside your video.",
+    "input_types": [
+      "text",
+      "image",
+      "video",
+      "audio"
+    ],
+    "operation_type": "video2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-07-01",
+    "title": "Seedance 2.5",
+    "url": "https://open.higgsfield.ai/models/bytedance/seedance-2.5/video-edit/api-reference",
+    "variant_title": "Video Edit"
+  }
+}

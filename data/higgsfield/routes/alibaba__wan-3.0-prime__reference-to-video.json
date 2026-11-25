@@ -1,0 +1,251 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "adaptive",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16",
+            "adaptive"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "audio_urls": {
+          "description": "Up to 5 files, 30s total. WAV or MP3.",
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Reference Audio",
+          "type": "array"
+        },
+        "duration": {
+          "default": 5,
+          "description": "2-30 seconds.",
+          "maximum": 30,
+          "minimum": 2,
+          "title": "Duration (sec)",
+          "type": "integer"
+        },
+        "enable_thinking": {
+          "default": false,
+          "title": "Deep Thinking",
+          "type": "boolean"
+        },
+        "file_url": {
+          "description": "One document (docx/xlsx/pptx/pdf/md). Forces deep thinking.",
+          "format": "uri",
+          "title": "Reference Document",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Sound",
+          "type": "boolean"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "Reference Images",
+          "type": "array"
+        },
+        "link_url": {
+          "description": "One public page. Forces deep thinking. Not combinable with file_url.",
+          "format": "uri",
+          "title": "Reference Web Page",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "description": "Enable Alibaba automatic prompt rewriting. Set false to disable it. Always enabled when file_url or link_url is provided.",
+          "title": "Prompt Expansion",
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "video_urls": {
+          "description": "Up to 5 clips, 30s total, each 1-30s.",
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Reference Videos",
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Wan 3.0 Prime Reference to Video",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per second of generated video.\n\n- Without video input: 480p: $0.0510; 720p: $0.1050; 1080p: $0.2100.\n- With video input: 480p: $0.1013; 720p: $0.2084; 1080p: $0.4341.\n\nTotal price = selected rate × output duration in seconds. Input video duration is not added to the billed duration.",
+    "title": "Wan 3.0 Prime",
+    "url": "https://dash.higgsfield.ai/models/alibaba/wan-3.0-prime/reference-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "adaptive",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16",
+            "adaptive"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "audio_urls": {
+          "description": "Up to 5 files, 30s total. WAV or MP3.",
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Reference Audio",
+          "type": "array"
+        },
+        "duration": {
+          "default": 5,
+          "description": "2-30 seconds.",
+          "maximum": 30,
+          "minimum": 2,
+          "title": "Duration (sec)",
+          "type": "integer"
+        },
+        "enable_thinking": {
+          "default": false,
+          "title": "Deep Thinking",
+          "type": "boolean"
+        },
+        "file_url": {
+          "description": "One document (docx/xlsx/pptx/pdf/md). Forces deep thinking.",
+          "format": "uri",
+          "title": "Reference Document",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Sound",
+          "type": "boolean"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "Reference Images",
+          "type": "array"
+        },
+        "link_url": {
+          "description": "One public page. Forces deep thinking. Not combinable with file_url.",
+          "format": "uri",
+          "title": "Reference Web Page",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "video_urls": {
+          "description": "Up to 5 clips, 30s total, each 1-30s.",
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Reference Videos",
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Wan 3.0 Prime Reference to Video",
+      "type": "object"
+    },
+    "title": "Wan 3.0 Prime — Reference to video",
+    "url": "https://docs.higgsfield.ai/docs/models/wan-3-prime/reference-to-video.md",
+    "usage_notes": [
+      "Reference media are optional in the stored schema: only prompt is required. The example includes an image to demonstrate reference mode.",
+      "Send either file\\_url or link\\_url. A document or web-page reference automatically enables thinking; when both are sent, file\\_url takes precedence.",
+      "Reference video clips must be 1–30 seconds each and total at most 30 seconds. Reference audio must be WAV or MP3 and total at most 30 seconds, as specified in the production schema.",
+      "The schema accepts seed=0, but the current implementation only forwards a nonzero seed."
+    ]
+  },
+  "id": "alibaba/wan-3.0-prime/reference-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "Generate videos guided by reference images with Wan 3.0 Prime.",
+    "input_types": [
+      "text",
+      "image",
+      "video",
+      "audio",
+      "file"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-08-24",
+    "title": "Wan 3.0 Prime",
+    "url": "https://open.higgsfield.ai/models/alibaba/wan-3.0-prime/reference-to-video/api-reference",
+    "variant_title": "Reference to Video"
+  }
+}

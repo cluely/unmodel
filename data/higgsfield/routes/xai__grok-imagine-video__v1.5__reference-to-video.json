@@ -1,0 +1,170 @@
+{
+  "console": {
+    "category": "image2video, text2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1:1",
+            "16:9",
+            "9:16",
+            "4:3",
+            "3:4",
+            "3:2",
+            "2:3"
+          ],
+          "type": "string"
+        },
+        "audio_url": {
+          "format": "uri",
+          "title": "Reference audio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 1,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "First-frame image",
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image",
+            "type": "string"
+          },
+          "maxItems": 7,
+          "minItems": 0,
+          "title": "Reference images",
+          "type": "array"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "480p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Grok Imagine Video 1.5 Reference Playground",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Grok Imagine Video 1.5",
+    "url": "https://dash.higgsfield.ai/models/xai/grok-imagine-video/v1.5/reference-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1:1",
+            "16:9",
+            "9:16",
+            "4:3",
+            "3:4",
+            "3:2",
+            "2:3"
+          ],
+          "type": "string"
+        },
+        "audio_url": {
+          "format": "uri",
+          "title": "Reference audio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 1,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "First-frame image",
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image",
+            "type": "string"
+          },
+          "maxItems": 7,
+          "minItems": 0,
+          "title": "Reference images",
+          "type": "array"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "480p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Grok Imagine Video 1.5 Reference Playground",
+      "type": "object"
+    },
+    "title": "Grok Imagine Video 1.5 — Reference to video",
+    "url": "https://docs.higgsfield.ai/docs/models/grok-video-1-5/reference-to-video.md",
+    "usage_notes": [
+      "This endpoint also accepts text-only requests or one first-frame image. Choose either image\\_url or reference media (image\\_urls/audio\\_url); do not combine these modes.",
+      "When image\\_urls or audio\\_url is provided, resolution must be 480p or 720p. The shared schema also lists 1080p, which is rejected in reference mode.",
+      "Input images must decode as JPEG, PNG, WebP or GIF; SVG and XML are unsupported."
+    ]
+  },
+  "id": "xai/grok-imagine-video/v1.5/reference-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "xai",
+    "description": "Creates videos from text prompts or still images, with 1080p resolution and clips up to 15 seconds.",
+    "input_types": [
+      "text",
+      "image",
+      "audio"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.08 per second at 480p for 1 second clips, $0.14 per second at 720p for 1 second clips and $0.25 per second at 1080p for 15 second clips.",
+    "released_on": "2026-07-01",
+    "title": "Grok Imagine Video 1.5",
+    "url": "https://open.higgsfield.ai/models/xai/grok-imagine-video/v1.5/reference-to-video/api-reference",
+    "variant_title": "Grok Imagine Video 1.5"
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 0,
+          "type": "array"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image URL",
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 0,
+          "type": "array"
+        },
+        "mode": {
+          "default": "pro",
+          "enum": [
+            "std",
+            "pro",
+            "4k"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Video URL",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_urls"
+      ],
+      "title": "Kling O3 Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.0945; 1080p: $0.1263. Billed duration is the source video duration rounded to the nearest whole second, capped at 15 seconds. Multi-shot requests use the sum of the specified shot durations. Total price = selected rate × billed duration in seconds; input duration is not added again.",
+    "title": "Kling O3",
+    "url": "https://dash.higgsfield.ai/models/kling-video/o3/video-edit/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 0,
+          "type": "array"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image URL",
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 0,
+          "type": "array"
+        },
+        "mode": {
+          "default": "pro",
+          "enum": [
+            "std",
+            "pro",
+            "4k"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Video URL",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_urls"
+      ],
+      "title": "Kling O3 Playground",
+      "type": "object"
+    },
+    "title": "Kling O3 — Video edit",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-o3/video-edit.md",
+    "usage_notes": [
+      "Supply exactly one source video from 3 to 15.5 seconds long and no larger than 200 MB. Duration is derived from the video; do not send a separate duration field.",
+      "You may also supply up to four image\\_urls and up to four elements.",
+      "Keep the top-level prompt within 2,500 characters; longer prompts are truncated.",
+      "elements contains Kling element IDs as decimal strings. Each ID must belong to the account making the request; arbitrary provider IDs are rejected.",
+      "The example.com media URLs are placeholders. Replace them with public HTTPS URLs to your own media before submitting."
+    ]
+  },
+  "id": "kling-video/o3/video-edit",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Kling O3 Video Edit generates edited videos from a single input video URL and optional images or elements, guided by a text prompt. Users can select modes including standard, professional, or 4K to customize output quality.",
+    "input_types": [
+      "text",
+      "image",
+      "video"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-02-01",
+    "title": "Kling O3",
+    "url": "https://open.higgsfield.ai/models/kling-video/o3/video-edit/api-reference",
+    "variant_title": "Video Edit"
+  }
+}

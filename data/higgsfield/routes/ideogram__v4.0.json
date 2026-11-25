@@ -1,0 +1,176 @@
+{
+  "console": {
+    "category": "image_edit, text2image",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "1:1",
+          "enum": [
+            "1:1",
+            "1:2",
+            "2:1",
+            "2:3",
+            "3:2",
+            "4:5",
+            "5:4",
+            "9:16",
+            "16:9",
+            "5:8",
+            "8:5",
+            "3:4",
+            "4:3",
+            "9:22",
+            "22:9",
+            "9:23",
+            "23:9",
+            "3:8",
+            "8:3",
+            "5:12",
+            "12:5",
+            "1:3",
+            "3:1"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Input image",
+          "type": "string"
+        },
+        "image_weight": {
+          "description": "How strongly the output should preserve the input image.",
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Image weight",
+          "type": "integer"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "maxLength": 2048,
+          "minLength": 2,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "rendering_speed": {
+          "default": "DEFAULT",
+          "enum": [
+            "TURBO",
+            "DEFAULT",
+            "QUALITY"
+          ],
+          "title": "Rendering speed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Ideogram 4.0 Playground",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Ideogram 4.0",
+    "url": "https://dash.higgsfield.ai/models/ideogram/v4.0/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "image",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "1:1",
+          "enum": [
+            "1:1",
+            "1:2",
+            "2:1",
+            "2:3",
+            "3:2",
+            "4:5",
+            "5:4",
+            "9:16",
+            "16:9",
+            "5:8",
+            "8:5",
+            "3:4",
+            "4:3",
+            "9:22",
+            "22:9",
+            "9:23",
+            "23:9",
+            "3:8",
+            "8:3",
+            "5:12",
+            "12:5",
+            "1:3",
+            "3:1"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Input image",
+          "type": "string"
+        },
+        "image_weight": {
+          "description": "How strongly the output should preserve the input image.",
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Image weight",
+          "type": "integer"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "maxLength": 2048,
+          "minLength": 2,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "rendering_speed": {
+          "default": "DEFAULT",
+          "enum": [
+            "TURBO",
+            "DEFAULT",
+            "QUALITY"
+          ],
+          "title": "Rendering speed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Ideogram 4.0 Playground",
+      "type": "object"
+    },
+    "title": "Ideogram 4.0 — Generate",
+    "url": "https://docs.higgsfield.ai/docs/models/ideogram-4/generate.md",
+    "usage_notes": [
+      "Omit image\\_url for text-to-image; provide image\\_url for remix/editing.",
+      "image\\_weight controls preservation of the input image and applies to editing requests only; values are integers from 1 to 100.",
+      "The square 1:1 aspect ratio is applied by default, including when an input image is supplied.",
+      "rendering\\_speed values are case-sensitive: TURBO, DEFAULT, QUALITY. prompt must contain 2–2048 characters."
+    ]
+  },
+  "id": "ideogram/v4.0",
+  "page": {
+    "availability_state": "available",
+    "company": "ideogram",
+    "description": "Generates and edits images with multilingual text for posters, packaging and other graphic layouts.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image_edit",
+    "output_type": "image",
+    "related_models_description": "Images cost $0.03 each.",
+    "released_on": "2026-06-01",
+    "title": "Ideogram 4.0",
+    "url": "https://open.higgsfield.ai/models/ideogram/v4.0/api-reference",
+    "variant_title": "Ideogram 4.0"
+  }
+}

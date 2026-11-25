@@ -1,0 +1,126 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1",
+            "4:3",
+            "3:4"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Happy Horse",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "HappyHorse 1.1",
+    "url": "https://dash.higgsfield.ai/models/alibaba/happy-horse/v1.1/text-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1",
+            "4:3",
+            "3:4"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Happy Horse",
+      "type": "object"
+    },
+    "title": "HappyHorse 1.1 — Text to video",
+    "url": "https://docs.higgsfield.ai/docs/models/happy-horse-1-1/text-to-video.md",
+    "usage_notes": [
+      "The prompt must contain text; an empty string is rejected during submission."
+    ]
+  },
+  "id": "alibaba/happy-horse/v1.1/text-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "Generates videos from text or image references with output at 1080p and clips up to 15 seconds.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.14 per second at 720p for 1 second clips and $0.18 per second at 1080p for 3 or 15 second clips.",
+    "released_on": "2026-06-01",
+    "title": "HappyHorse 1.1",
+    "url": "https://open.higgsfield.ai/models/alibaba/happy-horse/v1.1/text-to-video/api-reference",
+    "variant_title": "Text to Video"
+  }
+}

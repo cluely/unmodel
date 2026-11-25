@@ -1,0 +1,147 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "cfg_scale": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "multipleOf": 0.01,
+          "title": "CFG Scale",
+          "type": "number"
+        },
+        "duration": {
+          "default": 5,
+          "enum": [
+            5,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "sound": {
+          "default": "on",
+          "enum": [
+            "on",
+            "off"
+          ],
+          "title": "Generate sound",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "Kling 2.6 Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 1080p: $0.0666. Total price = selected rate × output duration in seconds.",
+    "title": "Kling 2.6 Pro",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v2.6/pro/image-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "cfg_scale": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "multipleOf": 0.01,
+          "title": "CFG Scale",
+          "type": "number"
+        },
+        "duration": {
+          "default": 5,
+          "enum": [
+            5,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "sound": {
+          "default": "on",
+          "enum": [
+            "on",
+            "off"
+          ],
+          "title": "Generate sound",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "Kling 2.6 Playground",
+      "type": "object"
+    },
+    "title": "Kling 2.6 — Pro image to video",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-2-6/pro-image-to-video.md",
+    "usage_notes": [
+      "duration accepts 5 or 10 seconds; 5 is the default.",
+      "Native audio uses sound: on or off and defaults to on.",
+      "The example.com media URLs are placeholders. Replace them with public HTTPS URLs to your own media before submitting."
+    ]
+  },
+  "id": "kling-video/v2.6/pro/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Kling 2.6 Pro Image to Video generates short videos from a single image URL using a text prompt to guide the transformation. Users can customize video duration, aspect ratio, sound inclusion, and CFG scale to control creativity and output style.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2025-12-01",
+    "title": "Kling 2.6 Pro",
+    "url": "https://open.higgsfield.ai/models/kling-video/v2.6/pro/image-to-video/api-reference",
+    "variant_title": "Image to Video (Pro)"
+  }
+}

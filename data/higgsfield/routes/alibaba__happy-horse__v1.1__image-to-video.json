@@ -1,0 +1,113 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 2,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "title": "Happy horse",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "HappyHorse 1.1",
+    "url": "https://dash.higgsfield.ai/models/alibaba/happy-horse/v1.1/image-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 2,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "title": "Happy horse",
+      "type": "object"
+    },
+    "title": "HappyHorse 1.1 — Image to video",
+    "url": "https://docs.higgsfield.ai/docs/models/happy-horse-1-1/image-to-video.md",
+    "usage_notes": [
+      "The prompt is optional. This endpoint accepts one first-frame image; it does not support a last-frame image."
+    ]
+  },
+  "id": "alibaba/happy-horse/v1.1/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "HappyHorse 1.1 - Image to Video. Configured Alibaba route; cloned from hh/image-to-video.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.14 per second at 720p for 1 second clips and $0.18 per second at 1080p for 2 or 15 second clips.",
+    "released_on": "2026-06-01",
+    "title": "HappyHorse 1.1",
+    "url": "https://open.higgsfield.ai/models/alibaba/happy-horse/v1.1/image-to-video/api-reference",
+    "variant_title": "Image to Video"
+  }
+}

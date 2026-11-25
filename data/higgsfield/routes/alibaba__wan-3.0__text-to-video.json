@@ -1,0 +1,157 @@
+{
+  "console": {
+    "category": "text2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "adaptive",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16",
+            "adaptive"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "description": "2-30 seconds.",
+          "maximum": 30,
+          "minimum": 2,
+          "title": "Duration (sec)",
+          "type": "integer"
+        },
+        "enable_thinking": {
+          "default": false,
+          "title": "Deep Thinking",
+          "type": "boolean"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Sound",
+          "type": "boolean"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Wan 3.0 Text to Video",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 480p: $0.0375; 720p: $0.0750; 1080p: $0.1500. Total price = selected rate × output duration in seconds.",
+    "title": "Wan 3.0",
+    "url": "https://dash.higgsfield.ai/models/alibaba/wan-3.0/text-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "adaptive",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16",
+            "adaptive"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "description": "2-30 seconds.",
+          "maximum": 30,
+          "minimum": 2,
+          "title": "Duration (sec)",
+          "type": "integer"
+        },
+        "enable_thinking": {
+          "default": false,
+          "title": "Deep Thinking",
+          "type": "boolean"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Sound",
+          "type": "boolean"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Wan 3.0 Text to Video",
+      "type": "object"
+    },
+    "title": "Wan 3.0 — Text to video",
+    "url": "https://docs.higgsfield.ai/docs/models/wan-3/text-to-video.md",
+    "usage_notes": [
+      "This endpoint generates from text; use the separate image or reference endpoint for media inputs.",
+      "The schema accepts seed=0, but the current implementation only forwards a nonzero seed."
+    ]
+  },
+  "id": "alibaba/wan-3.0/text-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "Generates videos from text or images with native audio and adjustable duration up to 30 seconds.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-08-24",
+    "title": "Wan 3.0",
+    "url": "https://open.higgsfield.ai/models/alibaba/wan-3.0/text-to-video/api-reference",
+    "variant_title": "Text to Video"
+  }
+}

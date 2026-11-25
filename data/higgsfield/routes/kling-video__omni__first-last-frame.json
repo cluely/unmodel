@@ -1,0 +1,138 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "enum": [
+            5,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "first_frame_url": {
+          "format": "uri",
+          "title": "First frame URL",
+          "type": "string"
+        },
+        "last_frame_url": {
+          "format": "uri",
+          "title": "Last frame URL",
+          "type": "string"
+        },
+        "mode": {
+          "default": "pro",
+          "enum": [
+            "std",
+            "pro"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "first_frame_url"
+      ],
+      "title": "Kling Omni Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.0632; 1080p: $0.0837. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations.",
+    "title": "Kling Omni",
+    "url": "https://dash.higgsfield.ai/models/kling-video/omni/first-last-frame/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "enum": [
+            5,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "first_frame_url": {
+          "format": "uri",
+          "title": "First frame URL",
+          "type": "string"
+        },
+        "last_frame_url": {
+          "format": "uri",
+          "title": "Last frame URL",
+          "type": "string"
+        },
+        "mode": {
+          "default": "pro",
+          "enum": [
+            "std",
+            "pro"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "first_frame_url"
+      ],
+      "title": "Kling Omni Playground",
+      "type": "object"
+    },
+    "title": "Kling Omni — First last frame",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-omni/first-last-frame.md",
+    "usage_notes": [
+      "first\\_frame\\_url supplies the starting frame; last\\_frame\\_url is optional. These names differ from the image\\_url and last\\_image\\_url fields on Kling 3.0 image-to-video.",
+      "Keep the top-level prompt within 2,500 characters; longer prompts are truncated.",
+      "The example.com media URLs are placeholders. Replace them with public HTTPS URLs to your own media before submitting."
+    ]
+  },
+  "id": "kling-video/omni/first-last-frame",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Generates and edits videos using image or video references and controls for start and end frames.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2025-12-01",
+    "title": "Kling Omni",
+    "url": "https://open.higgsfield.ai/models/kling-video/omni/first-last-frame/api-reference",
+    "variant_title": "First/Last Frame"
+  }
+}

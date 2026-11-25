@@ -1,0 +1,191 @@
+{
+  "console": {
+    "category": "video2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "audio_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
+        },
+        "bitrate_mode": {
+          "default": "high",
+          "enum": [
+            "standard",
+            "high"
+          ],
+          "type": "string"
+        },
+        "draft": {
+          "default": false,
+          "description": "Generate a 480p MP4 draft with standard bitrate for later finalization.",
+          "type": "boolean"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 30,
+          "minimum": 4,
+          "type": "integer"
+        },
+        "generate_audio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "minItems": 1,
+          "type": "array"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "video_url": {
+          "format": "uri",
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_url"
+      ],
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 480p: $0.1387; 720p: $0.3264; 1080p: $0.7858. Total price = selected rate × requested extension duration in seconds. The duration of the existing input video is not added to the billed duration.",
+    "title": "Seedance 2.5",
+    "url": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/video-extend/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "audio_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
+        },
+        "bitrate_mode": {
+          "default": "high",
+          "enum": [
+            "standard",
+            "high"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 30,
+          "minimum": 4,
+          "type": "integer"
+        },
+        "generate_audio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "minItems": 1,
+          "type": "array"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "video_url": {
+          "format": "uri",
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_url"
+      ],
+      "type": "object"
+    },
+    "title": "Seedance 2.5 — Video extend",
+    "url": "https://docs.higgsfield.ai/docs/models/seedance-2-5/video-extend.md",
+    "usage_notes": [
+      "Use publicly accessible media URLs; asset:// references are rejected for these endpoints.",
+      "The source video\\_url counts toward the 10-video limit, so include at most 9 additional video\\_urls. At most 50 media items are accepted across the source video and all reference arrays.",
+      "Videos and audio may be trimmed or padded during preprocessing to fit their respective 30-second total budgets. Output framing follows the source video.",
+      "duration is an integer from 4 to 30 seconds, with default 5."
+    ]
+  },
+  "id": "bytedance/seedance-2.5/video-extend",
+  "page": {
+    "availability_state": "available",
+    "company": "bytedance",
+    "description": "Seedance 2.5 Video Extend generates extended video content from an input video URL and text prompt, supporting up to 30 seconds duration and optional audio or image inputs. It outputs videos in 480p or 720p resolution with mp4 or mov format, allowing control over audio generation and multiple media inputs.",
+    "input_types": [
+      "text",
+      "image",
+      "video",
+      "audio"
+    ],
+    "operation_type": "video2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-07-01",
+    "title": "Seedance 2.5",
+    "url": "https://open.higgsfield.ai/models/bytedance/seedance-2.5/video-extend/api-reference",
+    "variant_title": "Video Extend"
+  }
+}

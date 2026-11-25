@@ -1,0 +1,208 @@
+{
+  "console": {
+    "category": "text2image",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "4:3",
+          "enum": [
+            "9:16",
+            "16:9",
+            "4:3",
+            "3:4",
+            "1:1",
+            "2:3",
+            "3:2"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "batch_size": {
+          "default": 1,
+          "enum": [
+            1,
+            4
+          ],
+          "title": "Result images",
+          "type": "integer"
+        },
+        "custom_reference_id": {
+          "default": null,
+          "description": "ID of a completed Soul ID trained with model_version v2 in your API account. Create one using POST /v1/custom-references.",
+          "format": "uuid",
+          "title": "Soul ID",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "custom_reference_strength": {
+          "default": 1,
+          "description": "Strength of the custom reference, from 0 to 1. Used when custom_reference_id is provided.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Soul ID strength",
+          "type": "number"
+        },
+        "enhance_prompt": {
+          "default": true,
+          "title": "Enhance Prompt",
+          "type": "boolean"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "default": null,
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "style_id": {
+          "format": "uuid",
+          "title": "Soul Style",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Soul V2 Playground",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Soul 2",
+    "url": "https://dash.higgsfield.ai/models/higgsfield-ai/soul/v2/standard/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "image",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "1:1",
+          "enum": [
+            "9:16",
+            "16:9",
+            "4:3",
+            "3:4",
+            "1:1",
+            "2:3",
+            "3:2"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "batch_size": {
+          "default": 1,
+          "enum": [
+            1,
+            4
+          ],
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "custom_reference_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Custom Reference Id"
+        },
+        "custom_reference_strength": {
+          "default": 1,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Custom Reference Strength",
+          "type": "number"
+        },
+        "enhance_prompt": {
+          "default": false,
+          "title": "Enhance Prompt",
+          "type": "boolean"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "style_id": {
+          "default": "3db34ab5-3439-4317-9e03-08dc30852e69",
+          "format": "uuid",
+          "title": "Style Id",
+          "type": "string"
+        },
+        "style_strength": {
+          "default": 1,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Style Strength",
+          "type": "number"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "SoulV2ParamsSchema",
+      "type": "object"
+    },
+    "title": "SOUL V2 — Text to image",
+    "url": "https://docs.higgsfield.ai/docs/models/soul-2/generate.md",
+    "usage_notes": [
+      "batch\\_size is 1 or 4 only. A custom\\_reference\\_id must belong to the calling account and have completed training.",
+      "aspect\\_ratio defaults to 1:1 and enhance\\_prompt defaults to false. seed defaults to a random integer from 1 to 1000000; explicit null is invalid.",
+      "style\\_id defaults to 3db34ab5-3439-4317-9e03-08dc30852e69. style\\_strength is accepted by the request schema but currently has no effect on generation.",
+      "Short prompts using the general style can be enhanced automatically even when enhance\\_prompt=false.",
+      "When using custom\\_reference\\_id, set custom\\_reference\\_strength to a value greater than 0 and no greater than 1. The schema accepts 0, but the current runtime fails to process it for a character reference."
+    ]
+  },
+  "id": "higgsfield-ai/soul/v2/standard",
+  "page": {
+    "availability_state": "available",
+    "company": "higgsfield",
+    "description": "Generates realistic portraits and fashion images, with natural textures and curated editorial styles.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2image",
+    "output_type": "image",
+    "related_models_description": "Images cost $0.0032 each at 720p and $0.0057 each at 1080p.",
+    "released_on": "2026-02-01",
+    "title": "Soul 2",
+    "url": "https://open.higgsfield.ai/models/higgsfield-ai/soul/v2/standard/api-reference",
+    "variant_title": "Text to Image"
+  }
+}

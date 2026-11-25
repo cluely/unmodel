@@ -1,0 +1,180 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "adaptive",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16",
+            "adaptive"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "description": "2-30 seconds.",
+          "maximum": 30,
+          "minimum": 2,
+          "title": "Duration (sec)",
+          "type": "integer"
+        },
+        "enable_thinking": {
+          "default": false,
+          "title": "Deep Thinking",
+          "type": "boolean"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "title": "Last Frame",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Sound",
+          "type": "boolean"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "First Frame",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "Wan 3.0 Image to Video",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 480p: $0.0375; 720p: $0.0750; 1080p: $0.1500. Total price = selected rate × output duration in seconds.",
+    "title": "Wan 3.0",
+    "url": "https://dash.higgsfield.ai/models/alibaba/wan-3.0/image-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "adaptive",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16",
+            "adaptive"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "description": "2-30 seconds.",
+          "maximum": 30,
+          "minimum": 2,
+          "title": "Duration (sec)",
+          "type": "integer"
+        },
+        "enable_thinking": {
+          "default": false,
+          "title": "Deep Thinking",
+          "type": "boolean"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "title": "Last Frame",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Sound",
+          "type": "boolean"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "First Frame",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "Wan 3.0 Image to Video",
+      "type": "object"
+    },
+    "title": "Wan 3.0 — Image to video",
+    "url": "https://docs.higgsfield.ai/docs/models/wan-3/image-to-video.md",
+    "usage_notes": [
+      "Use image\\_url for the first frame and optional end\\_image\\_url for the last frame. Reference arrays belong to the reference-to-video endpoint.",
+      "The schema accepts seed=0, but the current implementation only forwards a nonzero seed."
+    ]
+  },
+  "id": "alibaba/wan-3.0/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "Generate videos from a starting image with Wan 3.0.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-08-24",
+    "title": "Wan 3.0",
+    "url": "https://open.higgsfield.ai/models/alibaba/wan-3.0/image-to-video/api-reference",
+    "variant_title": "Image to Video"
+  }
+}

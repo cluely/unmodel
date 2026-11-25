@@ -1114,3 +1114,115 @@ server-rendered HTML of https://open.higgsfield.ai/pricing fetched 2026-11-24
 (the compare view is client-rendered). Left in place, unconfirmed; nothing in
 this document depends on it.
 
+---
+
+## 10. Snapshot sources for the generated tier (2026-11-24)
+
+§6.5 said "there is no snapshot source to generate from". That is superseded:
+the owner decided to serve every route, generated from committed snapshots, and
+`scripts/codegen-higgsfield.ts --refresh` builds the snapshot in
+`data/higgsfield/` from three documented, keyless surfaces.
+
+| Source | URL | Read for |
+| --- | --- | --- |
+| C, console document | `https://dash.higgsfield.ai/models/<id>/llms.txt` | "Input JSON Schema", the "## Pricing" paragraph, "Category" |
+| P, page data | `https://open.higgsfield.ai/models/<id>/api-reference` (the loader data the page server-renders into its HTML) | enumeration, `output_type`, `operation_type`, `released_on`, `description`, `related_models_description` |
+| D, docs page | `https://docs.higgsfield.ai/docs/models/<family>/<workflow>.md`, indexed by `https://docs.higgsfield.ai/docs/llms.txt` | "Complete JSON schema", "## Usage notes", "**Catalog ID:**" |
+
+**Not a source, by owner decision.** The pages load their catalog from
+`https://dash.higgsfield.ai/api/v2/app-models/` (a paginated JSON API; the
+`/explore` page data names it in its `next` link). It is undocumented, and
+`https://open.higgsfield.ai/robots.txt` says `Disallow: /api/`. The refresh
+does not request it and nothing committed depends on it. It was read once in
+the design stage (108 rows) and used here only as a cross-check, below.
+
+**Enumeration without it.** `/explore`, `/explore/image`, `/explore/video` and
+`https://open.higgsfield.ai/sitemap.xml` name one entry route per family or
+playground preset. Each route's page data names every sibling (`family[]`) and
+a set of `related_models[]`; a preset's page names the model row under each
+variant (`workflow.variants[].model_slug`). Following those links to a fixed
+point, seeded also with the ids the docs name, reaches 117 pages:
+
+- 108 with a console document — every row of the console catalog;
+- 2 legacy paths, `higgsfiled/genjutsu/{motion-transfer,object-swap}/v1.0`,
+  reachable only through the Genjutsu preset: a page, no `llms.txt` (404), no
+  docs page. D says of them: "The legacy endpoint … remains callable for
+  existing clients but is hidden from model discovery." Excluded in
+  `data/higgsfield/curation.json`;
+- 7 playground presets (`workflows/ads-studio`, `…/cinema-studio-4-0`,
+  `…/genjutsu`, `…/genjutsu/object-swap`, `…/graphic-ads`,
+  `…/marketplace-design`, `…/product-shots`): `catalog_type: "workflow"`, no
+  `llms.txt`, each a page over a model row. Listed in `manifest.json`, not
+  snapshotted. (`workflows/cinema-studio-4-0` is in the sitemap only.)
+
+**The roster.** 114 snapshotted ids: 108 C+P (80 of them also D), 4 D only
+(`higgsfield-ai/soul/cinema`, `minimax/h3/{text-to-video,image-to-video,reference-to-video}`;
+their console pages and `llms.txt` are 404), and the 2 legacy paths. D has 84
+workflow pages, which is the "17 + 67 catalog entries" its two category indexes
+state. One row joins under a different name: D's `v1/custom-references` page
+states "**Catalog ID:** `soul-id`", so the console's `soul-id` row is filed
+under the path a caller can POST to. Generated: 24 image routes and 87 video
+routes; hand-written: `v1/custom-references`; excluded: the 2 legacy paths.
+
+**C and P are one publication.** For all 108 rows the page data's
+`input_schema` equals the console document's "Input JSON Schema", and its
+`pricing_description` equals the "## Pricing" paragraph — with `null` on the
+page where the document prints "Public pricing information is not available
+for this model." (43 routes). The refresh asserts both on every run.
+
+**D versus C.** Of the 80 routes both publish, 68 schemas are equal once
+annotations are dropped. The other 12 differ at these pointers, each resolved
+by a `prefer` entry in `data/higgsfield/overlays.json` (the twelfth,
+`v1/custom-references`, is hand-written: C's schema there is `{"title":"Soul ID"}`):
+
+| Route | Pointer | D | C |
+| --- | --- | --- | --- |
+| `bytedance/seedance-2.5/{text-to-video,image-to-video,reference-to-video,video-edit,video-extend}` | `/properties/draft` | absent | boolean |
+| `alibaba/wan-3.0/reference-to-video`, `alibaba/wan-3.0-prime/reference-to-video` | `/properties/prompt_extend` | absent | boolean |
+| `higgsfield-ai/soul/standard` | `/properties/custom_reference_id`, `/custom_reference_strength`, `/image_reference_url` | present | absent |
+| `higgsfield-ai/soul/standard` | `/properties/seed` | integer or null | integer |
+| `higgsfield-ai/soul/v2/standard` | `/properties/style_strength` | present | absent |
+| `higgsfield/ads-studio/v1.0` | `/properties/aspect_ratio/enum` | 14 values | 12 values |
+| `z-image/turbo` | `/properties/prompt/maxLength` | 800 | 2500 |
+
+The last row is not in §5. So is one schema slip: both sources nest a `mode`
+property schema inside `kling-video/omni/video-reference`'s `duration`.
+
+**Strictness is published per route.** `additionalProperties` is `false` on 51
+console schemas, `true` on 6 and absent on 51.
+
+**Conditionals.** 22 routes carry `if` / `then` / `else`, `allOf`, `anyOf` or
+`not` at the top level. They reduce to five patterns (the generator's header
+lists them); the one that needed care is AI Influencer's
+`if: { properties: { tier: { not: { const: "insects" } } } }`.
+
+**Pricing surfaces.** 65 routes have a pricing paragraph in C. Of the 43 that
+do not, 41 have a price sentence in P (`related_models_description`); the two
+without are `soul-id` and `bytedance/seedance-2.5/finalize-draft`. AI
+Influencer also states "$0.05 per sheet." in its page description. Most P
+sentences for video are sample points ("$0.14 per second at 720p for 1 second
+clips") and are recorded as unpriced. Hailuo 2.3's sentence is not one: it
+prices 6- and 10-second clips, and `duration` is the enum `[6, 10]` — a rate
+table in form, and unpriced all the same, for the reason in the next paragraph.
+
+**The "no public pricing" sentence is not particular to Soul.** §4 and §5 #29
+record it as a contradiction on the three Soul routes and AI Influencer. It is
+the same on every route of the 43: the document prints "Public pricing
+information is not available for this model." wherever the page data's
+`pricing_description` is `null`. Twenty of those routes have a rate transcribed
+from the page's price sentence (or, for AI Influencer, its description): the
+four above, and `ideogram/v4.0`, `z-image/turbo`, the four
+`kling-image/v4.0/*`, the four `recraft/v4.1/*`, the two
+`alibaba/qwen-image-3/*`, the two `bytedance/seedream/v5.0/pro/*` and the two
+`minimax/hailuo-2.3/standard/*` (re-read live for `ideogram/v4.0`, 2026-11-24).
+The generator reads the contradiction off the snapshot for every route
+instead of taking it from a pricing row. Contradicting pages are not
+catalogued: the sixteen are `unpriced` with the page's sentence as the quote,
+and the four the owner ruled on (the Soul routes and AI Influencer) keep their
+rate, marked, behind a `decided` date on the row (`docs/decisions.md` §11).
+
+**Cross-check against the console catalog (once, manual).** The 108 rows read
+in the design stage were compared with the snapshot field by field: schema,
+pricing paragraph, price sentence, output type, operation types, release date
+and description. All agree, apart from number formatting on two Soul V2
+defaults (`1.0` in the API's JSON, `1` in the document).

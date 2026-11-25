@@ -1,0 +1,80 @@
+{
+  "console": {
+    "category": "image_edit",
+    "input_schema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "1:1",
+          "enum": [
+            "auto",
+            "1:1",
+            "4:3",
+            "16:9",
+            "3:2",
+            "21:9",
+            "3:4",
+            "9:16",
+            "2:3"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "title": "Image URLs",
+          "type": "array"
+        },
+        "prompt": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "2k",
+          "enum": [
+            "1k",
+            "1.5k",
+            "2k"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_urls"
+      ],
+      "title": "Seedream 5.0 Pro Image Edit",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Seedream 5.0 Pro",
+    "url": "https://dash.higgsfield.ai/models/bytedance/seedream/v5.0/pro/edit/llms.txt"
+  },
+  "docs": null,
+  "id": "bytedance/seedream/v5.0/pro/edit",
+  "page": {
+    "availability_state": "available",
+    "company": "bytedance",
+    "description": "Edit and combine images with Seedream 5.0 Pro using a prompt and up to 10 reference images. Change subjects, colors or composition and generate one result at 1K, 1.5K or 2K.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image_edit",
+    "output_type": "image",
+    "related_models_description": "Images cost $0.054 each at 1k and 1.5k and $0.108 each at 2k.",
+    "released_on": "2026-07-08",
+    "title": "Seedream 5.0 Pro",
+    "url": "https://open.higgsfield.ai/models/bytedance/seedream/v5.0/pro/edit/api-reference",
+    "variant_title": "Image Edit"
+  }
+}

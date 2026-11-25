@@ -1,0 +1,62 @@
+{
+  "console": {
+    "category": "text2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "21:9",
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 10,
+          "description": "Requested output duration in seconds, from 3 to 20.",
+          "maximum": 20,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "prompt": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Kling 4.0 Flash",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v4.0-flash/text-to-video/llms.txt"
+  },
+  "docs": null,
+  "id": "kling-video/v4.0-flash/text-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Generate 720p videos from text prompts with Kling 4.0 Flash. Choose a duration from 3 to 20 seconds and an aspect ratio of 21:9, 16:9, 9:16, or 1:1.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.094 per second at 720p, for 3, 10 or 20 second clips.",
+    "released_on": "2026-11-04",
+    "title": "Kling 4.0 Flash",
+    "url": "https://open.higgsfield.ai/models/kling-video/v4.0-flash/text-to-video/api-reference",
+    "variant_title": "Text to Video"
+  }
+}

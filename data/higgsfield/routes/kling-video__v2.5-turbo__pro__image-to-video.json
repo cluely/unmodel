@@ -1,0 +1,121 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "cfg_scale": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "multipleOf": 0.01,
+          "title": "CFG Scale",
+          "type": "number"
+        },
+        "duration": {
+          "default": 5,
+          "enum": [
+            5,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "negative_prompt": {
+          "default": "",
+          "title": "Negative Prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "Kling 2.5 Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 1080p: $0.0525. Total price = selected rate × output duration in seconds.",
+    "title": "Kling 2.5 Turbo Pro",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v2.5-turbo/pro/image-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "cfg_scale": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "multipleOf": 0.01,
+          "title": "CFG Scale",
+          "type": "number"
+        },
+        "duration": {
+          "default": 5,
+          "enum": [
+            5,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "negative_prompt": {
+          "default": "",
+          "title": "Negative Prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "Kling 2.5 Playground",
+      "type": "object"
+    },
+    "title": "Kling 2.5 Turbo — Pro image to video",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-2-5-turbo/pro-image-to-video.md",
+    "usage_notes": [
+      "duration accepts 5 or 10 seconds; 5 is the default.",
+      "This endpoint does not expose a sound or aspect\\_ratio field.",
+      "The example.com media URLs are placeholders. Replace them with public HTTPS URLs to your own media before submitting."
+    ]
+  },
+  "id": "kling-video/v2.5-turbo/pro/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Kling 2.5 Turbo Pro converts a single image into a short video clip using a text prompt to guide the animation style. Users can specify video duration, CFG scale for prompt adherence, and provide negative prompts to refine output.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2025-09-01",
+    "title": "Kling 2.5 Turbo Pro",
+    "url": "https://open.higgsfield.ai/models/kling-video/v2.5-turbo/pro/image-to-video/api-reference",
+    "variant_title": "Image to Video (Pro)"
+  }
+}

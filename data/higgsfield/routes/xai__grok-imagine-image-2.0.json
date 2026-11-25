@@ -1,0 +1,155 @@
+{
+  "console": {
+    "category": "image_edit, text2image",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1:1",
+            "1:2",
+            "2:1",
+            "3:2",
+            "2:3",
+            "4:3",
+            "3:4",
+            "16:9",
+            "9:16"
+          ],
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 0,
+          "title": "Input Images",
+          "type": "array"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "quality": {
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium"
+          ],
+          "title": "Quality",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1k",
+          "enum": [
+            "1k",
+            "2k"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Grok Imagine 2.0 Playground",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Grok Imagine 2.0",
+    "url": "https://dash.higgsfield.ai/models/xai/grok-imagine-image-2.0/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "image",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1:1",
+            "1:2",
+            "2:1",
+            "3:2",
+            "2:3",
+            "4:3",
+            "3:4",
+            "16:9",
+            "9:16"
+          ],
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 0,
+          "title": "Input Images",
+          "type": "array"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "quality": {
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium"
+          ],
+          "title": "Quality",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1k",
+          "enum": [
+            "1k",
+            "2k"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Grok Imagine 2.0 Playground",
+      "type": "object"
+    },
+    "title": "Grok Image 2.0 — Generate and edit",
+    "url": "https://docs.higgsfield.ai/docs/models/grok-image-2/generate-and-edit.md",
+    "usage_notes": [
+      "Supports both text-to-image and editing: omit image\\_urls for generation, or supply up to 10 references for editing.",
+      "quality accepts low or medium only; resolution accepts 1k or 2k. aspect\\_ratio defaults to auto.",
+      "Reference images may be resized during preprocessing before submission. The request produces one image; no batch count is declared."
+    ]
+  },
+  "id": "xai/grok-imagine-image-2.0",
+  "page": {
+    "availability_state": "available",
+    "company": "xai",
+    "description": "Generates images and makes precise edits while preserving image details and visual consistency.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image_edit",
+    "output_type": "image",
+    "related_models_description": "Images cost $0.04 each at 1k, low quality and $0.08 each at 2k, medium quality.",
+    "released_on": "2026-08-01",
+    "title": "Grok Imagine 2.0",
+    "url": "https://open.higgsfield.ai/models/xai/grok-imagine-image-2.0/api-reference",
+    "variant_title": "Grok Imagine 2.0"
+  }
+}

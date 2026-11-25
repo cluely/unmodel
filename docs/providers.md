@@ -319,7 +319,7 @@ Not served, each for a stated reason:
 - `GET /v2/edit` — the same parameters as a query string, and the only Photoroom route that
   takes the picture as a URL (`imageUrl`). `.request.method` is `"POST"` for every HTTP endpoint
   in unmodel, so a body-less GET has no request shape to be expressed in, and `imageUrl` is
-  therefore not a field of `imageEdit`. Recorded as a follow-up, 2026-11-24.
+  therefore not a field of `imageEdit`. A follow-up, by owner decision of 2026-11-24.
 - The JSON body on `/v1/segment` (`{"image_file_b64": "…"}`) — documented in prose, absent from
   the OpenAPI document, with no statement of which other fields may accompany it
   (https://docs.photoroom.com/tutorials/how-to-migrate-from-remove.bg-api-before-it-shuts-down.md:
@@ -1545,7 +1545,7 @@ openbmb, nanbeige, tii-falcon, allenai (Olmo — weights only).
 
 ## Unified surfaces — coverage per category
 
-Thirteen entries take a **standardized camelCase vocabulary** instead of a wire body and
+Sixteen entries take a **standardized camelCase vocabulary** instead of a wire body and
 compile it to whichever provider the `"provider/model"` ref names. They are a layer *over*
 the roster above, not a replacement for it: a unified call compiles to a provider's wire
 params and then runs **that provider's own validator**, so there is exactly one definition
@@ -1591,11 +1591,11 @@ listed: a provider with more than one `unified-<category>.ts` leaf is split, whi
 keeps a newly split provider from silently skipping every per-category budget.
 
 **Types without runtime.** Every provider in the roster above also publishes
-`unmodel/<provider>/types` (75 subpaths): its wire names verbatim plus one uniform
-`<Endpoint>Body` alias per endpoint address it serves — 206 endpoints in all — and nothing
+`unmodel/<provider>/types` (82 subpaths): its wire names verbatim plus one uniform
+`<Endpoint>Body` alias per endpoint address it serves — 227 endpoints in all — and nothing
 executable. `unmodel/types` is the matching hub for the canonical vocabulary
 (`ChatParams`, `TtsParams`, `ImageParams`, …, `Issue`, `ValidateResult`), deliberately with
-no aggregate of provider wire types. All 76 entries emit an empty JavaScript module, which
+no aggregate of provider wire types. All 83 entries emit an empty JavaScript module, which
 `test/types-entries.test.ts` asserts against a real build alongside the completeness drift
 guard keyed on `src/cli-registry.ts`.
 
@@ -1605,7 +1605,7 @@ guard keyed on `src/cli-registry.ts`.
 published enums (voices, sizes, ratios, durations, codecs, languages) under their own names.
 The tables are the **same objects** the adapter compiles with, which is why they sit on
 import-free `<category>-params.ts` leaves that both read: one import from a values entry costs
-~1 KiB (19.4 KiB at the worst, runway's) instead of the 30–82 KiB a validator would drag.
+~1 KiB (30.4 KiB at the worst, fal's `VIDEO_MODEL_PARAMS`) instead of the 30–82 KiB a validator would drag.
 `unmodel/values` is the canonical hub (the closed unions as arrays, `CANONICAL_KEY_LISTS`,
 `CHAT_PROVIDERS`) and `unmodel/values/chat-refs` carries the 1,530 chat refs on their own
 subpath to keep the model list out of unrelated imports. `test/values-entries.test.ts` measures every export against a
@@ -1709,7 +1709,7 @@ wire-exact subpath first, adapter second.
 
 Two different vocabularies, both closed unions, both catalog-id-based.
 
-**`.toSdk(target)` — every endpoint, 196 of them.** (The count is not maintained by hand:
+**`.toSdk(target)` — every endpoint, 227 of them.** (The count is not maintained by hand:
 `src/cli.test.ts`'s drift guard asserts `REGISTRY` + `MULTIPART_ONLY` are exactly the set of
 module-level validators, so that test is the source of truth if this number ever rots.)
 The target set is a property of

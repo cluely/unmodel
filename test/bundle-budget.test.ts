@@ -227,9 +227,9 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
   /**
    * The native sync. provider: two validators on ONE url, a shared module of
    * enums, cross-field checks and two long hand catalogs (62 error codes, 93
-   * dubbing languages), and a five-row model table. 62.0 KiB measured — the
-   * heaviest hand provider in the tree, and the two catalogs are most of the
-   * difference from tripo3d's 46.4.
+   * dubbing languages), and a five-row model table. 62.0 KiB measured at
+   * landing, and the two catalogs are most of the difference from tripo3d's
+   * 46.4.
    *
    * 78.9 measured, 2026-11-12: the error catalog grew to 135 codes and the
    * dubbing enum to 110, and the segments/outputAudio/dialogueEdit checks and
@@ -267,9 +267,9 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    */
   photoroom: 101,
   /**
-   * Atlas Cloud: ONE validator on ONE url, and the heaviest hand provider in
-   * the tree at 72.2 KiB measured — heavier than sync.'s two validators and two
-   * long catalogs, from a single endpoint.
+   * Atlas Cloud: ONE validator on ONE url, and 72.2 KiB measured at landing —
+   * as much as a hand provider with two validators and two long catalogs
+   * (sync.) weighs, from a single endpoint.
    *
    * The reason is the thing that makes this provider interesting rather than a
    * regression: Atlas publishes one OpenAPI 3.0.0 document PER MODEL, so its 23

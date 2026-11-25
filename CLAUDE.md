@@ -95,15 +95,17 @@ bun run codegen          # regen src/catalog/*.gen.ts from data/models-dev.json 
 bun run codegen:fal      # regen src/providers/fal/gen/** from data/fal/ snapshots (offline)
 bun run codegen:refresh  # re-fetch the models.dev snapshot, then regen
 bun run codegen:fal:refresh|:check|:audit   # the network-touching fal variants
+bun run codegen:revana | codegen:photoroom | codegen:higgsfield   # regen those providers' gen/** from data/<id>/ snapshots (offline)
+bun run codegen:<revana|photoroom|higgsfield>:refresh|:check     # their network-touching variants
 
 bun run changeset        # record a user-visible change
 bun run audit:leaderboard | audit:atlascloud | gen:tts-matrix
 ```
 
-- **Definition of done for any change** is the CI ladder, in order: `codegen` + `codegen:fal` leave the tree clean (drift check — includes untracked files), `check`, `bench:types`, `bun test`, `build`, `lint:pkg` all green. Run at least the ones your change can affect.
+- **Definition of done for any change** is the CI ladder, in order: `codegen`, `codegen:fal`, `codegen:revana`, `codegen:photoroom` and `codegen:higgsfield` leave the tree clean (drift check — includes untracked files), `check`, `bench:types`, `bun test`, `build`, `lint:pkg` all green. Run at least the ones your change can affect.
 - `bench:types` fails at >20% over the committed baselines; counts are deterministic for the pinned TypeScript version.
 - Bundle/declaration pins in `test/bundle-budget.test.ts` are **platform-sensitive — pin the Linux (CI) figure**, not the local macOS one.
-- Codegen is offline by design (a fal outage can never fail an unrelated PR); only the `:refresh`/`:check`/`:audit` variants touch the network. Snapshot drift is caught by the weekly workflows (`codegen-refresh.yml`, `codegen-fal-refresh.yml`, `leaderboard-audit.yml`, `atlascloud-audit.yml`).
+- Codegen is offline by design (a fal outage can never fail an unrelated PR); only the `:refresh`/`:check`/`:audit` variants touch the network. Snapshot drift is caught by the weekly workflows (`codegen-refresh.yml`, `codegen-fal-refresh.yml`, `codegen-revana-refresh.yml`, `codegen-photoroom-refresh.yml`, `codegen-higgsfield-refresh.yml`, `leaderboard-audit.yml`, `atlascloud-audit.yml`).
 
 ## Repository map
 

@@ -247,15 +247,11 @@ describe("completeness — every category an adapter serves has its uniform alia
       }
     }
     expect(missing).toEqual([]);
-    // 72 adapters across the 48 providers today — fal alone brings eleven,
-    // which is more categories than any other provider serves. A floor, so the
+    // 112 adapters across the 51 providers — fal alone brings eleven, which is
+    // more categories than any other provider serves. The sweep walks files,
+    // and a split provider's `unified.ts` barrel re-exports the adapter object
+    // of each `unified-<category>.ts` leaf, so it counts 200. A floor, so the
     // sweep cannot go vacuous if `adaptersOf` ever stops finding them.
-    // atlascloud added two (its `unified.ts` barrel and its `unified-video.ts`
-    // leaf both export the same adapter object, and this sweep walks files);
-    // `sfx` added three (fal's leaf and barrel, ElevenLabs' pair counted once
-    // per file the same way). `sts` added four: two leaves plus their two
-    // barrels — hume's `unified.ts` became a barrel in the same wave, so its
-    // tts adapter is now counted through `unified-tts.ts` as well.
     expect(categories).toBeGreaterThanOrEqual(76);
   });
 
@@ -323,7 +319,7 @@ describe("identity — the published table IS the adapter's table", () => {
   });
 
   test("the format specs are the adapter's own too", async () => {
-    // 16 of the 58 adapters carry an `AudioFormatSpec`; it is the only place a
+    // 19 of the 112 adapters carry an `AudioFormatSpec`; it is the only place a
     // caller can learn which sample rates and bitrates a codec is legal at, so
     // it is published — and by reference, for the reason above.
     let found = 0;
@@ -739,9 +735,10 @@ function graphKiB(entry: string): number {
 
 describe("bundle discipline", () => {
   /**
-   * **30 KiB per export**, against a worst measured 19.4 (runway's video model
-   * lists, which sit beside that provider's 22 hand-written ratio and
-   * resolution tables in one import-free leaf). The ceiling is deliberately not
+   * **30 KiB per export**, against a worst measured 25.4 under it
+   * (higgsfield's `VIDEO_MODEL_PARAMS`: one generated row per route, each with
+   * its own vocabularies; fal's, at 30.4, has the budget of its own below).
+   * The ceiling is deliberately not
    * "the worst plus a bit": the number that matters is the one below which a
    * dragged validator cannot hide, and a validator is 30–80 KiB. Before the
    * `<category>-params.ts` split this suite forced, the same measurement over

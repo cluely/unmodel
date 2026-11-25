@@ -1,5 +1,166 @@
 # unmodel
 
+## 0.8.0
+
+### Minor Changes
+
+- 9894c64: Higgsfield joins `unmodel/image`, `unmodel/image-edit` and `unmodel/video`, with `unmodel/higgsfield/unified` and `unmodel/higgsfield/values`.
+
+  A ref names a route and splits on the first slash: `"higgsfield/higgsfield-ai/soul/standard"`, `"higgsfield/bytedance/seedance-2.5/text-to-video"`.
+  - `unmodel/image` — 18 routes: every image route with a `prompt` that does not require a source picture.
+  - `unmodel/image-edit` — the 10 routes of `higgsfield.imageEdit`. `operation: "edit"` at every one (`"removeBackground"` is a compile error and an `invalid_enum_value` at `operation`: no Higgsfield route removes a background); the source is `{ url }` only.
+  - `unmodel/video` — 86 routes: text-to-video, image-to-video, first-and-last-frame, reference-to-video, motion control (Genjutsu, Kling), clip editing and clip extension, all through `prompt`, `image` (with `role`) and `video`.
+
+  What each canonical word does is read from the route's own generated row, so it differs by route and is typed per ref:
+  - `n` is `batch_size` (Soul: 1 or 4; Ads Studio: 1 to 8) or `series_amount` (Kling Image series, where it is required), and refused on a route that renders one image. No video route takes a count.
+  - `resolution` maps only where the route's own value is a canonical tier. Soul's `720p | 1080p`, Seedream's `1.5k`, Kling Image's `8k` and MiniMax H3's `768P` / `2K` are not, so they are refused as `resolution` and sent through `providerOptions.higgsfield.resolution`. On `unmodel/image-edit` a route's `resolution` is one of its extras.
+  - `aspectRatio` is matched against the route's list. `dimensions` and a `WxH` `size` are sent as the listed shape they describe, with an `approximated_param` warning; no route takes pixels. `"auto"` and `"adaptive"` are not shapes and stay on `providerOptions.higgsfield.aspect_ratio`.
+  - `image` roles land on the route's own parameter (`image_url` / `first_frame_url`, `end_image_url` / `last_image_url` / `last_frame_url`, `image_urls`), and a role the route has no parameter for is refused naming the roles it serves. `video` lands on `video_url`, or as a one-element `video_urls` on a route that has only the list.
+  - `outputFormat` maps on the four Recraft routes. `outputDelivery: "url"` is what every route does; `"base64"` is refused. `strength` is refused: no editing route has one.
+  - Inline bytes (`{ file }`, `{ data }`) are refused with `POST /files/generate-upload-url` named.
+  - Everything else a route declares is a typed extra on that ref: `camera_movement` on Cinema Studio 4.0, `style_id` on Soul, `preset_id` on Genjutsu Restyle.
+
+  A word a route has no parameter for is an `unsupported_param` naming the route and counting the routes that do take it. Counts, durations and required fields are checked by the route's own validator and reported at the canonical word.
+
+  Not addressed by a pack, and still validated by id at `unmodel/higgsfield`: the five image routes that require a source picture (they are `unmodel/image-edit` refs), `higgsfield/ai-influencer` (no `prompt`), and `bytedance/seedance-2.5/finalize-draft` (its one input is a prior request's id).
+
+  `unmodel/higgsfield/values` exports `IMAGE_MODELS` / `IMAGE_MODEL_PARAMS`, `IMAGE_EDIT_*` and `VIDEO_*`: the same row objects the adapters compile with.
+
+  Bundle sizes: `unmodel/image` 1400.2 → 1587.1 KiB, `unmodel/image-edit` 814.6 → 997.7 KiB, `unmodel/video` 1403.5 → 1715.4 KiB. `createImage([…])`, `createImageEdit([…])` and `createVideo([…])` build a pack from only the adapters you name.
+
+- 327c850: `unmodel/image-edit` gains a second operation: `operation: "removeBackground"`.
+
+  **Type change:** `ImageEditParams` is now a union over `operation`. Code that reads `prompt` off an `ImageEditParams` value, and a custom adapter typed against the full `ImageEditParams`, must narrow or re-declare — see "Type change" below.
+
+  ```ts
+  import { imageEdit } from "unmodel/image-edit";
+  import { toFormData } from "unmodel/stability";
+
+  const request = imageEdit({
+    operation: "removeBackground",
+    model: "stability/stable-image-remove-background",
+    image: { file },
+    outputFormat: "webp",
+  });
+  // → { image: file, output_format: "webp" }
+
+  await fetch(request.request.url, {
+    method: request.request.method,
+    headers: {
+      authorization: `Bearer ${process.env.STABILITY_API_KEY ?? ""}`,
+      accept: "image/*",
+    },
+    body: toFormData(request),
+  });
+  ```
+
+  A removal takes a picture and, optionally, an encoding. It has no prompt: the operation is the instruction.
+
+  Two refs serve it, and Stability joins the pack:
+  - `stability/stable-image-remove-background` → `stability.imageEditRemoveBackground` (5 credits, $0.05). `outputFormat: "jpeg"` is refused by name: the route returns an alpha channel and offers `png` and `webp`.
+  - `photoroom/remove-background` → `photoroom.imageEditRemoveBackground`, `POST /v1/segment` ($0.02 — a fifth of what the same cut-out costs through `/v2/edit`). `outputFormat: "jpeg"` is written `jpg`, the route's own spelling. `bg_color`, `channels`, `crop` and `despill` are per-model extras; the route's `size` (a named downscale) rides in `providerOptions.photoroom`, because the canonical `size` is a shape. Photoroom's two refs compile to two different forms, so `PhotoroomImageEditWire` is the fields of both and `PhotoroomImageEditResult` the union of the two routes' results: a unified call's result type is read per provider, and reaching a field of one form takes an `in` check (`"imageFile" in result`). `.request` and `.toSdk("photoroom")` are on both.
+
+  **Which operation a model serves is a fact of the model**, so the type follows the ref. At a removal ref, `prompt`, `strength`, `n`, `seed`, `size`, `aspectRatio` and `dimensions` are compile errors; at an edit ref, `operation: "removeBackground"` is. `photoroom/edit-with-ai` edits and `photoroom/remove-background` removes, and neither compiles with the other's operation. A JavaScript caller gets the same answers at run time: `invalid_enum_value` at `operation` naming what the model does serve, and `unsupported_param` at each word that belongs to the other operation. Photoroom's and Stability's image-edit ids are unmodel's names for routes that take no model field, so an id outside their lists is refused at `model` (`invalid_enum_value`, naming the refs) instead of being sent, and billed, as whichever route the operation picks.
+
+  For a picker:
+  - `IMAGE_EDIT_OPERATIONS` at `unmodel/values` — `["edit", "removeBackground"]`.
+  - `IMAGE_EDIT_MODEL_PARAMS[model].operations` at `unmodel/<provider>/values` — which of them that model serves. **Absent means `["edit"]`**, which is what every existing row says.
+  - `unmodel/stability/values` gains `IMAGE_EDIT_MODELS` and `IMAGE_EDIT_MODEL_PARAMS`; `unmodel/stability/unified` gains the `imageEdit` adapter (with `StabilityImageEditWire` / `StabilityImageEditResult`) for `createImageEdit([…])`.
+
+  **Type change.** `ImageEditParams` is now a union over `operation`: `ImageEditEditParams | ImageEditRemoveBackgroundParams`.
+  - Code that reads `prompt`, `seed`, `strength`, `n` or a shape word off an `ImageEditParams` value must narrow first (`if (params.operation === "edit")`); `prompt` is `string | undefined` until it does. `ImageEditParams["operation"]` is `"edit" | "removeBackground"`, so an exhaustive `switch` gains a case.
+  - A custom adapter is unaffected if it is typed the way the shipped ones are: `ImageEditParamsFor<K>` and `ImageEditAdapterFor<K, …>` still mean the edit arm, through a new last type parameter that defaults to `"edit"`. An adapter typed against the full `ImageEditParams` should declare `ImageEditParamsFor<K>` instead, or handle both arms. One that serves a removal declares its operation (`ImageEditAdapterFor<K, Wire, Out, Table, "removeBackground">`) and lists it on the model's row.
+
+  New types on `unmodel/image-edit`: `ImageEditOperation`, `ImageEditParamsCommon`, `ImageEditEditBase`, `ImageEditEditParams`, `ImageEditRemoveBackgroundParams`, `ImageEditModelParams`, `ImageEditModelParamTable`, `ImageEditOperationOf`, `ImageEditOperationArms`. `unmodel/types` gains `ImageEditOperation`, `ImageEditEditParams`, `ImageEditRemoveBackgroundParams`, and the two a custom adapter's row is typed with, `ImageEditModelParams` and `ImageEditModelParamTable`.
+
+  Also in this release:
+  - `FAL_EXCLUDED` says the true thing about background removal at fal. The seven still-image routes are excluded because promoting them is generator work, not because the vocabulary lacks the word; the nine video routes carry their own reason, which says the image-edit operation is not their path.
+  - `STABILITY_STYLE_PRESETS` and `STABILITY_OUTPUT_FORMATS` are declared on Stability's import-free constraints leaf (every export keeps its name and place), so a bundle that only uses Stability's edit routes no longer carries its three generation validators.
+
+  Not behind the operation yet, each needing its own wire-exact address first: Recraft's `POST /v1/images/removeBackground`, Bria's `POST /v2/image/edit/remove_background`, and fal's seven still-image removal routes. `docs/providers.md` records each with its source and date.
+
+- cf7af1d: - **fal (`unmodel/fal`, `unmodel/sfx`):** Curate `elevenlabs/sound-effects/v3` (fal's replacement for `fal-ai/elevenlabs/sound-effects/v2`, scheduled to retire 2027-02-01), with 0.5–30s duration, 19-value `output_format`, `loop`, `prompt_influence`, `enable_safety_checker`, and $0.002/s catalog provenance.
+  - **mureka (`unmodel/music`):** Guard the `styles` extra in `compileSong` and `compileInstrumental` so passing `styles` with `lyrics` or `instrumental: true` returns an `unsupported_param` error naming `POST /v1/song/easy-generate` instead of passing through as an `unknown_param` warning.
+- a438cdd: New provider: **Higgsfield** (`unmodel/higgsfield`, `unmodel/higgsfield/types`) — its own image and video models (Soul, Marketing Studio, Ads Studio, AI Influencer, Cinema Studio, Genjutsu) and every third-party route it hosts (Seedance, Seedream, Kling, Wan, Happy Horse, Qwen Image, MiniMax, LTX, PixVerse, MAGI-2, Recraft, Ideogram, Grok Imagine, Z-Image), behind one key.
+
+  Four addresses:
+  - `higgsfield.image` — the 24 routes that answer images, on `POST https://api.higgsfield.ai/{endpoint}`.
+  - `higgsfield.imageEdit` — the 10 of them that take a picture to edit: a narrower view of the same route, which refuses an image route that does not edit and a request that carries no picture.
+  - `higgsfield.video` — the 87 routes that answer a video: text-to-video, image-to-video, reference-to-video, motion control, clip editing and clip extension are all route ids here, not separate addresses.
+  - `higgsfield.characterTrain` — Soul ID training, `POST /v1/custom-references`. A new verb: it creates the character a Soul route's `custom_reference_id` names.
+
+  The generation addresses take the route id as `endpoint` and an optional `hf_webhook`; both are moved into `.request.url` (the path and the `hf_webhook` query parameter) and neither reaches the body. Nothing else is added, removed or defaulted, and an explicit `null` is kept — Higgsfield's idempotency fingerprint counts omitted fields and explicit nulls. `.toSdk("higgsfield")` is the second argument of `@higgsfield/client/v2`'s `subscribe`: `{ input }`, passed as written, or `{ input, webhook: { url } }` when the params carry `hf_webhook` — the client's type also asks for a `webhook.secret` its v2 code never sends, so add your own to that one.
+
+  Every route is validated from its own published JSON Schema: required fields, vocabularies, numeric and length bounds, patterns, UUID and URL formats, nested objects, and the cross-field rules the schemas state (`enhance_prompt` on Marketing Studio, HDR on Kling 4.0, "at least one reference" on the reference routes, `<<<image_N>>>` prompt tokens on Cinema Studio). Strictness follows each route: an undeclared key is an error on the 54 routes whose schema says `additionalProperties: false` and a warning on the rest. A type, a `null` and a vocabulary are always one route's own: a value another route would refuse is never refused on a route that does not declare the key, and nothing about the body is refused on a route id unmodel has no row for — one newer than the snapshot is an `unknown_model` warning at `endpoint` and is sent as written. A route id typed at the wrong wide address (an image route at `higgsfield.video`) is a warning naming the right address, never a refusal — the path is the same either way. A value that cannot be a route id (a pasted URL, a leading slash) is refused with the id it should have been. Where a conditional requires a parameter whose published default already satisfies it (`resolution` under HDR on Kling 4.0, `prompt_extend` under `enable_thinking` on Qwen Image 3), omitting it is a warning: a server that fills defaults first fulfils that request. A file that is not at a URL is pointed at `POST /files/generate-upload-url`; no route takes bytes.
+
+  Also exported: `checkRequestStatus` (takes a status document or a webhook delivery, and reports `failed`, `nsfw`, `canceled`, an empty `completed`, and Ads Studio's partially failed batches), the URL builders (`submitUrl`, `estimateUrl`, `requestStatusUrl`, `requestCancelUrl`, `requestUrl`, `customReferenceUrl`, and the upload, preset-list and usage routes), the `Idempotency-Key` / `Hf-Expires-After` / webhook header names, the status tuples (`HIGGSFIELD_REQUEST_STATUSES`, `HIGGSFIELD_TERMINAL_STATUSES`, …), the response types (`RequestStatus`, `RequestAccepted`, `WebhookDelivery`, `CustomReference`, `ErrorResponse`, …), the per-route rows (`HIGGSFIELD_IMAGE_SHAPES`, `HIGGSFIELD_VIDEO_SHAPES`, `HIGGSFIELD_DOC_URLS`, `HIGGSFIELD_ENDPOINTS`, `HIGGSFIELD_EXCLUDED`) and the catalog.
+
+  Pricing: Higgsfield publishes prices as sentences. Each is transcribed with its quote into `HIGGSFIELD_RATES`, and `higgsfieldCostUSD` (and the `estimate` on a validated request) answers a figure only when the request states everything the rate depends on — `undefined` for sample-point, approximate and token-metered routes, for a batch whose billing no source states, and for clips whose length the body does not carry (declare a source clip's duration with `options.media` to price Genjutsu and Kling motion control). `ModelInfo.cost` carries a figure on the 18 routes with one flat rate; on the three priced Soul routes it is the default 720p figure. Twenty routes state a price on their model page while their console document says "Public pricing information is not available for this model." Contradicting pages are not catalogued, so sixteen of them are unpriced, with that reason on the row. The three priced Soul routes and AI Influencer are catalogued by owner decision: their rate is marked `contradicted`, `HIGGSFIELD_CONTRADICTED_PRICING_CAVEAT` is the sentence to show with it, and a validated request whose estimate came from one carries a warning with the new issue code `unconfirmed_cost`.
+
+  New issue code: `unconfirmed_cost` (a warning by default, like every code settable through `options.severity`). An exhaustive `switch` or `Record` over `IssueCode` gains a member.
+
+  Not included: webhook signature verification (the delivery type and header names are exported; no recorded delivery exists to verify against), the two misspelled legacy `higgsfiled/genjutsu/*` paths (routed with a warning that carries the reason), the Agent API and the legacy v1 job-set surface. Nothing was exercised against a live key: every body, bound and price is Higgsfield's published contract as of 2026-11-24.
+
+  The per-route surface is generated from committed snapshots of Higgsfield's public console, docs and model pages (`bun run codegen:higgsfield`, refreshed weekly).
+
+- a42bff3: Add `unmodel/photoroom`: native validators for Photoroom's two image APIs.
+  - `photoroom.imageEdit` — `POST https://image-api.photoroom.com/v2/edit`, the Image Editing API: background removal, AI backgrounds, shadows, relighting, text removal, expand, uncrop, upscale, beautify, ironing, flat lay, ghost mannequin, virtual model, templating and prompt-driven edits, on one multipart route. The params are the form fields themselves, dotted names included (`"background.blur.radius": 0.02`), plus three open-keyed families typed as template-literal keys (`editWithAI.additionalImages.<name>.imageFile`, `layers.<id>.text.content`, …).
+  - `photoroom.imageEditRemoveBackground` — `POST https://sdk.photoroom.com/v1/segment`, the Remove Background API: seven remove.bg-compatible fields.
+
+  What the validators know that the API does not tell you up front:
+  - Five features are switched by a request **header** that is in no schema (`pr-ai-shadows-model-version` and four siblings, exported as `PHOTOROOM_REQUEST_HEADERS`). `imageEdit` takes them as params and returns them on `.request.headers`.
+  - `/v2/edit` does not refuse a field it does not know: it answers 200, bills the call and names the field in a response header. That is an `unknown_param` warning here, before the send.
+  - A form part is text, so a field takes either spelling of its value: `maxWidth: 200` or `"200"` (the OpenAPI document's own example), `removeBackground: false` or `"false"`, and on `/v1/segment` `crop: true` or `"true"`. Nothing is converted; a bound applies to the number the text spells, and `toFormData` writes a number in plain decimal digits, never with an exponent.
+  - Cross-field rules are errors only where Photoroom states the rejection, and warnings where it says "can only be provided if" — its own docs examples contradict one such sentence. All 56 multipart examples in Photoroom's docs validate as published, every value the text the example sends, with no error and no warning (`test/fixtures/photoroom/docs-examples.json`).
+
+  Both are multipart: send `.request.url` with `photoroom.toFormData(validated)`. Estimates are the self-serve rates — $0.10 per Image Editing call, $0.02 per Remove Background call — and `PHOTOROOM_PRICING_CAVEAT` says what those numbers are not; a request for `virtualModel.quality` above `standard` returns no estimate, because no price is published for it.
+
+  The form-field tables are generated from Photoroom's OpenAPI document (`data/photoroom/`, `bun run codegen:photoroom`, refreshed weekly) and exported as data: `PHOTOROOM_EDIT_FIELDS`, `PHOTOROOM_EDIT_FAMILIES`, `PHOTOROOM_SEGMENT_FIELDS`. Types-only entry at `unmodel/photoroom/types`.
+
+  Not served: `GET /v2/edit` (the URL-input variant — unmodel has no body-less GET request shape), the base64 JSON body on `/v1/segment`, and Photoroom's account, visual-QA and legacy render routes.
+
+  CLI: `unmodel validate photoroom.imageEdit` is registered; `photoroom.imageEditRemoveBackground` needs a file and is library-only. The CLI's multipart note now reads the endpoint's declared framing, so it also appears for a multipart endpoint that returns headers.
+
+- b7c6534: `unmodel/image-edit` gains Photoroom: `photoroom/edit-with-ai`.
+
+  ```ts
+  import { imageEdit } from "unmodel/image-edit";
+  import { toFormData } from "unmodel/photoroom";
+
+  const request = imageEdit({
+    operation: "edit",
+    model: "photoroom/edit-with-ai",
+    prompt: "make it winter",
+    image: { file },
+  });
+  // → { "editWithAI.mode": "ai.auto", "editWithAI.prompt": "make it winter", removeBackground: false, imageFile: file }
+  ```
+
+  Edit With AI is the one mode of Photoroom's `POST /v2/edit` that is a picture and a sentence, so it is the one ref. `prompt` → `editWithAI.prompt` (with `editWithAI.mode: "ai.auto"`), `seed` → `editWithAI.seed`, `outputFormat` → `export.format`, and the result is `photoroom.imageEdit`'s own multipart `ValidatedForm` at $0.10 a call.
+  - The adapter writes `removeBackground: false`. The route's default would return a cut-out of the edit, and every Edit With AI example in Photoroom's docs sends it. Your own value in `providerOptions.photoroom` wins.
+  - `image` is `{ file }` only: `{ url }` and `{ data }` are compile errors and run-time refusals, because POST reads the picture from the `imageFile` part and Photoroom fetches a URL only on `GET /v2/edit`.
+  - `strength`, `n`, `size`, `aspectRatio` and `dimensions` are refused with the reason. `outputSize` is the canvas a result is positioned in, not a generation size, so no shape word compiles onto it.
+  - Reference pictures (`editWithAI.additionalImages.<name>.imageFile`, up to four) and every other field of the route go in `providerOptions.photoroom`, which is typed from the whole `/v2/edit` form.
+
+  New subpaths: `unmodel/photoroom/unified` (the adapter, for `createImageEdit([…])`) and `unmodel/photoroom/values` (`IMAGE_EDIT_MODELS`, `IMAGE_EDIT_MODEL_PARAMS`, the generated field tables, the feature-header names and their documented values, the byte limits).
+
+  New types on `unmodel/photoroom` and `unmodel/photoroom/types`: `EditFields` (the `/v2/edit` form's fields — `EditParams` without the five `pr-*` header params) and `EditValidated` (what `photoroom.imageEdit` returns for a request typed as the whole form; the same type as `ReturnType<typeof photoroom.imageEdit>`, named so you can state it).
+
+  Type fix: a `Blob` is now accepted at a typed `providerOptions` key on every multipart adapter. A bucket used to map over a `Blob` as if it were a nested object, so `providerOptions: { openai: { image: blob } }` did not compile.
+
+### Patch Changes
+
+- ba4dc9b: - **`unmodel` (`computeCostUSD`), `unmodel/openai-compatible` (`checkChat`):** Add `audioOutputTokens` to `TokenBreakdown` and price `completion_tokens_details.audio_tokens` at the catalog's `outputAudio` rate (falling back to `cost.output` when a model publishes no `outputAudio` rate).
+- ba4dc9b: openai-compatible: `checkChat` prices `prompt_tokens_details.audio_tokens` at the audio rate
+
+  Chat Completions responses report the audio part of `prompt_tokens` in
+  `prompt_tokens_details.audio_tokens` (OpenAI, and OpenRouter for every routed
+  model), but the shared checker never passed it to `computeCostUSD`, so audio
+  prompt tokens were billed at the text rate. An OpenRouter
+  `google/gemini-3-flash-preview` response with 800k audio and 200k text prompt
+  tokens priced at $0.50 instead of $0.90. It now passes the count as
+  `audioInputTokens`, the same re-rating `google.checkChat` already does.
+
 ## 0.7.0
 
 ### Minor Changes
@@ -2575,16 +2736,12 @@ fps?, max_long_side_pixel? } }` user part, and `image_url.detail: "default"`
 
   VIDEO (`minimax.videoV2`, `unmodel/video` as `minimax/…`)
   - `MiniMax-H3-Highspeed`, `MiniMax-H3-Lite` and `MiniMax-H3-Max` join
-    `MiniMax-H3` on POST /v2/video_generation, with per-model rules:
-    - resolution: `MiniMax-H3` renders `768P`/`2K`; the other three `480P`/`768P`
-      (`480P` is new to the route, and canonical `480p` maps to it exactly);
-    - duration: 4–15 seconds, except `MiniMax-H3-Max` at 5–15;
-    - `MiniMax-H3-Lite` refuses an `"adaptive"` (or omitted) `ratio` for
-      reference-to-video;
-    - `MiniMax-H3-Max` takes the new `extra: { prompt_expansion_mode:
+    `MiniMax-H3` on POST /v2/video_generation, with per-model rules: - resolution: `MiniMax-H3` renders `768P`/`2K`; the other three `480P`/`768P`
+    (`480P` is new to the route, and canonical `480p` maps to it exactly); - duration: 4–15 seconds, except `MiniMax-H3-Max` at 5–15; - `MiniMax-H3-Lite` refuses an `"adaptive"` (or omitted) `ratio` for
+    reference-to-video; - `MiniMax-H3-Max` takes the new `extra: { prompt_expansion_mode:
 "disabled" | "balanced" | "quality" }`; undeclared fields inside `extra` are
-      refused, and `extra` on the other three is flagged as undocumented (a
-      warning).
+    refused, and `extra` on the other three is flagged as undocumented (a
+    warning).
   - Pricing is per model and resolution, per second of output: H3 $0.08 (768P) /
     $0.13 (2K); Highspeed $0.06 / $0.04 (480P); Lite $0.04 / $0.025 (480P); Max
     $0.08 / $0.05 (480P). Input images beyond the free quota add $0.04 / $0.03 /

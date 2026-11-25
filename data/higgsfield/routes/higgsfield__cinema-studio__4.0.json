@@ -1,0 +1,499 @@
+{
+  "console": {
+    "category": "video2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16",
+            "21:9"
+          ],
+          "type": "string"
+        },
+        "audio_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "type": "array"
+        },
+        "camera_aperture": {
+          "enum": [
+            "f14-wide-open",
+            "f4-moderate",
+            "f11-deep-focus"
+          ],
+          "type": "string"
+        },
+        "camera_lens": {
+          "enum": [
+            "clean-sharp",
+            "anamorphic",
+            "vintage-anamorphic",
+            "warm-vintage",
+            "halation-vintage"
+          ],
+          "type": "string"
+        },
+        "camera_model": {
+          "enum": [
+            "modern",
+            "35mm-film",
+            "8mm-film",
+            "dv-camcorder"
+          ],
+          "type": "string"
+        },
+        "camera_movement": {
+          "enum": [
+            "snorricam",
+            "robot-arm",
+            "tilt-up",
+            "rack-focus",
+            "tilt-down",
+            "pov",
+            "pan-left",
+            "crane-up",
+            "pan-right",
+            "crane-down",
+            "side-tracking",
+            "pedestal-up",
+            "pedestal-down",
+            "handheld",
+            "tracking",
+            "drone-orbit",
+            "dolly-zoom",
+            "aerial-pullback",
+            "static-shot",
+            "bullet-time",
+            "whip-pan",
+            "slow-zoom-in",
+            "arc-left",
+            "slow-zoom-out",
+            "arc-right",
+            "truck-right",
+            "dolly-in",
+            "truck-left",
+            "dolly-out",
+            "slider-right",
+            "crush-zoom",
+            "slider-left",
+            "helicopter-shot"
+          ],
+          "type": "string"
+        },
+        "color_palette": {
+          "enum": [
+            "static-noon",
+            "twilight-fable",
+            "back-row-kissing-seats",
+            "on-the-other-side-of-the-porthole",
+            "the-emerald-ambush",
+            "highway-standoff",
+            "the-faded-fresco",
+            "oil-ochre",
+            "the-mountain-convent",
+            "ghost-in-the-code",
+            "pink-velvet",
+            "two-days-to-the-horizon",
+            "industrial-fog",
+            "stairs-go-up",
+            "field-post",
+            "home-is-the-next-gas-station",
+            "glossy-flesh",
+            "the-crimson-ballet",
+            "neon-rain-at-midnight",
+            "the-morning-after-rain",
+            "the-iron-borough",
+            "the-ground",
+            "the-investigation",
+            "turquoise-mirage",
+            "a-dream-in-color",
+            "breakfast-on-schedule",
+            "favela-gold",
+            "a-hotel-for-one",
+            "after-dark",
+            "crimson-vigi",
+            "the-neighbors-saw-everything",
+            "the-grey-channel",
+            "mirage-at-noon",
+            "bubblegum-boulevard",
+            "yellow-room",
+            "the-earth-keeps-things-reluctantly",
+            "tropic-fever-dream",
+            "bioluminescent-night",
+            "dont-turn-it-off-im-watching",
+            "the-silk-curtain-falls",
+            "the-butterfly",
+            "playtime",
+            "wallpaper-romance",
+            "overtime",
+            "the-way-home-is-longer",
+            "everyone-speaks-in-whispers",
+            "runaway-summer",
+            "amber-wasteland",
+            "the-circus",
+            "gasoline-sunset"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 30,
+          "minimum": 4,
+          "type": "integer"
+        },
+        "era": {
+          "enum": [
+            "1960s",
+            "1980s",
+            "1990s",
+            "2000s",
+            "2020s"
+          ],
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "genre": {
+          "enum": [
+            "epic",
+            "drama",
+            "noir",
+            "comedy",
+            "horror",
+            "action"
+          ],
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "type": "array"
+        },
+        "light": {
+          "enum": [
+            "silhouette",
+            "practicals",
+            "window",
+            "overhead-fall",
+            "contre-jour",
+            "soft-cross"
+          ],
+          "type": "string"
+        },
+        "pacing": {
+          "enum": [
+            "chaotic",
+            "dynamic",
+            "calm",
+            "single-shot"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p"
+          ],
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "type": "object"
+    },
+    "pricing": "Token-metered pricing. Billable video tokens = ceil((input video seconds + generated video seconds) × output width × output height × 24 fps / 1024). Image and audio references do not count as video input. At 480p or 720p, each 1,000 video tokens cost $0.0214 without video input or $0.01284 with video input (0.6× the standard rate). With video references, both input and generated video durations are billable. Rates shown are before any applicable customer discount.",
+    "title": "Cinema Studio 4.0",
+    "url": "https://dash.higgsfield.ai/models/higgsfield/cinema-studio/4.0/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16",
+            "21:9"
+          ],
+          "type": "string"
+        },
+        "audio_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "type": "array"
+        },
+        "camera_aperture": {
+          "enum": [
+            "f14-wide-open",
+            "f4-moderate",
+            "f11-deep-focus"
+          ],
+          "type": "string"
+        },
+        "camera_lens": {
+          "enum": [
+            "clean-sharp",
+            "anamorphic",
+            "vintage-anamorphic",
+            "warm-vintage",
+            "halation-vintage"
+          ],
+          "type": "string"
+        },
+        "camera_model": {
+          "enum": [
+            "modern",
+            "35mm-film",
+            "8mm-film",
+            "dv-camcorder"
+          ],
+          "type": "string"
+        },
+        "camera_movement": {
+          "enum": [
+            "snorricam",
+            "robot-arm",
+            "tilt-up",
+            "rack-focus",
+            "tilt-down",
+            "pov",
+            "pan-left",
+            "crane-up",
+            "pan-right",
+            "crane-down",
+            "side-tracking",
+            "pedestal-up",
+            "pedestal-down",
+            "handheld",
+            "tracking",
+            "drone-orbit",
+            "dolly-zoom",
+            "aerial-pullback",
+            "static-shot",
+            "bullet-time",
+            "whip-pan",
+            "slow-zoom-in",
+            "arc-left",
+            "slow-zoom-out",
+            "arc-right",
+            "truck-right",
+            "dolly-in",
+            "truck-left",
+            "dolly-out",
+            "slider-right",
+            "crush-zoom",
+            "slider-left",
+            "helicopter-shot"
+          ],
+          "type": "string"
+        },
+        "color_palette": {
+          "enum": [
+            "static-noon",
+            "twilight-fable",
+            "back-row-kissing-seats",
+            "on-the-other-side-of-the-porthole",
+            "the-emerald-ambush",
+            "highway-standoff",
+            "the-faded-fresco",
+            "oil-ochre",
+            "the-mountain-convent",
+            "ghost-in-the-code",
+            "pink-velvet",
+            "two-days-to-the-horizon",
+            "industrial-fog",
+            "stairs-go-up",
+            "field-post",
+            "home-is-the-next-gas-station",
+            "glossy-flesh",
+            "the-crimson-ballet",
+            "neon-rain-at-midnight",
+            "the-morning-after-rain",
+            "the-iron-borough",
+            "the-ground",
+            "the-investigation",
+            "turquoise-mirage",
+            "a-dream-in-color",
+            "breakfast-on-schedule",
+            "favela-gold",
+            "a-hotel-for-one",
+            "after-dark",
+            "crimson-vigi",
+            "the-neighbors-saw-everything",
+            "the-grey-channel",
+            "mirage-at-noon",
+            "bubblegum-boulevard",
+            "yellow-room",
+            "the-earth-keeps-things-reluctantly",
+            "tropic-fever-dream",
+            "bioluminescent-night",
+            "dont-turn-it-off-im-watching",
+            "the-silk-curtain-falls",
+            "the-butterfly",
+            "playtime",
+            "wallpaper-romance",
+            "overtime",
+            "the-way-home-is-longer",
+            "everyone-speaks-in-whispers",
+            "runaway-summer",
+            "amber-wasteland",
+            "the-circus",
+            "gasoline-sunset"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 30,
+          "minimum": 4,
+          "type": "integer"
+        },
+        "era": {
+          "enum": [
+            "1960s",
+            "1980s",
+            "1990s",
+            "2000s",
+            "2020s"
+          ],
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "genre": {
+          "enum": [
+            "epic",
+            "drama",
+            "noir",
+            "comedy",
+            "horror",
+            "action"
+          ],
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "type": "array"
+        },
+        "light": {
+          "enum": [
+            "silhouette",
+            "practicals",
+            "window",
+            "overhead-fall",
+            "contre-jour",
+            "soft-cross"
+          ],
+          "type": "string"
+        },
+        "pacing": {
+          "enum": [
+            "chaotic",
+            "dynamic",
+            "calm",
+            "single-shot"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p"
+          ],
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "type": "object"
+    },
+    "title": "Cinema Studio 4.0 — Generate",
+    "url": "https://docs.higgsfield.ai/docs/models/cinema-studio-4/generate.md",
+    "usage_notes": [
+      "This is the public Cinema Studio 4.0 workflow. It uses text-to-video when references are absent and reference-to-video when any media array is nonempty.",
+      "Omit creative-control fields to let the director choose them automatically; the literal value \"auto\" is not accepted for these enum fields.",
+      "Optional prompt references use one-based tokens such as \\<\\<\\<image\\_1>>>, \\<\\<\\<video\\_1>>> and \\<\\<\\<audio\\_1>>>. Each token must refer to an attached item of the same media type.",
+      "This endpoint produces a new video. Editing and extension use the separate Seedance 2.5 endpoints.",
+      "Reference media are limited to 30 images, 10 videos and 10 audio files, with at most 50 items total. Video and audio may be normalized to separate 30-second total budgets."
+    ]
+  },
+  "id": "higgsfield/cinema-studio/4.0",
+  "page": {
+    "availability_state": "available",
+    "company": "higgsfield",
+    "description": "Generates cinematic videos up to 30 seconds with automatic scene direction.",
+    "input_types": [
+      "text",
+      "image",
+      "video",
+      "audio"
+    ],
+    "operation_type": "video2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-09-18",
+    "title": "Cinema Studio 4.0",
+    "url": "https://open.higgsfield.ai/models/higgsfield/cinema-studio/4.0/api-reference",
+    "variant_title": "Cinema Studio 4.0"
+  }
+}

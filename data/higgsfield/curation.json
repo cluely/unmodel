@@ -1,0 +1,57 @@
+{
+  "$comment": [
+    "HAND-MAINTAINED. What Higgsfield's own documents cannot say about its roster.",
+    "",
+    "unmodel serves EVERY route in data/higgsfield/routes/ (owner decision, 2026-11-24): there is no allow-list,",
+    "and a route the next refresh adds is generated without anyone filing it here. This file holds the",
+    "exceptions, each with a reason, a source and the date it was verified:",
+    "  handWritten        a route whose body is typed by hand, so the generator does not lower it",
+    "  views.imageEdit    image routes the vendor files under `image_edit` that are NOT picture edits",
+    "  excluded.routes    routes the documents list that unmodel deliberately does not serve",
+    "",
+    "THE IMAGE-EDIT VIEW's RULE. An image route joins the view when its console document's \"Category\" lists",
+    "`image_edit`: that filing is the vendor's own statement that the route takes a source picture, and it is the",
+    "only published one. Where the route is also filed `text2image` (Ideogram 4.0, Grok Imagine Image 2.0, the",
+    "Marketing Studio routes) the picture is optional and the filing alone admits it; nobody re-reads each schema.",
+    "An entry under `views.imageEdit.exclude` is a person who did read one and found the picture is not the thing",
+    "being edited.",
+    "",
+    "ANTI-ROT: scripts/codegen-higgsfield.ts fails on any id here that the snapshot no longer lists, and on a",
+    "view exclusion naming a route the vendor no longer files under `image_edit`.",
+    "",
+    "Not routes, and so not here: the console's playground presets (`workflows/*`). The refresh lists them in",
+    "manifest.json; each is a page over a model row, with no path of its own to POST to."
+  ],
+  "handWritten": {
+    "v1/custom-references": {
+      "reason": "Soul ID training creates a reusable character reference; it is not a generation route. It answers `{ id, status }` instead of the request envelope and is polled at GET /v1/custom-references/{id}. The console files it under the slug `soul-id` with the input schema `{\"title\":\"Soul ID\"}`, so only the docs page publishes its body, and the two sources cannot be reconciled pointer by pointer.",
+      "source": "https://docs.higgsfield.ai/docs/models/soul-id/create-character.md (\"This is not an image-generation endpoint; do not POST to /soul-id.\") + https://dash.higgsfield.ai/models/soul-id/llms.txt",
+      "date": "2026-11-24"
+    }
+  },
+  "views": {
+    "imageEdit": {
+      "exclude": {
+        "higgsfield/ai-influencer": {
+          "reason": "Filed under `image_edit, text2image`, but its optional `image_url` is an identity photo for a generated character sheet, not a picture being edited: the route has no `prompt`, and the page describes it as \"Create one AI influencer character sheet.\" It stays an id at the wide image address.",
+          "source": "https://dash.higgsfield.ai/models/higgsfield/ai-influencer/llms.txt + https://open.higgsfield.ai/models/higgsfield/ai-influencer/api-reference",
+          "date": "2026-11-24"
+        }
+      }
+    }
+  },
+  "excluded": {
+    "routes": {
+      "higgsfiled/genjutsu/motion-transfer/v1.0": {
+        "reason": "A misspelled legacy path (`higgsfiled`) for `higgsfield/genjutsu/motion-transfer/v1.0`. It still answers, and the console's Genjutsu playground preset still points at it, but it has no console document (its llms.txt is 404) and no docs page; its page prints the older price sentence (\"Each second of input video costs $0.318 at 480p …\") beside the correctly spelled route's current one. unmodel serves the documented spelling only.",
+        "source": "https://open.higgsfield.ai/models/higgsfiled/genjutsu/motion-transfer/v1.0/api-reference + https://open.higgsfield.ai/models/workflows/genjutsu/api-reference",
+        "date": "2026-11-24"
+      },
+      "higgsfiled/genjutsu/object-swap/v1.0": {
+        "reason": "A misspelled legacy path (`higgsfiled`) for `higgsfield/genjutsu/object-swap/v1.0`. It still answers, and the console's Genjutsu playground preset still points at it, but it has no console document (its llms.txt is 404) and no docs page; its page prints the older price sentence (\"Each second of input video costs $0.318 at 480p …\") beside the correctly spelled route's current one. unmodel serves the documented spelling only.",
+        "source": "https://open.higgsfield.ai/models/higgsfiled/genjutsu/object-swap/v1.0/api-reference + https://open.higgsfield.ai/models/workflows/genjutsu/api-reference",
+        "date": "2026-11-24"
+      }
+    }
+  }
+}

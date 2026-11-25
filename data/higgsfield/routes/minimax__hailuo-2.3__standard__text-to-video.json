@@ -1,0 +1,90 @@
+{
+  "console": {
+    "category": "text2video",
+    "input_schema": {
+      "properties": {
+        "duration": {
+          "default": 6,
+          "enum": [
+            6,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_optimizer": {
+          "default": true,
+          "title": "Prompt optimizer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Minimax Hailuo 2.3 Playground",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "MiniMax Hailuo 2.3 Standard",
+    "url": "https://dash.higgsfield.ai/models/minimax/hailuo-2.3/standard/text-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "duration": {
+          "default": 6,
+          "enum": [
+            6,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_optimizer": {
+          "default": true,
+          "title": "Prompt optimizer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Minimax Hailuo 2.3 Playground",
+      "type": "object"
+    },
+    "title": "Hailuo 2.3 — Standard text to video",
+    "url": "https://docs.higgsfield.ai/docs/models/hailuo-2-3/standard-text-to-video.md",
+    "usage_notes": [
+      "This Standard endpoint uses a fixed 768P output resolution; resolution is not a configurable field in the production schema."
+    ]
+  },
+  "id": "minimax/hailuo-2.3/standard/text-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "minimax",
+    "description": "Generates short videos from text or images with fluid body motion and natural facial expressions.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.0467 per second at 768p for 6 second clips and $0.056 per second at 768p for 10 second clips.",
+    "released_on": "2025-10-01",
+    "title": "MiniMax Hailuo 2.3 Standard",
+    "url": "https://open.higgsfield.ai/models/minimax/hailuo-2.3/standard/text-to-video/api-reference",
+    "variant_title": "Text to Video (Standard)"
+  }
+}

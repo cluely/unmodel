@@ -1,0 +1,195 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "cfg_scale": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "multipleOf": 0.01,
+          "title": "CFG Scale",
+          "type": "number"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "last_image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "multi_prompt": {
+          "items": {
+            "properties": {
+              "duration": {
+                "maximum": 15,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "prompt": {
+                "maxLength": 512,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "maxItems": 6,
+          "minItems": 0,
+          "type": "array"
+        },
+        "multi_shots": {
+          "default": false,
+          "type": "boolean"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "sound": {
+          "default": "on",
+          "enum": [
+            "on",
+            "off"
+          ],
+          "title": "Generate sound",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "title": "Kling 3.0 Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 1080p: $0.0962. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations.",
+    "title": "Kling 3.0 Pro",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v3.0/pro/image-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "cfg_scale": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "multipleOf": 0.01,
+          "title": "CFG Scale",
+          "type": "number"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "last_image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "multi_prompt": {
+          "items": {
+            "properties": {
+              "duration": {
+                "maximum": 15,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "prompt": {
+                "maxLength": 512,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "maxItems": 6,
+          "minItems": 0,
+          "type": "array"
+        },
+        "multi_shots": {
+          "default": false,
+          "type": "boolean"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "sound": {
+          "default": "on",
+          "enum": [
+            "on",
+            "off"
+          ],
+          "title": "Generate sound",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "title": "Kling 3.0 Playground",
+      "type": "object"
+    },
+    "title": "Kling 3.0 — Pro · Image to video",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-3/pro-image-to-video.md",
+    "usage_notes": [
+      "image\\_url is the first frame; last\\_image\\_url optionally sets the final frame.",
+      "Always include a non-empty top-level prompt, including when using multi\\_prompt. Keep it within 2,500 characters; longer prompts are truncated.",
+      "For custom shots, set multi\\_shots to true and provide 1–6 multi\\_prompt objects. Each object needs prompt (at most 512 characters) and duration (a positive integer from 1 to 15 seconds).",
+      "Custom-shot durations are summed for generation and billing; the top-level duration does not override that sum. With multi\\_shots enabled and no custom shots, the top-level duration is retained.",
+      "Native audio uses sound: on or off and defaults to on.",
+      "elements contains Kling element IDs as decimal strings. Each ID must belong to the account making the request; arbitrary provider IDs are rejected.",
+      "The example.com media URLs are placeholders. Replace them with public HTTPS URLs to your own media before submitting."
+    ]
+  },
+  "id": "kling-video/v3.0/pro/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Kling 3.0 Image to Video (Pro) generates videos from a single image URL with optional sound and customizable duration up to 15 seconds. It supports multi-shot sequences with multiple prompts and fine-tuning via CFG scale for creative video outputs.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-02-01",
+    "title": "Kling 3.0 Pro",
+    "url": "https://open.higgsfield.ai/models/kling-video/v3.0/pro/image-to-video/api-reference",
+    "variant_title": "Image to Video (Pro)"
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "console": {
+    "category": "text2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "cfg_scale": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "multipleOf": 0.01,
+          "title": "CFG Scale",
+          "type": "number"
+        },
+        "duration": {
+          "default": 5,
+          "enum": [
+            5,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "sound": {
+          "default": "on",
+          "enum": [
+            "on",
+            "off"
+          ],
+          "title": "Generate sound",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Kling 2.6 Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 1080p: $0.0666. Total price = selected rate × output duration in seconds.",
+    "title": "Kling 2.6 Pro",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v2.6/pro/text-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "cfg_scale": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "multipleOf": 0.01,
+          "title": "CFG Scale",
+          "type": "number"
+        },
+        "duration": {
+          "default": 5,
+          "enum": [
+            5,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "sound": {
+          "default": "on",
+          "enum": [
+            "on",
+            "off"
+          ],
+          "title": "Generate sound",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Kling 2.6 Playground",
+      "type": "object"
+    },
+    "title": "Kling 2.6 — Pro text to video",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-2-6/pro-text-to-video.md",
+    "usage_notes": [
+      "duration accepts 5 or 10 seconds; 5 is the default.",
+      "Native audio uses sound: on or off and defaults to on."
+    ]
+  },
+  "id": "kling-video/v2.6/pro/text-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Generates videos and sound from text or images, including dialogue, sound effects and ambience.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2025-12-01",
+    "title": "Kling 2.6 Pro",
+    "url": "https://open.higgsfield.ai/models/kling-video/v2.6/pro/text-to-video/api-reference",
+    "variant_title": "Text to Video (Pro)"
+  }
+}

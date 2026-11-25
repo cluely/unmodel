@@ -1,0 +1,79 @@
+{
+  "console": {
+    "category": "text2video",
+    "input_schema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "aigc_watermark": {
+          "const": false,
+          "default": false,
+          "type": "boolean"
+        },
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "auto",
+            "adaptive",
+            "21:9",
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 4,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "prompt": {
+          "maxLength": 7000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "768P",
+          "enum": [
+            "480P",
+            "768P"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "MiniMax H3 Lite Text to Video",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "MiniMax H3 Lite",
+    "url": "https://dash.higgsfield.ai/models/minimax/h3-lite/text-to-video/llms.txt"
+  },
+  "docs": null,
+  "id": "minimax/h3-lite/text-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "minimax",
+    "description": "Generate 4–15 second videos from text with MiniMax H3 Lite. Choose 480P or 768P and control the scene, motion and aspect ratio for affordable creative exploration.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.025 per second at 480P and $0.04 per second at 768P, for 4, 5, 10 or 15 second clips.",
+    "released_on": "2026-10-30",
+    "title": "MiniMax H3 Lite",
+    "url": "https://open.higgsfield.ai/models/minimax/h3-lite/text-to-video/api-reference",
+    "variant_title": "Text to Video"
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "console": {
+    "category": "video2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Image Urls",
+          "type": "array"
+        },
+        "prompt": {
+          "default": "",
+          "maxLength": 10000,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "480p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "video_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Video Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "video_url",
+        "image_urls"
+      ],
+      "title": "MotionTransferParams",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 480p: $0.1540; 720p: $0.3446; 1080p: $0.8346. Billed duration is the source video duration rounded up to a whole second. Total price = selected rate × billed duration in seconds.",
+    "title": "Genjutsu",
+    "url": "https://dash.higgsfield.ai/models/higgsfield/genjutsu/motion-transfer/v1.0/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Image Urls",
+          "type": "array"
+        },
+        "prompt": {
+          "default": "",
+          "maxLength": 10000,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "480p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "video_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Video Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "video_url",
+        "image_urls"
+      ],
+      "title": "MotionTransferParams",
+      "type": "object"
+    },
+    "title": "Genjutsu — Motion transfer",
+    "url": "https://docs.higgsfield.ai/docs/models/genjutsu/motion-transfer.md",
+    "usage_notes": [
+      "Use higgsfield/genjutsu/motion-transfer/v1.0 for new integrations. The legacy endpoint higgsfiled/genjutsu/motion-transfer/v1.0 remains callable for existing clients but is hidden from model discovery.",
+      "The source video must be at least 4 seconds. Videos longer than 30 seconds are trimmed to 30 seconds; output duration follows the prepared source video.",
+      "Provide 1–8 image references. The prompt is optional and defaults to an empty string."
+    ]
+  },
+  "id": "higgsfield/genjutsu/motion-transfer/v1.0",
+  "page": {
+    "availability_state": "available",
+    "company": "higgsfield",
+    "description": "Swaps characters, locations, and styles in a video, keeping its motion.",
+    "input_types": [
+      "text",
+      "image",
+      "video"
+    ],
+    "operation_type": "video2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-09-17",
+    "title": "Genjutsu",
+    "url": "https://open.higgsfield.ai/models/higgsfield/genjutsu/motion-transfer/v1.0/api-reference",
+    "variant_title": "Motion Transfer"
+  }
+}

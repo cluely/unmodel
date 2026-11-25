@@ -1,0 +1,185 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "dynamic_range": {
+                "const": "hdr"
+              }
+            },
+            "required": [
+              "dynamic_range"
+            ]
+          },
+          "then": {
+            "properties": {
+              "resolution": {
+                "enum": [
+                  "1080p",
+                  "4k"
+                ]
+              }
+            },
+            "required": [
+              "resolution"
+            ]
+          }
+        }
+      ],
+      "else": {
+        "else": {
+          "else": {
+            "else": {
+              "properties": {
+                "elements": {
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "elements"
+              ]
+            },
+            "if": {
+              "properties": {
+                "video_urls": {
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "video_urls"
+              ]
+            }
+          },
+          "if": {
+            "required": [
+              "end_image_url"
+            ]
+          }
+        },
+        "if": {
+          "properties": {
+            "image_urls": {
+              "minItems": 1
+            }
+          },
+          "required": [
+            "image_urls"
+          ]
+        }
+      },
+      "if": {
+        "required": [
+          "image_url"
+        ]
+      },
+      "properties": {
+        "aspect_ratio": {
+          "default": "adaptive",
+          "enum": [
+            "21:9",
+            "16:9",
+            "9:16",
+            "1:1",
+            "adaptive"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 10,
+          "maximum": 30,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "dynamic_range": {
+          "default": "sdr",
+          "description": "HDR requires 1080p or 4K and adds $0.047 or $0.078 per second of output video, respectively, after base-price discounts.",
+          "enum": [
+            "sdr",
+            "hdr"
+          ],
+          "title": "Dynamic range",
+          "type": "string"
+        },
+        "elements": {
+          "items": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 7,
+          "type": "array"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "minLength": 1,
+          "type": "string"
+        },
+        "image_url": {
+          "format": "uri",
+          "minLength": 1,
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 10,
+          "type": "array"
+        },
+        "prompt": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p",
+            "4k"
+          ],
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 5,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates (USD). Per output second, without / with video input: 720p $0.1257 / $0.1544; 1080p $0.1879 / $0.2336.\n\n4K: $0.549/output s without video; with video, $0.329 × (output + max(input, output)), in seconds. Input totals reference videos and video elements after the 30s trim.\n\nHDR adds $0.047/output s at 1080p or $0.078 at 4K, after base-price discounts (including fixed-price agreements). SDR has no surcharge.",
+    "title": "Kling 4.0",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v4.0/reference-to-video/llms.txt"
+  },
+  "docs": null,
+  "id": "kling-video/v4.0/reference-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Create videos with Kling 4.0 using image and video references. Combine a text prompt with reference images, videos, or elements to guide clips up to 30 seconds long in 720p or 1080p.",
+    "input_types": [
+      "text",
+      "image",
+      "video"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-10-23",
+    "title": "Kling 4.0",
+    "url": "https://open.higgsfield.ai/models/kling-video/v4.0/reference-to-video/api-reference",
+    "variant_title": "Reference to Video"
+  }
+}

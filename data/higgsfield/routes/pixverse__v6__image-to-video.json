@@ -1,0 +1,162 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 1,
+          "title": "Duration",
+          "type": "number"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "title": "Last frame",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Generate audio",
+          "type": "boolean"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "First frame",
+          "type": "string"
+        },
+        "negative_prompt": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "360p",
+            "540p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "PixVerse V6 Image to Video Playground",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "PixVerse V6",
+    "url": "https://dash.higgsfield.ai/models/pixverse/v6/image-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 1,
+          "title": "Duration",
+          "type": "number"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "title": "Last frame",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Generate audio",
+          "type": "boolean"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "First frame",
+          "type": "string"
+        },
+        "negative_prompt": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "360p",
+            "540p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "PixVerse V6 Image to Video Playground",
+      "type": "object"
+    },
+    "title": "PixVerse V6 — Image to video",
+    "url": "https://docs.higgsfield.ai/docs/models/pixverse-v6/image-to-video.md",
+    "usage_notes": [
+      "duration is a number from 1 to 15, so the schema allows fractional values. If negative\\_prompt is supplied, it must contain 1–2,048 characters.",
+      "Use image\\_url for the first frame and optional end\\_image\\_url for the last frame. This endpoint has no aspect\\_ratio parameter; framing comes from the input image."
+    ]
+  },
+  "id": "pixverse/v6/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "pixverse",
+    "description": "PixVerse V6 Image to Video on Runware with optional native synchronized audio.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.035 per second at 360p for 15 second clips, $0.045 per second at 540p for 15 second clips, $0.06 per second at 720p for 15 second clips and $0.115 per second at 1080p for 1 or 15 second clips.",
+    "released_on": "2026-03-01",
+    "title": "PixVerse V6",
+    "url": "https://open.higgsfield.ai/models/pixverse/v6/image-to-video/api-reference",
+    "variant_title": "Image to Video"
+  }
+}

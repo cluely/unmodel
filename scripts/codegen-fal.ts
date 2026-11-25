@@ -421,6 +421,17 @@ export type Node =
       xmax?: number;
       minLen?: number;
       maxLen?: number;
+      /**
+       * `const` on a boolean: the one accepted value. A string or number `const`
+       * is a one-member `enum` instead, so this exists only for the type `enum`
+       * cannot carry.
+       */
+      const?: boolean;
+      /** `pattern`, as the schema spells it. */
+      pattern?: string;
+      /** `multipleOf`. */
+      step?: number;
+      format?: "uri" | "uuid";
     }
   | { k: "array"; items: Node; minItems?: number; maxItems?: number }
   /**
@@ -430,8 +441,15 @@ export type Node =
    */
   | { k: "nullable"; inner: Node }
   | { k: "ref"; hash: string }
-  | { k: "record"; values: Node }
-  | { k: "object"; props: Record<string, Prop>; order: string[] }
+  /**
+   * `named` are the keys the schema types apart from the rest (`properties`
+   * beside a schema-valued `additionalProperties`). The renderers below print
+   * `values` only, so a generator that sets `named` widens `values` to cover
+   * them before rendering a type.
+   */
+  | { k: "record"; values: Node; maxProps?: number; named?: Record<string, Node> }
+  /** `closed`: `additionalProperties: false`. */
+  | { k: "object"; props: Record<string, Prop>; order: string[]; closed?: true }
   | { k: "union"; arms: Node[] }
   | { k: "unknown" };
 
@@ -893,6 +911,7 @@ export function tsType(node: Node, componentTypeName: (hash: string) => string):
         if (node.open !== true) return listed;
         return `${listed} | (${node.t === "string" ? "string" : "number"} & {})`;
       }
+      if (node.const !== undefined) return literal(node.const);
       return node.t === "boolean" ? "boolean" : node.t === "string" ? "string" : "number";
     }
     case "array": {
@@ -951,6 +970,7 @@ export function zodExpr(node: Node, componentSchemaName: (hash: string) => strin
           ? `z.enum([${node.enum.map((value) => quote(String(value))).join(", ")}])`
           : `z.literal([${node.enum.map((value) => num(Number(value))).join(", ")}])`;
       }
+      if (node.const !== undefined) return `z.literal(${literal(node.const)})`;
       if (node.t === "boolean") return "z.boolean()";
       return node.t === "string" ? "z.string()" : "z.number()";
     }

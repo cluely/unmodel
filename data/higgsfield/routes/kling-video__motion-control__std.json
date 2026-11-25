@@ -1,0 +1,130 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "character_orientation": {
+          "default": "video",
+          "description": "Generate the orientation of the characters in the video, which can be selected to match the image or the video",
+          "enum": [
+            "image",
+            "video"
+          ],
+          "title": "Character orientation",
+          "type": "string"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "keep_original_sound": {
+          "default": "yes",
+          "enum": [
+            "yes",
+            "no"
+          ],
+          "title": "Keep original sound",
+          "type": "string"
+        },
+        "prompt": {
+          "default": "",
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "video_url": {
+          "format": "uri",
+          "title": "Video URL",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_url",
+        "video_url"
+      ],
+      "title": "Kling Motion Control Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.0523. Billed duration is the motion-reference video duration rounded to the nearest whole second. Total price = selected rate × billed duration in seconds.",
+    "title": "Kling 2.6",
+    "url": "https://dash.higgsfield.ai/models/kling-video/motion-control/std/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "character_orientation": {
+          "default": "video",
+          "description": "Generate the orientation of the characters in the video, which can be selected to match the image or the video",
+          "enum": [
+            "image",
+            "video"
+          ],
+          "title": "Character orientation",
+          "type": "string"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "keep_original_sound": {
+          "default": "yes",
+          "enum": [
+            "yes",
+            "no"
+          ],
+          "title": "Keep original sound",
+          "type": "string"
+        },
+        "prompt": {
+          "default": "",
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "video_url": {
+          "format": "uri",
+          "title": "Video URL",
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_url",
+        "video_url"
+      ],
+      "title": "Kling Motion Control Playground",
+      "type": "object"
+    },
+    "title": "Kling 2.6 Motion Control — Standard",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-2-6-motion-control/std.md",
+    "usage_notes": [
+      "Use a motion-reference video from 3 to 30 seconds long. The output duration follows the source video; do not send a separate duration field.",
+      "Use a character image up to 10 MB with each dimension between 300 and 65,536 pixels. Images outside the 0.4–2.5 width-to-height range are adjusted before generation.",
+      "Videos larger than 100 MB are compressed before generation.",
+      "Set character\\_orientation to image or video. keep\\_original\\_sound uses the strings yes and no, with yes as the default.",
+      "The example.com media URLs are placeholders. Replace them with public HTTPS URLs to your own media before submitting."
+    ]
+  },
+  "id": "kling-video/motion-control/std",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Kling 2.6 Motion Control (Standard) generates videos by animating a source image using motion from a reference video. Users provide an image URL and a video URL, with options to keep the original sound and align character orientation to either the image or video.",
+    "input_types": [
+      "text",
+      "image",
+      "video"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2025-12-01",
+    "title": "Kling 2.6",
+    "url": "https://open.higgsfield.ai/models/kling-video/motion-control/std/api-reference",
+    "variant_title": "Motion Control (Standard)"
+  }
+}

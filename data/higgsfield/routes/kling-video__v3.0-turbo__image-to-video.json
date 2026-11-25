@@ -1,0 +1,110 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "Kling 3.0 Turbo",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.0839; 1080p: $0.1049. Total price = selected rate × output duration in seconds.",
+    "title": "Kling 3.0 Turbo",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v3.0-turbo/image-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "Kling 3.0 Turbo",
+      "type": "object"
+    },
+    "title": "Kling 3.0 — Turbo · Image to video",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-3/turbo-image-to-video.md",
+    "usage_notes": [
+      "duration accepts integers from 3 to 15 seconds. resolution accepts 720p or 1080p and defaults to 720p.",
+      "This endpoint has no sound, multi\\_shots, elements, or last-frame field.",
+      "Keep prompt within 2,500 characters; longer prompts are truncated.",
+      "The example.com media URLs are placeholders. Replace them with public HTTPS URLs to your own media before submitting."
+    ]
+  },
+  "id": "kling-video/v3.0-turbo/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Kling 3.0 Turbo converts a single image into a short video clip using a text prompt to guide the animation. Users can specify the video duration between 3 to 15 seconds and choose between 720p or 1080p resolution for output.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-06-01",
+    "title": "Kling 3.0 Turbo",
+    "url": "https://open.higgsfield.ai/models/kling-video/v3.0-turbo/image-to-video/api-reference",
+    "variant_title": "Image to Video (Turbo)"
+  }
+}

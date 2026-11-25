@@ -1,0 +1,215 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "camera_movement": {
+          "enum": [
+            "dolly_in",
+            "dolly_out",
+            "dolly_left",
+            "dolly_right",
+            "jib_up",
+            "jib_down",
+            "static",
+            "focus_shift"
+          ],
+          "title": "Camera movement",
+          "type": "string"
+        },
+        "duration": {
+          "default": 6,
+          "enum": [
+            6,
+            8,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "title": "Last frame",
+          "type": "string"
+        },
+        "fps": {
+          "default": 25,
+          "enum": [
+            24,
+            25,
+            48,
+            50
+          ],
+          "title": "Frames per second",
+          "type": "integer"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Generate audio",
+          "type": "boolean"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "First frame",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "maxLength": 5000,
+          "minLength": 2,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p",
+            "2k",
+            "4k"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "duration",
+        "image_url"
+      ],
+      "title": "LTX-2.5 Fast Image to Video Playground",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "LTX-2.5 Fast",
+    "url": "https://dash.higgsfield.ai/models/lightricks/ltx-2.5/image-to-video/fast/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "camera_movement": {
+          "enum": [
+            "dolly_in",
+            "dolly_out",
+            "dolly_left",
+            "dolly_right",
+            "jib_up",
+            "jib_down",
+            "static",
+            "focus_shift"
+          ],
+          "title": "Camera movement",
+          "type": "string"
+        },
+        "duration": {
+          "default": 6,
+          "enum": [
+            6,
+            8,
+            10
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "title": "Last frame",
+          "type": "string"
+        },
+        "fps": {
+          "default": 25,
+          "enum": [
+            24,
+            25,
+            48,
+            50
+          ],
+          "title": "Frames per second",
+          "type": "integer"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Generate audio",
+          "type": "boolean"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "First frame",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "maxLength": 5000,
+          "minLength": 2,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p",
+            "2k",
+            "4k"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt",
+        "duration",
+        "image_url"
+      ],
+      "title": "LTX-2.5 Fast Image to Video Playground",
+      "type": "object"
+    },
+    "title": "LTX-2.5 — Image to video fast",
+    "url": "https://docs.higgsfield.ai/docs/models/ltx-2-5/image-to-video-fast.md",
+    "usage_notes": [
+      "duration is marked required in the schema and has default 6; the API applies this top-level default before validation. The example includes it explicitly.",
+      "Fast supports 720p, 1080p, 2k or 4k and 24, 25, 48 or 50 fps.",
+      "image\\_url is the required first frame; end\\_image\\_url is an optional last frame. aspect\\_ratio explicitly controls output dimensions."
+    ]
+  },
+  "id": "lightricks/ltx-2.5/image-to-video/fast",
+  "page": {
+    "availability_state": "available",
+    "company": "lightricks",
+    "description": "LTX-2.5 Fast Image to Video on Runware with native audio and optional camera movement.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.09 per second at 720p for 6 second clips, $0.13 per second at 1080p for 6 second clips, $0.19 per second at 2k for 6 second clips and $0.30 per second at 4k for 8 or 10 second clips.",
+    "released_on": "2026-08-01",
+    "title": "LTX-2.5 Fast",
+    "url": "https://open.higgsfield.ai/models/lightricks/ltx-2.5/image-to-video/fast/api-reference",
+    "variant_title": "Image to Video"
+  }
+}

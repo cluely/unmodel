@@ -1,0 +1,218 @@
+{
+  "$comment": [
+    "HAND-MAINTAINED. Every deviation from what Higgsfield's own published schemas say, and nothing else.",
+    "",
+    "Most routes are published twice: by the console (dash.higgsfield.ai/models/<id>/llms.txt) and by the docs",
+    "(docs.higgsfield.ai/docs/models/<family>/<workflow>.md). Where the two schemas differ there is NO default",
+    "winner: every differing JSON pointer needs a `prefer` entry here, or codegen stops naming the route, the",
+    "pointer and both values. A reviewer therefore decides each disagreement once, in writing.",
+    "",
+    "Overlay kinds, each requiring `reason` + `source` + `date`:",
+    "  prefer         which source's value stands at one pointer where the two schemas differ",
+    "  nullable       an explicit `null` the route accepts although its schema does not type it (`warn`: the",
+    "                 sources contradict each other, so null is reported as well as accepted)",
+    "  softBound      a tighter bound one source states that the hard schema does not: reported, never refused",
+    "  ignoreKeyword  a keyword in a published schema that is not JSON Schema and constrains nothing",
+    "  tokens         `<<<kind_N>>>` prompt tokens that index an attached item, where only prose says so",
+    "",
+    "ANTI-ROT: an overlay whose route, pointer or parameter no longer exists FAILS codegen, and so does a `prefer`",
+    "entry at a pointer where the two sources now agree, a `nullable` entry on a parameter that is already",
+    "nullable, and a `softBound` that is no tighter than the hard bound. An exception that has stopped being one",
+    "must be deleted, not carried."
+  ],
+  "overlays": [
+    {
+      "kind": "prefer",
+      "route": "bytedance/seedance-2.5/text-to-video",
+      "pointer": "/properties/draft",
+      "prefer": "console",
+      "reason": "The console document declares `draft` (\"Generate a 480p MP4 draft with standard bitrate for later finalization.\") and the docs page does not. The route is `additionalProperties: false`, and the console also lists `bytedance/seedance-2.5/finalize-draft`, which consumes a draft's request id, so leaving the field out would refuse a request the API documents.",
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/text-to-video/llms.txt + https://docs.higgsfield.ai/docs/models/seedance-2-5/text-to-video.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "bytedance/seedance-2.5/image-to-video",
+      "pointer": "/properties/draft",
+      "prefer": "console",
+      "reason": "The console document declares `draft` (\"Generate a 480p MP4 draft with standard bitrate for later finalization.\") and the docs page does not. The route is `additionalProperties: false`, and the console also lists `bytedance/seedance-2.5/finalize-draft`, which consumes a draft's request id, so leaving the field out would refuse a request the API documents.",
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/image-to-video/llms.txt + https://docs.higgsfield.ai/docs/models/seedance-2-5/image-to-video.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "bytedance/seedance-2.5/reference-to-video",
+      "pointer": "/properties/draft",
+      "prefer": "console",
+      "reason": "The console document declares `draft` (\"Generate a 480p MP4 draft with standard bitrate for later finalization.\") and the docs page does not. The route is `additionalProperties: false`, and the console also lists `bytedance/seedance-2.5/finalize-draft`, which consumes a draft's request id, so leaving the field out would refuse a request the API documents.",
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/reference-to-video/llms.txt + https://docs.higgsfield.ai/docs/models/seedance-2-5/reference-to-video.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "bytedance/seedance-2.5/video-edit",
+      "pointer": "/properties/draft",
+      "prefer": "console",
+      "reason": "The console document declares `draft` (\"Generate a 480p MP4 draft with standard bitrate for later finalization.\") and the docs page does not. The route is `additionalProperties: false`, and the console also lists `bytedance/seedance-2.5/finalize-draft`, which consumes a draft's request id, so leaving the field out would refuse a request the API documents.",
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/video-edit/llms.txt + https://docs.higgsfield.ai/docs/models/seedance-2-5/video-edit.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "bytedance/seedance-2.5/video-extend",
+      "pointer": "/properties/draft",
+      "prefer": "console",
+      "reason": "The console document declares `draft` (\"Generate a 480p MP4 draft with standard bitrate for later finalization.\") and the docs page does not. The route is `additionalProperties: false`, and the console also lists `bytedance/seedance-2.5/finalize-draft`, which consumes a draft's request id, so leaving the field out would refuse a request the API documents.",
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/video-extend/llms.txt + https://docs.higgsfield.ai/docs/models/seedance-2-5/video-extend.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "alibaba/wan-3.0/reference-to-video",
+      "pointer": "/properties/prompt_extend",
+      "prefer": "console",
+      "reason": "The console document declares a boolean `prompt_extend` and the docs page does not. The sibling text-to-video and image-to-video routes declare it in both sources, and the wider schema is the one that cannot refuse a request the API fulfils.",
+      "source": "https://dash.higgsfield.ai/models/alibaba/wan-3.0/reference-to-video/llms.txt + https://docs.higgsfield.ai/docs/models/wan-3/reference-to-video.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "alibaba/wan-3.0-prime/reference-to-video",
+      "pointer": "/properties/prompt_extend",
+      "prefer": "console",
+      "reason": "The console document declares a boolean `prompt_extend` and the docs page does not. The sibling text-to-video and image-to-video routes declare it in both sources, and the wider schema is the one that cannot refuse a request the API fulfils.",
+      "source": "https://dash.higgsfield.ai/models/alibaba/wan-3.0-prime/reference-to-video/llms.txt + https://docs.higgsfield.ai/docs/models/wan-3-prime/reference-to-video.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "higgsfield-ai/soul/standard",
+      "pointer": "/properties/custom_reference_id",
+      "prefer": "docs",
+      "reason": "The docs page declares `custom_reference_id` and the console document does not. The docs schema is the server's (`SoulParamsSchema`) and its usage notes describe the field at run time; the console schema is titled \"Soul Playground\" and is the playground form.",
+      "source": "https://docs.higgsfield.ai/docs/models/soul-standard/generate.md + https://dash.higgsfield.ai/models/higgsfield-ai/soul/standard/llms.txt",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "higgsfield-ai/soul/standard",
+      "pointer": "/properties/custom_reference_strength",
+      "prefer": "docs",
+      "reason": "The docs page declares `custom_reference_strength` and the console document does not. The docs schema is the server's (`SoulParamsSchema`) and its usage notes describe the field at run time; the console schema is titled \"Soul Playground\" and is the playground form.",
+      "source": "https://docs.higgsfield.ai/docs/models/soul-standard/generate.md + https://dash.higgsfield.ai/models/higgsfield-ai/soul/standard/llms.txt",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "higgsfield-ai/soul/standard",
+      "pointer": "/properties/image_reference_url",
+      "prefer": "docs",
+      "reason": "The docs page declares `image_reference_url` and the console document does not. The docs schema is the server's (`SoulParamsSchema`) and its usage notes describe the field at run time; the console schema is titled \"Soul Playground\" and is the playground form.",
+      "source": "https://docs.higgsfield.ai/docs/models/soul-standard/generate.md + https://dash.higgsfield.ai/models/higgsfield-ai/soul/standard/llms.txt",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "higgsfield-ai/soul/standard",
+      "pointer": "/properties/seed",
+      "prefer": "docs",
+      "reason": "The docs schema types `seed` as integer or null (\"seed may be omitted or null\"); the console schema types it as integer with `default: null`. Both say null is sent, and the docs schema is the one that says so in its type.",
+      "source": "https://docs.higgsfield.ai/docs/models/soul-standard/generate.md + https://dash.higgsfield.ai/models/higgsfield-ai/soul/standard/llms.txt",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "higgsfield-ai/soul/v2/standard",
+      "pointer": "/properties/style_strength",
+      "prefer": "docs",
+      "reason": "The docs page declares `style_strength` (0–1) and the console document does not: \"style_strength is accepted by the request schema but currently has no effect on generation.\" A field the server accepts stays typed.",
+      "source": "https://docs.higgsfield.ai/docs/models/soul-2/generate.md + https://dash.higgsfield.ai/models/higgsfield-ai/soul/v2/standard/llms.txt",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "higgsfield/ads-studio/v1.0",
+      "pointer": "/properties/aspect_ratio/enum",
+      "prefer": "docs",
+      "reason": "The docs schema lists 14 aspect ratios, including `3:1` and `1:3`; the console schema lists 12, without those two. The route is closed, so the narrower list would refuse two values the model's own documentation page publishes. Not probed against a live key.",
+      "source": "https://docs.higgsfield.ai/docs/models/ads-studio/generate.md + https://dash.higgsfield.ai/models/higgsfield/ads-studio/v1.0/llms.txt",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "prefer",
+      "route": "z-image/turbo",
+      "pointer": "/properties/prompt/maxLength",
+      "prefer": "console",
+      "reason": "The console schema allows a 2500-character `prompt`; the docs schema allows 800 (\"at most 800 characters\"). The wider bound is the hard one: a refusal at 801 characters that the API fulfils is the worse failure. The docs figure is kept as a soft bound (the `softBound` entry below).",
+      "source": "https://dash.higgsfield.ai/models/z-image/turbo/llms.txt + https://docs.higgsfield.ai/docs/models/z-image-turbo/generate.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "softBound",
+      "route": "z-image/turbo",
+      "param": "prompt",
+      "keyword": "maxLength",
+      "value": 800,
+      "reason": "The docs page states the tighter limit in its schema and its usage notes: \"prompt must contain non-whitespace text and at most 800 characters.\" A prompt between 801 and 2500 characters is inside the console schema and outside the docs one, so it is reported and not refused.",
+      "source": "https://docs.higgsfield.ai/docs/models/z-image-turbo/generate.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "softBound",
+      "route": "higgsfield-ai/soul/v2/standard",
+      "param": "custom_reference_strength",
+      "keyword": "exclusiveMinimum",
+      "value": 0,
+      "reason": "The schema's minimum is 0, and the docs usage notes say 0 does not work with a character reference: \"set custom_reference_strength to a value greater than 0 and no greater than 1. The schema accepts 0, but the current runtime fails to process it for a character reference.\" The schema accepts it, so it is reported and not refused.",
+      "source": "https://docs.higgsfield.ai/docs/models/soul-2/generate.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "nullable",
+      "route": "higgsfield-ai/soul/v2/standard",
+      "param": "seed",
+      "warn": true,
+      "reason": "Both schemas type `seed` as integer, and the two sources contradict each other on null: the docs usage notes say \"explicit null is invalid\", while the console schema carries `default: null` and the console document's own \"Required Parameters Example\" sends `\"seed\": null`. A false refusal is the worse failure, so null is accepted and reported. Not probed against a live key.",
+      "source": "https://docs.higgsfield.ai/docs/models/soul-2/generate.md + https://dash.higgsfield.ai/models/higgsfield-ai/soul/v2/standard/llms.txt",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "nullable",
+      "route": "higgsfield-ai/soul/v2/image-to-image",
+      "param": "seed",
+      "reason": "The console schema types `seed` as integer with `default: null`, and the console document's own \"Required Parameters Example\" sends `\"seed\": null`. No source says null is refused on this route.",
+      "source": "https://dash.higgsfield.ai/models/higgsfield-ai/soul/v2/image-to-image/llms.txt",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "nullable",
+      "route": "higgsfield-ai/soul/standard",
+      "param": "style_id",
+      "warn": true,
+      "reason": "Both schemas type `style_id` as a uuid string, and the two sources contradict each other on null: the docs schema gives it a uuid default, while the console schema carries `default: null` and the console document's own \"Required Parameters Example\", TypeScript sample and cURL sample all send `\"style_id\": null`. A false refusal is the worse failure, so null is accepted and reported. Not probed against a live key.",
+      "source": "https://dash.higgsfield.ai/models/higgsfield-ai/soul/standard/llms.txt + https://docs.higgsfield.ai/docs/models/soul-standard/generate.md",
+      "date": "2026-11-25"
+    },
+    {
+      "kind": "ignoreKeyword",
+      "route": "kling-video/omni/video-reference",
+      "pointer": "/properties/duration/mode",
+      "reason": "Both sources nest a whole `mode` property schema (`{ default: \"pro\", enum: [\"std\", \"pro\"], type: \"string\" }`) inside the `duration` property, beside the real top-level `mode`. `mode` is not a JSON Schema keyword, so it constrains nothing; it is a slip in the published schema.",
+      "source": "https://dash.higgsfield.ai/models/kling-video/omni/video-reference/llms.txt + https://docs.higgsfield.ai/docs/models/kling-omni/video-reference.md",
+      "date": "2026-11-24"
+    },
+    {
+      "kind": "tokens",
+      "route": "higgsfield/cinema-studio/4.0",
+      "prompt": "prompt",
+      "arrays": {
+        "image": "image_urls",
+        "video": "video_urls",
+        "audio": "audio_urls"
+      },
+      "reason": "The docs usage notes state a rule the schema cannot: \"Optional prompt references use one-based tokens such as <<<image_1>>>, <<<video_1>>> and <<<audio_1>>>. Each token must refer to an attached item of the same media type.\"",
+      "source": "https://docs.higgsfield.ai/docs/models/cinema-studio-4/generate.md",
+      "date": "2026-11-24"
+    }
+  ]
+}

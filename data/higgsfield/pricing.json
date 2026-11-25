@@ -1,0 +1,1348 @@
+{
+  "$comment": [
+    "HAND-TRANSCRIBED. Higgsfield publishes prices as sentences, in three places: the \"## Pricing\" paragraph of a",
+    "route's console document (dash.higgsfield.ai/models/<id>/llms.txt), the price sentence its model page shows",
+    "beside its related models (open.higgsfield.ai/models/<id>/api-reference), and, once, the page description.",
+    "Every rate here is a human reading one of those sentences, which is why each row carries the exact `quote`,",
+    "the `source` URL and the date it was `verified`.",
+    "",
+    "EVERY generation route has a row: a rate, or an `unpriced` reason. Silence stops codegen.",
+    "",
+    "Row shape, a rate:",
+    "  unit               per_image | per_second",
+    "  usd                one rate, or one per value of `by` (keys are that field's WIRE values, verbatim)",
+    "  by                 the wire field that selects the rate",
+    "  byUnpublished      why no wire field selects it; `usd` is then keyed by the quote's own labels",
+    "  usdWithVideoInput  the table that applies when any of `videoInputs` carries a clip",
+    "  seconds            what a per-second rate multiplies: `request` (the body's `duration`), `source` (the clip at",
+    "                     `sourceParam`, with `rounding` as quoted and `maxSeconds` where a source states a trim, in",
+    "                     the quote or in `maxSecondsQuote`), `output` (the delivered clip, whose length the request",
+    "                     does not state) or `formula` (the quote's own arithmetic over durations the request does not",
+    "                     state)",
+    "  count              a wire field the vendor says multiplies a per-image rate; `countQuote` is where it says so",
+    "  multipliedBy       a field that changes how many images come back, where NO source says how it bills",
+    "  catalog            the `by` value whose figure the catalog row's `cost` carries (owner decision, 2026-11-24, for",
+    "                     the Soul routes: the default resolution). Must be the default every source agrees on.",
+    "  undefinedWhen      requests the quote prices in a way this row cannot express; no estimate is given there.",
+    "                     `changes: rate` also keeps the rate off the catalog row; `changes: unit` does not.",
+    "  decided            the date the owner ruled that this rate is catalogued although the route's console document",
+    "                     says no price is public. Required on such a route, refused on any other.",
+    "…or an explicit non-price:",
+    "  unpriced           the REASON no rate can be stated, in prose",
+    "",
+    "THE CONSOLE'S \"NO PUBLIC PRICING\" SENTENCE. Where a route's page data has no pricing paragraph, its console",
+    "document prints \"Public pricing information is not available for this model.\" under \"## Pricing\" — while the",
+    "model page, or the document's own description, states a price. Those are contradicting pages, and a rate read",
+    "off one of them is `unpriced` (the reason says so, and keeps the sentence as its `quote`) UNLESS the owner ruled",
+    "for that route: the row then carries `decided`, the date of the ruling, and its rate is published with the",
+    "caveat (`contradicted` on its rate, a CAVEAT line above its catalog row). Rulings so far: the three priced",
+    "Soul routes and AI Influencer, 2026-11-24.",
+    "Whether a route is contradicted is read off the snapshot, never entered by hand, and codegen stops on a rate",
+    "at a contradicted route without `decided`, and on a `decided` at a route that is not contradicted.",
+    "",
+    "WHAT IS NOT A PRICE, and so is `unpriced`:",
+    "  - a sample point. \"$0.14 per second at 720p for 1 second clips\" prices one combination of a resolution and",
+    "    a clip length out of a range of lengths. A sentence is a rate TABLE only when what it qualifies its rates by",
+    "    is one wire field's closed enum and it prices every member; codegen checks exactly that of every `by` row.",
+    "  - a rate the vendor calls approximate (\"Roughly costs …\").",
+    "  - token-metered pricing.",
+    "  - a sentence the route's console document contradicts, where the owner has not ruled (see above).",
+    "",
+    "TWO GUARDS, both run by scripts/codegen-higgsfield.ts on every generate:",
+    "  A  every `quote`, `countQuote` and `maxSecondsQuote` must be a verbatim substring of that route's",
+    "     committed snapshot (its console pricing paragraph, page price sentence, page description, a property",
+    "     description or a docs usage note). A sentence that changed upstream therefore fails the refresh until",
+    "     someone re-reads it.",
+    "  B  every number in `usd` and `usdWithVideoInput` must be one of the dollar amounts in the row's own `quote`,",
+    "     and, where the quote states an amount beside a key (\"720p: $0.2647\", \"$0.054 each at 1k and 1.5k\",",
+    "     \"for 6 second clips\"), the amount under that key must be one the quote puts beside it. This catches a",
+    "     transposed digit and two figures filed under each other's key.",
+    "A table may be keyed by any such field: Hailuo 2.3 prices its two `duration` values, 6 and 10, and offers no others.",
+    "A one-member `resolution` enum is written as a flat rate (\"$0.035 each at 1k.\" on a route that offers only",
+    "`1k`), and so is a rate the quote states once for every value (\"$0.015 each at 1k and 2k.\")."
+  ],
+  "endpoints": {
+    "alibaba/happy-horse/image-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/alibaba/happy-horse/image-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.14 per second at 720p for 1 second clips and $0.28 per second at 1080p for 2 or 15 second clips."
+    },
+    "alibaba/happy-horse/reference-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/alibaba/happy-horse/reference-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.14 per second at 720p for 1 second clips and $0.28 per second at 1080p for 2 or 15 second clips."
+    },
+    "alibaba/happy-horse/text-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/alibaba/happy-horse/text-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.14 per second at 720p for 1 second clips and $0.28 per second at 1080p for 3 or 15 second clips."
+    },
+    "alibaba/happy-horse/v1.1/image-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/alibaba/happy-horse/v1.1/image-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.14 per second at 720p for 1 second clips and $0.18 per second at 1080p for 2 or 15 second clips."
+    },
+    "alibaba/happy-horse/v1.1/reference-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/alibaba/happy-horse/v1.1/reference-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.14 per second at 720p for 1 second clips and $0.18 per second at 1080p for 2 or 15 second clips."
+    },
+    "alibaba/happy-horse/v1.1/text-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/alibaba/happy-horse/v1.1/text-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.14 per second at 720p for 1 second clips and $0.18 per second at 1080p for 3 or 15 second clips."
+    },
+    "alibaba/qwen-image-3/edit": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/alibaba/qwen-image-3/edit/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.04 each at 1k and $0.075 each at 2k."
+    },
+    "alibaba/qwen-image-3/text-to-image": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/alibaba/qwen-image-3/text-to-image/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.04 each at 1k and $0.075 each at 2k."
+    },
+    "alibaba/wan-3.0-prime/image-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.051,
+        "720p": 0.105,
+        "1080p": 0.21
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/alibaba/wan-3.0-prime/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.0510; 720p: $0.1050; 1080p: $0.2100. Total price = selected rate × output duration in seconds."
+    },
+    "alibaba/wan-3.0-prime/reference-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.051,
+        "720p": 0.105,
+        "1080p": 0.21
+      },
+      "usdWithVideoInput": {
+        "480p": 0.1013,
+        "720p": 0.2084,
+        "1080p": 0.4341
+      },
+      "videoInputs": [
+        "video_urls"
+      ],
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/alibaba/wan-3.0-prime/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per second of generated video.\n\n- Without video input: 480p: $0.0510; 720p: $0.1050; 1080p: $0.2100.\n- With video input: 480p: $0.1013; 720p: $0.2084; 1080p: $0.4341.\n\nTotal price = selected rate × output duration in seconds. Input video duration is not added to the billed duration."
+    },
+    "alibaba/wan-3.0-prime/text-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.051,
+        "720p": 0.105,
+        "1080p": 0.21
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/alibaba/wan-3.0-prime/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.0510; 720p: $0.1050; 1080p: $0.2100. Total price = selected rate × output duration in seconds."
+    },
+    "alibaba/wan-3.0/image-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.0375,
+        "720p": 0.075,
+        "1080p": 0.15
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/alibaba/wan-3.0/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.0375; 720p: $0.0750; 1080p: $0.1500. Total price = selected rate × output duration in seconds."
+    },
+    "alibaba/wan-3.0/reference-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.0375,
+        "720p": 0.075,
+        "1080p": 0.15
+      },
+      "usdWithVideoInput": {
+        "480p": 0.0747,
+        "720p": 0.1493,
+        "1080p": 0.3011
+      },
+      "videoInputs": [
+        "video_urls"
+      ],
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/alibaba/wan-3.0/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per second of generated video.\n\n- Without video input: 480p: $0.0375; 720p: $0.0750; 1080p: $0.1500.\n- With video input: 480p: $0.0747; 720p: $0.1493; 1080p: $0.3011.\n\nTotal price = selected rate × output duration in seconds. Input video duration is not added to the billed duration."
+    },
+    "alibaba/wan-3.0/text-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.0375,
+        "720p": 0.075,
+        "1080p": 0.15
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/alibaba/wan-3.0/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.0375; 720p: $0.0750; 1080p: $0.1500. Total price = selected rate × output duration in seconds."
+    },
+    "bytedance/seedance-2.0/image-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.0804,
+        "720p": 0.1735,
+        "1080p": 0.4293,
+        "4k": 0.8907
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.0/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.0804; 720p: $0.1735; 1080p: $0.4293; 4K: $0.8907. Total price = selected rate × output duration in seconds."
+    },
+    "bytedance/seedance-2.0/reference-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.0804,
+        "720p": 0.1735,
+        "1080p": 0.4293,
+        "4k": 0.8907
+      },
+      "usdWithVideoInput": {
+        "480p": 0.0991,
+        "720p": 0.2128,
+        "1080p": 0.5183,
+        "4k": 1.0669
+      },
+      "videoInputs": [
+        "video_urls"
+      ],
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.0/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per second of generated video.\n\n- Without video input: 480p: $0.0804; 720p: $0.1735; 1080p: $0.4293; 4K: $0.8907.\n- With video input: 480p: $0.0991; 720p: $0.2128; 1080p: $0.5183; 4K: $1.0669.\n\nTotal price = selected rate × output duration in seconds. Input video duration is not added to the billed duration. Image or audio references alone use the rate without video input."
+    },
+    "bytedance/seedance-2.0/text-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.0804,
+        "720p": 0.1735,
+        "1080p": 0.4293,
+        "4k": 0.8907
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.0/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.0804; 720p: $0.1735; 1080p: $0.4293; 4K: $0.8907. Total price = selected rate × output duration in seconds."
+    },
+    "bytedance/seedance-2.5/finalize-draft": {
+      "unpriced": "The console document's pricing paragraph says no price is public. Its guide bills finalization per output second at the 1080p rate, on the duration and video-input tier saved with the draft, and this request states neither.",
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/finalize-draft/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Public pricing information is not available for this model."
+    },
+    "bytedance/seedance-2.5/image-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.1177,
+        "720p": 0.2647,
+        "1080p": 0.6518
+      },
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "draft",
+          "in": [
+            true
+          ],
+          "changes": "rate",
+          "reason": "A draft is rendered at 480p and billed at its own resolution's rate, whatever `resolution` says: \"Draft generation and finalization are separate paid requests. Each is billed per output second at its own resolution.\""
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.1177; 720p: $0.2647; 1080p: $0.6518. Total price = selected rate × output duration in seconds."
+    },
+    "bytedance/seedance-2.5/reference-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.1177,
+        "720p": 0.2647,
+        "1080p": 0.6518
+      },
+      "usdWithVideoInput": {
+        "480p": 0.1387,
+        "720p": 0.3264,
+        "1080p": 0.7858
+      },
+      "videoInputs": [
+        "video_urls"
+      ],
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "draft",
+          "in": [
+            true
+          ],
+          "changes": "rate",
+          "reason": "A draft is rendered at 480p and billed at its own resolution's rate, whatever `resolution` says: \"Draft generation and finalization are separate paid requests. Each is billed per output second at its own resolution.\""
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per second of generated video.\n\n- Without video input: 480p: $0.1177; 720p: $0.2647; 1080p: $0.6518.\n- With video input: 480p: $0.1387; 720p: $0.3264; 1080p: $0.7858.\n\nTotal price = selected rate × output duration in seconds. Input video duration is not added to the billed duration. Image or audio references alone use the rate without video input."
+    },
+    "bytedance/seedance-2.5/text-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.1177,
+        "720p": 0.2647,
+        "1080p": 0.6518
+      },
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "draft",
+          "in": [
+            true
+          ],
+          "changes": "rate",
+          "reason": "A draft is rendered at 480p and billed at its own resolution's rate, whatever `resolution` says: \"Draft generation and finalization are separate paid requests. Each is billed per output second at its own resolution.\""
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.1177; 720p: $0.2647; 1080p: $0.6518. Total price = selected rate × output duration in seconds."
+    },
+    "bytedance/seedance-2.5/video-edit": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.1387,
+        "720p": 0.3264,
+        "1080p": 0.7858
+      },
+      "seconds": "output",
+      "undefinedWhen": [
+        {
+          "param": "draft",
+          "in": [
+            true
+          ],
+          "changes": "rate",
+          "reason": "A draft is rendered at 480p and billed at its own resolution's rate, whatever `resolution` says: \"Draft generation and finalization are separate paid requests. Each is billed per output second at its own resolution.\""
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/video-edit/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.1387; 720p: $0.3264; 1080p: $0.7858. The edited video duration is determined from the primary input video and rounded up to a whole second. Total price = selected rate × that duration in seconds; input duration is not added again."
+    },
+    "bytedance/seedance-2.5/video-extend": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.1387,
+        "720p": 0.3264,
+        "1080p": 0.7858
+      },
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "draft",
+          "in": [
+            true
+          ],
+          "changes": "rate",
+          "reason": "A draft is rendered at 480p and billed at its own resolution's rate, whatever `resolution` says: \"Draft generation and finalization are separate paid requests. Each is billed per output second at its own resolution.\""
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/bytedance/seedance-2.5/video-extend/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.1387; 720p: $0.3264; 1080p: $0.7858. Total price = selected rate × requested extension duration in seconds. The duration of the existing input video is not added to the billed duration."
+    },
+    "bytedance/seedream/v5.0/pro/edit": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/bytedance/seedream/v5.0/pro/edit/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.054 each at 1k and 1.5k and $0.108 each at 2k."
+    },
+    "bytedance/seedream/v5.0/pro/text-to-image": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/bytedance/seedream/v5.0/pro/text-to-image/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.054 each at 1k and 1.5k and $0.108 each at 2k."
+    },
+    "higgsfield-ai/soul/cinema": {
+      "unpriced": "No surface states a price: the route is documented on docs.higgsfield.ai only, and it has no console document and no model page.",
+      "source": "https://docs.higgsfield.ai/docs/models/soul-cinema/generate.md",
+      "verified": "2026-11-24"
+    },
+    "higgsfield-ai/soul/standard": {
+      "unit": "per_image",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.0938,
+        "1080p": 0.1875
+      },
+      "multipliedBy": "batch_size",
+      "catalog": "720p",
+      "decided": "2026-11-24",
+      "source": "https://open.higgsfield.ai/models/higgsfield-ai/soul/standard/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.0938 each at 720p and $0.1875 each at 1080p."
+    },
+    "higgsfield-ai/soul/v2/image-to-image": {
+      "unit": "per_image",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.0032,
+        "1080p": 0.0057
+      },
+      "multipliedBy": "batch_size",
+      "catalog": "720p",
+      "decided": "2026-11-24",
+      "source": "https://open.higgsfield.ai/models/higgsfield-ai/soul/v2/image-to-image/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.0032 each at 720p and $0.0057 each at 1080p."
+    },
+    "higgsfield-ai/soul/v2/standard": {
+      "unit": "per_image",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.0032,
+        "1080p": 0.0057
+      },
+      "multipliedBy": "batch_size",
+      "catalog": "720p",
+      "decided": "2026-11-24",
+      "source": "https://open.higgsfield.ai/models/higgsfield-ai/soul/v2/standard/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.0032 each at 720p and $0.0057 each at 1080p."
+    },
+    "higgsfield/ads-studio/v1.0": {
+      "unpriced": "Token-metered: the charge follows token counts the request does not state, and no per-image or per-second figure is published as a price.",
+      "source": "https://dash.higgsfield.ai/models/higgsfield/ads-studio/v1.0/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Per 1M tokens: text input $5, cached text input $1.25, text output $10; image input $8, cached image input $2, image output $30. Quality defaults to high. Final cost uses actual token usage and standard credit rounding. The initial charge is an estimate reconciled on completion."
+    },
+    "higgsfield/ai-influencer": {
+      "unit": "per_image",
+      "usd": 0.05,
+      "decided": "2026-11-24",
+      "source": "https://open.higgsfield.ai/models/higgsfield/ai-influencer/api-reference",
+      "verified": "2026-11-24",
+      "quote": "$0.05 per sheet."
+    },
+    "higgsfield/cinema-studio/4.0": {
+      "unpriced": "Token-metered: the charge follows token counts the request does not state, and no per-image or per-second figure is published as a price.",
+      "source": "https://dash.higgsfield.ai/models/higgsfield/cinema-studio/4.0/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Token-metered pricing. Billable video tokens = ceil((input video seconds + generated video seconds) × output width × output height × 24 fps / 1024). Image and audio references do not count as video input. At 480p or 720p, each 1,000 video tokens cost $0.0214 without video input or $0.01284 with video input (0.6× the standard rate). With video references, both input and generated video durations are billable. Rates shown are before any applicable customer discount."
+    },
+    "higgsfield/genjutsu-light/motion-transfer/v1.0": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.0739,
+        "720p": 0.1471,
+        "1080p": 0.2936
+      },
+      "seconds": "output",
+      "source": "https://dash.higgsfield.ai/models/higgsfield/genjutsu-light/motion-transfer/v1.0/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Price per second (output): 480p — $0.0739; 720p — $0.1471; 1080p — $0.2936."
+    },
+    "higgsfield/genjutsu-light/object-swap/v1.0": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.0739,
+        "720p": 0.1471,
+        "1080p": 0.2936
+      },
+      "seconds": "output",
+      "source": "https://dash.higgsfield.ai/models/higgsfield/genjutsu-light/object-swap/v1.0/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Price per second (output): 480p — $0.0739; 720p — $0.1471; 1080p — $0.2936."
+    },
+    "higgsfield/genjutsu/motion-transfer/v1.0": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.154,
+        "720p": 0.3446,
+        "1080p": 0.8346
+      },
+      "seconds": "source",
+      "sourceParam": "video_url",
+      "rounding": "up",
+      "maxSeconds": 30,
+      "maxSecondsQuote": "Videos longer than 30 seconds are trimmed to 30 seconds; output duration follows the prepared source video.",
+      "source": "https://dash.higgsfield.ai/models/higgsfield/genjutsu/motion-transfer/v1.0/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.1540; 720p: $0.3446; 1080p: $0.8346. Billed duration is the source video duration rounded up to a whole second. Total price = selected rate × billed duration in seconds."
+    },
+    "higgsfield/genjutsu/object-swap/v1.0": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.154,
+        "720p": 0.3446,
+        "1080p": 0.8346
+      },
+      "seconds": "source",
+      "sourceParam": "video_url",
+      "rounding": "up",
+      "maxSeconds": 30,
+      "maxSecondsQuote": "Videos longer than 30 seconds are trimmed to 30 seconds; output duration follows the prepared source video.",
+      "source": "https://dash.higgsfield.ai/models/higgsfield/genjutsu/object-swap/v1.0/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.1540; 720p: $0.3446; 1080p: $0.8346. Billed duration is the source video duration rounded up to a whole second. Total price = selected rate × billed duration in seconds."
+    },
+    "higgsfield/genjutsu/restyle/v1.0": {
+      "unpriced": "The vendor labels these rates approximate (\"Roughly costs\"), so they are not an exact price.",
+      "source": "https://dash.higgsfield.ai/models/higgsfield/genjutsu/restyle/v1.0/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Roughly costs $0.318 per second at 480p, $0.681 per second at 720p, or $1.632 per second at 1080p."
+    },
+    "ideogram/v4.0": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/ideogram/v4.0/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.03 each."
+    },
+    "kling-image/v4.0/edit": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/kling-image/v4.0/edit/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.063 each at 2k, $0.094 each at 4k and $0.157 each at 8k."
+    },
+    "kling-image/v4.0/edit/series": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/kling-image/v4.0/edit/series/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.063 each at 2k, $0.094 each at 4k and $0.157 each at 8k."
+    },
+    "kling-image/v4.0/text-to-image": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/kling-image/v4.0/text-to-image/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.063 each at 2k, $0.094 each at 4k and $0.157 each at 8k."
+    },
+    "kling-image/v4.0/text-to-image/series": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/kling-image/v4.0/text-to-image/series/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.063 each at 2k, $0.094 each at 4k and $0.157 each at 8k."
+    },
+    "kling-video/motion-control/pro": {
+      "unit": "per_second",
+      "usd": 0.0779,
+      "seconds": "source",
+      "sourceParam": "video_url",
+      "rounding": "nearest",
+      "source": "https://dash.higgsfield.ai/models/kling-video/motion-control/pro/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 1080p: $0.0779. Billed duration is the motion-reference video duration rounded to the nearest whole second. Total price = selected rate × billed duration in seconds."
+    },
+    "kling-video/motion-control/std": {
+      "unit": "per_second",
+      "usd": 0.0523,
+      "seconds": "source",
+      "sourceParam": "video_url",
+      "rounding": "nearest",
+      "source": "https://dash.higgsfield.ai/models/kling-video/motion-control/std/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0523. Billed duration is the motion-reference video duration rounded to the nearest whole second. Total price = selected rate × billed duration in seconds."
+    },
+    "kling-video/o3/first-last-frame": {
+      "unit": "per_second",
+      "byUnpublished": "The route has no `resolution` field. The quote prices two output resolutions, and no source says which value of `mode` produces which.",
+      "usd": {
+        "720p": 0.0683,
+        "1080p": 0.086
+      },
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "multi_shots",
+          "in": [
+            true
+          ],
+          "changes": "unit",
+          "reason": "The quote bills an explicit multi-shot request on the sum of its shot durations, not on `duration`."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/o3/first-last-frame/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0683; 1080p: $0.0860. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/o3/image-reference": {
+      "unit": "per_second",
+      "byUnpublished": "The route has no `resolution` field. The quote prices two output resolutions, and no source says which value of `mode` produces which.",
+      "usd": {
+        "720p": 0.0683,
+        "1080p": 0.086
+      },
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "multi_shots",
+          "in": [
+            true
+          ],
+          "changes": "unit",
+          "reason": "The quote bills an explicit multi-shot request on the sum of its shot durations, not on `duration`."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/o3/image-reference/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0683; 1080p: $0.0860. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/o3/video-edit": {
+      "unit": "per_second",
+      "byUnpublished": "The route has no `resolution` field. The quote prices two output resolutions, and no source says which value of `mode` produces which.",
+      "usd": {
+        "720p": 0.0945,
+        "1080p": 0.1263
+      },
+      "seconds": "source",
+      "sourceParam": "video_urls",
+      "rounding": "nearest",
+      "maxSeconds": 15,
+      "source": "https://dash.higgsfield.ai/models/kling-video/o3/video-edit/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0945; 1080p: $0.1263. Billed duration is the source video duration rounded to the nearest whole second, capped at 15 seconds. Multi-shot requests use the sum of the specified shot durations. Total price = selected rate × billed duration in seconds; input duration is not added again."
+    },
+    "kling-video/o3/video-reference": {
+      "unit": "per_second",
+      "byUnpublished": "The route has no `resolution` field. The quote prices two output resolutions, and no source says which value of `mode` produces which.",
+      "usd": {
+        "720p": 0.0945,
+        "1080p": 0.1263
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/o3/video-reference/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0945; 1080p: $0.1263. Total price = selected rate × output duration in seconds. Input video duration is not added to the billed duration. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/omni/first-last-frame": {
+      "unit": "per_second",
+      "byUnpublished": "The route has no `resolution` field. The quote prices two output resolutions, and no source says which value of `mode` produces which.",
+      "usd": {
+        "720p": 0.0632,
+        "1080p": 0.0837
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/omni/first-last-frame/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0632; 1080p: $0.0837. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/omni/image-reference": {
+      "unit": "per_second",
+      "byUnpublished": "The route has no `resolution` field. The quote prices two output resolutions, and no source says which value of `mode` produces which.",
+      "usd": {
+        "720p": 0.0632,
+        "1080p": 0.0837
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/omni/image-reference/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0632; 1080p: $0.0837. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/omni/video-edit": {
+      "unit": "per_second",
+      "byUnpublished": "The route has no `resolution` field. The quote prices two output resolutions, and no source says which value of `mode` produces which.",
+      "usd": {
+        "720p": 0.0945,
+        "1080p": 0.1252
+      },
+      "seconds": "source",
+      "sourceParam": "video_urls",
+      "rounding": "nearest",
+      "maxSeconds": 10,
+      "source": "https://dash.higgsfield.ai/models/kling-video/omni/video-edit/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0945; 1080p: $0.1252. Billed duration is the source video duration rounded to the nearest whole second, capped at 10 seconds. Multi-shot requests use the sum of the specified shot durations. Total price = selected rate × billed duration in seconds; input duration is not added again."
+    },
+    "kling-video/omni/video-reference": {
+      "unit": "per_second",
+      "byUnpublished": "The route has no `resolution` field. The quote prices two output resolutions, and no source says which value of `mode` produces which.",
+      "usd": {
+        "720p": 0.0945,
+        "1080p": 0.1252
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/omni/video-reference/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0945; 1080p: $0.1252. Total price = selected rate × output duration in seconds. Input video duration is not added to the billed duration. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/v2.5-turbo/pro/image-to-video": {
+      "unit": "per_second",
+      "usd": 0.0525,
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/v2.5-turbo/pro/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 1080p: $0.0525. Total price = selected rate × output duration in seconds."
+    },
+    "kling-video/v2.5-turbo/pro/text-to-video": {
+      "unit": "per_second",
+      "usd": 0.0525,
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/v2.5-turbo/pro/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 1080p: $0.0525. Total price = selected rate × output duration in seconds."
+    },
+    "kling-video/v2.5-turbo/standard/image-to-video": {
+      "unit": "per_second",
+      "usd": 0.0315,
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/v2.5-turbo/standard/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0315. Total price = selected rate × output duration in seconds."
+    },
+    "kling-video/v2.6/pro/image-to-video": {
+      "unit": "per_second",
+      "usd": 0.0666,
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/v2.6/pro/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 1080p: $0.0666. Total price = selected rate × output duration in seconds."
+    },
+    "kling-video/v2.6/pro/text-to-video": {
+      "unit": "per_second",
+      "usd": 0.0666,
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/v2.6/pro/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 1080p: $0.0666. Total price = selected rate × output duration in seconds."
+    },
+    "kling-video/v3.0-turbo/image-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.0839,
+        "1080p": 0.1049
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/v3.0-turbo/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0839; 1080p: $0.1049. Total price = selected rate × output duration in seconds."
+    },
+    "kling-video/v3.0-turbo/text-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.0839,
+        "1080p": 0.1049
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/kling-video/v3.0-turbo/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0839; 1080p: $0.1049. Total price = selected rate × output duration in seconds."
+    },
+    "kling-video/v3.0/4k/image-to-video": {
+      "unit": "per_second",
+      "usd": 0.3151,
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "multi_shots",
+          "in": [
+            true
+          ],
+          "changes": "unit",
+          "reason": "The quote bills an explicit multi-shot request on the sum of its shot durations, not on `duration`."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v3.0/4k/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 4K: $0.3151. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/v3.0/4k/text-to-video": {
+      "unit": "per_second",
+      "usd": 0.3151,
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "multi_shots",
+          "in": [
+            true
+          ],
+          "changes": "unit",
+          "reason": "The quote bills an explicit multi-shot request on the sum of its shot durations, not on `duration`."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v3.0/4k/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 4K: $0.3151. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/v3.0/pro/image-to-video": {
+      "unit": "per_second",
+      "usd": 0.0962,
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "multi_shots",
+          "in": [
+            true
+          ],
+          "changes": "unit",
+          "reason": "The quote bills an explicit multi-shot request on the sum of its shot durations, not on `duration`."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v3.0/pro/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 1080p: $0.0962. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/v3.0/pro/text-to-video": {
+      "unit": "per_second",
+      "usd": 0.0962,
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "multi_shots",
+          "in": [
+            true
+          ],
+          "changes": "unit",
+          "reason": "The quote bills an explicit multi-shot request on the sum of its shot durations, not on `duration`."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v3.0/pro/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 1080p: $0.0962. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/v3.0/std/image-to-video": {
+      "unit": "per_second",
+      "usd": 0.0714,
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "multi_shots",
+          "in": [
+            true
+          ],
+          "changes": "unit",
+          "reason": "The quote bills an explicit multi-shot request on the sum of its shot durations, not on `duration`."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v3.0/std/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0714. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/v3.0/std/text-to-video": {
+      "unit": "per_second",
+      "usd": 0.0714,
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "multi_shots",
+          "in": [
+            true
+          ],
+          "changes": "unit",
+          "reason": "The quote bills an explicit multi-shot request on the sum of its shot durations, not on `duration`."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v3.0/std/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0714. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations."
+    },
+    "kling-video/v3/motion-control/pro": {
+      "unit": "per_second",
+      "usd": 0.1189,
+      "seconds": "source",
+      "sourceParam": "video_url",
+      "rounding": "nearest",
+      "source": "https://dash.higgsfield.ai/models/kling-video/v3/motion-control/pro/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 1080p: $0.1189. Billed duration is the motion-reference video duration rounded to the nearest whole second. Total price = selected rate × billed duration in seconds."
+    },
+    "kling-video/v3/motion-control/std": {
+      "unit": "per_second",
+      "usd": 0.092,
+      "seconds": "source",
+      "sourceParam": "video_url",
+      "rounding": "nearest",
+      "source": "https://dash.higgsfield.ai/models/kling-video/v3/motion-control/std/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0920. Billed duration is the motion-reference video duration rounded to the nearest whole second. Total price = selected rate × billed duration in seconds."
+    },
+    "kling-video/v4.0-flash/image-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/kling-video/v4.0-flash/image-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.094 per second at 720p, for 3, 10 or 20 second clips."
+    },
+    "kling-video/v4.0-flash/reference-to-video": {
+      "unit": "per_second",
+      "usd": 0.094,
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "video_urls",
+          "minItems": 1,
+          "changes": "rate",
+          "reason": "With input video the rate is $0.063 per billable second, and billable seconds add the input clips' duration, which the request does not state."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v4.0-flash/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "720p: without input video, $0.094 per output second. With input video, $0.063 per billable second. Billable duration = output duration + max(total input video duration, output duration). Explicit clips longer than 20 seconds are trimmed before measurement."
+    },
+    "kling-video/v4.0-flash/text-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/kling-video/v4.0-flash/text-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.094 per second at 720p, for 3, 10 or 20 second clips."
+    },
+    "kling-video/v4.0-flash/video-edit": {
+      "unit": "per_second",
+      "usd": 0.063,
+      "seconds": "formula",
+      "source": "https://dash.higgsfield.ai/models/kling-video/v4.0-flash/video-edit/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "720p: $0.063 per billable second. Billable duration = output duration + max(total input video duration, output duration). Total input duration includes the base video and video references; explicit clips longer than 20 seconds are trimmed before measurement."
+    },
+    "kling-video/v4.0/image-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.1257,
+        "1080p": 0.1879,
+        "4k": 0.549
+      },
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "dynamic_range",
+          "in": [
+            "hdr"
+          ],
+          "changes": "rate",
+          "reason": "HDR adds a per-second surcharge that depends on the resolution and is applied after discounts."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v4.0/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.1257; 1080p: $0.1879; 4K: $0.549. Total price = selected rate × output duration in seconds.\n\nHDR adds $0.047 per second of output video at 1080p or $0.078 at 4K, after base-price discounts, including fixed-price agreements. SDR has no additional charge."
+    },
+    "kling-video/v4.0/reference-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.1257,
+        "1080p": 0.1879,
+        "4k": 0.549
+      },
+      "usdWithVideoInput": {
+        "720p": 0.1544,
+        "1080p": 0.2336
+      },
+      "videoInputs": [
+        "video_urls"
+      ],
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "dynamic_range",
+          "in": [
+            "hdr"
+          ],
+          "changes": "rate",
+          "reason": "HDR adds a per-second surcharge that depends on the resolution and is applied after discounts."
+        },
+        {
+          "param": "elements",
+          "minItems": 1,
+          "changes": "rate",
+          "reason": "A video element counts as video input, and an element id does not say whether it is one."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v4.0/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates (USD). Per output second, without / with video input: 720p $0.1257 / $0.1544; 1080p $0.1879 / $0.2336.\n\n4K: $0.549/output s without video; with video, $0.329 × (output + max(input, output)), in seconds. Input totals reference videos and video elements after the 30s trim.\n\nHDR adds $0.047/output s at 1080p or $0.078 at 4K, after base-price discounts (including fixed-price agreements). SDR has no surcharge."
+    },
+    "kling-video/v4.0/text-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.1257,
+        "1080p": 0.1879,
+        "4k": 0.549
+      },
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "dynamic_range",
+          "in": [
+            "hdr"
+          ],
+          "changes": "rate",
+          "reason": "HDR adds a per-second surcharge that depends on the resolution and is applied after discounts."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v4.0/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.1257; 1080p: $0.1879; 4K: $0.549. Total price = selected rate × output duration in seconds.\n\nHDR adds $0.047 per second of output video at 1080p or $0.078 at 4K, after base-price discounts, including fixed-price agreements. SDR has no additional charge."
+    },
+    "kling-video/v4.0/video-edit": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.1257,
+        "1080p": 0.1879,
+        "4k": 0.549
+      },
+      "usdWithVideoInput": {
+        "720p": 0.1544,
+        "1080p": 0.2336
+      },
+      "videoInputs": [
+        "video_url",
+        "video_urls"
+      ],
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "dynamic_range",
+          "in": [
+            "hdr"
+          ],
+          "changes": "rate",
+          "reason": "HDR adds a per-second surcharge that depends on the resolution and is applied after discounts."
+        },
+        {
+          "param": "elements",
+          "minItems": 1,
+          "changes": "rate",
+          "reason": "A video element counts as video input, and an element id does not say whether it is one."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/kling-video/v4.0/video-edit/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD.\n\n720p and 1080p are charged per second of output video:\n- Without video input: 720p: $0.1257; 1080p: $0.1879.\n- With video input: 720p: $0.1544; 1080p: $0.2336.\nInput video duration is not added to the billed duration at these resolutions.\n\n4K:\n- Without video input: $0.549 × output duration in seconds.\n- With video input: $0.329 × (output duration + max(total input video duration, output duration)), in seconds.\nInput video duration includes reference videos and video-based elements after the 30-second trim.\n\nHDR adds $0.047 per second of output video at 1080p or $0.078 at 4K, after base-price discounts, including fixed-price agreements. SDR has no additional charge."
+    },
+    "lightricks/ltx-2.5/image-to-video/fast": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/lightricks/ltx-2.5/image-to-video/fast/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.09 per second at 720p for 6 second clips, $0.13 per second at 1080p for 6 second clips, $0.19 per second at 2k for 6 second clips and $0.30 per second at 4k for 8 or 10 second clips."
+    },
+    "lightricks/ltx-2.5/image-to-video/pro": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/lightricks/ltx-2.5/image-to-video/pro/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.12 per second at 720p for 6 second clips and $0.17 per second at 1080p for 8 or 10 second clips."
+    },
+    "lightricks/ltx-2.5/text-to-video/fast": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/lightricks/ltx-2.5/text-to-video/fast/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.09 per second at 720p for 6 second clips, $0.13 per second at 1080p for 6 second clips, $0.19 per second at 2k for 6 second clips and $0.30 per second at 4k for 8 or 10 second clips."
+    },
+    "lightricks/ltx-2.5/text-to-video/pro": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/lightricks/ltx-2.5/text-to-video/pro/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.12 per second at 720p for 6 second clips and $0.17 per second at 1080p for 8 or 10 second clips."
+    },
+    "marketing-studio/image": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a quality (and, where it says so, an aspect ratio), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/marketing-studio/image/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.0162 each at 1k, low quality, auto aspect ratio, $0.0222 each at 2k, low quality, auto aspect ratio and $0.7219 each at 4k, high quality, auto aspect ratio."
+    },
+    "marketing-studio/image/flare": {
+      "unpriced": "Token-metered: the charge follows token counts the request does not state, and no per-image or per-second figure is published as a price.",
+      "source": "https://dash.higgsfield.ai/models/marketing-studio/image/flare/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Per 1M tokens: text input $5, cached text input $1.25, text output $10; image input $8, cached image input $2, image output $30. Quality defaults to high. Final cost uses actual token usage and standard credit rounding. The initial charge is an estimate reconciled on completion."
+    },
+    "marketing-studio/image/sunburst": {
+      "unpriced": "Token-metered: the charge follows token counts the request does not state, and no per-image or per-second figure is published as a price.",
+      "source": "https://dash.higgsfield.ai/models/marketing-studio/image/sunburst/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Per 1M tokens: text input $5, cached text input $1.25, text output $10; image input $8, cached image input $2, image output $30. Quality defaults to high. Final cost uses actual token usage and standard credit rounding. The initial charge is an estimate reconciled on completion."
+    },
+    "minimax/h3-highspeed/image-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/minimax/h3-highspeed/image-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.04 per second at 480P and $0.06 per second at 768P, for 4, 5, 10 or 15 second clips."
+    },
+    "minimax/h3-highspeed/reference-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480P": 0.04,
+        "768P": 0.06
+      },
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "video_urls",
+          "minItems": 1,
+          "changes": "unit",
+          "reason": "Prepared input-video seconds are billed as well as output seconds, and the request does not state them."
+        },
+        {
+          "param": "image_urls",
+          "minItems": 6,
+          "changes": "rate",
+          "reason": "Each reference image after the fifth adds a flat per-image charge."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/minimax/h3-highspeed/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "480P: $0.04 per second of output video and prepared input video. 768P: $0.06 per second of output video and prepared input video. The first 5 reference images are included; each additional image costs $0.03. Audio references have no separate charge. Total = (output seconds + prepared input-video seconds) × the selected per-second rate + additional-image charges. Input-video duration is measured after preprocessing, which may trim or extend the clips."
+    },
+    "minimax/h3-highspeed/text-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/minimax/h3-highspeed/text-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.04 per second at 480P and $0.06 per second at 768P, for 4, 5, 10 or 15 second clips."
+    },
+    "minimax/h3-lite/image-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/minimax/h3-lite/image-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.025 per second at 480P and $0.04 per second at 768P, for 4, 5, 10 or 15 second clips."
+    },
+    "minimax/h3-lite/reference-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480P": 0.025,
+        "768P": 0.04
+      },
+      "seconds": "request",
+      "undefinedWhen": [
+        {
+          "param": "video_urls",
+          "minItems": 1,
+          "changes": "unit",
+          "reason": "Prepared input-video seconds are billed as well as output seconds, and the request does not state them."
+        },
+        {
+          "param": "image_urls",
+          "minItems": 6,
+          "changes": "rate",
+          "reason": "Each reference image after the fifth adds a flat per-image charge."
+        }
+      ],
+      "source": "https://dash.higgsfield.ai/models/minimax/h3-lite/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "480P: $0.025 per second of output video and prepared input video. 768P: $0.04 per second of output video and prepared input video. The first 5 reference images are included; each additional image costs $0.02. Audio references have no separate charge. Total = (output seconds + prepared input-video seconds) × the selected per-second rate + additional-image charges. Input-video duration is measured after preprocessing, which may trim or extend the clips."
+    },
+    "minimax/h3-lite/text-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/minimax/h3-lite/text-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.025 per second at 480P and $0.04 per second at 768P, for 4, 5, 10 or 15 second clips."
+    },
+    "minimax/h3/image-to-video": {
+      "unpriced": "No surface states a price: the route is documented on docs.higgsfield.ai only, and it has no console document and no model page.",
+      "source": "https://docs.higgsfield.ai/docs/models/minimax-h3/image-to-video.md",
+      "verified": "2026-11-24"
+    },
+    "minimax/h3/reference-to-video": {
+      "unpriced": "No surface states a price: the route is documented on docs.higgsfield.ai only, and it has no console document and no model page.",
+      "source": "https://docs.higgsfield.ai/docs/models/minimax-h3/reference-to-video.md",
+      "verified": "2026-11-24"
+    },
+    "minimax/h3/text-to-video": {
+      "unpriced": "No surface states a price: the route is documented on docs.higgsfield.ai only, and it has no console document and no model page.",
+      "source": "https://docs.higgsfield.ai/docs/models/minimax-h3/text-to-video.md",
+      "verified": "2026-11-24"
+    },
+    "minimax/hailuo-2.3/standard/image-to-video": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/minimax/hailuo-2.3/standard/image-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.0467 per second for 6 second clips and $0.056 per second for 10 second clips."
+    },
+    "minimax/hailuo-2.3/standard/text-to-video": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/minimax/hailuo-2.3/standard/text-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.0467 per second at 768p for 6 second clips and $0.056 per second at 768p for 10 second clips."
+    },
+    "pixverse/v6/image-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/pixverse/v6/image-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.035 per second at 360p for 15 second clips, $0.045 per second at 540p for 15 second clips, $0.06 per second at 720p for 15 second clips and $0.115 per second at 1080p for 1 or 15 second clips."
+    },
+    "pixverse/v6/text-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/pixverse/v6/text-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.035 per second at 360p for 15 second clips, $0.045 per second at 540p for 15 second clips, $0.06 per second at 720p for 15 second clips and $0.115 per second at 1080p for 1 or 15 second clips."
+    },
+    "recraft/v4.1/pro/text-to-image": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/recraft/v4.1/pro/text-to-image/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.21 each at 2k."
+    },
+    "recraft/v4.1/text-to-image": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/recraft/v4.1/text-to-image/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.035 each at 1k."
+    },
+    "recraft/v4.1/utility/pro/text-to-image": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/recraft/v4.1/utility/pro/text-to-image/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.21 each at 2k."
+    },
+    "recraft/v4.1/utility/text-to-image": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/recraft/v4.1/utility/text-to-image/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.035 each at 1k."
+    },
+    "sand/magi-2/image-to-video": {
+      "unit": "per_second",
+      "usd": 0.08,
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/sand/magi-2/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "USD 0.08/sec."
+    },
+    "sand/magi-2/reference-to-video": {
+      "unit": "per_second",
+      "usd": 0.08,
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/sand/magi-2/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "USD 0.08/sec."
+    },
+    "sand/magi-2/text-to-video": {
+      "unit": "per_second",
+      "usd": 0.08,
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/sand/magi-2/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "USD 0.08/sec."
+    },
+    "wan/v2.6/image-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "480p": 0.1,
+        "720p": 0.0752,
+        "1080p": 0.1129
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/wan/v2.6/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 480p: $0.1000; 720p: $0.0752; 1080p: $0.1129. Total price = selected rate × output duration in seconds."
+    },
+    "wan/v2.6/reference-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.0752,
+        "1080p": 0.1129
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/wan/v2.6/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0752; 1080p: $0.1129. Total price = selected rate × output duration in seconds."
+    },
+    "wan/v2.6/text-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.0752,
+        "1080p": 0.1129
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/wan/v2.6/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0752; 1080p: $0.1129. Total price = selected rate × output duration in seconds."
+    },
+    "wan/v2.7/image-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.075,
+        "1080p": 0.1125
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/wan/v2.7/image-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0750; 1080p: $0.1125. Total price = selected rate × output duration in seconds."
+    },
+    "wan/v2.7/reference-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.075,
+        "1080p": 0.1125
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/wan/v2.7/reference-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0750; 1080p: $0.1125. Total price = selected rate × output duration in seconds."
+    },
+    "wan/v2.7/text-to-video": {
+      "unit": "per_second",
+      "by": "resolution",
+      "usd": {
+        "720p": 0.075,
+        "1080p": 0.1125
+      },
+      "seconds": "request",
+      "source": "https://dash.higgsfield.ai/models/wan/v2.7/text-to-video/llms.txt",
+      "verified": "2026-11-24",
+      "quote": "Standard self-serve rates in USD per video second: 720p: $0.0750; 1080p: $0.1125. Total price = selected rate × output duration in seconds."
+    },
+    "xai/grok-imagine-image-2.0": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a quality (and, where it says so, an aspect ratio), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/xai/grok-imagine-image-2.0/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.04 each at 1k, low quality and $0.08 each at 2k, medium quality."
+    },
+    "xai/grok-imagine-video/v1.5/reference-to-video": {
+      "unpriced": "The only published figures are sample points: each rate is tied to a clip length (\"for N second clips\"), and the sentence does not say what the other combinations cost.",
+      "source": "https://open.higgsfield.ai/models/xai/grok-imagine-video/v1.5/reference-to-video/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Video costs $0.08 per second at 480p for 1 second clips, $0.14 per second at 720p for 1 second clips and $0.25 per second at 1080p for 15 second clips."
+    },
+    "z-image/turbo": {
+      "unpriced": "Higgsfield's two publications of this route contradict each other on price: its model page states the sentence quoted here, and its console document says \"Public pricing information is not available for this model.\" Contradicting pages are not catalogued. The owner's exception of 2026-11-24 covers the Soul routes and AI Influencer and has not been extended to this route.",
+      "source": "https://open.higgsfield.ai/models/z-image/turbo/api-reference",
+      "verified": "2026-11-24",
+      "quote": "Images cost $0.015 each at 1k and 2k."
+    }
+  }
+}

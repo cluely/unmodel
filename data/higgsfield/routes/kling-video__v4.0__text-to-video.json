@@ -1,0 +1,100 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "dynamic_range": {
+                "const": "hdr"
+              }
+            },
+            "required": [
+              "dynamic_range"
+            ]
+          },
+          "then": {
+            "properties": {
+              "resolution": {
+                "enum": [
+                  "1080p",
+                  "4k"
+                ]
+              }
+            },
+            "required": [
+              "resolution"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "21:9",
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 10,
+          "maximum": 30,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "dynamic_range": {
+          "default": "sdr",
+          "description": "HDR requires 1080p or 4K and adds $0.047 or $0.078 per second of output video, respectively, after base-price discounts.",
+          "enum": [
+            "sdr",
+            "hdr"
+          ],
+          "title": "Dynamic range",
+          "type": "string"
+        },
+        "prompt": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p",
+            "4k"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.1257; 1080p: $0.1879; 4K: $0.549. Total price = selected rate × output duration in seconds.\n\nHDR adds $0.047 per second of output video at 1080p or $0.078 at 4K, after base-price discounts, including fixed-price agreements. SDR has no additional charge.",
+    "title": "Kling 4.0",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v4.0/text-to-video/llms.txt"
+  },
+  "docs": null,
+  "id": "kling-video/v4.0/text-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Create videos with Kling 4.0 from text, images, and video references. Generate up to 30-second clips in 1080p, guide keyframes, and edit existing videos.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-10-23",
+    "title": "Kling 4.0",
+    "url": "https://open.higgsfield.ai/models/kling-video/v4.0/text-to-video/api-reference",
+    "variant_title": "Text to Video"
+  }
+}

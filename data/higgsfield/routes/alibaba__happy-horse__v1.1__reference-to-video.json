@@ -1,0 +1,121 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 2,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image URL",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "image_urls",
+        "prompt"
+      ],
+      "title": "Happy horse",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "HappyHorse 1.1",
+    "url": "https://dash.higgsfield.ai/models/alibaba/happy-horse/v1.1/reference-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 2,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image URL",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "image_urls",
+        "prompt"
+      ],
+      "title": "Happy horse",
+      "type": "object"
+    },
+    "title": "HappyHorse 1.1 — Reference to video",
+    "url": "https://docs.higgsfield.ai/docs/models/happy-horse-1-1/reference-to-video.md",
+    "usage_notes": [
+      "Provide 1–9 reference images. This limit is enforced at submission even though the stored JSON Schema does not set minItems or maxItems. Reference videos are unsupported."
+    ]
+  },
+  "id": "alibaba/happy-horse/v1.1/reference-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "HappyHorse 1.1 - Reference to Video. Configured Alibaba route; cloned from happy-horse/reference-to-video.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.14 per second at 720p for 1 second clips and $0.18 per second at 1080p for 2 or 15 second clips.",
+    "released_on": "2026-06-01",
+    "title": "HappyHorse 1.1",
+    "url": "https://open.higgsfield.ai/models/alibaba/happy-horse/v1.1/reference-to-video/api-reference",
+    "variant_title": "Reference to Video"
+  }
+}

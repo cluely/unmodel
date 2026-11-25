@@ -1,0 +1,223 @@
+{
+  "console": {
+    "category": "text2image",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "4:3",
+          "enum": [
+            "9:16",
+            "16:9",
+            "4:3",
+            "3:4",
+            "1:1",
+            "2:3",
+            "3:2"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "batch_size": {
+          "default": 1,
+          "enum": [
+            1,
+            4
+          ],
+          "title": "Result images",
+          "type": "integer"
+        },
+        "enhance_prompt": {
+          "default": true,
+          "title": "Enhance Prompt",
+          "type": "boolean"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "default": null,
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "style_id": {
+          "default": null,
+          "format": "uuid",
+          "title": "Soul Style",
+          "type": "string"
+        },
+        "style_strength": {
+          "default": 1,
+          "format": "float",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Style strength",
+          "type": "number"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Soul Playground",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Soul Standard",
+    "url": "https://dash.higgsfield.ai/models/higgsfield-ai/soul/standard/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "image",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "4:3",
+          "enum": [
+            "9:16",
+            "16:9",
+            "4:3",
+            "3:4",
+            "1:1",
+            "2:3",
+            "3:2"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "batch_size": {
+          "default": 1,
+          "enum": [
+            1,
+            4
+          ],
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "custom_reference_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Custom Reference Id"
+        },
+        "custom_reference_strength": {
+          "default": 1,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Custom Reference Strength",
+          "type": "number"
+        },
+        "enhance_prompt": {
+          "default": false,
+          "title": "Enhance Prompt",
+          "type": "boolean"
+        },
+        "image_reference_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Reference Url"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "maximum": 1000000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "style_id": {
+          "default": "464ea177-8d40-4940-8d9d-b438bab269c7",
+          "format": "uuid",
+          "title": "Style Id",
+          "type": "string"
+        },
+        "style_strength": {
+          "default": 1,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Style Strength",
+          "type": "number"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "SoulParamsSchema",
+      "type": "object"
+    },
+    "title": "SOUL — Text to image",
+    "url": "https://docs.higgsfield.ai/docs/models/soul-standard/generate.md",
+    "usage_notes": [
+      "batch\\_size is 1 or 4 only. A custom\\_reference\\_id must belong to the calling account and have completed training.",
+      "aspect\\_ratio defaults to 4:3; enhance\\_prompt defaults to false; style\\_id defaults to 464ea177-8d40-4940-8d9d-b438bab269c7.",
+      "Optional image\\_reference\\_url guides prompt enhancement; it is distinct from custom\\_reference\\_id for a trained character.",
+      "seed may be omitted or null; generation selects a random seed when it is absent.",
+      "Short prompts using the general style can be enhanced automatically even when enhance\\_prompt=false.",
+      "custom\\_reference\\_strength=0 uses the selected style's default character strength; it does not disable the character reference."
+    ]
+  },
+  "id": "higgsfield-ai/soul/standard",
+  "page": {
+    "availability_state": "available",
+    "company": "higgsfield",
+    "description": "Generates fashion and lifestyle photos from text, with style presets for editorial and social content.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2image",
+    "output_type": "image",
+    "related_models_description": "Images cost $0.0938 each at 720p and $0.1875 each at 1080p.",
+    "released_on": "2025-06-01",
+    "title": "Soul Standard",
+    "url": "https://open.higgsfield.ai/models/higgsfield-ai/soul/standard/api-reference",
+    "variant_title": "Soul Standard"
+  }
+}

@@ -1,0 +1,274 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "else": {
+        "required": [
+          "prompt"
+        ]
+      },
+      "if": {
+        "properties": {
+          "multi_shots": {
+            "const": true
+          }
+        }
+      },
+      "properties": {
+        "aspect_ratio": {
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "first_frame_url": {
+          "format": "uri",
+          "title": "First frame URL",
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image URL",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "last_frame_url": {
+          "format": "uri",
+          "title": "Last frame URL",
+          "type": "string"
+        },
+        "mode": {
+          "default": "std",
+          "enum": [
+            "std",
+            "pro",
+            "4k"
+          ],
+          "type": "string"
+        },
+        "multi_prompt": {
+          "items": {
+            "properties": {
+              "duration": {
+                "maximum": 15,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "prompt": {
+                "maxLength": 512,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "type": "array"
+        },
+        "multi_shots": {
+          "default": false,
+          "type": "boolean"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "shot_type": {
+          "default": "customize",
+          "enum": [
+            "customize",
+            "intelligent"
+          ],
+          "type": "string"
+        },
+        "sound": {
+          "default": "off",
+          "enum": [
+            "on",
+            "off"
+          ],
+          "type": "string"
+        }
+      },
+      "then": {
+        "required": [
+          "multi_prompt"
+        ]
+      },
+      "title": "Kling Omni Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.0683; 1080p: $0.0860. Total price = selected rate × output duration in seconds. For explicit multi-shot requests, output duration is the sum of the shot durations.",
+    "title": "Kling O3",
+    "url": "https://dash.higgsfield.ai/models/kling-video/o3/image-reference/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "else": {
+        "required": [
+          "prompt"
+        ]
+      },
+      "if": {
+        "properties": {
+          "multi_shots": {
+            "const": true
+          }
+        }
+      },
+      "properties": {
+        "aspect_ratio": {
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 3,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "first_frame_url": {
+          "format": "uri",
+          "title": "First frame URL",
+          "type": "string"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image URL",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "last_frame_url": {
+          "format": "uri",
+          "title": "Last frame URL",
+          "type": "string"
+        },
+        "mode": {
+          "default": "std",
+          "enum": [
+            "std",
+            "pro",
+            "4k"
+          ],
+          "type": "string"
+        },
+        "multi_prompt": {
+          "items": {
+            "properties": {
+              "duration": {
+                "maximum": 15,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "prompt": {
+                "maxLength": 512,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "type": "array"
+        },
+        "multi_shots": {
+          "default": false,
+          "type": "boolean"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "shot_type": {
+          "default": "customize",
+          "enum": [
+            "customize",
+            "intelligent"
+          ],
+          "type": "string"
+        },
+        "sound": {
+          "default": "off",
+          "enum": [
+            "on",
+            "off"
+          ],
+          "type": "string"
+        }
+      },
+      "then": {
+        "required": [
+          "multi_prompt"
+        ]
+      },
+      "title": "Kling Omni Playground",
+      "type": "object"
+    },
+    "title": "Kling O3 — Image reference",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-o3/image-reference.md",
+    "usage_notes": [
+      "Supply image\\_urls for visual references. Reference images are optional in the schema.",
+      "For a single shot, set multi\\_shots to false and provide prompt. For multiple shots, set multi\\_shots to true and provide 1–6 multi\\_prompt objects, each containing prompt and a positive integer duration.",
+      "Always include a non-empty top-level prompt, including when using multi\\_prompt.",
+      "Each shot prompt is limited to 512 characters. Custom-shot durations are summed for generation and billing; the top-level duration does not override that sum.",
+      "Native audio uses sound: on or off and defaults to off.",
+      "A multi\\_prompt shot must last at least 1 second; zero-second shots are rejected even though the schema permits zero.",
+      "When multi\\_shots is true, multi\\_prompt is required even with shot\\_type set to intelligent.",
+      "Keep the top-level prompt within 2,500 characters; longer prompts are truncated.",
+      "elements contains Kling element IDs as decimal strings. Each ID must belong to the account making the request; arbitrary provider IDs are rejected.",
+      "The example.com media URLs are placeholders. Replace them with public HTTPS URLs to your own media before submitting."
+    ]
+  },
+  "id": "kling-video/o3/image-reference",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Kling O3 Image Reference generates videos from one or multiple images using customizable prompts and settings like duration, aspect ratio, and sound. It supports both single and multi-shot workflows with options for intelligent or customized shot types.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-02-01",
+    "title": "Kling O3",
+    "url": "https://open.higgsfield.ai/models/kling-video/o3/image-reference/api-reference",
+    "variant_title": "Image Reference"
+  }
+}

@@ -1,0 +1,247 @@
+{
+  "console": {
+    "category": "image_edit, text2image",
+    "input_schema": {
+      "$defs": {
+        "TraitVariants": {
+          "additionalProperties": false,
+          "properties": {
+            "animal_choices": {
+              "anyOf": [
+                {
+                  "additionalProperties": {
+                    "maximum": 4,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "maxProperties": 64,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Animal Choices"
+            },
+            "choices": {
+              "additionalProperties": {
+                "enum": [
+                  "original",
+                  "v1",
+                  "v2",
+                  "v3",
+                  "v4",
+                  "v5"
+                ],
+                "type": "string"
+              },
+              "maxProperties": 512,
+              "properties": {
+                "pr_centaur": {
+                  "enum": [
+                    "v1",
+                    "v2",
+                    "v3",
+                    "v4",
+                    "v5",
+                    "v6",
+                    "v7",
+                    "v8",
+                    "v9",
+                    "v10"
+                  ]
+                }
+              },
+              "title": "Choices",
+              "type": "object"
+            },
+            "version": {
+              "const": "appearance-v2",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "version",
+            "choices"
+          ],
+          "title": "TraitVariants",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "enum": [
+                  "normal",
+                  "freak",
+                  "total"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "body_color": {
+                "type": "null"
+              },
+              "pinned_species": {
+                "type": "null"
+              },
+              "trait_variants": {
+                "properties": {
+                  "animal_choices": {
+                    "type": "null"
+                  }
+                }
+              },
+              "variation_index": {
+                "const": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "not": {
+                  "const": "insects"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "pinned_species": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "body_color": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "brief": {
+          "default": "",
+          "maxLength": 4000,
+          "title": "",
+          "type": "string"
+        },
+        "image_url": {
+          "default": null,
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "item_image_urls": {
+          "default": [],
+          "items": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 3,
+          "type": "array"
+        },
+        "pinned_species": {
+          "maxLength": 64,
+          "minLength": 1,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "seed": {
+          "default": null,
+          "maximum": 1000000,
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "selection": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "default": {},
+          "maxProperties": 18,
+          "type": "object"
+        },
+        "tier": {
+          "default": "normal",
+          "enum": [
+            "normal",
+            "freak",
+            "total",
+            "insects",
+            "frogs",
+            "cats",
+            "dogs",
+            "capybaras",
+            "birds"
+          ],
+          "type": "string"
+        },
+        "trait_variants": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TraitVariants"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "variation_index": {
+          "default": 0,
+          "maximum": 2147483647,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "title": "AI Influencer input",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "AI Influencer",
+    "url": "https://dash.higgsfield.ai/models/higgsfield/ai-influencer/llms.txt"
+  },
+  "docs": null,
+  "id": "higgsfield/ai-influencer",
+  "page": {
+    "availability_state": "available",
+    "company": "higgsfield",
+    "description": "Create one AI influencer character sheet. Human and animal modes. $0.05 per sheet.",
+    "input_types": [
+      "image"
+    ],
+    "operation_type": "image_edit",
+    "output_type": "image",
+    "related_models_description": "Images cost $0.05 each at medium quality.",
+    "released_on": "2026-10-05",
+    "title": "AI Influencer",
+    "url": "https://open.higgsfield.ai/models/higgsfield/ai-influencer/api-reference",
+    "variant_title": "AI Influencer"
+  }
+}

@@ -1,0 +1,217 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "else": {
+        "properties": {
+          "video_urls": {
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "video_urls"
+        ]
+      },
+      "if": {
+        "properties": {
+          "image_urls": {
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "image_urls"
+        ]
+      },
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 10,
+          "minimum": 2,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "negative_prompt": {
+          "default": "",
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Video",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Wan 2.7 References",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.0750; 1080p: $0.1125. Total price = selected rate × output duration in seconds.",
+    "title": "Wan 2.7",
+    "url": "https://dash.higgsfield.ai/models/wan/v2.7/reference-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "else": {
+        "properties": {
+          "video_urls": {
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "video_urls"
+        ]
+      },
+      "if": {
+        "properties": {
+          "image_urls": {
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "image_urls"
+        ]
+      },
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 10,
+          "minimum": 2,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "negative_prompt": {
+          "default": "",
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Video",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Wan 2.7 References",
+      "type": "object"
+    },
+    "title": "Wan 2.7 — Reference to video",
+    "url": "https://docs.higgsfield.ai/docs/models/wan-2-7/reference-to-video.md",
+    "usage_notes": [
+      "Provide a nonempty image\\_urls or video\\_urls array. The combined number of image and video references must not exceed 5; this submission limit is not expressed in the stored JSON Schema.",
+      "Reference generation is limited to 2–10 seconds and aspect ratios 16:9 or 9:16."
+    ]
+  },
+  "id": "wan/v2.7/reference-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "Wan 2.7 - Reference to Video. Configured Alibaba route; cloned from wan-27/reference-to-video.",
+    "input_types": [
+      "text",
+      "image",
+      "video"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-07-01",
+    "title": "Wan 2.7",
+    "url": "https://open.higgsfield.ai/models/wan/v2.7/reference-to-video/api-reference",
+    "variant_title": "Reference to Video"
+  }
+}

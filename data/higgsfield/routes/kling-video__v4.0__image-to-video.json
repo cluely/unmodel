@@ -1,0 +1,111 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "dynamic_range": {
+                "const": "hdr"
+              }
+            },
+            "required": [
+              "dynamic_range"
+            ]
+          },
+          "then": {
+            "properties": {
+              "resolution": {
+                "enum": [
+                  "1080p",
+                  "4k"
+                ]
+              }
+            },
+            "required": [
+              "resolution"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "duration": {
+          "default": 10,
+          "maximum": 30,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "dynamic_range": {
+          "default": "sdr",
+          "description": "HDR requires 1080p or 4K and adds $0.047 or $0.078 per second of output video, respectively, after base-price discounts.",
+          "enum": [
+            "sdr",
+            "hdr"
+          ],
+          "title": "Dynamic range",
+          "type": "string"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "minLength": 1,
+          "type": "string"
+        },
+        "image_url": {
+          "format": "uri",
+          "minLength": 1,
+          "type": "string"
+        },
+        "image_urls": {
+          "description": "Intermediate frames between the first and end frames. Up to 8 images.",
+          "items": {
+            "format": "uri",
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Middle frames",
+          "type": "array"
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p",
+            "4k"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.1257; 1080p: $0.1879; 4K: $0.549. Total price = selected rate × output duration in seconds.\n\nHDR adds $0.047 per second of output video at 1080p or $0.078 at 4K, after base-price discounts, including fixed-price agreements. SDR has no additional charge.",
+    "title": "Kling 4.0",
+    "url": "https://dash.higgsfield.ai/models/kling-video/v4.0/image-to-video/llms.txt"
+  },
+  "docs": null,
+  "id": "kling-video/v4.0/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Animate images with Kling 4.0. Guide the video with a starting image, reference images, or an ending frame, and generate clips up to 30 seconds long in 720p or 1080p.",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-10-23",
+    "title": "Kling 4.0",
+    "url": "https://open.higgsfield.ai/models/kling-video/v4.0/image-to-video/api-reference",
+    "variant_title": "Image to Video"
+  }
+}

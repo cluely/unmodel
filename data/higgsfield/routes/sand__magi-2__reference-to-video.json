@@ -1,0 +1,124 @@
+{
+  "console": {
+    "category": "image2video, video2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "image_urls": {
+            "maxItems": 0
+          },
+          "video_urls": {
+            "maxItems": 0
+          }
+        }
+      },
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "21:9",
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16"
+          ],
+          "type": "string"
+        },
+        "audio_urls": {
+          "items": {
+            "format": "uri",
+            "maxLength": 8192,
+            "pattern": "^https://[^/\\s?#]+(?:[/?#]\\S*)?$",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "type": "array"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 30,
+          "minimum": 4,
+          "type": "integer"
+        },
+        "generate_audio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "maxLength": 8192,
+            "pattern": "^https://[^/\\s?#]+(?:[/?#]\\S*)?$",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "type": "array"
+        },
+        "prompt": {
+          "maxLength": 15000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "1080p",
+          "enum": [
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "maxLength": 8192,
+            "pattern": "^https://[^/\\s?#]+(?:[/?#]\\S*)?$",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "type": "array"
+        }
+      },
+      "then": {
+        "properties": {
+          "audio_urls": {
+            "minItems": 1
+          }
+        },
+        "required": [
+          "audio_urls"
+        ]
+      },
+      "type": "object"
+    },
+    "pricing": "USD 0.08/sec. 1 concurrent generation per account across all MAGI-2 modes. Contact sales to increase the limit.",
+    "title": "MAGI-2",
+    "url": "https://dash.higgsfield.ai/models/sand/magi-2/reference-to-video/llms.txt"
+  },
+  "docs": null,
+  "id": "sand/magi-2/reference-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "sand-ai",
+    "description": "Use images, video clips, and audio as references for a new 1080p video. Add an optional text prompt and choose a duration from 4 to 30 seconds, with optional generated audio.",
+    "input_types": [
+      "text",
+      "image",
+      "video",
+      "audio"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-11-24",
+    "title": "MAGI-2",
+    "url": "https://open.higgsfield.ai/models/sand/magi-2/reference-to-video/api-reference",
+    "variant_title": "Reference to Video"
+  }
+}

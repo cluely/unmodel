@@ -1,0 +1,22 @@
+{
+  "console": null,
+  "docs": null,
+  "id": "higgsfiled/genjutsu/object-swap/v1.0",
+  "page": {
+    "availability_state": "available",
+    "company": "higgsfield",
+    "description": "One video. Endless ways to reimagine it.",
+    "input_types": [
+      "text",
+      "image",
+      "video"
+    ],
+    "operation_type": "video2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-09-17",
+    "title": "Genjutsu",
+    "url": "https://open.higgsfield.ai/models/higgsfiled/genjutsu/object-swap/v1.0/api-reference",
+    "variant_title": "Object Swap"
+  }
+}

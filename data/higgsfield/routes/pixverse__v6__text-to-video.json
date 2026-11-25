@@ -1,0 +1,162 @@
+{
+  "console": {
+    "category": "text2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 1,
+          "title": "Duration",
+          "type": "number"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Generate audio",
+          "type": "boolean"
+        },
+        "negative_prompt": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "360p",
+            "540p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "PixVerse V6 Text to Video Playground",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "PixVerse V6",
+    "url": "https://dash.higgsfield.ai/models/pixverse/v6/text-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 1,
+          "title": "Duration",
+          "type": "number"
+        },
+        "generate_audio": {
+          "default": true,
+          "title": "Generate audio",
+          "type": "boolean"
+        },
+        "negative_prompt": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "360p",
+            "540p",
+            "720p",
+            "1080p"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "PixVerse V6 Text to Video Playground",
+      "type": "object"
+    },
+    "title": "PixVerse V6 — Text to video",
+    "url": "https://docs.higgsfield.ai/docs/models/pixverse-v6/text-to-video.md",
+    "usage_notes": [
+      "duration is a number from 1 to 15, so the schema allows fractional values. If negative\\_prompt is supplied, it must contain 1–2,048 characters."
+    ]
+  },
+  "id": "pixverse/v6/text-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "pixverse",
+    "description": "Generates videos from text or images with native sound and control over the first and last frames.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2video",
+    "output_type": "video",
+    "related_models_description": "Video costs $0.035 per second at 360p for 15 second clips, $0.045 per second at 540p for 15 second clips, $0.06 per second at 720p for 15 second clips and $0.115 per second at 1080p for 1 or 15 second clips.",
+    "released_on": "2026-03-01",
+    "title": "PixVerse V6",
+    "url": "https://open.higgsfield.ai/models/pixverse/v6/text-to-video/api-reference",
+    "variant_title": "Text to Video"
+  }
+}

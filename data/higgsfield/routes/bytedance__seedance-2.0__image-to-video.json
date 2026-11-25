@@ -1,0 +1,120 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 4,
+          "type": "integer"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "image_url": {
+          "format": "uri",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p",
+            "4k"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 480p: $0.0804; 720p: $0.1735; 1080p: $0.4293; 4K: $0.8907. Total price = selected rate × output duration in seconds.",
+    "title": "Seedance 2.0",
+    "url": "https://dash.higgsfield.ai/models/bytedance/seedance-2.0/image-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 4,
+          "type": "integer"
+        },
+        "end_image_url": {
+          "format": "uri",
+          "type": "string"
+        },
+        "generate_audio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "image_url": {
+          "format": "uri",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p",
+            "4k"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_url"
+      ],
+      "type": "object"
+    },
+    "title": "Seedance 2.0 — Image to video",
+    "url": "https://docs.higgsfield.ai/docs/models/seedance-2/image-to-video.md",
+    "usage_notes": [
+      "Use publicly accessible media URLs; asset:// references are rejected for these endpoints.",
+      "The prompt is optional. Output framing follows image\\_url; end\\_image\\_url is the optional last frame."
+    ]
+  },
+  "id": "bytedance/seedance-2.0/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "bytedance",
+    "description": "Generate videos from text with controls for duration, resolution, aspect ratio, and optional audio. Create polished multi-shot stories for ads, social content, and cinematic scenes",
+    "input_types": [
+      "text",
+      "image"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-02-01",
+    "title": "Seedance 2.0",
+    "url": "https://open.higgsfield.ai/models/bytedance/seedance-2.0/image-to-video/api-reference",
+    "variant_title": "Image to Video"
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "console": {
+    "category": "text2image",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "1:1",
+          "description": "Output aspect ratio. Exact provider-recommended dimensions are selected automatically.",
+          "enum": [
+            "1:1",
+            "2:3",
+            "3:2",
+            "3:4",
+            "4:3",
+            "7:9",
+            "9:7",
+            "9:16",
+            "16:9",
+            "21:9"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Positive prompt describing the desired content, style, and composition.",
+          "maxLength": 2500,
+          "minLength": 1,
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "description": "Rewrite and reason over the prompt before generation; this uses the enhanced price tier.",
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "1k",
+          "description": "Output resolution tier. Both tiers produce PNG images.",
+          "enum": [
+            "1k",
+            "2k"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "description": "Optional random seed for similar, reproducible results.",
+          "maximum": 2147483647,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Z-Image Turbo",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Z-Image Turbo",
+    "url": "https://dash.higgsfield.ai/models/z-image/turbo/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "image",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "1:1",
+          "description": "Output aspect ratio. Exact provider-recommended dimensions are selected automatically.",
+          "enum": [
+            "1:1",
+            "2:3",
+            "3:2",
+            "3:4",
+            "4:3",
+            "7:9",
+            "9:7",
+            "9:16",
+            "16:9",
+            "21:9"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Positive prompt describing the desired content, style, and composition.",
+          "maxLength": 800,
+          "minLength": 1,
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "description": "Rewrite and reason over the prompt before generation; this uses the enhanced price tier.",
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "1k",
+          "description": "Output resolution tier. Both tiers produce PNG images.",
+          "enum": [
+            "1k",
+            "2k"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "description": "Optional random seed for similar, reproducible results.",
+          "maximum": 2147483647,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Z-Image Turbo",
+      "type": "object"
+    },
+    "title": "Z-Image Turbo — Generate",
+    "url": "https://docs.higgsfield.ai/docs/models/z-image-turbo/generate.md",
+    "usage_notes": [
+      "Text-to-image only. prompt must contain non-whitespace text and at most 800 characters.",
+      "prompt\\_extend defaults to false; enabling it uses the enhanced pricing tier.",
+      "The schema accepts 1k and 2k tiers, ten aspect ratios, and an optional integer seed from 0 to 2147483647."
+    ]
+  },
+  "id": "z-image/turbo",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "Generates images quickly with clear Chinese and English text rendering and PNG output up to 2K.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2image",
+    "output_type": "image",
+    "related_models_description": "Images cost $0.015 each at 1k and 2k.",
+    "released_on": null,
+    "title": "Z-Image Turbo",
+    "url": "https://open.higgsfield.ai/models/z-image/turbo/api-reference",
+    "variant_title": "Turbo"
+  }
+}

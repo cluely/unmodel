@@ -1,0 +1,155 @@
+{
+  "console": {
+    "category": "text2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1",
+            "4:3",
+            "3:4"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "audio_url": {
+          "format": "uri",
+          "title": "Audio URL",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 2,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "negative_prompt": {
+          "default": "",
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Wan 2.6 Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.0750; 1080p: $0.1125. Total price = selected rate × output duration in seconds.",
+    "title": "Wan 2.7",
+    "url": "https://dash.higgsfield.ai/models/wan/v2.7/text-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1",
+            "4:3",
+            "3:4"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "audio_url": {
+          "format": "uri",
+          "title": "Audio URL",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 15,
+          "minimum": 2,
+          "title": "Duration",
+          "type": "integer"
+        },
+        "negative_prompt": {
+          "default": "",
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 2147483646,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Wan 2.6 Playground",
+      "type": "object"
+    },
+    "title": "Wan 2.7 — Text to video",
+    "url": "https://docs.higgsfield.ai/docs/models/wan-2-7/text-to-video.md",
+    "usage_notes": [
+      "The prompt must contain text. audio\\_url can supply driving audio."
+    ]
+  },
+  "id": "wan/v2.7/text-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "Generates videos from text or images with native audio and consistent characters across scenes.",
+    "input_types": [
+      "text",
+      "audio"
+    ],
+    "operation_type": "text2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2026-04-01",
+    "title": "Wan 2.7",
+    "url": "https://open.higgsfield.ai/models/wan/v2.7/text-to-video/api-reference",
+    "variant_title": "Text to Video"
+  }
+}

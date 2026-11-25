@@ -1,0 +1,190 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 10,
+          "minimum": 3,
+          "mode": {
+            "default": "pro",
+            "enum": [
+              "std",
+              "pro"
+            ],
+            "type": "string"
+          },
+          "title": "Duration",
+          "type": "integer"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 0,
+          "type": "array"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image URL",
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 0,
+          "type": "array"
+        },
+        "mode": {
+          "default": "pro",
+          "enum": [
+            "std",
+            "pro"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Video URL",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_urls"
+      ],
+      "title": "Kling Omni Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 720p: $0.0945; 1080p: $0.1252. Total price = selected rate × output duration in seconds. Input video duration is not added to the billed duration. For explicit multi-shot requests, output duration is the sum of the shot durations.",
+    "title": "Kling Omni",
+    "url": "https://dash.higgsfield.ai/models/kling-video/omni/video-reference/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "aspect_ratio": {
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "maximum": 10,
+          "minimum": 3,
+          "mode": {
+            "default": "pro",
+            "enum": [
+              "std",
+              "pro"
+            ],
+            "type": "string"
+          },
+          "title": "Duration",
+          "type": "integer"
+        },
+        "elements": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 0,
+          "type": "array"
+        },
+        "image_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Image URL",
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 0,
+          "type": "array"
+        },
+        "mode": {
+          "default": "pro",
+          "enum": [
+            "std",
+            "pro"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "video_urls": {
+          "items": {
+            "format": "uri",
+            "title": "Video URL",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt",
+        "video_urls"
+      ],
+      "title": "Kling Omni Playground",
+      "type": "object"
+    },
+    "title": "Kling Omni — Video reference",
+    "url": "https://docs.higgsfield.ai/docs/models/kling-omni/video-reference.md",
+    "usage_notes": [
+      "Supply exactly one video reference. duration controls the generated clip and accepts integer values from 3 to 10 seconds.",
+      "You may also supply up to four image\\_urls and up to four elements.",
+      "Keep the top-level prompt within 2,500 characters; longer prompts are truncated.",
+      "elements contains Kling element IDs as decimal strings. Each ID must belong to the account making the request; arbitrary provider IDs are rejected.",
+      "The example.com media URLs are placeholders. Replace them with public HTTPS URLs to your own media before submitting."
+    ]
+  },
+  "id": "kling-video/omni/video-reference",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Kling Omni Video Reference generates videos from a single input video URL combined with a text prompt and optional images or elements. It supports customizable duration and aspect ratios, enabling creative video synthesis based on reference footage.",
+    "input_types": [
+      "text",
+      "image",
+      "video"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2025-12-01",
+    "title": "Kling Omni",
+    "url": "https://open.higgsfield.ai/models/kling-video/omni/video-reference/api-reference",
+    "variant_title": "Video Reference"
+  }
+}

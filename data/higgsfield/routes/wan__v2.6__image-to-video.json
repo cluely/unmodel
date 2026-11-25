@@ -1,0 +1,161 @@
+{
+  "console": {
+    "category": "image2video",
+    "input_schema": {
+      "properties": {
+        "audio_url": {
+          "format": "uri",
+          "title": "Audio URL",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "enum": [
+            5,
+            10,
+            15
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "multi_shots": {
+          "default": false,
+          "type": "boolean"
+        },
+        "negative_prompt": {
+          "default": "",
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 10000000,
+          "minimum": -1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "Wan 2.6 Playground",
+      "type": "object"
+    },
+    "pricing": "Standard self-serve rates in USD per video second: 480p: $0.1000; 720p: $0.0752; 1080p: $0.1129. Total price = selected rate × output duration in seconds.",
+    "title": "Wan 2.6",
+    "url": "https://dash.higgsfield.ai/models/wan/v2.6/image-to-video/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "video",
+    "method": "POST",
+    "schema": {
+      "properties": {
+        "audio_url": {
+          "format": "uri",
+          "title": "Audio URL",
+          "type": "string"
+        },
+        "duration": {
+          "default": 5,
+          "enum": [
+            5,
+            10,
+            15
+          ],
+          "title": "Duration",
+          "type": "integer"
+        },
+        "image_url": {
+          "format": "uri",
+          "title": "Image URL",
+          "type": "string"
+        },
+        "multi_shots": {
+          "default": false,
+          "type": "boolean"
+        },
+        "negative_prompt": {
+          "default": "",
+          "title": "Negative prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "prompt_extend": {
+          "default": false,
+          "type": "boolean"
+        },
+        "resolution": {
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p",
+            "1080p"
+          ],
+          "type": "string"
+        },
+        "seed": {
+          "maximum": 10000000,
+          "minimum": -1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt",
+        "image_url"
+      ],
+      "title": "Wan 2.6 Playground",
+      "type": "object"
+    },
+    "title": "Wan 2.6 — Image to video",
+    "url": "https://docs.higgsfield.ai/docs/models/wan-2-6/image-to-video.md",
+    "usage_notes": [
+      "Setting multi\\_shots=true also enables prompt\\_extend, even if prompt\\_extend was false.",
+      "Input images may be resized to fit a 1,440-pixel maximum dimension before generation. A last-frame input is unsupported."
+    ]
+  },
+  "id": "wan/v2.6/image-to-video",
+  "page": {
+    "availability_state": "available",
+    "company": "alibaba",
+    "description": "Wan 2.6 - Image to Video. Configured Alibaba route; cloned from wan-26/image-to-video.",
+    "input_types": [
+      "text",
+      "image",
+      "audio"
+    ],
+    "operation_type": "image2video",
+    "output_type": "video",
+    "related_models_description": null,
+    "released_on": "2025-12-01",
+    "title": "Wan 2.6",
+    "url": "https://open.higgsfield.ai/models/wan/v2.6/image-to-video/api-reference",
+    "variant_title": "Image to Video"
+  }
+}

@@ -1,0 +1,231 @@
+{
+  "console": {
+    "category": "text2image",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "1:1",
+          "enum": [
+            "1:1",
+            "2:1",
+            "1:2",
+            "3:2",
+            "2:3",
+            "4:3",
+            "3:4",
+            "5:4",
+            "4:5",
+            "6:10",
+            "14:10",
+            "10:14",
+            "16:9",
+            "9:16"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "background_color": {
+          "properties": {
+            "rgb": {
+              "items": {
+                "maximum": 255,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            }
+          },
+          "required": [
+            "rgb"
+          ],
+          "title": "Background color",
+          "type": "object"
+        },
+        "colors": {
+          "items": {
+            "properties": {
+              "rgb": {
+                "items": {
+                  "maximum": 255,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "maxItems": 3,
+                "minItems": 3,
+                "type": "array"
+              }
+            },
+            "required": [
+              "rgb"
+            ],
+            "type": "object"
+          },
+          "title": "Colors",
+          "type": "array"
+        },
+        "output_format": {
+          "default": "jpg",
+          "enum": [
+            "jpg",
+            "png",
+            "webp"
+          ],
+          "title": "Output format",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "maxLength": 10000,
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "2k",
+          "enum": [
+            "2k"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Recraft V4.1 Pro Playground",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Recraft V4.1 Pro",
+    "url": "https://dash.higgsfield.ai/models/recraft/v4.1/pro/text-to-image/llms.txt"
+  },
+  "docs": {
+    "catalog_id": null,
+    "category": "image",
+    "method": "POST",
+    "schema": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "1:1",
+          "enum": [
+            "1:1",
+            "2:1",
+            "1:2",
+            "3:2",
+            "2:3",
+            "4:3",
+            "3:4",
+            "5:4",
+            "4:5",
+            "6:10",
+            "14:10",
+            "10:14",
+            "16:9",
+            "9:16"
+          ],
+          "title": "Aspect ratio",
+          "type": "string"
+        },
+        "background_color": {
+          "properties": {
+            "rgb": {
+              "items": {
+                "maximum": 255,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            }
+          },
+          "required": [
+            "rgb"
+          ],
+          "title": "Background color",
+          "type": "object"
+        },
+        "colors": {
+          "items": {
+            "properties": {
+              "rgb": {
+                "items": {
+                  "maximum": 255,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "maxItems": 3,
+                "minItems": 3,
+                "type": "array"
+              }
+            },
+            "required": [
+              "rgb"
+            ],
+            "type": "object"
+          },
+          "title": "Colors",
+          "type": "array"
+        },
+        "output_format": {
+          "default": "jpg",
+          "enum": [
+            "jpg",
+            "png",
+            "webp"
+          ],
+          "title": "Output format",
+          "type": "string"
+        },
+        "prompt": {
+          "description": "Write your prompt here",
+          "maxLength": 10000,
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "2k",
+          "enum": [
+            "2k"
+          ],
+          "title": "Resolution",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Recraft V4.1 Pro Playground",
+      "type": "object"
+    },
+    "title": "Recraft V4.1 Pro — Text to image",
+    "url": "https://docs.higgsfield.ai/docs/models/recraft-v4-1-pro/generate.md",
+    "usage_notes": [
+      "This variant accepts only resolution=2k; use the separate standard/Pro endpoint for the other resolution tier.",
+      "colors is an array of objects shaped as \\{\"rgb\": \\[R, G, B]}; background\\_color is one such object. Every RGB value is an integer 0–255, with exactly three entries.",
+      "output\\_format is jpg, png, or webp; default is jpg. No reference-image input is declared.",
+      "prompt must contain 1–10000 characters. Fourteen aspect-ratio values are listed in the schema, including 6:10, 14:10, and 10:14."
+    ]
+  },
+  "id": "recraft/v4.1/pro/text-to-image",
+  "page": {
+    "availability_state": "available",
+    "company": "recraft",
+    "description": "Recraft V4.1 Pro generates images from text prompts with customizable resolution, aspect ratio, output format, and color options. Users can specify background and palette colors to tailor the visual style of the output.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2image",
+    "output_type": "image",
+    "related_models_description": "Images cost $0.21 each at 2k.",
+    "released_on": "2026-05-01",
+    "title": "Recraft V4.1 Pro",
+    "url": "https://open.higgsfield.ai/models/recraft/v4.1/pro/text-to-image/api-reference",
+    "variant_title": "Pro Text to Image"
+  }
+}

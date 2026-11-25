@@ -1,0 +1,67 @@
+{
+  "console": {
+    "category": "text2image",
+    "input_schema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "default": "auto",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1",
+            "4:3",
+            "3:4",
+            "3:2",
+            "2:3",
+            "21:9",
+            "auto"
+          ],
+          "type": "string"
+        },
+        "prompt": {
+          "maxLength": 50000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolution": {
+          "default": "2k",
+          "enum": [
+            "2k",
+            "4k",
+            "8k"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "title": "Kling Image 4.0 Text to Image",
+      "type": "object"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Kling Image 4.0",
+    "url": "https://dash.higgsfield.ai/models/kling-image/v4.0/text-to-image/llms.txt"
+  },
+  "docs": null,
+  "id": "kling-image/v4.0/text-to-image",
+  "page": {
+    "availability_state": "available",
+    "company": "kling",
+    "description": "Generate detailed images from text with Kling Image 4.0. Create realistic scenes, product visuals and text-rich designs at 2K, 4K or native 8K.",
+    "input_types": [
+      "text"
+    ],
+    "operation_type": "text2image",
+    "output_type": "image",
+    "related_models_description": "Images cost $0.063 each at 2k, $0.094 each at 4k and $0.157 each at 8k.",
+    "released_on": "2026-11-17",
+    "title": "Kling Image 4.0",
+    "url": "https://open.higgsfield.ai/models/kling-image/v4.0/text-to-image/api-reference",
+    "variant_title": "Text to Image"
+  }
+}

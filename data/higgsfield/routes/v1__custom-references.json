@@ -1,0 +1,101 @@
+{
+  "console": {
+    "category": "character",
+    "input_schema": {
+      "title": "Soul ID"
+    },
+    "pricing": "Public pricing information is not available for this model.",
+    "title": "Soul ID",
+    "url": "https://dash.higgsfield.ai/models/soul-id/llms.txt"
+  },
+  "docs": {
+    "catalog_id": "soul-id",
+    "category": "image",
+    "method": "POST",
+    "schema": {
+      "$defs": {
+        "ImageUrlInputImageSchema": {
+          "properties": {
+            "image_url": {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "title": "Image Url",
+              "type": "string"
+            },
+            "type": {
+              "const": "image_url",
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "image_url"
+          ],
+          "title": "ImageUrlInputImageSchema",
+          "type": "object"
+        },
+        "SoulModelVersion": {
+          "enum": [
+            "v1",
+            "v2",
+            "cinema"
+          ],
+          "title": "SoulModelVersion",
+          "type": "string"
+        }
+      },
+      "properties": {
+        "input_images": {
+          "items": {
+            "$ref": "#/$defs/ImageUrlInputImageSchema"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Input Images",
+          "type": "array"
+        },
+        "model_version": {
+          "$ref": "#/$defs/SoulModelVersion",
+          "default": "v1"
+        },
+        "name": {
+          "maxLength": 100,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "input_images"
+      ],
+      "title": "CreateCustomReferenceSchema",
+      "type": "object"
+    },
+    "title": "Soul ID — Create character",
+    "url": "https://docs.higgsfield.ai/docs/models/soul-id/create-character.md",
+    "usage_notes": [
+      "Soul ID trains a reusable character reference. This is not an image-generation endpoint; do not POST to /soul-id.",
+      "Use POST /v1/custom-references with application/json. name has a maximum length of 100; input\\_images must contain 1–100 \\{\"type\":\"image\\_url\",\"image\\_url\":\"...\"} objects.",
+      "model\\_version accepts v1, v2, cinema; its default is v1. Choose the matching generation family.",
+      "The creation response returns id and status. Poll GET /v1/custom-references/\\{id}; statuses are not\\_ready, queued, in\\_progress, completed, and failed.",
+      "After completion, pass the returned id as custom\\_reference\\_id to the matching Soul generation endpoint. References are scoped to the account that created them.",
+      "When the account already has the maximum number of references in training, creation returns 429 Too Many Requests with a Retry-After header. Retry after that delay; nothing is charged for the rejected request."
+    ]
+  },
+  "id": "v1/custom-references",
+  "page": {
+    "availability_state": "available",
+    "company": "higgsfield",
+    "description": "",
+    "input_types": [],
+    "operation_type": "character",
+    "output_type": "image",
+    "related_models_description": null,
+    "released_on": null,
+    "title": "Soul ID",
+    "url": "https://open.higgsfield.ai/models/soul-id/api-reference",
+    "variant_title": "Soul ID"
+  }
+}

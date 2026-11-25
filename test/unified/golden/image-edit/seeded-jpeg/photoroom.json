@@ -1,0 +1,21 @@
+{
+  "ref": "photoroom/edit-with-ai",
+  "image": {
+    "file": "@blob"
+  },
+  "params": {
+    "editWithAI.mode": "ai.auto",
+    "editWithAI.prompt": "make it winter",
+    "removeBackground": false,
+    "imageFile": {
+      "@blob": {
+        "size": 64,
+        "type": "image/png"
+      }
+    },
+    "editWithAI.seed": 7,
+    "export.format": "jpeg"
+  },
+  "url": "https://image-api.photoroom.com/v2/edit",
+  "headers": {}
+}

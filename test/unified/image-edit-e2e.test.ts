@@ -17,6 +17,7 @@
  *    through the canonical `image`.
  */
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { UnmodelValidationError } from "../../src/core/issues";
 import { TranslationUnavailableError } from "../../src/core/translate/errors";
 import { imageEdit as openaiImageEdit } from "../../src/providers/openai";
@@ -35,6 +36,11 @@ import {
   imageEditReplaceBackground as ideogramReplaceBackground,
 } from "../../src/providers/ideogram";
 import {
+  EDIT_URL,
+  imageEdit as photoroomImageEdit,
+  toFormData as photoroomFormData,
+} from "../../src/providers/photoroom";
+import {
   imageEditGenerateBackground,
   imageEditInpaint,
   imageEditOutpaint,
@@ -47,7 +53,7 @@ const png = (bytes = 64): Blob => new Blob([new Uint8Array(bytes)], { type: "ima
 const URL_IMAGE = "https://example.com/street.png";
 
 describe("the pack", () => {
-  test("registers exactly the six image-edit providers, sorted", () => {
+  test("registers exactly the seven image-edit providers, sorted", () => {
     expect([...imageEdit.providers]).toEqual([
       "black-forest-labs",
       // fal contributes 17 editing endpoints — more than the other four
@@ -57,6 +63,9 @@ describe("the pack", () => {
       "fal",
       "ideogram",
       "openai",
+      // One ref, `photoroom/edit-with-ai`: the single mode of a forty-feature
+      // route that is a picture and a sentence.
+      "photoroom",
       "recraft",
       "revana",
     ]);
@@ -764,6 +773,274 @@ describe("revana: the source is a public URL and nothing else", () => {
       image_url: URL_IMAGE,
       image_urls: ["https://example.com/style.png"],
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// photoroom — one mode of one route, on a flat multipart form
+// ---------------------------------------------------------------------------
+
+interface DocsExample {
+  page: string;
+  url: string;
+  fields: Record<string, string>;
+}
+
+/** Photoroom's own Edit With AI curl examples, as published (see the fixture's `$comment`). */
+const EDIT_WITH_AI_EXAMPLES = (
+  JSON.parse(
+    readFileSync(
+      new URL("../fixtures/photoroom/docs-examples.json", import.meta.url),
+      "utf8",
+    ),
+  ) as { examples: DocsExample[] }
+).examples.filter((example) => example.page.endsWith("/edit-with-ai.md"));
+
+/** A multipart body as `name → text`, with every file part rendered the way the fixture writes one. */
+function formFields(form: FormData): Record<string, string> {
+  const fields: Record<string, string> = {};
+  form.forEach((value, key) => {
+    fields[key] = typeof value === "string" ? value : "@file";
+  });
+  return fields;
+}
+
+describe("photoroom: Edit With AI, and nothing else on the route", () => {
+  const base = { operation: "edit", model: "photoroom/edit-with-ai", prompt: PROMPT } as const;
+
+  test("the body is the flat form, ending in `photoroom.imageEdit`'s own ValidatedForm", () => {
+    const file = png();
+    const params = imageEdit({ ...base, image: { file }, seed: 7, outputFormat: "webp" });
+    const body: Record<string, unknown> = { ...params };
+    expect(body).toEqual({
+      "editWithAI.mode": "ai.auto",
+      "editWithAI.prompt": PROMPT,
+      removeBackground: false,
+      imageFile: file,
+      "editWithAI.seed": 7,
+      "export.format": "webp",
+    });
+    expect(params.imageFile).toBe(file);
+    expect(params.request.url).toBe(EDIT_URL);
+    expect(params.request.body).toBe("form");
+    // No content-type: `fetch` derives the multipart boundary. And no `pr-*`
+    // header either — the adapter writes none.
+    expect(params.request.headers).toEqual({});
+    const sdk: unknown = params.toSdk("photoroom");
+    expect(sdk).toEqual(body);
+    // The same request, written by hand, is the same validated value.
+    const direct = photoroomImageEdit({
+      "editWithAI.mode": "ai.auto",
+      "editWithAI.prompt": PROMPT,
+      removeBackground: false,
+      imageFile: file,
+      "editWithAI.seed": 7,
+      "export.format": "webp",
+    });
+    expect(body).toEqual({ ...direct });
+  });
+
+  test("the fixture carries all five Edit With AI examples", () => {
+    expect(EDIT_WITH_AI_EXAMPLES.length).toBe(5);
+    // The premise `removeBackground: false` rests on, read off the docs.
+    expect(EDIT_WITH_AI_EXAMPLES.map((example) => example.fields["removeBackground"])).toEqual([
+      "false",
+      "false",
+      "false",
+      "false",
+      "false",
+    ]);
+    expect(
+      EDIT_WITH_AI_EXAMPLES.filter((example) => example.fields["referenceBox"] !== undefined).length,
+    ).toBe(1);
+  });
+
+  test("a prompt and a seed send exactly the form Photoroom's own example sends", () => {
+    // The second and third examples on the page: a picture, a prompt, a seed.
+    const examples = EDIT_WITH_AI_EXAMPLES.filter(
+      (example) => Object.keys(example.fields).length === 5 && example.fields["editWithAI.seed"],
+    );
+    expect(examples.length).toBe(2);
+    for (const example of examples) {
+      const params = imageEdit({
+        ...base,
+        prompt: example.fields["editWithAI.prompt"] as string,
+        image: { file: png() },
+        seed: Number(example.fields["editWithAI.seed"]),
+      });
+      expect(formFields(photoroomFormData(params))).toEqual(example.fields);
+    }
+  });
+
+  test("`referenceBox` is not written, and the escape hatch reproduces the example that sends it", () => {
+    const example = EDIT_WITH_AI_EXAMPLES.find(
+      (candidate) => candidate.fields["referenceBox"] !== undefined,
+    ) as DocsExample;
+    const bare = imageEdit({
+      ...base,
+      prompt: example.fields["editWithAI.prompt"] as string,
+      image: { file: png() },
+    });
+    expect(Object.keys(bare)).not.toContain("referenceBox");
+
+    const result = imageEdit.safe({
+      ...base,
+      prompt: example.fields["editWithAI.prompt"] as string,
+      image: { file: png() },
+      providerOptions: { photoroom: { referenceBox: "originalImage" } },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // The OpenAPI document says the pair "Can't be provided" together and the
+    // docs send it on nine pages; `photoroom.imageEdit` sides with the docs.
+    expect(result.warnings).toEqual([]);
+    expect(formFields(photoroomFormData(result.params))).toEqual(example.fields);
+  });
+
+  test("further reference pictures ride on `providerOptions.photoroom`, under names the caller picks", () => {
+    const example = EDIT_WITH_AI_EXAMPLES.find(
+      (candidate) => candidate.fields["editWithAI.additionalImages.Scene.imageFile"] !== undefined,
+    ) as DocsExample;
+    const result = imageEdit.safe({
+      ...base,
+      prompt: example.fields["editWithAI.prompt"] as string,
+      image: { file: png() },
+      seed: Number(example.fields["editWithAI.seed"]),
+      providerOptions: {
+        photoroom: { "editWithAI.additionalImages.Scene.imageFile": png() },
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // A documented family key is not an unknown field.
+    expect(result.warnings).toEqual([]);
+    expect(formFields(photoroomFormData(result.params))).toEqual(example.fields);
+  });
+
+  test("reference pictures by URL: the nested `*.imageUrl` family is typed on POST, as the docs send it", () => {
+    // The fifth example on the page, and the only one that names a reference
+    // by URL. The OpenAPI document lists no `*.imageUrl` on POST; the docs
+    // page posts two, and the field table's overlay sides with the page.
+    const example = EDIT_WITH_AI_EXAMPLES.find(
+      (candidate) =>
+        candidate.fields["editWithAI.additionalImages.styleRef.imageUrl"] !== undefined,
+    ) as DocsExample;
+    const result = imageEdit.safe({
+      ...base,
+      prompt: example.fields["editWithAI.prompt"] as string,
+      image: { file: png() },
+      providerOptions: {
+        photoroom: {
+          "editWithAI.additionalImages.styleRef.imageUrl": example.fields[
+            "editWithAI.additionalImages.styleRef.imageUrl"
+          ] as string,
+          "editWithAI.additionalImages.moodRef.imageUrl": example.fields[
+            "editWithAI.additionalImages.moodRef.imageUrl"
+          ] as string,
+        },
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toEqual([]);
+    expect(formFields(photoroomFormData(result.params))).toEqual(example.fields);
+  });
+
+  test("a `pr-*` header param supplied through the escape hatch comes back as a header", () => {
+    const params = imageEdit({
+      ...base,
+      image: { file: png() },
+      providerOptions: { photoroom: { "pr-hd-background-removal": "auto" } },
+    });
+    expect(params.request.headers).toEqual({ "pr-hd-background-removal": "auto" });
+    expect(Object.keys(params)).not.toContain("pr-hd-background-removal");
+  });
+
+  test("the forced `removeBackground: false` yields to the caller's own value", () => {
+    const params = imageEdit({
+      ...base,
+      image: { file: png() },
+      providerOptions: { photoroom: { removeBackground: true } },
+    });
+    expect((params as unknown as { removeBackground: unknown }).removeBackground).toBe(true);
+  });
+
+  test.each([
+    ["{ url }", { url: URL_IMAGE }],
+    ["{ data }", { data: "aVZCT1J3MEtHZ28=" }],
+  ])("%s is refused naming the multipart part and the route that does fetch a URL", (_label, image) => {
+    const result = imageEdit.safe({ ...base, image } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["image"]],
+    ]);
+    const message = result.errors[0]!.message;
+    expect(message).toContain("it takes { file }");
+    expect(message).toContain("multipart `imageFile` part");
+    expect(message).toContain("`GET /v2/edit`");
+  });
+
+  test("every declared gap is refused at its canonical name, with the reason", () => {
+    const refused = (extra: Record<string, unknown>): string => {
+      const result = imageEdit.safe({ ...base, image: { file: png() }, ...extra } as never);
+      expect(result.ok).toBe(false);
+      if (result.ok) return "";
+      expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+        ["unsupported_param", Object.keys(extra)],
+      ]);
+      return result.errors[0]!.message;
+    };
+    expect(refused({ strength: 0.5 })).toContain("steered by `editWithAI.prompt` alone");
+    expect(refused({ n: 2 })).toContain("issue N requests");
+    // The three shape words share one reason, and it names the field that
+    // LOOKS like the answer and is not.
+    for (const shape of [
+      { size: "1024x1024" },
+      { aspectRatio: "16:9" },
+      { dimensions: { width: 1024, height: 768 } },
+    ]) {
+      const message = refused(shape);
+      expect(message).toContain("1K (`1024x1024`)");
+      expect(message).toContain("`outputSize` is the CANVAS");
+    }
+  });
+
+  test("the provider's own findings arrive at the canonical name", () => {
+    // `editWithAI.prompt` is `minLength: 1` on the wire.
+    const empty = imageEdit.safe({ ...base, prompt: "", image: { file: png() } });
+    expect(empty.ok).toBe(false);
+    if (empty.ok) return;
+    expect(empty.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["invalid_shape", ["prompt"]],
+    ]);
+
+    // "Maximum File Size: 30MB", reported where the caller put the picture.
+    const tooBig = imageEdit.safe({ ...base, image: { file: png(30 * 1024 * 1024 + 1) } });
+    expect(tooBig.ok).toBe(false);
+    if (tooBig.ok) return;
+    expect(tooBig.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["media_too_large", ["image"]],
+    ]);
+  });
+
+  test("the estimate is the flat per-call rate, read off the `edit-with-ai` row", () => {
+    const result = imageEdit.safe({ ...base, image: { file: png() }, seed: 1 });
+    expect(result.ok && result.estimate?.costUSD).toBeCloseTo(0.1, 6);
+  });
+
+  test("a typo in the escape hatch is the route's own billed-and-ignored warning", () => {
+    const result = imageEdit.safe({
+      ...base,
+      image: { file: png() },
+      providerOptions: { photoroom: { "editWithAI.sead": 7 } },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unknown_param", ["editWithAI.sead"]],
+    ]);
+    expect(result.warnings[0]!.message).toContain("`pr-unsupported-attributes`");
   });
 });
 

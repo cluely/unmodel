@@ -52,6 +52,7 @@ import type { OpenaiImageResult } from "../../src/providers/openai/unified-image
 import type { OpenaiTtsResult } from "../../src/providers/openai/unified-tts";
 import type { OpenaiSttResult } from "../../src/providers/openai/unified-stt";
 import type { OpenaiVideoResult } from "../../src/providers/openai/unified-video";
+import type { PhotoroomImageEditResult } from "../../src/providers/photoroom/unified";
 import type { PixverseVideoResult } from "../../src/providers/pixverse/unified";
 import type { RecraftImageEditResult } from "../../src/providers/recraft/unified-image-edit";
 import type { RecraftImageResult } from "../../src/providers/recraft/unified-image";
@@ -102,6 +103,7 @@ expectNotAny<ViduImageResult>();
 expectNotAny<BflImageEditResult>();
 expectNotAny<IdeogramImageEditResult>();
 expectNotAny<OpenaiImageEditResult>();
+expectNotAny<PhotoroomImageEditResult>();
 expectNotAny<RecraftImageEditResult>();
 
 // Video.

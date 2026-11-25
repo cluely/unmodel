@@ -771,9 +771,17 @@
 			"types": "./dist/providers/photoroom/index.d.ts",
 			"default": "./dist/providers/photoroom/index.js"
 		},
+		"./photoroom/unified": {
+			"types": "./dist/providers/photoroom/unified.d.ts",
+			"default": "./dist/providers/photoroom/unified.js"
+		},
 		"./photoroom/types": {
 			"types": "./dist/providers/photoroom/types.d.ts",
 			"default": "./dist/providers/photoroom/types.js"
+		},
+		"./photoroom/values": {
+			"types": "./dist/providers/photoroom/values.d.ts",
+			"default": "./dist/providers/photoroom/values.js"
 		},
 		"./pixverse": {
 			"types": "./dist/providers/pixverse/index.d.ts",

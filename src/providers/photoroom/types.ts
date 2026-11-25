@@ -44,7 +44,7 @@ import type { PhotoroomRequestHeader } from "./constants";
 import type { EditParams } from "./image-edit";
 import type { SegmentParams } from "./image-edit-remove-background";
 
-export type { EditParams } from "./image-edit";
+export type { EditFields, EditParams, EditValidated } from "./image-edit";
 
 export type { SegmentParams } from "./image-edit-remove-background";
 

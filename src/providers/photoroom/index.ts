@@ -55,6 +55,13 @@
  * A key prefixed `sandbox_` makes free, watermarked calls ("1,000 per month,
  * 100 per day"). It is a property of the KEY, so nothing here models it.
  *
+ * ## From `unmodel/image-edit`
+ *
+ * One mode of `/v2/edit` has the shape the canonical image-edit vocabulary
+ * names — a picture and a sentence — and that is Edit With AI. It is the ref
+ * `photoroom/edit-with-ai` there (`unmodel/photoroom/unified`), and it ends in
+ * `imageEdit` below. Everything else on the route is reachable here only.
+ *
  * ## What is deliberately NOT here
  *
  * - **`GET /v2/edit`** — the same parameters as a query string, and the only
@@ -80,7 +87,7 @@
  */
 
 export { imageEdit } from "./image-edit";
-export type { EditParams } from "./image-edit";
+export type { EditFields, EditParams, EditValidated } from "./image-edit";
 
 export { imageEditRemoveBackground } from "./image-edit-remove-background";
 export type { SegmentParams } from "./image-edit-remove-background";

@@ -10,7 +10,7 @@ One import per category, one camelCase vocabulary, `"provider/model"` refs. Ever
 | [Text to speech](#text-to-speech) | `unmodel/tts` | `unmodel/openai`, `unmodel/elevenlabs`, `unmodel/deepgram` |
 | [Speech to text](#speech-to-text) | `unmodel/stt` | `unmodel/openai`, `unmodel/deepgram`, `unmodel/assemblyai` |
 | [Image generation](#image-generation) | `unmodel/image` | `unmodel/openai`, `unmodel/google`, `unmodel/black-forest-labs` |
-| [Image editing](#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram` |
+| [Image editing](#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram`, `unmodel/photoroom` |
 | [Video generation](#video-generation) | `unmodel/video` | `unmodel/openai`, `unmodel/google`, `unmodel/runway` |
 | [Lipsync](#lipsync) | `unmodel/lipsync` | `unmodel/fal`, `unmodel/sync` |
 | [Avatar](#avatar) | `unmodel/avatar` | `unmodel/fal`, `unmodel/sync` |
@@ -156,6 +156,29 @@ await fetch(request.request.url, {
 ```
 
 Source inputs narrow by route. OpenAI takes `{ file }`, FLUX Kontext takes `{ data }` or `{ url }`. Masked and specialized edits live on provider subpaths.
+
+Seven providers are in the pack: black-forest-labs, fal, ideogram, openai, photoroom, recraft, revana. The same request at Photoroom compiles to its flat multipart form, whose field names carry dots:
+
+```ts
+import { toFormData } from "unmodel/photoroom";
+
+const request = imageEdit({
+  operation: "edit",
+  model: "photoroom/edit-with-ai",
+  prompt: "make it winter",
+  image: { file: source },
+});
+// → { "editWithAI.mode": "ai.auto", "editWithAI.prompt": "make it winter",
+//     removeBackground: false, imageFile: source }
+
+await fetch(request.request.url, {
+  method: request.request.method,
+  headers: { ...request.request.headers, "x-api-key": process.env.PHOTOROOM_API_KEY ?? "" },
+  body: toFormData(request),
+});
+```
+
+`photoroom/edit-with-ai` is one mode of Photoroom's `POST /v2/edit`. The adapter writes `removeBackground: false` because the route's default returns a cut-out of the edit. Reference pictures and every other field of the route go through `providerOptions.photoroom`, which is typed from the whole form; `{ url }` is refused, because Photoroom fetches a URL only on `GET /v2/edit`.
 
 ## Video generation
 

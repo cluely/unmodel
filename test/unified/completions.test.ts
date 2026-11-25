@@ -951,6 +951,50 @@ imageEdit({ model: "openai/gpt-image-2", operation: "edit", prompt: "x", image: 
     expect(entries.length).toBeGreaterThan(10);
     expect(entries).toContain("2048x1024");
   });
+
+  test("photoroom/edit-with-ai: outputFormat completes all three encodings", () => {
+    // `export.format` takes `png`, `jpeg` and `webp` under the canonical
+    // spellings, so the adapter refuses none of them and the list is whole.
+    const entries = completionsAt(`import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+imageEdit({ model: "photoroom/edit-with-ai", operation: "edit", prompt: "x", image: { file }, outputFormat: "¦" });`);
+    expect([...entries].sort()).toEqual(["jpeg", "png", "webp"]);
+  });
+
+  test("photoroom/edit-with-ai: a shape word is an error in every spelling", () => {
+    // Edit With AI has no field for the shape of its output, so `size` and
+    // `aspectRatio` are `never` on this row — while the same request without
+    // one compiles.
+    const request = (extra: string): string => `import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+imageEdit({ model: "photoroom/edit-with-ai", operation: "edit", prompt: "x", image: { file }${extra} });`;
+    expect(semanticErrorsIn(request(""))).toEqual([]);
+    expect(semanticErrorsIn(request(`, size: "1024x1024"`)).length).toBeGreaterThan(0);
+    expect(semanticErrorsIn(request(`, aspectRatio: "1:1"`)).length).toBeGreaterThan(0);
+  });
+
+  test("photoroom/edit-with-ai: the bucket completes the route's dotted form fields", () => {
+    // The adapter's `Wire` is the whole `/v2/edit` form, so the escape hatch
+    // offers the fields a caller actually reaches for there — and a typo on
+    // this route is billed and ignored, which is what makes the list matter.
+    const entries = completionsAt(`import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+imageEdit({ model: "photoroom/edit-with-ai", operation: "edit", prompt: "x", image: { file }, providerOptions: { photoroom: { ¦ } } });`);
+    // A dotted field completes QUOTED — it is one form part, not a path.
+    for (const field of [
+      "referenceBox",
+      "removeBackground",
+      "outputSize",
+      '"editWithAI.seed"',
+      '"pr-hd-background-removal"',
+    ]) {
+      expect(entries, field).toContain(field);
+    }
+    const values = completionsAt(`import { imageEdit } from "./src/unified/image-edit";
+declare const file: Blob;
+imageEdit({ model: "photoroom/edit-with-ai", operation: "edit", prompt: "x", image: { file }, providerOptions: { photoroom: { referenceBox: "¦" } } });`);
+    expect([...values].sort()).toEqual(["originalImage", "subjectBox"]);
+  });
 });
 
 /**

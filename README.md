@@ -120,7 +120,7 @@ Provider validators take provider-native fields, and the validated result is the
 | [🗣️ Text to speech](docs/surfaces.md#text-to-speech) | `unmodel/tts` | `unmodel/openai`, `unmodel/elevenlabs`, `unmodel/deepgram` |
 | [🎧 Speech to text](docs/surfaces.md#speech-to-text) | `unmodel/stt` | `unmodel/openai`, `unmodel/deepgram`, `unmodel/assemblyai` |
 | [🖼️ Image generation](docs/surfaces.md#image-generation) | `unmodel/image` | `unmodel/openai`, `unmodel/google`, `unmodel/black-forest-labs` |
-| [✏️ Image editing](docs/surfaces.md#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram` |
+| [✏️ Image editing](docs/surfaces.md#image-editing) | `unmodel/image-edit` | `unmodel/openai`, `unmodel/black-forest-labs`, `unmodel/ideogram`, `unmodel/photoroom` |
 | [🎬 Video generation](docs/surfaces.md#video-generation) | `unmodel/video` | `unmodel/openai`, `unmodel/google`, `unmodel/runway` |
 | [👄 Lipsync](docs/surfaces.md#lipsync) | `unmodel/lipsync` | `unmodel/fal`, `unmodel/heygen`, `unmodel/sync`, `unmodel/veed` |
 | [🧑‍🎤 Avatar](docs/surfaces.md#avatar) | `unmodel/avatar` | `unmodel/fal`, `unmodel/heygen`, `unmodel/sync`, `unmodel/veed` |

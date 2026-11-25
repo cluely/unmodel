@@ -598,10 +598,18 @@ export type UnifiedWire<A> = A extends UnifiedAdapter<any, infer W, any, any>
  * new enum member on an existing key). The leaf arm is the same
  * `(string & {})` convention every generated union in this library carries:
  * the union drives autocomplete, it does not gate the API.
+ *
+ * A `Blob` is a LEAF, like a function: a multipart wire types its file parts as
+ * `Blob`, and mapping over one would ask the caller for an object with an index
+ * signature, which no `Blob` has. The kernel's merge agrees — it recurses into
+ * plain objects only, so a `Blob` in a bucket replaces whatever was compiled.
+ * The leaf is recognised by shape, never by the global `Blob` name: a consumer
+ * compiling without DOM or Node types has no `Blob`, and an unresolved name in
+ * this conditional would collapse every bucket to `any`.
  */
 type OpenBucket<T> = T extends readonly (infer E)[]
   ? ReadonlyArray<OpenBucket<E>> | Array<OpenBucket<E>>
-  : T extends (...args: never[]) => unknown
+  : T extends ((...args: never[]) => unknown) | BlobLeaf
     ? T
     : T extends object
       ? { readonly [K in keyof T]?: OpenBucket<T[K]> } & Readonly<Record<string, unknown>>
@@ -610,6 +618,13 @@ type OpenBucket<T> = T extends readonly (infer E)[]
         : T extends string
           ? T | (string & {})
           : T;
+
+/** What every `Blob` (and `File`) has, spelled without the global name. */
+interface BlobLeaf {
+  readonly size: number;
+  readonly type: string;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
 
 /** The two-argument form: keys tied, values an open bag. */
 type OpenUnifiedProviderOptions<Ref extends string> = {

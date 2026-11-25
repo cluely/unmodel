@@ -44,6 +44,10 @@ import { video as bytedance } from "../../src/providers/bytedance/unified-video"
 import { video as fal } from "../../src/providers/fal/unified-video";
 import { FAL_REQUIRED_PROBES } from "../../src/providers/fal/gen/endpoints.gen";
 import { video as google } from "../../src/providers/google/unified-video";
+import { video as higgsfield } from "../../src/providers/higgsfield/unified-video";
+import { HIGGSFIELD_VIDEO_SHAPES } from "../../src/providers/higgsfield/gen/video-narrow.gen";
+import type { HiggsfieldEndpointShape } from "../../src/providers/higgsfield/shape-types";
+import type { HiggsfieldVideoParamRow } from "../../src/providers/higgsfield/param-types";
 import { video as kling } from "../../src/providers/kling/unified-video";
 import { video as lightricks } from "../../src/providers/lightricks/unified";
 import { video as luma } from "../../src/providers/luma/unified-video";
@@ -74,6 +78,7 @@ const ADAPTERS: readonly Adapter[] = [
   fal,
   atlascloud,
   revana,
+  higgsfield,
 ];
 
 const IMAGE_URL = "https://example.com/frame.png";
@@ -165,9 +170,47 @@ const ATLASCLOUD_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Obje
   }),
 );
 
+/**
+ * Higgsfield's required sets, DERIVED for the same reason fal's are.
+ *
+ * `HIGGSFIELD_VIDEO_SHAPES[id].props[name].req` is each route's own published
+ * `required` list, and the route's unified row says which canonical word each
+ * required parameter is: a role's picture, the source clip, the length. A
+ * required parameter the row has no word for is an extra, and the probe for it
+ * is written out below — today that is one, Genjutsu Restyle's `preset_id`,
+ * whose value comes from a live list and is checked as a UUID. Anything else
+ * stops the file, so a route that starts requiring something new is named
+ * here instead of failing eighty cells.
+ */
+const HIGGSFIELD_REQUIRED_EXTRAS: Readonly<Record<string, unknown>> = {
+  preset_id: "229b2a75-05e4-4580-85f9-b47ee521a00d",
+};
+
+const HIGGSFIELD_REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = Object.fromEntries(
+  Object.entries(higgsfield.modelParams as Readonly<Record<string, HiggsfieldVideoParamRow>>).flatMap(([id, row]) => {
+    const shape = (HIGGSFIELD_VIDEO_SHAPES as Readonly<Record<string, HiggsfieldEndpointShape>>)[id];
+    const need = Object.keys(shape?.props ?? {}).filter((name) => shape?.props[name]?.req === true);
+    const params: Record<string, unknown> = {};
+    const images: Array<{ url: string; role?: "last" | "reference" }> = [];
+    for (const name of need) {
+      if (name === "prompt") continue;
+      if (name === row.roleWire?.first) images.unshift({ url: IMAGE_URL });
+      else if (name === row.roleWire?.last) images.push({ url: IMAGE_URL, role: "last" });
+      else if (name === row.roleWire?.reference) images.push({ url: IMAGE_URL, role: "reference" });
+      else if (name === row.videoWire) params["video"] = { url: CLIP_URL };
+      else if (name === "duration") params["duration"] = row.durations?.[0] ?? row.bounds?.duration?.min;
+      else if (Object.hasOwn(HIGGSFIELD_REQUIRED_EXTRAS, name)) params[name] = HIGGSFIELD_REQUIRED_EXTRAS[name];
+      else throw new Error(`higgsfield/${id} requires \`${name}\`, and this sweep has no probe for it`);
+    }
+    if (images.length > 0) params["image"] = images.length === 1 && images[0]?.role === undefined ? images[0] : images;
+    return Object.keys(params).length === 0 ? [] : [[`higgsfield/${id}`, params as Partial<VideoParams>] as const];
+  }),
+);
+
 const REQUIRED: Readonly<Record<string, Partial<VideoParams>>> = {
   ...FAL_REQUIRED,
   ...ATLASCLOUD_REQUIRED,
+  ...HIGGSFIELD_REQUIRED,
   // `NemesisInput` requires BOTH a clip and reference pictures ("restages a
   // clip with your people, products and places"), which none of the four route
   // bases carries alone. The references ride on the video base.

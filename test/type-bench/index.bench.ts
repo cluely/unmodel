@@ -23,6 +23,7 @@ import { chat } from "../../src/chat/index";
 import { getProviderTyped } from "../../src/catalog/typed.gen";
 import { tts } from "../../src/unified/tts";
 import { imageEdit } from "../../src/unified/image-edit";
+import { video } from "../../src/unified/video";
 import { image as falImage } from "../../src/providers/fal/image";
 import { video as klingVideo } from "../../src/providers/kling";
 import { video as higgsfieldVideo } from "../../src/providers/higgsfield/video";
@@ -70,7 +71,7 @@ bench("image-edit: unified pack call", () => {
     prompt: "make it winter",
     image: { file: new Blob([]) },
   });
-}).types([14983, "instantiations"]);
+}).types([16012, "instantiations"]);
 
 /**
  * The same pack, the other operation.
@@ -85,6 +86,11 @@ bench("image-edit: unified pack call", () => {
  * 70. The arm does not cross the sizing XOR — a removal has no shape to choose
  * — which is why neither figure doubled. An arm that did cross it, or a third
  * operation, moves both.
+ *
+ * An adapter joining the pack moves both by what its rows cost the ref union:
+ * higgsfield, the ninth and ten generated rows, is 1,029 on the edit call
+ * (14,983 to 16,012, +6.9%) and 1,028 on this one, against the 544 the eighth
+ * cost with its one row.
  */
 bench("image-edit: unified pack call, removeBackground", () => {
   return imageEdit.safe({
@@ -92,7 +98,7 @@ bench("image-edit: unified pack call, removeBackground", () => {
     model: "stability/stable-image-remove-background",
     image: { file: new Blob([]) },
   });
-}).types([14918, "instantiations"]);
+}).types([15946, "instantiations"]);
 
 bench("fal: image pack call", () => {
   return falImage.safe({ endpoint: "fal-ai/flux/dev", prompt: "a lighthouse" });
@@ -187,3 +193,33 @@ bench("higgsfield: a video call narrowed by its route", () => {
     duration: 5,
   });
 }).types([3747, "instantiations"]);
+
+/**
+ * `unmodel/video`: one call through the ready pack, at a ref from its largest
+ * roster.
+ *
+ * Pinned because this is the pack with the most refs by a wide margin —
+ * Higgsfield alone brings 86, each with its own generated row — and every
+ * call resolves its ref against all of them: `UnifiedRef` is the union the
+ * `model` literal is checked against, and `ModelParamsFor` picks one adapter's
+ * table and one row out of it. Both are lookups (a distributive pick of the
+ * adapter by its `provider`, then an indexed access by model id), which is
+ * what keeps a call's cost from growing with the roster. A narrowing helper
+ * that distributed over the ref union instead would show up here first.
+ *
+ * The second bench is the same call at a provider with five refs. The two are
+ * pinned together so that the roster's size and the pack's own cost can be
+ * told apart: they should stay close.
+ */
+bench("video: unified pack call, at a higgsfield route", () => {
+  return video.safe({
+    model: "higgsfield/bytedance/seedance-2.5/text-to-video",
+    prompt: "a fox",
+    resolution: "720p",
+    duration: 5,
+  });
+}).types([30153, "instantiations"]);
+
+bench("video: unified pack call, at a small roster", () => {
+  return video.safe({ model: "openai/sora-2", prompt: "a fox", duration: 8 });
+}).types([28629, "instantiations"]);

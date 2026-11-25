@@ -404,6 +404,30 @@ request.request.url; // "https://queue.fal.run/fal-ai/flux/dev"
 - **Auth is `Authorization: Key ${FAL_KEY}`.** The `Key ` prefix is real and fal's own OpenAPI omits it, so unmodel states it in prose rather than deriving it. No unmodel export takes your key.
 - **The types are generated from fal's own published OpenAPI.** `bun run codegen:fal` rebuilds `src/providers/fal/gen/` from committed per-endpoint snapshots. Curation, pricing and overlays stay hand-maintained in `data/fal/`, each row carrying a source URL, a date and a quote.
 
+### Higgsfield
+
+`unmodel/higgsfield` covers every route Higgsfield serves: 24 image routes and 87 video routes, its own models (Soul, Marketing Studio, Cinema Studio, Genjutsu) and the ones it hosts (Seedance, Kling, Wan, Recraft, Ideogram, …), plus Soul ID training.
+
+```ts
+import { video } from "unmodel/higgsfield";
+
+const request = video({
+  endpoint: "bytedance/seedance-2.5/text-to-video",
+  prompt: "A fox walks through snow",
+  resolution: "720p",
+  duration: 5,
+});
+
+JSON.stringify(request);
+// → {"prompt":"A fox walks through snow","resolution":"720p","duration":5}
+request.request.url; // "https://api.higgsfield.ai/bytedance/seedance-2.5/text-to-video"
+```
+
+- **The route is the path**, as at fal: `endpoint` selects it and never reaches the body. `higgsfield.image`, `higgsfield.imageEdit` and `higgsfield.video` are one URL template, split by what a route answers.
+- **Each route is checked against its own published schema** — its parameters, vocabularies, bounds and cross-field rules — generated from committed snapshots of Higgsfield's public console, docs and model pages (`bun run codegen:higgsfield`).
+- **Prices are sentences, so most estimates are per request.** `higgsfieldCostUSD` answers a figure only when the request states everything the rate depends on, and `undefined` otherwise.
+- **The same routes are refs in `unmodel/image`, `unmodel/image-edit` and `unmodel/video`**: `"higgsfield/higgsfield-ai/soul/standard"`, `"higgsfield/bytedance/seedance-2.5/text-to-video"`.
+
 ## 📚 Docs
 
 - 📖 [Surfaces guide](docs/surfaces.md) — all fourteen categories, examples, quirks, bundles and custom packs

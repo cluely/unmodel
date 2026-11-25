@@ -1,0 +1,11 @@
+{
+  "ref": "higgsfield/higgsfield/genjutsu/motion-transfer/v1.0",
+  "params": {
+    "prompt": "the dancer from the clip, as the character in the picture",
+    "video_url": "https://example.com/clip.mp4",
+    "image_urls": [
+      "https://example.com/frame.png"
+    ]
+  },
+  "url": "https://api.higgsfield.ai/higgsfield/genjutsu/motion-transfer/v1.0"
+}

@@ -1,0 +1,8 @@
+{
+  "ref": "higgsfield/bytedance/seedream/v5.0/pro/text-to-image",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "aspect_ratio": "21:9"
+  },
+  "url": "https://api.higgsfield.ai/bytedance/seedream/v5.0/pro/text-to-image"
+}

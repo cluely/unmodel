@@ -21,6 +21,6 @@ Pricing: Higgsfield publishes prices as sentences. Each is transcribed with its 
 
 New issue code: `unconfirmed_cost` (a warning by default, like every code settable through `options.severity`). An exhaustive `switch` or `Record` over `IssueCode` gains a member.
 
-Not included: webhook signature verification (the delivery type and header names are exported; no recorded delivery exists to verify against), the two misspelled legacy `higgsfiled/genjutsu/*` paths (routed with a warning that carries the reason), the Agent API and the legacy v1 job-set surface. The addresses are not yet refs in `unmodel/image`, `unmodel/image-edit` or `unmodel/video`. Nothing was exercised against a live key: every body, bound and price is Higgsfield's published contract as of 2026-11-24.
+Not included: webhook signature verification (the delivery type and header names are exported; no recorded delivery exists to verify against), the two misspelled legacy `higgsfiled/genjutsu/*` paths (routed with a warning that carries the reason), the Agent API and the legacy v1 job-set surface. Nothing was exercised against a live key: every body, bound and price is Higgsfield's published contract as of 2026-11-24.
 
 The per-route surface is generated from committed snapshots of Higgsfield's public console, docs and model pages (`bun run codegen:higgsfield`, refreshed weekly).

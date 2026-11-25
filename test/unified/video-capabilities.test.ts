@@ -47,6 +47,7 @@ import { video as atlascloud } from "../../src/providers/atlascloud/unified-vide
 import { video as bytedance } from "../../src/providers/bytedance/unified-video";
 import { video as fal } from "../../src/providers/fal/unified-video";
 import { video as google } from "../../src/providers/google/unified-video";
+import { video as higgsfield } from "../../src/providers/higgsfield/unified-video";
 import { video as kling } from "../../src/providers/kling/unified-video";
 import { video as lightricks } from "../../src/providers/lightricks/unified";
 import { video as luma } from "../../src/providers/luma/unified-video";
@@ -426,6 +427,36 @@ const TABLE: Readonly<Record<string, Capability>> = {
     video: "native",
     negativePrompt: "native",
     seed: "native",
+    n: "declared",
+  },
+  /**
+   * A route for a ref, and the one row where every media cell is `native` on a
+   * FLAT body: Kling 4.0's reference-to-video route declares an opening frame
+   * (`image_url`), a closing one (`end_image_url`), reference pictures
+   * (`image_urls`) and reference clips (`video_urls`), and the adapter reads
+   * all four off its generated row. It has no `seed` and no `negative_prompt`,
+   * which its row refuses by name — twenty-two and nine of the eighty-six
+   * routes do have them, so neither is a provider-wide gap.
+   *
+   * The route requires at least one reference of some kind, so every probe
+   * carries a reference picture; a media probe replaces or joins it.
+   *
+   * What a route with fewer roles does with the same inputs is `video-e2e`'s.
+   */
+  higgsfield: {
+    ref: "higgsfield/kling-video/v4.0/reference-to-video",
+    adapter: higgsfield,
+    base: { image: [{ url: "https://example.com/reference.png", role: "reference" }] },
+    duration: { support: "native", class: "number", at: "duration" },
+    size: { class: "tier-field", at: "resolution" },
+    resolution: "native",
+    aspectRatio: "native",
+    imageFirst: "native",
+    imageLast: "native",
+    imageReference: "native",
+    video: "native",
+    negativePrompt: "refused",
+    seed: "refused",
     n: "declared",
   },
 };

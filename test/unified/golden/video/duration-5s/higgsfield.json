@@ -1,0 +1,10 @@
+{
+  "ref": "higgsfield/alibaba/wan-3.0/text-to-video",
+  "params": {
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": 5,
+    "aspect_ratio": "9:16",
+    "resolution": "720p"
+  },
+  "url": "https://api.higgsfield.ai/alibaba/wan-3.0/text-to-video"
+}

@@ -219,7 +219,7 @@ Kontext Multi, FLUX.2 pro/dev edit, FLUX fill and i2i, Seedream 4.5 / 5 Pro edit
 Qwen-Image-Edit 2511, Qwen Image 3 edit, and the prompt-less FIBO Relight route).
 Seven of the ten — openai, black-forest-labs, ideogram, recraft, photoroom, stability, fal — ship a
 unified adapter, and `unmodel/image-edit` carries the ready-made pack over
-them (and over revana, the router). fal's adapter contains the 17 prompt-based rows; FIBO Relight is exact on
+them (and over revana and higgsfield, the routers). fal's adapter contains the 17 prompt-based rows; FIBO Relight is exact on
 the provider-native substrate and marked `unified: false`, because a canonical
 `operation: "edit"` requires a prompt the route does not accept.
 
@@ -1460,10 +1460,58 @@ that the quote is still in the snapshot and that every number is in its own quot
 `HIGGSFIELD_PRICING_CAVEAT` goes beside every figure: these are standard self-serve rates, and
 `POST /estimate/{endpoint}` with the same body answers the account's own amount.
 
+**The three generation addresses are refs in `unmodel/image`, `unmodel/image-edit` and
+`unmodel/video`.** A ref names a route — `higgsfield/higgsfield-ai/soul/standard`,
+`higgsfield/bytedance/seedance-2.5/text-to-video` — and splits on the first slash. The three
+adapters branch on the route's generated row and never on its id
+(`gen/{image,image-edit,video}-params.gen.ts`, emitted by the same generator): which wire
+parameters a canonical word may write, the shapes, the tiers the route can express, where a
+count or a picture lands, which picture roles the route has a parameter for.
+
+| Pack | Routes | Not addressed, and why |
+|---|---|---|
+| `unmodel/image` | 18 of the 24 image routes | the five that require a source picture (`unmodel/image-edit` addresses them) and `higgsfield/ai-influencer`, which has no `prompt` |
+| `unmodel/image-edit` | the 10 of the view | — |
+| `unmodel/video` | 86 of the 87 video routes | `bytedance/seedance-2.5/finalize-draft`: its one input is a prior request's id |
+
+The opt-outs are rules in the generator, not a list, so a route the next refresh adds is
+filed without anyone editing a file; each generated file prints the routes it leaves out with
+the reason. Every route stays reachable by id at its `higgsfield.*` address.
+
+- **Every gap is per route.** `seed` is on 22 of the 86 video routes and `negative_prompt`
+  on 9, so no word a route's schema can carry is declared unsupported adapter-wide; a refusal
+  names the route and counts the siblings that take the word. The two adapter-wide
+  declarations — `strength` on image-edit, `n` on video — are guarded: the generator stops if
+  a route ever declares a parameter either could mean.
+- **`resolution` maps only where the route's own word is a canonical tier.** The Soul routes
+  list `720p | 1080p`, which `unmodel/image`'s `1k | 2k | 4k` has no word for, so `resolution`
+  is `never` there and the route's own value is `providerOptions.higgsfield.resolution`. No
+  tier is mapped onto a pixel class: on Soul the resolution selects the price. The same rule
+  leaves out Seedream's `1.5k`, Kling Image's `8k`, and MiniMax H3's `768P` and `2K`. On
+  `unmodel/image-edit`, which has no tier word, a route's `resolution` is one of its extras.
+- **`aspect_ratio: "auto"` and `"adaptive"` are not shapes.** `AspectRatio` has no word for
+  "you decide" or "follow the inputs"; both are the default wherever a route lists them, and
+  `providerOptions.higgsfield.aspect_ratio` otherwise. Any other member a closed list
+  publishes must reach the row, or the generator stops (`assertRatiosComplete`).
+- **Media is a public URL.** No route takes bytes, so `{ file }`, `{ data }` and an inline
+  video frame are refused with `POST /files/generate-upload-url` named.
+- **A source clip is `video_url`, or a one-element `video_urls`.** Where a route has only the
+  list (Cinema Studio 4.0, the reference-to-video routes), the canonical `video` goes there,
+  which is the row fal's adapter has for the same Seedance route. Where it has both
+  (Seedance 2.5 video-edit), `video_urls` is its extra.
+- **The route's validator has the last word.** A count outside Soul's `1 | 4`, a duration
+  outside a route's list or range, the Kling Image series routes' required count and Genjutsu
+  Restyle's required `preset_id` are `higgsfield.*` findings, reported at the canonical word
+  the adapter compiled from.
+- **A route unmodel has no row for** draws `unknown_model` (from the pack at `model`, and from
+  `higgsfield.*` at `endpoint`, which is what the wire validator calls it) and stays callable for the words
+  Higgsfield spells one way everywhere (`prompt`, `seed`, `negative_prompt`, `aspect_ratio`,
+  `duration`). A count, a picture, a clip, a size and an encoding — the words whose parameter
+  or whose value differs by route — are refused there instead of guessed, naming
+  `providerOptions.higgsfield`.
+
 **What is not here, and why.**
 
-- *Unified packs.* The three generated addresses are not yet refs in `unmodel/image`,
-  `unmodel/image-edit` or `unmodel/video`; that lands separately.
 - *Webhook verification.* Deliveries are signed (Standard Webhooks). unmodel ships
   `WebhookDelivery`, the three header names and `HIGGSFIELD_WEBHOOK_STATUSES`, and no
   verifier: there is no recorded delivery to pin the `whsec_` decoding or the two-signature
@@ -1517,11 +1565,11 @@ leaves rather than whole validators.
 |---|---|---|---|
 | `unmodel/chat` | `chat` | n/a — three dialect codecs, composed with all 33 concrete provider `chat` validators | 33: every chat-validating provider except the four endpoint factories (amazon-bedrock, azure, cloudflare-workers-ai, google-vertex — a bare ref cannot carry their config) and cohere (a fifth dialect with no codec) |
 | `unmodel/chat/factory` | `createChat` | the same three codecs, no registry | whichever provider validators you register: `createChat({ anthropic, openai })` |
-| `unmodel/image` | `image`, `createImage` | 18 | black-forest-labs, bria, bytedance, fal, google, ideogram, kling, krea, leonardo, luma, openai, recraft, revana, reve, runway, stability, vidu, xai |
+| `unmodel/image` | `image`, `createImage` | 19 | black-forest-labs, bria, bytedance, fal, google, higgsfield, ideogram, kling, krea, leonardo, luma, openai, recraft, revana, reve, runway, stability, vidu, xai |
 | `unmodel/tts` | `tts`, `createTts` | 20 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume (API retired 2026-11-13; every route answers 404), inworld, lmnt, minimax, murf, openai, resemble, revana, rime, smallest-ai, speechify, stepfun |
 | `unmodel/stt` | `stt`, `createStt` | 13 | assemblyai, cartesia, deepgram, elevenlabs, fal, gladia, google, inworld, mistral, openai, revai, soniox, speechmatics |
-| `unmodel/video` | `video`, `createVideo` | 15 | alibaba, atlascloud, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, revana, runway, vidu, xai |
-| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 8 | black-forest-labs, fal, ideogram, openai, photoroom (two refs: `photoroom/edit-with-ai`, the one mode of `POST /v2/edit` that is a picture and a sentence, and `photoroom/remove-background`), recraft, revana, stability (one ref, `stability/stable-image-remove-background`, `operation: "removeBackground"` only) — the eight with a route that is *image + prompt, no mask* or *image, background removed* |
+| `unmodel/video` | `video`, `createVideo` | 16 | alibaba, atlascloud, bytedance, fal, google, higgsfield, kling, lightricks, luma, minimax, openai, pixverse, revana, runway, vidu, xai |
+| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 9 | black-forest-labs, fal, higgsfield, ideogram, openai, photoroom (two refs: `photoroom/edit-with-ai`, the one mode of `POST /v2/edit` that is a picture and a sentence, and `photoroom/remove-background`), recraft, revana, stability (one ref, `stability/stable-image-remove-background`, `operation: "removeBackground"` only) — the nine with a route that is *image + prompt, no mask* or *image, background removed* |
 | `unmodel/music` | `music`, `createMusic` | 6 | elevenlabs, fal, google, mureka, revana, stability |
 | `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (2 models, `POST /v1/sound-generation`), fal (7 endpoints from five vendors, ElevenLabs' v2 and v3 among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 5 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), revana (1 curated model on the one route it serves every media model from), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
@@ -1534,7 +1582,7 @@ leaves rather than whole validators.
 
 **Layout.** Each adapter lives in the provider's own directory as
 `unified-<category>.ts`, re-exported from a single `unified.ts` barrel published as
-`unmodel/<provider>/unified` (50 such subpaths). A provider serving more than one category
+`unmodel/<provider>/unified` (51 such subpaths). A provider serving more than one category
 therefore splits per category, so no pack pays for another category's schemas or catalogs.
 `test/bundle-budget.test.ts` asserts a pack can only reach a provider through that
 provider's uniformly-named endpoint module — which is what makes the address-vs-wire
@@ -1551,7 +1599,7 @@ no aggregate of provider wire types. All 76 entries emit an empty JavaScript mod
 `test/types-entries.test.ts` asserts against a real build alongside the completeness drift
 guard keyed on `src/cli-registry.ts`.
 
-**Values without a validator.** The 50 providers with a unified adapter also publish
+**Values without a validator.** The 51 providers with a unified adapter also publish
 `unmodel/<provider>/values`: the runtime twin of those types — `<CATEGORY>_MODEL_PARAMS`,
 `<CATEGORY>_MODELS` and `<CATEGORY>_FORMAT_SPEC` per category served, plus that provider's own
 published enums (voices, sizes, ratios, durations, codecs, languages) under their own names.

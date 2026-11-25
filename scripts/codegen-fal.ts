@@ -2283,10 +2283,16 @@ export function canonicalRatios(values: readonly (string | number)[]): string[] 
  *
  * - `"auto"` — "you decide": it names no geometry (argued in
  *   {@link canonicalRatios}).
+ * - `"adaptive"` — "follow the inputs": the shape is read off the pictures or
+ *   the clip the request carries, so the word names no geometry either.
+ *   Higgsfield's MiniMax H3 page puts the two side by side: "For text-only
+ *   requests, aspect_ratio="auto" or "adaptive" resolves to 16:9"
+ *   (https://docs.higgsfield.ai/docs/models/minimax-h3/text-to-video.md, read
+ *   2026-11-24). No fal snapshot lists it.
  *
  * Everything else a closed `aspect_ratio` enum publishes must reach the row.
  */
-export const RATIOS_THAT_ARE_NOT_SHAPES: ReadonlySet<string> = new Set(["auto"]);
+export const RATIOS_THAT_ARE_NOT_SHAPES: ReadonlySet<string> = new Set(["auto", "adaptive"]);
 
 /**
  * Wire enum → row completeness, in the direction no preset sweep can run.

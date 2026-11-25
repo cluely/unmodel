@@ -1,0 +1,13 @@
+{
+  "ref": "higgsfield/higgsfield-ai/soul/standard",
+  "params": {
+    "prompt": "a lighthouse in fog"
+  },
+  "url": "https://api.higgsfield.ai/higgsfield-ai/soul/standard",
+  "issues": [
+    {
+      "code": "unconfirmed_cost",
+      "path": []
+    }
+  ]
+}

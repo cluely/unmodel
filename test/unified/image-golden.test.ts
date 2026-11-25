@@ -90,7 +90,7 @@ const caseDirs = readdirSync(GOLDEN, { withFileTypes: true })
 
 test("the image golden tree is present", () => {
   // A vacuous suite passes by asserting nothing; this is the guard against it.
-  expect(caseDirs.length).toBeGreaterThanOrEqual(10);
+  expect(caseDirs.length).toBeGreaterThanOrEqual(18);
 });
 
 describe.each(caseDirs)("golden image/%s", (name) => {

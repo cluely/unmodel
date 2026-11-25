@@ -27,6 +27,11 @@
  * documents, snapshotted under `data/higgsfield/`; `higgsfield.characterTrain`
  * is the one hand-typed body.
  *
+ * The three generation addresses are also refs in `unmodel/image`,
+ * `unmodel/image-edit` and `unmodel/video` (`higgsfield/<route id>`), through
+ * the adapters on `unmodel/higgsfield/unified`; the rows those adapters read
+ * are on `unmodel/higgsfield/values`. Neither is re-exported here.
+ *
  * What comes back: `checkRequestStatus` reports a submitted or polled request
  * the way every provider's checker does. The URL builders, the status tuples
  * and the response types cover the rest of the lifecycle — poll, cancel,

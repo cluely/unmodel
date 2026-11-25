@@ -92,6 +92,12 @@ const CASES: readonly Case[] = [
   // Revana's one picture extra, on the models whose catalog row lists their
   // quality tiers — and one level down, because its body is `{ model, input }`.
   { ref: "revana/gpt-image-1", extras: { quality: "high" }, at: ["input"] },
+  // Higgsfield's are each route's own parameters, typed from that route's
+  // generated wire interface: Soul's style dials, on a flat body.
+  {
+    ref: "higgsfield/higgsfield-ai/soul/standard",
+    extras: { style_strength: 0.5, enhance_prompt: true },
+  },
 ];
 
 /** The wire node at a path, or `undefined`. */

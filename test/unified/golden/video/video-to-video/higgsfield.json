@@ -1,0 +1,9 @@
+{
+  "ref": "higgsfield/bytedance/seedance-2.5/video-extend",
+  "params": {
+    "prompt": "restyle the clip as a pencil sketch",
+    "duration": 5,
+    "video_url": "https://example.com/clip.mp4"
+  },
+  "url": "https://api.higgsfield.ai/bytedance/seedance-2.5/video-extend"
+}

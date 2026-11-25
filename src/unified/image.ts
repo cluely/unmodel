@@ -86,6 +86,8 @@ import { image as bytedance } from "../providers/bytedance/unified-image";
 // validator, schema and narrowing tables inside `unmodel/image`.
 import { image as fal } from "../providers/fal/unified-image";
 import { image as google } from "../providers/google/unified-image";
+// The LEAF, for fal's reason: `../providers/higgsfield/unified` carries three adapters.
+import { image as higgsfield } from "../providers/higgsfield/unified-image";
 import { image as ideogram } from "../providers/ideogram/unified-image";
 import { image as kling } from "../providers/kling/unified-image";
 import { image as krea } from "../providers/krea/unified";
@@ -166,10 +168,18 @@ export function createImage<A extends ImageAdapter>(
  * and a tier rather than by pixels — so `dimensions` reaches it as the shape
  * the pixels describe, with the warning that conversion always carries.
  *
- * The cost is honest and measured: importing this pulls in eighteen provider
+ * Higgsfield is the third, and like fal its ref names a ROUTE: one URL
+ * template in front of its own models (Soul, Marketing Studio, Ads Studio) and
+ * hosted ones (Seedream, Qwen, Kling Image, Recraft, Ideogram, Grok, Z-Image).
+ * Its `compile` reads the route's generated row and never the id. A picture is
+ * sized by a shape and, where the route's own word is one, a tier: the Soul
+ * routes size in `720p | 1080p`, which is not a `resolution` this vocabulary
+ * has, so it is refused there and reached through `providerOptions.higgsfield`.
+ *
+ * The cost is honest and measured: importing this pulls in nineteen provider
  * validators, their schemas and their catalogs, pinned in
  * `test/bundle-budget.test.ts`. `createImage([…])` above is the way to pay for
- * two providers instead of eighteen.
+ * two providers instead of nineteen.
  */
 export const image = createImage([
   openai,
@@ -190,6 +200,7 @@ export const image = createImage([
   reve,
   xai,
   revana,
+  higgsfield,
 ]);
 
 export type {

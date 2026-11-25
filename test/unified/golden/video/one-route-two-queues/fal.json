@@ -1,0 +1,13 @@
+{
+  "ref": "fal/bytedance/seedance-2.5/text-to-video",
+  "params": {
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": "5",
+    "resolution": "720p",
+    "aspect_ratio": "9:16"
+  },
+  "url": "https://queue.fal.run/bytedance/seedance-2.5/text-to-video",
+  "headers": {
+    "content-type": "application/json"
+  }
+}

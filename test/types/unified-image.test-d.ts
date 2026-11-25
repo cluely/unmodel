@@ -29,6 +29,7 @@ import { createImage, image } from "../../src/unified/image";
 import { image as blackForestLabsImage } from "../../src/providers/black-forest-labs/unified";
 import { image as stabilityImage } from "../../src/providers/stability/unified-image";
 import { image as googleImage } from "../../src/providers/google/unified-image";
+import { image as higgsfieldImage } from "../../src/providers/higgsfield/unified-image";
 import type { GoogleImagenInstance } from "../../src/providers/google/image";
 import { image as ideogramImage } from "../../src/providers/ideogram/unified";
 import { image as openaiImage } from "../../src/providers/openai/unified-image";
@@ -385,7 +386,77 @@ function revanaNarrowingTests(): void {
   });
 }
 
+// ---------------------------------------------------------------------------
+// higgsfield — a route for a ref, rows generated from each route's schema
+// ---------------------------------------------------------------------------
+
+function higgsfieldNarrowingTests(): void {
+  // Marketing Studio lists eight shapes (and `auto`, which is not one) and all three tiers.
+  image({ model: "higgsfield/marketing-studio/image", prompt: "hi", aspectRatio: "21:9", resolution: "4k" });
+  // @ts-expect-error — 5:4 is not one of Marketing Studio's shapes.
+  image({ model: "higgsfield/marketing-studio/image", prompt: "hi", aspectRatio: "5:4" });
+  // @ts-expect-error — `auto` names no geometry; it is `providerOptions.higgsfield.aspect_ratio`.
+  image({ model: "higgsfield/marketing-studio/image", prompt: "hi", aspectRatio: "auto" });
+  // @ts-expect-error — Kling Image lists 2k, 4k and 8k: no 1k.
+  image({ model: "higgsfield/kling-image/v4.0/text-to-image", prompt: "hi", resolution: "1k" });
+
+  image({ model: "higgsfield/marketing-studio/image", prompt: "hi", resolution: "2k" });
+
+  // Soul sizes in `720p | 1080p`, which is not a tier: `resolution` is `never` there.
+  // @ts-expect-error — the route's own word is `providerOptions.higgsfield.resolution`.
+  image({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "hi", resolution: "1k" });
+  image({
+    model: "higgsfield/higgsfield-ai/soul/standard",
+    prompt: "hi",
+    n: 4,
+    providerOptions: { higgsfield: { resolution: "1080p" } },
+  });
+  // @ts-expect-error — Ideogram 4.0 has no `resolution` parameter at all.
+  image({ model: "higgsfield/ideogram/v4.0", prompt: "hi", resolution: "1k" });
+
+  // No Higgsfield route takes pixels: `size` is `never`, `dimensions` is sent as a shape.
+  // @ts-expect-error — `aspectRatio` is the word.
+  image({ model: "higgsfield/z-image/turbo", prompt: "hi", size: "1024x1024" });
+  image({ model: "higgsfield/z-image/turbo", prompt: "hi", dimensions: { width: 1024, height: 1024 } });
+
+  // Extras are the route's own parameters, typed from its generated wire interface.
+  image({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "hi", style_strength: 0.5 });
+  image({ model: "higgsfield/recraft/v4.1/text-to-image", prompt: "hi", background_color: { rgb: [255, 0, 0] } });
+  // @ts-expect-error — `style_strength` is a number.
+  image({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "hi", style_strength: "half" });
+  // @ts-expect-error — Z-Image Turbo's row has no style dial.
+  image({ model: "higgsfield/z-image/turbo", prompt: "hi", style_strength: 0.5 });
+  // @ts-expect-error — Grok Imagine's `quality` is low or medium.
+  image({ model: "higgsfield/xai/grok-imagine-image-2.0", prompt: "hi", quality: "high" });
+
+  // The edit-only routes and AI Influencer are not `unmodel/image` refs.
+  // @ts-expect-error — it requires a source picture; `unmodel/image-edit` addresses it.
+  expectAssignable<UnifiedRef<typeof higgsfieldImage>>("higgsfield/alibaba/qwen-image-3/edit");
+  // @ts-expect-error — it has no `prompt`.
+  expectAssignable<UnifiedRef<typeof higgsfieldImage>>("higgsfield/higgsfield/ai-influencer");
+  // @ts-expect-error — a video route is `unmodel/video`'s.
+  expectAssignable<UnifiedRef<typeof higgsfieldImage>>("higgsfield/bytedance/seedance-2.5/text-to-video");
+  expectAssignable<UnifiedRef<typeof higgsfieldImage>>("higgsfield/higgsfield-ai/soul/standard");
+
+  // The result is `higgsfield.image`'s Validated: the flat body, without the route id.
+  const result = image({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "hi" });
+  expectAssignable<string>(result.prompt);
+  expectTrue<IsNever<KeyIn<typeof result, "endpoint">>>();
+  expectAssignable<{ input: { prompt: string }; webhook?: { url: string } }>(result.toSdk("higgsfield"));
+  // @ts-expect-error — Higgsfield's own client is the one SDK target.
+  result.toSdk("openai");
+
+  // `providerOptions.higgsfield` is the adapter's wire body.
+  image({
+    model: "higgsfield/z-image/turbo",
+    prompt: "hi",
+    // @ts-expect-error — `seed` is a number.
+    providerOptions: { higgsfield: { seed: "7" } },
+  });
+}
+
 export {
+  higgsfieldNarrowingTests,
   revanaNarrowingTests,
   refUnionTests,
   sizingXorTests,

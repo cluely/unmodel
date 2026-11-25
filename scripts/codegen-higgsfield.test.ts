@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { CANONICAL_KEY_LISTS } from "../src/core/unified/canonical-keys";
 import {
   CONSOLE_NO_PRICING,
+  PACK_VOCABULARY,
   comparable,
   differingPointers,
   generate,
@@ -15,7 +17,7 @@ import {
 } from "./codegen-higgsfield";
 
 /**
- * Three suites, split the way `codegen-revana.test.ts` splits them.
+ * Four suites, split the way `codegen-revana.test.ts` splits them.
  *
  * The first covers the **readers**: the three parsers that turn a documented
  * page into a snapshot row, on inline samples of each page's own format.
@@ -25,7 +27,10 @@ import {
  * only way to test a refusal, because the committed snapshot deliberately
  * contains none.
  *
- * The third runs against the **real committed snapshot**, one test per fact
+ * The third does the same for the **unified rows**: what each pack's row
+ * carries, which routes a pack addresses, and every way a row can stop the run.
+ *
+ * The fourth runs against the **real committed snapshot**, one test per fact
  * the provider builds on, naming the route that exercises it. A refresh that
  * changes one of those facts then fails with a message saying which.
  */
@@ -328,6 +333,15 @@ function block(file: string | undefined, id: string): string {
   return text.slice(start, end);
 }
 
+/**
+ * A slice of a unified row file with its hoisted lists and maps written back
+ * in place, so a test reads a row the way the adapter does.
+ */
+function inlined(file: string, slice: string): string {
+  const shared = new Map([...file.matchAll(/^const ([A-Z]_[0-9a-f]{6}) = (.+) as const;$/gm)].map((match) => [match[1] as string, match[2] as string]));
+  return slice.replace(/\b[A-Z]_[0-9a-f]{6}\b/g, (name) => shared.get(name) ?? name);
+}
+
 /** A generated file with its JSDoc blocks un-wrapped, so a sentence can be matched wherever the re-flow broke it. */
 function prose(file: string | undefined): string {
   return (file ?? "").replace(/\n\s*\*\s?/g, " ");
@@ -343,16 +357,19 @@ const CLIP = route("maker/clip");
 describe("codegen-higgsfield on a mini fixture", () => {
   const files = generate(input([CLIP, STILL]));
 
-  test("emits the id lists, the rates, the one gate, and three files per output type", () => {
+  test("emits the id lists, the rates, the one gate, three files per output type, and one row file per pack", () => {
     expect([...files.keys()]).toEqual([
       "endpoints.gen.ts",
+      "image-edit-params.gen.ts",
       "image-narrow.gen.ts",
+      "image-params.gen.ts",
       "image-wire.gen.ts",
       "input-schema.gen.ts",
       "models-image.gen.ts",
       "models-video.gen.ts",
       "pricing.gen.ts",
       "video-narrow.gen.ts",
+      "video-params.gen.ts",
       "video-wire.gen.ts",
     ]);
   });
@@ -365,6 +382,7 @@ describe("codegen-higgsfield on a mini fixture", () => {
     const imports = [...files.values()].flatMap((content) => [...content.matchAll(/from "([^"]+)"/g)].map((match) => match[1]));
     expect([...new Set(imports)].sort()).toEqual([
       "../../../core/catalog-types",
+      "../param-types",
       "../pricing-types",
       "../shape-types",
       "./endpoints.gen",
@@ -392,9 +410,10 @@ describe("codegen-higgsfield on a mini fixture", () => {
   });
 
   test("the picture-editing view is the image routes filed under image_edit, minus curation's exclusions", () => {
-    const edit = route("maker/edit", { output: "image", category: "image_edit" });
-    const both = route("maker/both", { output: "image", category: "image_edit, text2image" });
-    const sheet = route("maker/sheet", { output: "image", category: "image_edit, text2image" });
+    const schema = properties({ prompt: { type: "string" }, image_url: { type: "string", format: "uri" } });
+    const edit = route("maker/edit", { output: "image", category: "image_edit", schema });
+    const both = route("maker/both", { output: "image", category: "image_edit, text2image", schema });
+    const sheet = route("maker/sheet", { output: "image", category: "image_edit, text2image", schema });
     const view = generate(input([edit, both, sheet, STILL], { curation: { views: { imageEdit: { exclude: { "maker/sheet": PROVENANCE } } } } }));
     expect(view.get("endpoints.gen.ts")).toContain('HIGGSFIELD_IMAGE_EDIT_ENDPOINTS = [\n  "maker/both",\n  "maker/edit",\n] as const;');
     expect(view.get("models-image.gen.ts")).toContain(
@@ -817,6 +836,203 @@ describe("codegen-higgsfield on a mini fixture", () => {
 });
 
 // ---------------------------------------------------------------------------
+// The unified rows, on fixtures
+// ---------------------------------------------------------------------------
+
+describe("codegen-higgsfield unified rows", () => {
+  const URI = { type: "string", format: "uri" };
+  const URIS = { type: "array", items: URI };
+  const PROMPT = { type: "string" };
+
+  /** One route's row in a pack's params file, as the block of text it is emitted as. */
+  function rowOf(out: Map<string, string>, pack: string, id: string): string {
+    const text = out.get(`${pack}-params.gen.ts`) ?? "";
+    const name = new RegExp(`^  ${JSON.stringify(id).replace(/[/.]/g, "\\$&")}: (ROW_[0-9a-f]{6}),$`, "m").exec(text)?.[1];
+    if (name === undefined) return "";
+    const start = text.indexOf(`const ${name} = {`);
+    return inlined(text, text.slice(start, text.indexOf("\n} as const;", start)));
+  }
+  function still(id: string, props: Json, extra: Json = {}, category = "text2image"): Json {
+    return route(id, { output: "image", category, schema: properties({ prompt: PROMPT, ...props }, extra) });
+  }
+  function clip(id: string, props: Json, extra: Json = {}): Json {
+    return route(id, { schema: properties(props, extra) });
+  }
+  const image = (...routes: Json[]): Map<string, string> => generate(input([...routes, CLIP]));
+  const video = (...routes: Json[]): Map<string, string> => generate(input([...routes, STILL]));
+
+  test("the packs' vocabularies are the kernel's own key lists", () => {
+    expect([...PACK_VOCABULARY.image].sort()).toEqual([...CANONICAL_KEY_LISTS.image].sort());
+    expect([...PACK_VOCABULARY["image-edit"]].sort()).toEqual([...CANONICAL_KEY_LISTS.imageEdit].sort());
+    expect([...PACK_VOCABULARY.video].sort()).toEqual([...CANONICAL_KEY_LISTS.video].sort());
+  });
+
+  test("a row file names its row type, its one wire file, and exports the table and the id list", () => {
+    const text = image(still("maker/styled", { style: { type: "string" } })).get("image-params.gen.ts") ?? "";
+    expect(text).toContain('import type { HiggsfieldImageParamRow } from "../param-types";');
+    expect(text).toContain('import type {\n  MakerStyledInput,\n} from "./image-wire.gen";');
+    expect(text).toContain("} as const satisfies Record<string, HiggsfieldImageParamRow>;");
+    expect(text).toContain('export const HIGGSFIELD_IMAGE_UNIFIED_MODELS = [\n  "maker/styled",\n] as const;');
+    expect(text).toContain('style: EXTRA as MakerStyledInput["style"],');
+  });
+
+  test("`keys` are the parameters a canonical word writes, in the route's order; the rest are extras", () => {
+    const row = rowOf(image(still("maker/a", { seed: { type: "integer", minimum: 1, maximum: 9 }, negative_prompt: PROMPT, style: PROMPT })), "image", "maker/a");
+    expect(row).toContain('keys: ["negative_prompt", "prompt", "seed"],');
+    expect(row).toContain("bounds: { seed: { min: 1, max: 9 } },");
+    expect(row).toContain('style: EXTRA as MakerAInput["style"],');
+    expect(row).not.toContain("negative_prompt: EXTRA");
+  });
+
+  test("shapes: `auto` and `adaptive` name no geometry and are dropped; any other member must be a ratio", () => {
+    const shaped = (members: string[]): Json => still("maker/shaped", { aspect_ratio: { type: "string", enum: members } });
+    expect(rowOf(image(shaped(["auto", "16:9", "adaptive", "2.35:1"])), "image", "maker/shaped")).toContain('ratios: ["16:9", "2.35:1"],');
+    expect(() => image(shaped(["16:9", "widescreen"]))).toThrow(/maker\/shaped: `aspect_ratio` enum member "widescreen" reached neither/);
+    expect(() => image(still("maker/free", { aspect_ratio: { type: "string" } }))).toThrow(/maker\/free: `aspect_ratio` is not a closed vocabulary/);
+    // No `aspect_ratio` at all is an empty list, which types the word `never`.
+    expect(rowOf(image(still("maker/plain", {})), "image", "maker/plain")).toContain("ratios: [],");
+  });
+
+  test("image tiers: `<n>k` maps in the route's spelling; a pixel class or an odd scale is not a tier", () => {
+    const sized = (members: string[]): string =>
+      rowOf(image(still("maker/sized", { resolution: { type: "string", enum: members } })), "image", "maker/sized");
+    expect(sized(["1K", "1.5k", "2k", "8k"])).toContain('tiers: ["1k", "2k"],\n  tierWire: { "1k": "1K", "2k": "2k" },');
+    // Soul's shape: the route HAS a `resolution`, written by nothing canonical.
+    const soul = sized(["720p", "1080p"]);
+    expect(soul).toContain("tiers: [],");
+    expect(soul).not.toContain("tierWire");
+    expect(soul).toContain('keys: ["prompt", "resolution"],');
+    expect(soul).not.toContain("resolution: EXTRA");
+  });
+
+  test("a count is `batch_size` or `series_amount`: its list, its range, and whether it is required", () => {
+    const listed = rowOf(image(still("maker/n", { batch_size: { type: "integer", enum: [4, 1] } })), "image", "maker/n");
+    expect(listed).toContain('countWire: "batch_size",\n  counts: [1, 4],');
+    const series = rowOf(
+      image(still("maker/n", { series_amount: { type: "integer", minimum: 2, maximum: 10 } }, { required: ["prompt", "series_amount"] })),
+      "image",
+      "maker/n",
+    );
+    expect(series).toContain('countWire: "series_amount",\n  countRequired: true,');
+    expect(series).toContain("bounds: { n: { min: 2, max: 10 } },");
+    expect(() => image(still("maker/n", { batch_size: { type: "integer" }, series_amount: { type: "integer" } }))).toThrow(
+      /maker\/n: declares `batch_size` and `series_amount`, two spellings of the image count/,
+    );
+  });
+
+  test("a picture `output_format` maps onto the canonical encodings; any other member stops the run", () => {
+    const formatted = (members: string[]): Json => still("maker/f", { output_format: { type: "string", enum: members } });
+    expect(rowOf(image(formatted(["jpg", "png", "webp"])), "image", "maker/f")).toContain('formatWire: { jpeg: "jpg", png: "png", webp: "webp" },');
+    expect(() => image(formatted(["png", "tiff"]))).toThrow(/maker\/f: `output_format` member "tiff" is not a picture format/);
+  });
+
+  test("`unmodel/image` addresses a route with a prompt and no required source picture, and says why not otherwise", () => {
+    const out = image(
+      still("maker/optional", { image_urls: URIS }),
+      still("maker/needs", { image_urls: URIS }, { required: ["prompt", "image_urls"] }),
+      route("maker/sheet", { output: "image", schema: properties({ seed: { type: "integer" } }) }),
+    );
+    const text = prose(out.get("image-params.gen.ts"));
+    expect(out.get("image-params.gen.ts")).toContain('HIGGSFIELD_IMAGE_UNIFIED_MODELS = [\n  "maker/optional",\n] as const;');
+    expect(text).toContain("- `maker/needs`: it requires a source picture (`image_urls`), which `unmodel/image` has no word for;");
+    expect(text).toContain("- `maker/sheet`: it declares no `prompt`, the one word every `unmodel/image` request has.");
+    // The optional picture is that route's extra.
+    expect(rowOf(out, "image", "maker/optional")).toContain('image_urls: EXTRA as MakerOptionalInput["image_urls"],');
+  });
+
+  test("`unmodel/image-edit` is the view: where the picture lands, and `resolution` as an extra", () => {
+    const out = image(
+      still("maker/one", { image_url: URI, resolution: { type: "string", enum: ["720p"] }, negative_prompt: PROMPT }, {}, "image_edit"),
+      still("maker/many", { image_urls: URIS }, {}, "image_edit, text2image"),
+    );
+    const one = rowOf(out, "image-edit", "maker/one");
+    expect(one).toContain('keys: ["image_url", "prompt"],');
+    expect(one).toContain('imageWire: "image_url",');
+    expect(one).toContain('resolution: EXTRA as MakerOneInput["resolution"],');
+    expect(one).toContain('negative_prompt: EXTRA as MakerOneInput["negative_prompt"],');
+    expect(one).not.toContain("tiers");
+    expect(rowOf(out, "image-edit", "maker/many")).toContain('imageWire: "image_urls",');
+    expect(out.get("image-edit-params.gen.ts")).toContain('HIGGSFIELD_IMAGE_EDIT_UNIFIED_MODELS = [\n  "maker/many",\n  "maker/one",\n] as const;');
+    expect(out.get("image-edit-params.gen.ts")).not.toContain("Not addressed here");
+    expect(() => image(still("maker/none", {}, {}, "image_edit"))).toThrow(/maker\/none: is in the picture-editing view and declares neither/);
+    expect(() => image(still("maker/two", { image_url: URI, image_urls: URIS }, {}, "image_edit"))).toThrow(
+      /maker\/two: declares `image_url` and `image_urls`, two spellings of the picture to edit/,
+    );
+  });
+
+  test("video lengths: a list, a range, or no parameter at all", () => {
+    const timed = (duration: Json | undefined): string =>
+      rowOf(video(clip("maker/t", { prompt: PROMPT, ...(duration !== undefined && { duration }) })), "video", "maker/t");
+    expect(timed({ type: "integer", enum: [10, 5] })).toContain("durations: [5, 10],");
+    const ranged = timed({ type: "integer", minimum: 4, maximum: 30 });
+    expect(ranged).not.toContain("durations");
+    expect(ranged).toContain("bounds: { duration: { min: 4, max: 30 } },");
+    expect(timed(undefined)).toContain("durations: [],");
+  });
+
+  test("video tiers: exact spellings, in the route's capitals; `768P` and `2K` are not tiers", () => {
+    const sized = (members: string[] | undefined): string =>
+      rowOf(video(clip("maker/s", { prompt: PROMPT, ...(members !== undefined && { resolution: { type: "string", enum: members } }) })), "video", "maker/s");
+    expect(sized(["480P", "768P", "4K"])).toContain('resolutions: ["480p", "4k"],\n  resolutionWire: { "480p": "480P", "4k": "4K" },');
+    const none = sized(["2K"]);
+    expect(none).toContain("resolutions: [],");
+    expect(none).not.toContain("resolutionWire");
+    expect(none).toContain('keys: ["prompt", "resolution"],');
+    expect(sized(undefined)).toContain('keys: ["prompt"],');
+  });
+
+  test("picture roles are read off the route's own spellings; two spellings of one role stop the run", () => {
+    const framed = rowOf(
+      video(clip("maker/r", { prompt: PROMPT, first_frame_url: URI, last_image_url: URI, image_urls: URIS })),
+      "video",
+      "maker/r",
+    );
+    expect(framed).toContain('roles: ["first", "last", "reference"],');
+    expect(framed).toContain('roleWire: { first: "first_frame_url", last: "last_image_url", reference: "image_urls" },');
+    expect(rowOf(video(clip("maker/r", { prompt: PROMPT })), "video", "maker/r")).toContain("roles: [],");
+    expect(() => video(clip("maker/r", { end_image_url: URI, last_frame_url: URI }))).toThrow(
+      /maker\/r: declares `end_image_url` and `last_frame_url`, two spellings of the `last` picture/,
+    );
+  });
+
+  test("the clip is `video_url` where the route has one, and the list is then its extra", () => {
+    const both = rowOf(video(clip("maker/v", { prompt: PROMPT, video_url: URI, video_urls: URIS })), "video", "maker/v");
+    expect(both).toContain('videoWire: "video_url",');
+    expect(both).toContain('video_urls: EXTRA as MakerVInput["video_urls"],');
+    const list = rowOf(video(clip("maker/v", { prompt: PROMPT, video_urls: URIS })), "video", "maker/v");
+    expect(list).toContain('videoWire: "video_urls",');
+    expect(list).toContain("extras: {},");
+  });
+
+  test("`unmodel/video` leaves out a route with no canonical word, and stops on a count", () => {
+    const out = video(clip("maker/final", { draft_id: { type: "string", format: "uuid" } }), CLIP);
+    expect(out.get("video-params.gen.ts")).toContain('HIGGSFIELD_VIDEO_UNIFIED_MODELS = [\n  "maker/clip",\n] as const;');
+    expect(prose(out.get("video-params.gen.ts"))).toContain("- `maker/final`: it declares no `prompt`, no picture and no clip, so no canonical word says what to make.");
+    expect(() => video(clip("maker/many", { prompt: PROMPT, batch_size: { type: "integer" } }))).toThrow(
+      /maker\/many: a video route declares `batch_size`/,
+    );
+  });
+
+  test("routes share a row only when their extras have the same TYPES", () => {
+    const moded = (id: string, members: string[]): Json => clip(id, { prompt: PROMPT, mode: { type: "string", enum: members } });
+    const same = video(moded("maker/a", ["std", "pro"]), moded("maker/b", ["std", "pro"]));
+    expect(prose(same.get("video-params.gen.ts"))).toContain("Shared by 2 routes with an identical surface: maker/a, maker/b.");
+    const different = video(moded("maker/a", ["std", "pro"]), moded("maker/b", ["std", "4k"]));
+    expect(rowOf(different, "video", "maker/a")).toContain('mode: EXTRA as MakerAInput["mode"],');
+    expect(rowOf(different, "video", "maker/b")).toContain('mode: EXTRA as MakerBInput["mode"],');
+  });
+
+  test("an extra that is spelled like a canonical word stops the run", () => {
+    expect(() => image(still("maker/dial", { image_url: URI, strength: { type: "number" } }, {}, "image_edit"))).toThrow(
+      /maker\/dial: declares `strength`, which is also a canonical word of unmodel\/image-edit/,
+    );
+    expect(() => video(clip("maker/dial", { prompt: PROMPT, model: { type: "string" } }))).toThrow(
+      /maker\/dial: declares `model`, which is also a canonical word of unmodel\/video/,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Pricing rows, on fixtures
 // ---------------------------------------------------------------------------
 
@@ -841,7 +1057,10 @@ describe("codegen-higgsfield pricing rows", () => {
     // rate there needs the owner's ruling. Rows get one here unless a test states `decided` itself.
     if (options.pricing === undefined && !("unpriced" in row) && !("decided" in row)) row = { ...row, decided: "2026-11-24" };
     const output = options.output ?? "image";
-    return generate(input([route("maker/sized", { schema: SIZED, output, sentence: SENTENCE, ...options })], { pricing: { "maker/sized": row } }));
+    // A count is a picture route's parameter: a video route that declared one would stop the run.
+    const { batch_size: _count, ...withoutCount } = SIZED["properties"] as Json;
+    const schema = output === "video" ? properties(withoutCount) : SIZED;
+    return generate(input([route("maker/sized", { schema, output, sentence: SENTENCE, ...options })], { pricing: { "maker/sized": row } }));
   }
   const models = (out: Map<string, string>): string => block(out.get("models-image.gen.ts") ?? out.get("models-video.gen.ts"), "maker/sized");
   const rate = (out: Map<string, string>): string => (out.get("pricing.gen.ts") ?? "").split("\n").find((line) => line.startsWith('  "maker/sized": ')) ?? "";
@@ -1037,6 +1256,12 @@ describe("codegen-higgsfield on the committed snapshot", () => {
     file("pricing.gen.ts")
       .split("\n")
       .find((line) => line.startsWith(`  ${JSON.stringify(id)}: `)) ?? "";
+  /** The members of a route's `aspect_ratio` vocabulary, read off its shape row. */
+  function shapeRatios(id: string): string {
+    const name = /aspect_ratio: \{ t: "string", enum: (E_[0-9a-f]{6}) \}/.exec(shape(id))?.[1];
+    const narrow = file(images.includes(id) ? "image-narrow.gen.ts" : "video-narrow.gen.ts");
+    return narrow.split("\n").find((line) => line.startsWith(`const ${name} = `)) ?? "";
+  }
 
   test("the manifest lists exactly the committed route files, with the hash of each one's bytes", () => {
     const manifest = readJson("manifest.json") as { routes: Record<string, { file: string; sha256: string }> };
@@ -1272,6 +1497,114 @@ describe("codegen-higgsfield on the committed snapshot", () => {
   test("Soul Standard: `style_id: null` is the console document's own example, so the row admits it with a warning", () => {
     expect(shape("higgsfield-ai/soul/standard")).toContain('style_id: { t: "string", nul: true, nulWarn: true, fmt: "uuid" }');
     expect(file("image-wire.gen.ts")).toMatch(/export interface HiggsfieldAiSoulStandardInput \{[^}]*\n  style_id\?: string \| null;/);
+  });
+
+  /** The ids a pack's row file addresses. */
+  const packIds = (pack: string): string[] => idList(file(`${pack}-params.gen.ts`), `HIGGSFIELD_${pack.replace("-", "_").toUpperCase()}_UNIFIED_MODELS`);
+  /** One route's row in a pack's row file. */
+  function unified(pack: string, id: string): string {
+    const text = file(`${pack}-params.gen.ts`);
+    const name = text.split("\n").find((line) => line.startsWith(`  ${JSON.stringify(id)}: ROW_`))?.slice(-11, -1);
+    const start = text.indexOf(`const ${name} = {`);
+    return name === undefined ? "" : inlined(text, text.slice(start, text.indexOf("\n} as const;", start)));
+  }
+
+  test("`unmodel/image` addresses 18 of the 24 image routes: the five edit-only ones and AI Influencer are left out", () => {
+    const ids = packIds("image");
+    expect(ids.length).toBe(18);
+    expect(images.filter((id) => !ids.includes(id))).toEqual([
+      "alibaba/qwen-image-3/edit",
+      "bytedance/seedream/v5.0/pro/edit",
+      "higgsfield-ai/soul/v2/image-to-image",
+      "higgsfield/ai-influencer",
+      "kling-image/v4.0/edit",
+      "kling-image/v4.0/edit/series",
+    ]);
+    // Marketing Studio, Grok Image and Ideogram take a picture optionally, so both packs address them.
+    for (const id of ["marketing-studio/image", "xai/grok-imagine-image-2.0", "ideogram/v4.0"]) {
+      expect(ids).toContain(id);
+      expect(edits).toContain(id);
+    }
+  });
+
+  test("`unmodel/image-edit` addresses exactly the view, and `unmodel/video` every video route but finalize-draft", () => {
+    expect(packIds("image-edit")).toEqual(edits);
+    expect(videos.filter((id) => !packIds("video").includes(id))).toEqual(["bytedance/seedance-2.5/finalize-draft"]);
+  });
+
+  test("Soul: 1 or 4 images in `batch_size`, and a `resolution` no tier names", () => {
+    const row = unified("image", "higgsfield-ai/soul/standard");
+    expect(row).toContain('countWire: "batch_size",\n  counts: [1, 4],');
+    expect(row).toContain("tiers: [],");
+    expect(row).toContain('keys: ["aspect_ratio", "batch_size", "prompt", "resolution", "seed"],');
+    // On the editing surface there is no tier word, so Soul 2's own is its extra.
+    expect(unified("image-edit", "higgsfield-ai/soul/v2/image-to-image")).toContain(
+      'resolution: EXTRA as HiggsfieldAiSoulV2ImageToImageInput["resolution"],',
+    );
+  });
+
+  test("Kling Image series requires its count; Seedream's `1.5k` and Kling's `8k` are not tiers", () => {
+    const series = unified("image", "kling-image/v4.0/text-to-image/series");
+    expect(series).toContain('countWire: "series_amount",\n  countRequired: true,');
+    expect(series).toContain('tiers: ["2k", "4k"],');
+    expect(unified("image", "bytedance/seedream/v5.0/pro/text-to-image")).toContain('tiers: ["1k", "2k"],');
+  });
+
+  test("Recraft is the one family with a picture `output_format`; Seedance 2.5's is a container and stays an extra", () => {
+    const formatted = packIds("image").filter((id) => unified("image", id).includes("formatWire"));
+    expect(formatted).toEqual([
+      "recraft/v4.1/pro/text-to-image",
+      "recraft/v4.1/text-to-image",
+      "recraft/v4.1/utility/pro/text-to-image",
+      "recraft/v4.1/utility/text-to-image",
+    ]);
+    expect(unified("video", "bytedance/seedance-2.5/text-to-video")).toContain(
+      'output_format: EXTRA as BytedanceSeedance25TextToVideoInput["output_format"],',
+    );
+  });
+
+  test("the picture to edit is one URL at Soul 2 and Ideogram, a list everywhere else", () => {
+    const single = edits.filter((id) => unified("image-edit", id).includes('imageWire: "image_url"'));
+    expect(single).toEqual(["higgsfield-ai/soul/v2/image-to-image", "ideogram/v4.0"]);
+    for (const id of edits) expect(unified("image-edit", id)).toMatch(/imageWire: "image_urls?",/);
+  });
+
+  test("the three spellings of a closing frame, and the two of an opening one", () => {
+    expect(unified("video", "alibaba/wan-3.0/image-to-video")).toContain('roleWire: { first: "image_url", last: "end_image_url" },');
+    expect(unified("video", "kling-video/v3.0/pro/image-to-video")).toContain('roleWire: { first: "image_url", last: "last_image_url" },');
+    expect(unified("video", "kling-video/omni/first-last-frame")).toContain('roleWire: { first: "first_frame_url", last: "last_frame_url" },');
+  });
+
+  test("Genjutsu and motion control take the clip in `video_url`; Cinema Studio takes it in the list", () => {
+    const genjutsu = unified("video", "higgsfield/genjutsu/motion-transfer/v1.0");
+    expect(genjutsu).toContain('roles: ["reference"],');
+    expect(genjutsu).toContain('videoWire: "video_url",');
+    expect(unified("video", "kling-video/v3/motion-control/pro")).toContain('roles: ["first"],\n  roleWire: { first: "image_url" },\n  videoWire: "video_url",');
+    expect(unified("video", "higgsfield/cinema-studio/4.0")).toContain('videoWire: "video_urls",');
+    // Seedance 2.5 video-edit has both: the list is its extra.
+    const edit = unified("video", "bytedance/seedance-2.5/video-edit");
+    expect(edit).toContain('videoWire: "video_url",');
+    expect(edit).toContain('video_urls: EXTRA as BytedanceSeedance25VideoEditInput["video_urls"],');
+  });
+
+  test("MiniMax H3: `480P` is a tier in its own capitals, `768P` and `2K` are not; 18 routes list `adaptive`", () => {
+    expect(unified("video", "minimax/h3-lite/text-to-video")).toContain('resolutions: ["480p"],\n  resolutionWire: { "480p": "480P" },');
+    const h3 = unified("video", "minimax/h3/text-to-video");
+    expect(h3).toContain("resolutions: [],");
+    expect(h3).toContain('ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],');
+    const adaptive = videos.filter((id) => /aspect_ratio: \{ t: "string", enum: (E_[0-9a-f]{6}) \}/.test(shape(id)) && shapeRatios(id).includes("adaptive"));
+    expect(adaptive.length).toBe(18);
+    for (const id of adaptive) expect(unified("video", id)).not.toContain("adaptive");
+  });
+
+  test("a duration is a list on 15 video routes, a range on 59, and absent on 12", () => {
+    const rows = packIds("video").map((id) => unified("video", id));
+    expect(rows.filter((row) => /durations: \[\d/.test(row)).length).toBe(15);
+    const ranged = rows.filter((row) => !row.includes("durations"));
+    expect(ranged.length).toBe(59);
+    // Every range states both ends, so a picker can draw it.
+    for (const row of ranged) expect(row).toMatch(/bounds: \{ duration: \{ min: \d+, max: \d+ \}/);
+    expect(rows.filter((row) => row.includes("durations: [],")).length).toBe(12);
   });
 
   test("a rate's defaults are the ones every source agrees on", () => {

@@ -16,7 +16,7 @@ import { image as ideogramAdapter } from "../../src/providers/ideogram/unified-i
 import { image as openaiAdapter } from "../../src/providers/openai/unified";
 
 describe("the pack", () => {
-  test("registers exactly the eighteen image providers, sorted", () => {
+  test("registers exactly the nineteen image providers, sorted", () => {
     expect([...image.providers]).toEqual([
       "black-forest-labs",
       "bria",
@@ -27,6 +27,7 @@ describe("the pack", () => {
       // bodies, prices and keys.
       "fal",
       "google",
+      "higgsfield",
       "ideogram",
       "kling",
       "krea",
@@ -652,6 +653,205 @@ describe("revana: a picture is sized by shape and by tier", () => {
     // for one (`test/fixtures/revana/quote-oracle.json`, `res-ok`), twice.
     const safe = image.safe(request);
     expect(safe.ok && safe.estimate?.costUSD).toBeCloseTo(0.16, 6);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// higgsfield — a route for a ref, and every refusal read off that route's row
+// ---------------------------------------------------------------------------
+
+describe("higgsfield: the route's own row decides every word", () => {
+  const body = (params: Record<string, unknown>): unknown =>
+    JSON.parse(JSON.stringify(image(params as never)));
+  const refused = (params: Record<string, unknown>): { code: string; path: unknown[]; message: string } => {
+    const result = image.safe(params as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected a refusal");
+    expect(result.errors.length).toBe(1);
+    return result.errors[0]!;
+  };
+
+  test("Soul: a count is `batch_size`, and the route id is the URL path", () => {
+    const params = image({
+      model: "higgsfield/higgsfield-ai/soul/standard",
+      prompt: "a red fox in snow",
+      aspectRatio: "16:9",
+      n: 4,
+      seed: 7,
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      prompt: "a red fox in snow",
+      aspect_ratio: "16:9",
+      batch_size: 4,
+      seed: 7,
+    });
+    expect(params.request.url).toBe("https://api.higgsfield.ai/higgsfield-ai/soul/standard");
+    expect(params.toSdk("higgsfield")).toEqual({ input: JSON.parse(JSON.stringify(params)) });
+  });
+
+  test("Soul renders 1 or 4: a 2 is the route's own finding, at `n`", () => {
+    const issue = refused({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "a fox", n: 2 });
+    expect(issue).toMatchObject({ code: "invalid_enum_value", path: ["n"] });
+    expect(issue.message).toBe(
+      "`batch_size` must be 1 or 4 on higgsfield-ai/soul/standard; got 2. (compiled from `batch_size`)",
+    );
+  });
+
+  test("the Kling Image series route requires a count, and says so at `n`", () => {
+    const issue = refused({ model: "higgsfield/kling-image/v4.0/text-to-image/series", prompt: "a fox" });
+    expect(issue).toMatchObject({ code: "invalid_shape", path: ["n"] });
+    expect(issue.message).toContain("`series_amount` is required by kling-image/v4.0/text-to-image/series");
+    expect(body({ model: "higgsfield/kling-image/v4.0/text-to-image/series", prompt: "a fox", n: 3 })).toEqual({
+      prompt: "a fox",
+      series_amount: 3,
+    });
+  });
+
+  test("a count at a route that renders one image is refused, naming the routes that take one", () => {
+    const issue = refused({ model: "higgsfield/ideogram/v4.0", prompt: "a fox", n: 2 });
+    expect(issue).toMatchObject({ code: "unsupported_param", path: ["n"] });
+    expect(issue.message).toContain("`ideogram/v4.0` renders one image per request");
+    expect(issue.message).toContain("5 of the 18 Higgsfield image routes do take one");
+  });
+
+  test("a canonical tier is sent in the route's spelling", () => {
+    expect(body({ model: "higgsfield/marketing-studio/image", prompt: "a fox", resolution: "2k" })).toEqual({
+      prompt: "a fox",
+      resolution: "2k",
+    });
+  });
+
+  test("Soul sizes in 720p / 1080p, which is not a tier: refused, never mapped onto one", () => {
+    const issue = refused({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "a fox", resolution: "1k" });
+    expect(issue).toMatchObject({ code: "invalid_enum_value", path: ["resolution"] });
+    expect(issue.message).toContain("none of its values is a canonical tier");
+    expect(issue.message).toContain("`providerOptions.higgsfield.resolution`");
+    // …and the route's own word reaches it there, checked by the route's own
+    // vocabulary and priced at the rate that resolution selects.
+    const result = image.safe({
+      model: "higgsfield/higgsfield-ai/soul/standard",
+      prompt: "a fox",
+      providerOptions: { higgsfield: { resolution: "1080p" } },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).toEqual({ prompt: "a fox", resolution: "1080p" });
+    expect(result.estimate.costUSD).toBe(0.1875);
+  });
+
+  test("a tier the route does not list is refused naming the ones it does", () => {
+    const issue = refused({ model: "higgsfield/kling-image/v4.0/text-to-image", prompt: "a fox", resolution: "1k" });
+    expect(issue).toMatchObject({ code: "invalid_enum_value", path: ["resolution"] });
+    expect(issue.message).toContain('`resolution` must be "2k" or "4k" on `kling-image/v4.0/text-to-image`');
+  });
+
+  test("a word the route has no parameter for is refused, counting the routes that have one", () => {
+    const seed = refused({ model: "higgsfield/marketing-studio/image", prompt: "a fox", seed: 7 });
+    expect(seed).toMatchObject({ code: "unsupported_param", path: ["seed"] });
+    expect(seed.message).toContain("`marketing-studio/image` declares no `seed` parameter");
+    expect(seed.message).toContain("5 of the 18 Higgsfield image routes do take it");
+
+    const negative = refused({ model: "higgsfield/ideogram/v4.0", prompt: "a fox", negativePrompt: "blur" });
+    expect(negative).toMatchObject({ code: "unsupported_param", path: ["negativePrompt"] });
+    expect(negative.message).toContain(
+      "1 of the 18 Higgsfield image routes does take it: `alibaba/qwen-image-3/text-to-image`",
+    );
+  });
+
+  test("`outputFormat` maps where the route has one, in the route's spelling", () => {
+    expect(body({ model: "higgsfield/recraft/v4.1/text-to-image", prompt: "a fox", outputFormat: "jpeg" })).toEqual({
+      prompt: "a fox",
+      output_format: "jpg",
+    });
+    const issue = refused({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "a fox", outputFormat: "png" });
+    expect(issue).toMatchObject({ code: "unsupported_param", path: ["outputFormat"] });
+    expect(issue.message).toContain("4 of the 18 Higgsfield image routes do take it");
+  });
+
+  test("pixels are sent as the listed shape they describe, with the warning that always carries", () => {
+    const result = image.safe({
+      model: "higgsfield/z-image/turbo",
+      prompt: "a fox",
+      dimensions: { width: 1920, height: 1080 },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).toEqual({ prompt: "a fox", aspect_ratio: "16:9" });
+    expect(result.params.warnings.map((warning) => [warning.code, warning.path])).toEqual([
+      ["approximated_param", ["dimensions"]],
+    ]);
+  });
+
+  test("a shape the route does not list is refused, never snapped", () => {
+    const issue = refused({ model: "higgsfield/z-image/turbo", prompt: "a fox", aspectRatio: "5:4" });
+    expect(issue).toMatchObject({ code: "invalid_enum_value", path: ["aspectRatio"] });
+  });
+
+  test('`outputDelivery: "url"` is what every route does; "base64" has no parameter', () => {
+    expect(body({ model: "higgsfield/z-image/turbo", prompt: "a fox", outputDelivery: "url" })).toEqual({
+      prompt: "a fox",
+    });
+    const issue = refused({ model: "higgsfield/z-image/turbo", prompt: "a fox", outputDelivery: "base64" });
+    expect(issue).toMatchObject({ code: "unsupported_param", path: ["outputDelivery"] });
+    expect(issue.message).toContain("`images[].url`");
+  });
+
+  test("an extra is the route's own parameter, and a sibling route's is refused by name", () => {
+    expect(
+      body({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "a fox", style_strength: 0.5 }),
+    ).toEqual({ prompt: "a fox", style_strength: 0.5 });
+    const issue = refused({ model: "higgsfield/z-image/turbo", prompt: "a fox", style_strength: 0.5 });
+    expect(issue).toMatchObject({ code: "unsupported_param", path: ["style_strength"] });
+    expect(issue.message).toContain("higgsfield-ai/soul/standard");
+  });
+
+  test("a route that requires a source picture is not an `unmodel/image` ref, and is not refused either", () => {
+    // `unknown_model` is a warning: a route newer than the roster must stay
+    // callable. The words Higgsfield spells one way everywhere are sent on, and
+    // `higgsfield.image` reports what this route's own schema requires.
+    const result = image.safe({ model: "higgsfield/alibaba/qwen-image-3/edit", prompt: "a fox", seed: 7 } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.warnings.map((issue) => issue.code)).toContain("unknown_model");
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([["invalid_shape", ["image_urls"]]]);
+  });
+
+  test("a word with more than one spelling is not guessed at a route with no row", () => {
+    const model = "higgsfield/some/newer-route";
+    const issue = refused({ model, prompt: "a fox", n: 2 });
+    expect(issue).toMatchObject({ code: "unsupported_param", path: ["n"] });
+    expect(issue.message).toContain("`batch_size` or `series_amount`");
+    expect(issue.message).toContain("`providerOptions.higgsfield`");
+    // A size and an encoding have one parameter and several VALUE spellings.
+    expect(refused({ model, prompt: "a fox", resolution: "1k" })).toMatchObject({ code: "unsupported_param", path: ["resolution"] });
+    expect(refused({ model, prompt: "a fox", outputFormat: "jpeg" })).toMatchObject({ code: "unsupported_param", path: ["outputFormat"] });
+    // What Higgsfield spells one way everywhere is sent on, with the kernel's warning.
+    const result = image.safe({ model, prompt: "a fox", seed: 7, negativePrompt: "blur", aspectRatio: "16:9" } as never);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).toEqual({
+      prompt: "a fox",
+      negative_prompt: "blur",
+      seed: 7,
+      aspect_ratio: "16:9",
+    });
+    expect(result.warnings.map((warning) => warning.code)).toContain("unknown_model");
+  });
+
+  test("`hf_webhook` rides `providerOptions` into the URL, and into the SDK's `webhook`", () => {
+    const params = image({
+      model: "higgsfield/z-image/turbo",
+      prompt: "a fox",
+      providerOptions: { higgsfield: { hf_webhook: "https://example.com/hook" } },
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({ prompt: "a fox" });
+    expect(params.request.url).toBe(
+      "https://api.higgsfield.ai/z-image/turbo?hf_webhook=https%3A%2F%2Fexample.com%2Fhook",
+    );
+    expect(params.toSdk("higgsfield")).toEqual({
+      input: { prompt: "a fox" },
+      webhook: { url: "https://example.com/hook" },
+    });
   });
 });
 

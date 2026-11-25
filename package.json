@@ -459,9 +459,17 @@
 			"types": "./dist/providers/higgsfield/index.d.ts",
 			"default": "./dist/providers/higgsfield/index.js"
 		},
+		"./higgsfield/unified": {
+			"types": "./dist/providers/higgsfield/unified.d.ts",
+			"default": "./dist/providers/higgsfield/unified.js"
+		},
 		"./higgsfield/types": {
 			"types": "./dist/providers/higgsfield/types.d.ts",
 			"default": "./dist/providers/higgsfield/types.js"
+		},
+		"./higgsfield/values": {
+			"types": "./dist/providers/higgsfield/values.d.ts",
+			"default": "./dist/providers/higgsfield/values.js"
 		},
 		"./huggingface": {
 			"types": "./dist/providers/huggingface/index.d.ts",

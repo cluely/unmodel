@@ -1,0 +1,7 @@
+{
+  "ref": "higgsfield/bytedance/seedance-2.5/text-to-video",
+  "params": {
+    "prompt": "a drone shot over a fjord at sunrise"
+  },
+  "url": "https://api.higgsfield.ai/bytedance/seedance-2.5/text-to-video"
+}

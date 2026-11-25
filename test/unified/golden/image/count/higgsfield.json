@@ -1,0 +1,9 @@
+{
+  "ref": "higgsfield/higgsfield/ads-studio/v1.0",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "batch_size": 2,
+    "aspect_ratio": "1:1"
+  },
+  "url": "https://api.higgsfield.ai/higgsfield/ads-studio/v1.0"
+}

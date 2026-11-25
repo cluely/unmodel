@@ -1,0 +1,20 @@
+{
+  "ref": "higgsfield/higgsfield-ai/soul/v2/image-to-image",
+  "image": {
+    "url": "https://example.com/street.png"
+  },
+  "params": {
+    "prompt": "make it winter",
+    "image_url": "https://example.com/street.png"
+  },
+  "url": "https://api.higgsfield.ai/higgsfield-ai/soul/v2/image-to-image",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "issues": [
+    {
+      "code": "unconfirmed_cost",
+      "path": []
+    }
+  ]
+}

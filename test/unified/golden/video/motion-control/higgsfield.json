@@ -1,0 +1,9 @@
+{
+  "ref": "higgsfield/kling-video/v3/motion-control/pro",
+  "params": {
+    "prompt": "the character in the picture performs the clip's motion",
+    "video_url": "https://example.com/clip.mp4",
+    "image_url": "https://example.com/frame.png"
+  },
+  "url": "https://api.higgsfield.ai/kling-video/v3/motion-control/pro"
+}

@@ -26,6 +26,11 @@ import type { FishAudioTtsResult } from "../../src/providers/fish-audio/unified"
 import type { GladiaSttResult } from "../../src/providers/gladia/unified";
 import type { GoogleImageResult } from "../../src/providers/google/unified-image";
 import type { GoogleVideoResult } from "../../src/providers/google/unified-video";
+import type {
+  HiggsfieldImageEditResult,
+  HiggsfieldImageResult,
+  HiggsfieldVideoResult,
+} from "../../src/providers/higgsfield/unified";
 import type { HumeTtsResult } from "../../src/providers/hume/unified";
 import type { IdeogramImageEditResult } from "../../src/providers/ideogram/unified-image-edit";
 import type {
@@ -86,6 +91,7 @@ expectNotAny<BflImageFlux1Result>();
 expectNotAny<BriaImageResult>();
 expectNotAny<BytedanceImageResult>();
 expectNotAny<GoogleImageResult>();
+expectNotAny<HiggsfieldImageResult>();
 expectNotAny<IdeogramImageResult>();
 expectNotAny<IdeogramImageV4Result>();
 expectNotAny<IdeogramGenerateResult>();
@@ -102,6 +108,7 @@ expectNotAny<ViduImageResult>();
 
 // Image edit.
 expectNotAny<BflImageEditResult>();
+expectNotAny<HiggsfieldImageEditResult>();
 expectNotAny<IdeogramImageEditResult>();
 expectNotAny<OpenaiImageEditResult>();
 expectNotAny<PhotoroomImageEditResult>();
@@ -111,6 +118,7 @@ expectNotAny<StabilityImageEditResult>();
 // Video.
 expectNotAny<BytedanceVideoResult>();
 expectNotAny<GoogleVideoResult>();
+expectNotAny<HiggsfieldVideoResult>();
 expectNotAny<KlingVideoResult>();
 expectNotAny<LightricksVideoResult>();
 expectNotAny<LumaVideoResult>();

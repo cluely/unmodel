@@ -48,6 +48,7 @@ import type {
 import { imageEdit } from "../../src/unified/image-edit";
 import { imageEdit as blackForestLabs } from "../../src/providers/black-forest-labs/unified-image-edit";
 import { imageEdit as fal } from "../../src/providers/fal/unified-image-edit";
+import { imageEdit as higgsfield } from "../../src/providers/higgsfield/unified-image-edit";
 import { imageEdit as ideogram } from "../../src/providers/ideogram/unified-image-edit";
 import { imageEdit as openai } from "../../src/providers/openai/unified-image-edit";
 import { imageEdit as photoroom } from "../../src/providers/photoroom/unified";
@@ -279,6 +280,27 @@ const TABLE: Readonly<Record<string, Capability>> = {
     outputFormat: "native",
     aspectRatio: "declared",
     dimensions: "declared",
+  },
+  /**
+   * A route for a ref, flat body, URL-only source. Qwen Image 3's edit route
+   * takes the picture as a LIST (`image_urls`), sizes by a closed shape list,
+   * and has a `seed`; it renders one image and has no encoding parameter, so
+   * `n` and `outputFormat` are refused by its row. `resolution` is its extra:
+   * the edit vocabulary has no tier word, and the route's own is `1k | 2k`.
+   */
+  higgsfield: {
+    ref: "higgsfield/alibaba/qwen-image-3/edit",
+    adapter: higgsfield,
+    size: { class: "ratio-enum", at: "aspect_ratio" },
+    sizeString: null,
+    extra: { resolution: "2k" },
+    strength: "declared",
+    n: "refused",
+    seed: "native",
+    outputFormat: "refused",
+    aspectRatio: "native",
+    dimensions: "derived",
+    warns: ["dimensions"],
   },
 };
 

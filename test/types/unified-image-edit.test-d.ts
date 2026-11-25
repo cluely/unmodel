@@ -36,6 +36,7 @@ import {
   type PhotoroomImageEditResult,
 } from "../../src/providers/photoroom/unified";
 import { imageEdit as recraftImageEdit } from "../../src/providers/recraft/unified";
+import { imageEdit as higgsfieldImageEdit } from "../../src/providers/higgsfield/unified-image-edit";
 import { imageEdit as revanaImageEdit } from "../../src/providers/revana/unified-image-edit";
 import type { UnifiedRef } from "../../src/core/unified/types";
 import {
@@ -411,6 +412,52 @@ function revanaNarrowingTests(): void {
 }
 
 // ---------------------------------------------------------------------------
+// higgsfield — the picture-editing view: URL-only, one row per route
+// ---------------------------------------------------------------------------
+
+function higgsfieldNarrowingTests(): void {
+  const base = { operation: "edit", prompt: "make it night" } as const;
+  const url = "https://example.com/street.png";
+
+  imageEdit({ ...base, model: "higgsfield/alibaba/qwen-image-3/edit", image: { url }, aspectRatio: "7:9" });
+  // @ts-expect-error — no Higgsfield route takes bytes: a Blob has no wire field.
+  imageEdit({ ...base, model: "higgsfield/alibaba/qwen-image-3/edit", image: { file: new Blob([]) } });
+  // @ts-expect-error — nor do inline bytes.
+  imageEdit({ ...base, model: "higgsfield/alibaba/qwen-image-3/edit", image: { data: "AAAA" } });
+  // @ts-expect-error — 5:4 is not one of Qwen Image 3's shapes.
+  imageEdit({ ...base, model: "higgsfield/alibaba/qwen-image-3/edit", image: { url }, aspectRatio: "5:4" });
+  // @ts-expect-error — no Higgsfield route has a `size` spelling.
+  imageEdit({ ...base, model: "higgsfield/alibaba/qwen-image-3/edit", image: { url }, size: "1024x1024" });
+
+  // Every route in the view edits: no row declares `operations`.
+  // @ts-expect-error — no Higgsfield route removes a background.
+  imageEdit({ operation: "removeBackground", model: "higgsfield/alibaba/qwen-image-3/edit", image: { url } });
+
+  // The route's own `resolution` is an extra here, in the route's own words.
+  imageEdit({ ...base, model: "higgsfield/higgsfield-ai/soul/v2/image-to-image", image: { url }, resolution: "1080p" });
+  // @ts-expect-error — Soul 2 sizes in 720p and 1080p.
+  imageEdit({ ...base, model: "higgsfield/higgsfield-ai/soul/v2/image-to-image", image: { url }, resolution: "2k" });
+  imageEdit({ ...base, model: "higgsfield/kling-image/v4.0/edit", image: { url }, resolution: "8k" });
+  // …and so is Ideogram 4.0's own dial, which is not the canonical `strength`.
+  imageEdit({ ...base, model: "higgsfield/ideogram/v4.0", image: { url }, image_weight: 40 });
+  // @ts-expect-error — `image_weight` is Ideogram's; Qwen's row has no such parameter.
+  imageEdit({ ...base, model: "higgsfield/alibaba/qwen-image-3/edit", image: { url }, image_weight: 40 });
+
+  // A route outside the view is `unmodel/image`'s ref, or no pack's.
+  // @ts-expect-error — Z-Image Turbo takes no picture.
+  expectAssignable<UnifiedRef<typeof higgsfieldImageEdit>>("higgsfield/z-image/turbo");
+  // @ts-expect-error — AI Influencer's picture is an identity photo, not a picture being edited.
+  expectAssignable<UnifiedRef<typeof higgsfieldImageEdit>>("higgsfield/higgsfield/ai-influencer");
+  expectAssignable<UnifiedRef<typeof higgsfieldImageEdit>>("higgsfield/marketing-studio/image");
+
+  const result = imageEdit({ ...base, model: "higgsfield/alibaba/qwen-image-3/edit", image: { url } });
+  expectAssignable<string>(result.prompt);
+  expectAssignable<string[] | undefined>(result.image_urls);
+  expectTrue<IsNever<KeyIn<typeof result, "endpoint">>>();
+  result.toSdk("higgsfield");
+}
+
+// ---------------------------------------------------------------------------
 // photoroom — one mode of a flat multipart form
 // ---------------------------------------------------------------------------
 
@@ -665,6 +712,7 @@ imageEdit({
 export {
   removeBackgroundTests,
   photoroomNarrowingTests,
+  higgsfieldNarrowingTests,
   revanaNarrowingTests,
   operationTests,
   imageNarrowingTests,

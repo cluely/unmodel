@@ -23,13 +23,14 @@ import { video as klingAdapter } from "../../src/providers/kling/unified-video";
 import { video as openaiAdapter } from "../../src/providers/openai/unified";
 
 describe("the pack", () => {
-  test("registers exactly the fifteen video providers, sorted", () => {
+  test("registers exactly the sixteen video providers, sorted", () => {
     expect([...video.providers]).toEqual([
       "alibaba",
       "atlascloud",
       "bytedance",
       "fal",
       "google",
+      "higgsfield",
       "kling",
       "lightricks",
       "luma",
@@ -1062,6 +1063,286 @@ describe("revana: the adapter compiles and `revana.video` decides", () => {
     // 8 seconds at the listed `4K+audio` rate.
     const safe = video.safe(request);
     expect(safe.ok && safe.estimate?.costUSD).toBeCloseTo(4.64, 6);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// higgsfield — a route for a ref, and the route's row is the dispatch
+// ---------------------------------------------------------------------------
+
+describe("higgsfield: the roles on the route's row are the dispatch", () => {
+  const FRAME = "https://example.com/frame.png";
+  const LAST = "https://example.com/last.png";
+  const CLIP = "https://example.com/clip.mp4";
+  const body = (params: Record<string, unknown>): unknown =>
+    JSON.parse(JSON.stringify(video(params as never)));
+  const refused = (params: Record<string, unknown>): { code: string; path: unknown[]; message: string } => {
+    const result = video.safe(params as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected a refusal");
+    expect(result.errors.length).toBe(1);
+    return result.errors[0]!;
+  };
+
+  test("text-to-video: the words Higgsfield spells one way, and the route id as the path", () => {
+    const params = video({
+      model: "higgsfield/bytedance/seedance-2.5/text-to-video",
+      prompt: "a fox",
+      duration: 5,
+      resolution: "720p",
+      aspectRatio: "16:9",
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      prompt: "a fox",
+      duration: 5,
+      aspect_ratio: "16:9",
+      resolution: "720p",
+    });
+    expect(params.request.url).toBe("https://api.higgsfield.ai/bytedance/seedance-2.5/text-to-video");
+    expect(params.toSdk("higgsfield")).toEqual({ input: JSON.parse(JSON.stringify(params)) });
+  });
+
+  test("the opening and closing frames land on whichever spelling the route has", () => {
+    const image = [{ url: FRAME }, { url: LAST, role: "last" }];
+    expect(body({ model: "higgsfield/alibaba/wan-3.0/image-to-video", prompt: "a fox", image })).toEqual({
+      prompt: "a fox",
+      image_url: FRAME,
+      end_image_url: LAST,
+    });
+    expect(body({ model: "higgsfield/kling-video/v3.0/pro/image-to-video", image })).toEqual({
+      image_url: FRAME,
+      last_image_url: LAST,
+    });
+    expect(body({ model: "higgsfield/kling-video/omni/first-last-frame", prompt: "a fox", image })).toEqual({
+      prompt: "a fox",
+      first_frame_url: FRAME,
+      last_frame_url: LAST,
+    });
+  });
+
+  test("Genjutsu motion transfer: a clip and reference pictures, on the same generic path", () => {
+    expect(
+      body({
+        model: "higgsfield/higgsfield/genjutsu/motion-transfer/v1.0",
+        video: { url: CLIP },
+        image: [{ url: FRAME, role: "reference" }],
+        resolution: "720p",
+      }),
+    ).toEqual({ video_url: CLIP, image_urls: [FRAME], resolution: "720p" });
+  });
+
+  test("the two bodies docs/surfaces.md prints: a clip and a picture, with no route-specific call", () => {
+    expect(
+      body({
+        model: "higgsfield/higgsfield/genjutsu/motion-transfer/v1.0",
+        video: { url: CLIP },
+        image: [{ url: FRAME, role: "reference" }],
+      }),
+    ).toEqual({ video_url: CLIP, image_urls: [FRAME] });
+    expect(
+      body({
+        model: "higgsfield/kling-video/v3/motion-control/pro",
+        video: { url: CLIP },
+        image: { url: FRAME },
+      }),
+    ).toEqual({ video_url: CLIP, image_url: FRAME });
+  });
+
+  test("Kling motion control: a clip and the character's picture", () => {
+    expect(
+      body({
+        model: "higgsfield/kling-video/v3/motion-control/pro",
+        video: { url: CLIP },
+        image: { url: FRAME },
+        character_orientation: "video",
+      }),
+    ).toEqual({ video_url: CLIP, image_url: FRAME, character_orientation: "video" });
+  });
+
+  test("a route with only the list takes the clip as a one-element `video_urls`", () => {
+    expect(
+      body({ model: "higgsfield/higgsfield/cinema-studio/4.0", prompt: "a fox", video: { url: CLIP } }),
+    ).toEqual({ prompt: "a fox", video_urls: [CLIP] });
+  });
+
+  test("a route with both takes the clip in `video_url`; `video_urls` stays its extra", () => {
+    expect(
+      body({
+        model: "higgsfield/bytedance/seedance-2.5/video-edit",
+        prompt: "make it dusk",
+        video: { url: CLIP },
+        video_urls: ["https://example.com/reference.mp4"],
+      }),
+    ).toEqual({
+      prompt: "make it dusk",
+      video_url: CLIP,
+      video_urls: ["https://example.com/reference.mp4"],
+    });
+  });
+
+  test("Genjutsu Restyle's required `preset_id` has no canonical word: the route reports it by its own name", () => {
+    const model = "higgsfield/higgsfield/genjutsu/restyle/v1.0";
+    const issue = refused({ model, video: { url: CLIP } });
+    expect(issue).toMatchObject({ code: "invalid_shape", path: ["preset_id"] });
+    expect(issue.message).toBe("`preset_id` is required by higgsfield/genjutsu/restyle/v1.0.");
+    expect(body({ model, video: { url: CLIP }, preset_id: "229b2a75-05e4-4580-85f9-b47ee521a00d" })).toEqual({
+      video_url: CLIP,
+      preset_id: "229b2a75-05e4-4580-85f9-b47ee521a00d",
+    });
+  });
+
+  test("a required picture that is missing is reported at `image`, not at a wire name", () => {
+    const issue = refused({ model: "higgsfield/alibaba/wan-3.0/image-to-video", prompt: "a fox" });
+    expect(issue).toMatchObject({ code: "invalid_shape", path: ["image"] });
+    expect(issue.message).toContain("`image_url` is required by alibaba/wan-3.0/image-to-video");
+  });
+
+  test("a role the route has no parameter for is refused, naming the roles it serves", () => {
+    const first = refused({
+      model: "higgsfield/bytedance/seedance-2.5/text-to-video",
+      prompt: "a fox",
+      image: { url: FRAME },
+    });
+    expect(first).toMatchObject({ code: "unsupported_param", path: ["image"] });
+    expect(first.message).toContain("It takes no picture at all");
+
+    const unlabelled = refused({
+      model: "higgsfield/alibaba/happy-horse/reference-to-video",
+      prompt: "a fox",
+      image: { url: FRAME },
+    });
+    expect(unlabelled.message).toContain("an image with no `role` is the opening frame");
+    expect(unlabelled.message).toContain('It takes reference pictures (`role: "reference"`)');
+
+    const reference = refused({
+      model: "higgsfield/kling-video/v2.6/pro/image-to-video",
+      prompt: "a fox",
+      image: [{ url: FRAME }, { url: FRAME, role: "reference" }],
+    });
+    expect(reference.message).toContain('It takes an opening frame (`role: "first"`)');
+  });
+
+  test("a clip at a route that generates one is refused", () => {
+    const issue = refused({
+      model: "higgsfield/bytedance/seedance-2.5/text-to-video",
+      prompt: "a fox",
+      video: { url: CLIP },
+    });
+    expect(issue).toMatchObject({ code: "unsupported_param", path: ["video"] });
+    expect(issue.message).toContain("declares no source-clip parameter");
+  });
+
+  test("inline bytes are refused with the upload route, for a picture and for a clip", () => {
+    const picture = refused({
+      model: "higgsfield/alibaba/wan-3.0/image-to-video",
+      prompt: "a fox",
+      image: { data: "aVZCT1J3MEtHZ28=", mimeType: "image/png" },
+    });
+    expect(picture).toMatchObject({ code: "unsupported_param", path: ["image"] });
+    expect(picture.message).toContain("POST https://api.higgsfield.ai/files/generate-upload-url");
+
+    const clip = refused({
+      model: "higgsfield/higgsfield/genjutsu/restyle/v1.0",
+      video: { data: "AAAA" },
+      preset_id: "229b2a75-05e4-4580-85f9-b47ee521a00d",
+    });
+    expect(clip).toMatchObject({ code: "unsupported_param", path: ["video"] });
+  });
+
+  test("a tier is sent in the route's capitals, and one it cannot express is refused", () => {
+    const model = "higgsfield/minimax/h3-lite/text-to-video";
+    expect(body({ model, prompt: "a fox", resolution: "480p" })).toEqual({ prompt: "a fox", resolution: "480P" });
+    const issue = refused({ model, prompt: "a fox", resolution: "720p" });
+    expect(issue).toMatchObject({ code: "invalid_enum_value", path: ["resolution"] });
+    expect(issue.message).toContain('`resolution` must be "480p" on `minimax/h3-lite/text-to-video`');
+    // `768P` is the route's own size and not a canonical tier.
+    expect(body({ model, prompt: "a fox", providerOptions: { higgsfield: { resolution: "768P" } } })).toEqual({
+      prompt: "a fox",
+      resolution: "768P",
+    });
+  });
+
+  test("a route whose one size is not a tier refuses every tier", () => {
+    const issue = refused({ model: "higgsfield/minimax/h3/text-to-video", prompt: "a fox", resolution: "1080p" });
+    expect(issue).toMatchObject({ code: "invalid_enum_value", path: ["resolution"] });
+    expect(issue.message).toContain("none of its values is a canonical tier");
+  });
+
+  test("a shape is sent in the route's own spelling, and one it does not list is refused", () => {
+    const model = "higgsfield/bytedance/seedance-2.5/text-to-video";
+    expect(body({ model, prompt: "a fox", aspectRatio: "32:18" })).toEqual({ prompt: "a fox", aspect_ratio: "16:9" });
+    expect(refused({ model, prompt: "a fox", aspectRatio: "5:4" })).toMatchObject({
+      code: "invalid_enum_value",
+      path: ["aspectRatio"],
+    });
+  });
+
+  test("a length outside the route's list or range is the route's own finding, at `duration`", () => {
+    const listed = refused({ model: "higgsfield/kling-video/v2.6/pro/text-to-video", prompt: "a fox", duration: 7 });
+    expect(listed).toMatchObject({ code: "invalid_enum_value", path: ["duration"] });
+    expect(listed.message).toBe("`duration` must be 5 or 10 on kling-video/v2.6/pro/text-to-video; got 7.");
+
+    const ranged = refused({ model: "higgsfield/bytedance/seedance-2.5/text-to-video", prompt: "a fox", duration: 99 });
+    expect(ranged).toMatchObject({ code: "invalid_shape", path: ["duration"] });
+    expect(ranged.message).toContain("at most 30");
+  });
+
+  test("a word the route has no parameter for is refused, counting the routes that have one", () => {
+    const seed = refused({ model: "higgsfield/bytedance/seedance-2.5/text-to-video", prompt: "a fox", seed: 7 });
+    expect(seed).toMatchObject({ code: "unsupported_param", path: ["seed"] });
+    expect(seed.message).toContain("22 of the 86 Higgsfield video routes do take it");
+
+    const ratio = refused({
+      model: "higgsfield/bytedance/seedance-2.5/image-to-video",
+      image: { url: FRAME },
+      aspectRatio: "16:9",
+    });
+    expect(ratio).toMatchObject({ code: "unsupported_param", path: ["aspectRatio"] });
+  });
+
+  test("`n` is declared: no video route has a count", () => {
+    const issue = refused({ model: "higgsfield/bytedance/seedance-2.5/text-to-video", prompt: "a fox", n: 2 });
+    expect(issue).toMatchObject({ code: "unsupported_param", path: ["n"] });
+  });
+
+  test("the estimate is `higgsfield.video`'s, at the rate the request selects", () => {
+    const result = video.safe({
+      model: "higgsfield/bytedance/seedance-2.5/text-to-video",
+      prompt: "a fox",
+      duration: 5,
+      resolution: "720p",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.estimate.costUSD).toBeCloseTo(1.3235, 4);
+  });
+
+  test("a route with no row: one-spelling words are sent on, a picture and a tier are not guessed", () => {
+    const model = "higgsfield/some/newer-route";
+    const result = video.safe({ model, prompt: "a fox", duration: 6, aspectRatio: "16:9", seed: 7 } as never);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(JSON.parse(JSON.stringify(result.params))).toEqual({
+      prompt: "a fox",
+      seed: 7,
+      duration: 6,
+      aspect_ratio: "16:9",
+    });
+    expect(result.warnings.map((warning) => warning.code)).toContain("unknown_model");
+    for (const [word, extra] of [
+      ["image", { image: { url: FRAME } }],
+      ["video", { video: { url: CLIP } }],
+      ["resolution", { resolution: "720p" }],
+    ] as const) {
+      const issue = refused({ model, prompt: "a fox", ...extra });
+      expect(issue).toMatchObject({ code: "unsupported_param", path: [word] });
+      expect(issue.message).toContain("`providerOptions.higgsfield`");
+    }
+  });
+
+  test("`finalize-draft` takes no canonical word and is not a ref", () => {
+    const result = video.safe({ model: "higgsfield/bytedance/seedance-2.5/finalize-draft", prompt: "a fox" });
+    expect(result.warnings.map((issue) => issue.code)).toContain("unknown_model");
   });
 });
 

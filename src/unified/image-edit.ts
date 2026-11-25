@@ -16,7 +16,7 @@
  * everywhere, with its own model list and its own params — see the note in
  * `core/unified/vocabulary/image-edit.ts`.
  *
- * That `imageEdit` is the ready-made pack: eight providers, and therefore eight
+ * That `imageEdit` is the ready-made pack: nine providers, and therefore nine
  * providers' catalogs and validators, in one bundle. To pay for only the ones
  * you call, build your own from the adapter leaves:
  *
@@ -123,6 +123,7 @@ import { imageEdit as blackForestLabs } from "../providers/black-forest-labs/uni
 // text-to-image adapter, and importing it here would ship fal's generation
 // validator, schema and narrowing tables inside `unmodel/image-edit`.
 import { imageEdit as fal } from "../providers/fal/unified-image-edit";
+import { imageEdit as higgsfield } from "../providers/higgsfield/unified-image-edit";
 import { imageEdit as ideogram } from "../providers/ideogram/unified-image-edit";
 import { imageEdit as openai } from "../providers/openai/unified-image-edit";
 // `unified`, not `unified-image-edit`: Photoroom serves this one category, so
@@ -165,8 +166,8 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * `stt`, the per-ref `image` narrowing. A generated or
  * dynamically-loaded registry would keep the first and lose the other three.
  *
- * Eight providers rather than the eleven that ship an editing route, and the
- * eight are exactly the ones with a route this vocabulary can express: an
+ * Nine providers rather than the twelve that ship an editing route, and the
+ * nine are exactly the ones with a route this vocabulary can express: an
  * image and a prompt with no mask, or an image whose background is to be
  * removed. Luma's reframe and BFL's FLUX Tools family are mask- or
  * geometry-driven, as are five of Stability's six routes; Bria's `imageEdit`
@@ -185,6 +186,11 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * so `{ file }` and `{ data }` are refused naming the upload route that turns a
  * local file into one.
  *
+ * Higgsfield is the third, with the same URL-only source and a route for a
+ * ref: its picture-editing view is ten routes over one URL template, and the
+ * route's generated row says whether the picture lands on `image_url` or as a
+ * one-element `image_urls`.
+ *
  * Photoroom is the one provider here that serves both operations, at two refs
  * over two routes. `photoroom/edit-with-ai` is the single mode of the
  * forty-feature `POST /v2/edit` that takes a picture and a sentence; the
@@ -197,10 +203,10 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * Stability serves `"removeBackground"` only, at one ref: its other five edit
  * routes are the mask- and search-driven ones above.
  *
- * The cost is honest and measured: importing this pulls in eight provider
+ * The cost is honest and measured: importing this pulls in nine provider
  * validators, their schemas and their catalogs, pinned in
  * `test/bundle-budget.test.ts`. `createImageEdit([…])` above is the way to pay
- * for two providers instead of eight.
+ * for two providers instead of nine.
  */
 export const imageEdit = createImageEdit([
   openai,
@@ -211,6 +217,7 @@ export const imageEdit = createImageEdit([
   revana,
   photoroom,
   stability,
+  higgsfield,
 ]);
 
 export type {

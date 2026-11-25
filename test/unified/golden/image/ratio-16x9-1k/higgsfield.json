@@ -1,0 +1,9 @@
+{
+  "ref": "higgsfield/marketing-studio/image",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "resolution": "1k",
+    "aspect_ratio": "16:9"
+  },
+  "url": "https://api.higgsfield.ai/marketing-studio/image"
+}

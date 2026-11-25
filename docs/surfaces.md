@@ -134,6 +134,26 @@ image({ model: "openai/gpt-image-2", prompt: "...", quality: "hd" }); // ❌ Typ
 
 `size`, `aspectRatio`, and `dimensions` describe the same decision and are mutually exclusive.
 
+At an aggregator the ref names a route, and the route's own row decides every word. Higgsfield serves Soul beside Marketing Studio from one URL template, and they agree about almost nothing:
+
+```ts
+const soul = image({
+  model: "higgsfield/higgsfield-ai/soul/standard",
+  prompt: "a lighthouse in fog",
+  aspectRatio: "16:9",
+  n: 4,
+});
+
+JSON.stringify(soul);
+// → {"prompt":"a lighthouse in fog","batch_size":4,"aspect_ratio":"16:9"}
+soul.request.url; // "https://api.higgsfield.ai/higgsfield-ai/soul/standard"
+
+image({ model: "higgsfield/marketing-studio/image", prompt: "...", resolution: "2k" });       // ✅
+image({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "...", resolution: "1k" }); // ❌ TypeScript error
+```
+
+Soul renders 1 or 4 images and sizes them in `720p | 1080p`, which is not a tier this vocabulary has: `resolution` is `never` there, and the route's own word is `providerOptions.higgsfield.resolution`. Nothing is mapped onto a neighbouring size, because on Soul the resolution selects the price.
+
 ## Image editing
 
 ```ts
@@ -155,9 +175,23 @@ await fetch(request.request.url, {
 });
 ```
 
-Source inputs narrow by route. OpenAI takes `{ file }`, FLUX Kontext takes `{ data }` or `{ url }`. Masked and specialized edits live on provider subpaths.
+Source inputs narrow by route. OpenAI takes `{ file }`, FLUX Kontext takes `{ data }` or `{ url }`, and the three routers (fal, Revana, Higgsfield) take `{ url }` only. Masked and specialized edits live on provider subpaths.
 
-Eight providers are in the pack: black-forest-labs, fal, ideogram, openai, photoroom, recraft, revana, stability. The same request at Photoroom compiles to its flat multipart form, whose field names carry dots:
+One canonical `image` lands wherever the route keeps its picture. Two Higgsfield routes, one request:
+
+```ts
+const edit = { operation: "edit", prompt: "make it winter", image: { url: "https://example.com/street.png" } } as const;
+
+JSON.stringify(imageEdit({ ...edit, model: "higgsfield/higgsfield-ai/soul/v2/image-to-image" }));
+// → {"prompt":"make it winter","image_url":"https://example.com/street.png"}
+
+JSON.stringify(imageEdit({ ...edit, model: "higgsfield/alibaba/qwen-image-3/edit", aspectRatio: "16:9" }));
+// → {"prompt":"make it winter","image_urls":["https://example.com/street.png"],"aspect_ratio":"16:9"}
+```
+
+The editing vocabulary has no `resolution`, so a route that has one takes it as its own extra, in its own words: `resolution: "1080p"` on Soul 2, `"8k"` on Kling Image.
+
+Nine providers are in the pack: black-forest-labs, fal, higgsfield, ideogram, openai, photoroom, recraft, revana, stability. The same request at Photoroom compiles to its flat multipart form, whose field names carry dots:
 
 ```ts
 import { toFormData } from "unmodel/photoroom";
@@ -239,6 +273,40 @@ Resolutions and durations narrow by model — including the ones the official SD
 video({ model: "openai/sora-2-pro", prompt: "...", resolution: "1080p", duration: 16 }); // ✅
 video({ model: "openai/sora-2", prompt: "...", resolution: "1080p" }); // ❌ TypeScript error
 ```
+
+The same route behind two queues is two refs and two bodies. Seedance 2.5 text-to-video is `bytedance/seedance-2.5/text-to-video` at fal and at Higgsfield, and the two publish different schemas for it:
+
+```ts
+const shot = { prompt: "a drone shot over a fjord at sunrise", duration: 5, resolution: "720p", aspectRatio: "9:16" } as const;
+
+JSON.stringify(video({ ...shot, model: "fal/bytedance/seedance-2.5/text-to-video" }));
+// → {"prompt":"a drone shot over a fjord at sunrise","duration":"5","resolution":"720p","aspect_ratio":"9:16"}
+//   POST https://queue.fal.run/bytedance/seedance-2.5/text-to-video
+
+JSON.stringify(video({ ...shot, model: "higgsfield/bytedance/seedance-2.5/text-to-video" }));
+// → {"prompt":"a drone shot over a fjord at sunrise","duration":5,"aspect_ratio":"9:16","resolution":"720p"}
+//   POST https://api.higgsfield.ai/bytedance/seedance-2.5/text-to-video
+```
+
+Higgsfield's adapter reads which picture roles a route has a parameter for, so motion transfer and motion control are the same two words as everything else — a clip and a picture — with no route-specific call:
+
+```ts
+video({
+  model: "higgsfield/higgsfield/genjutsu/motion-transfer/v1.0",
+  video: { url: "https://example.com/clip.mp4" },
+  image: [{ url: "https://example.com/frame.png", role: "reference" }],
+});
+// → {"video_url":"https://example.com/clip.mp4","image_urls":["https://example.com/frame.png"]}
+
+video({
+  model: "higgsfield/kling-video/v3/motion-control/pro",
+  video: { url: "https://example.com/clip.mp4" },
+  image: { url: "https://example.com/frame.png" },
+});
+// → {"video_url":"https://example.com/clip.mp4","image_url":"https://example.com/frame.png"}
+```
+
+A role a route has no parameter for is refused naming the roles it does serve, and no Higgsfield route takes bytes: an inline picture or clip is refused with the upload route that makes a URL.
 
 ## Lipsync
 

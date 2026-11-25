@@ -51,6 +51,7 @@
  * | image | `image-to-video`, `image-1080p`, `first-last-frames`, `inline-bytes` |
  * | reference | `reference-to-video`, `auto-duration` |
  * | video | `video-to-video`, `auto-duration` |
+ * | video + image | `motion-transfer` (a clip and reference pictures), `motion-control` (a clip and a first frame) |
  *
  * `auto-duration` is the one case whose canonical request carries a
  * `providerOptions` block, and it is the only honest way to pin what it pins.
@@ -104,7 +105,7 @@ const caseDirs = readdirSync(GOLDEN, { withFileTypes: true })
 
 test("the video golden tree is present", () => {
   // A vacuous suite passes by asserting nothing; this is the guard against it.
-  expect(caseDirs.length).toBeGreaterThanOrEqual(10);
+  expect(caseDirs.length).toBeGreaterThanOrEqual(17);
 });
 
 describe.each(caseDirs)("golden video/%s", (name) => {
@@ -208,6 +209,30 @@ describe("the matrix itself", () => {
       else if (typeof duration === "string") seen.add(duration.endsWith("s") ? "suffixed" : "string");
     }
     expect([...seen].sort()).toEqual(["nested-number", "null", "number", "string", "suffixed"]);
+  });
+
+  /**
+   * One request, two bodies. `bytedance/seedance-2.5/text-to-video` is the same
+   * route id behind two queues, and the two publish different schemas for it:
+   * fal's `duration` is the string enum `"5"`, Higgsfield's the integer `5`.
+   * The canonical `duration: 5` reaches each in its own spelling, and
+   * everything else is the same three keys.
+   */
+  test("the same Seedance route compiles to each queue's own body", () => {
+    const bodies = new Map(
+      all
+        .filter(({ name }) => name === "one-route-two-queues")
+        .map(({ fixture }) => [fixture.ref.slice(0, fixture.ref.indexOf("/")), fixture] as const),
+    );
+    const fal = bodies.get("fal");
+    const higgsfield = bodies.get("higgsfield");
+    expect(fal?.ref).toBe("fal/bytedance/seedance-2.5/text-to-video");
+    expect(higgsfield?.ref).toBe("higgsfield/bytedance/seedance-2.5/text-to-video");
+    expect(fal?.params["duration"]).toBe("5");
+    expect(higgsfield?.params["duration"]).toBe(5);
+    expect<Record<string, unknown>>({ ...fal?.params, duration: 5 }).toEqual(higgsfield?.params ?? {});
+    expect(fal?.url).toBe("https://queue.fal.run/bytedance/seedance-2.5/text-to-video");
+    expect(higgsfield?.url).toBe("https://api.higgsfield.ai/bytedance/seedance-2.5/text-to-video");
   });
 
   /**

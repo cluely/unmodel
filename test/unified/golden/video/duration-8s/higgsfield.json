@@ -1,0 +1,10 @@
+{
+  "ref": "higgsfield/kling-video/v4.0/text-to-video",
+  "params": {
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": 8,
+    "aspect_ratio": "16:9",
+    "resolution": "1080p"
+  },
+  "url": "https://api.higgsfield.ai/kling-video/v4.0/text-to-video"
+}

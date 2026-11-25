@@ -1,0 +1,11 @@
+{
+  "ref": "higgsfield/alibaba/happy-horse/reference-to-video",
+  "params": {
+    "prompt": "@fox trots through the same snowfield at dusk",
+    "duration": 5,
+    "image_urls": [
+      "https://example.com/frame.png"
+    ]
+  },
+  "url": "https://api.higgsfield.ai/alibaba/happy-horse/reference-to-video"
+}

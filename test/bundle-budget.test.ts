@@ -356,6 +356,12 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    * It grows with Higgsfield's roster, by design: the weekly refresh adds rows.
    *
    * 376 is 341.1 × 1.1, the same multiple as every row above.
+   *
+   * 344.7 once the three unified packs reach the same modules (2026-11-25,
+   * linux/amd64 and macOS alike): no module joined this entry — `values` and
+   * `unified` are their own entries and the barrel imports neither — but
+   * rolldown now emits the validators' tables as chunks the packs share, and
+   * each chunk boundary costs its import and export lines. The pin stands.
    */
   higgsfield: 376,
 
@@ -827,8 +833,32 @@ const TTS_PACK_BUDGET_KIB = 1115;
  * measured on macOS with revana's picture slice on top of the model wave's
  * rows and runway's grown arms — both causes above, in one tree. 1520 is
  * that × 1.1.
+ *
+ * **Bumped 1520 → 1750 by higgsfield**, measured 1587.1 KiB on linux/amd64
+ * (oven/bun:1.3.14 in Docker, 2026-11-25; macOS agrees), up from 1400.2, of
+ * which the new provider is 182.7 — read off the `//#region
+ * src/providers/higgsfield/*` blocks in this pack's own chunks:
+ *
+ * | module | KiB | what it is |
+ * |---|---|---|
+ * | `gen/pricing.gen.ts` | 45.1 | the rate table, ALL 111 routes: the estimate reads it by id |
+ * | `checks.ts` | 25.5 | the one check battery every `higgsfield.*` address shares (decisions.md §4) |
+ * | `gen/endpoints.gen.ts` | 22.9 | every address's id list and documentation URL — the signpost a foreign id gets |
+ * | `gen/image-narrow.gen.ts` | 21.0 | what each of the 24 image routes declares |
+ * | `gen/models-image.gen.ts` | 20.9 | their catalog rows, reached through the validator's `catalog:` |
+ * | `urls.ts` | 9.1 | the submit URL and the upload hint |
+ * | `gen/image-params.gen.ts` | 7.4 | the 18 unified rows |
+ * | `compile-input.ts` | 7.6 | the three adapters' shared derivations |
+ * | `unified-image.ts` | 4.7 | the adapter |
+ * | `pricing.ts`, `gen/input-schema.gen.ts`, `submit.ts`, `image.ts`, `addresses.ts`, `character-train-models.ts` | 18.6 | the estimate, the one pipeline schema, the factory, the address |
+ *
+ * None of the video half is here (asserted below). What IS here beyond the
+ * image routes' own rows is the two tables keyed by every route id — the rates
+ * and the id lists, 68 KiB between them — because `higgsfield.image` reads
+ * both to price a request and to tell a video route's id from an unknown one.
+ * 1750 is the measurement × 1.1.
  */
-const IMAGE_PACK_BUDGET_KIB = 1520;
+const IMAGE_PACK_BUDGET_KIB = 1750;
 
 /**
  * The two generated catalogs this pack legitimately reaches, and nothing else.
@@ -930,8 +960,28 @@ const IMAGE_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog
  * **Bumped to 1525 where the two land together** (2026-11-13 merge): 1387.4 KiB
  * measured on macOS with revana's video slice on top of the model wave's rows
  * — both causes above, in one tree. 1525 is that × 1.1.
+ *
+ * **Bumped 1525 → 1890 by higgsfield**, measured 1715.4 KiB on linux/amd64
+ * (oven/bun:1.3.14 in Docker, 2026-11-25; macOS agrees), up from 1403.5, of
+ * which the new provider is 308.1 — the largest single addition this pack has
+ * taken, for the largest roster in it: 86 refs, more than twice fal's.
+ *
+ * | module | KiB | what it is |
+ * |---|---|---|
+ * | `gen/models-video.gen.ts` | 73.5 | the 87 catalog rows, each under its price quote |
+ * | `gen/video-narrow.gen.ts` | 64.3 | what each of the 87 video routes declares, bounds and demands across fields |
+ * | `gen/pricing.gen.ts` | 45.1 | the rate table, all 111 routes |
+ * | `gen/video-params.gen.ts` | 32.4 | the 86 unified rows, 65 distinct, their lists hoisted and shared |
+ * | `checks.ts` | 25.5 | the shared check battery |
+ * | `gen/endpoints.gen.ts` | 22.9 | every address's id list and documentation URL |
+ * | `unified-video.ts`, `compile-input.ts` | 16.7 | the adapter and the adapters' shared derivations |
+ * | `urls.ts`, `pricing.ts`, `gen/input-schema.gen.ts`, `submit.ts`, `video.ts`, `addresses.ts`, `character-train-models.ts` | 27.7 | the route, the estimate, the one pipeline schema, the factory |
+ *
+ * 3.6 KiB a ref. The cost is the roster's, and it grows with the weekly
+ * refresh by design. None of the image half is here (asserted below). 1890 is
+ * the measurement × 1.1.
  */
-const VIDEO_PACK_BUDGET_KIB = 1525;
+const VIDEO_PACK_BUDGET_KIB = 1890;
 
 /**
  * The two generated catalogs this pack legitimately reaches.
@@ -944,13 +994,14 @@ const VIDEO_PACK_BUDGET_KIB = 1525;
  */
 const VIDEO_PACK_CATALOGS: string[] = ["src/catalog/google.gen.ts", "src/catalog/openai.gen.ts"];
 
-/** The fifteen providers `unmodel/video`'s ready-made pack is allowed to reach. */
+/** The sixteen providers `unmodel/video`'s ready-made pack is allowed to reach. */
 const VIDEO_PACK_PROVIDERS: string[] = [
   "alibaba",
   "atlascloud",
   "bytedance",
   "fal",
   "google",
+  "higgsfield",
   "kling",
   "lightricks",
   "luma",
@@ -978,6 +1029,10 @@ const VIDEO_PACK_PROVIDERS: string[] = [
  * revana is the second router, reached through `revana/unified-image.ts` and
  * the picture slice of its generated tables — never the video, speech or music
  * ones the same route also serves (asserted below).
+ *
+ * higgsfield is the third, reached through `higgsfield/unified-image.ts` and
+ * the image half of its generated tables — never the video half, which is
+ * several times larger (asserted below).
  */
 const IMAGE_PACK_PROVIDERS: string[] = [
   "black-forest-labs",
@@ -985,6 +1040,7 @@ const IMAGE_PACK_PROVIDERS: string[] = [
   "bytedance",
   "fal",
   "google",
+  "higgsfield",
   "ideogram",
   "kling",
   "krea",
@@ -1363,8 +1419,20 @@ const TTS_PACK_PROVIDERS: string[] = [
  * recraft. No generation module and no second catalog joined: Stability's
  * `image.ts` stays out, which the composition test below pins. 900 is the
  * measurement × 1.1.
+ *
+ * **Bumped 900 → 1100 by higgsfield**, measured 997.7 KiB on linux/amd64
+ * (oven/bun:1.3.14 in Docker, 2026-11-25; macOS agrees), up from 814.6, of
+ * which the new provider is 179.0. It is the image pack's addition (182.7)
+ * less 3.7, and for revana's reason: `higgsfield.imageEdit` is a narrower VIEW
+ * of `higgsfield.image` over the same routes (decisions.md §4), so it carries
+ * the same check battery, the same two all-route tables and all 24 image
+ * routes' catalog and shape rows to serve the 10 of them that edit. What is
+ * this pack's own is the 10 unified rows (4.7), the adapter (3.9) and the view
+ * (1.7). A private copy of ten routes' rows would be about 24 KiB smaller and
+ * would be a second set of tables for one set of routes. 1100 is the
+ * measurement × 1.1.
  */
-const IMAGE_EDIT_PACK_BUDGET_KIB = 900;
+const IMAGE_EDIT_PACK_BUDGET_KIB = 1100;
 
 /**
  * The one generated catalog this pack legitimately reaches.
@@ -1376,10 +1444,36 @@ const IMAGE_EDIT_PACK_BUDGET_KIB = 900;
  */
 const IMAGE_EDIT_PACK_CATALOGS: string[] = ["src/catalog/openai.gen.ts"];
 
-/** The eight providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
+/**
+ * Higgsfield's generated tables, by the output type they describe. One URL
+ * template serves both, so the split between `unmodel/image` (and
+ * `unmodel/image-edit`, a view over the image routes) and `unmodel/video` is
+ * these two lists and nothing finer: a pack carries its own half and none of
+ * the other. Wire files are type-only and are not in a pack's module graph.
+ */
+const HIGGSFIELD_IMAGE_HALF: readonly string[] = [
+  "image.ts",
+  "image-edit.ts",
+  "unified-image.ts",
+  "unified-image-edit.ts",
+  "gen/models-image.gen.ts",
+  "gen/image-narrow.gen.ts",
+  "gen/image-params.gen.ts",
+  "gen/image-edit-params.gen.ts",
+];
+const HIGGSFIELD_VIDEO_HALF: readonly string[] = [
+  "video.ts",
+  "unified-video.ts",
+  "gen/models-video.gen.ts",
+  "gen/video-narrow.gen.ts",
+  "gen/video-params.gen.ts",
+];
+
+/** The nine providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
 const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
   "black-forest-labs",
   "fal",
+  "higgsfield",
   "ideogram",
   "openai",
   "photoroom",
@@ -1800,6 +1894,75 @@ const PACK_BUDGET_KIB: Readonly<Record<string, number>> = {
  * not the one figure each happened to draw: on the co-locating layout an
  * entry measures what `image-edit` does on that build, whichever build it is.
  * `video` and `image-edit` stay under the pins they had.
+ *
+ * ## With higgsfield in three packs (2026-11-25)
+ *
+ * Measured on linux/amd64 (oven/bun:1.3.14 in Docker), 226 builds of the one
+ * tree, in KiB, beside the sixty-four of the tree before it tabled above.
+ * These are the Linux figures the rule asks for:
+ *
+ * | pack | before, low–high | after, low–high | pin |
+ * |---|---|---|---|
+ * | `image` | 1430.7–1610.1 | 1638.1–1817.5 | 1775 → 2000 |
+ * | `image-edit` | 825.5–1010.4 | 1019.8–1227.0 | 1660 |
+ * | `video` | 1270.1–1507.3 | 1593.4–1830.6 | 1880 → 2015 |
+ * | `lipsync` | 594.2–682.1, and 955.2 | 594.2–682.1, and 1149.4 on fourteen builds | 1055 → 1265 |
+ * | `avatar` | 600.9–688.7, and 965.4 | 600.9–688.7, and 1159.6 on one | 1065 → 1280 |
+ * | `upscale` | 582.9–670.8, and 943.9 | 582.9–670.8, and 1138.1 on three | 1040 → 1255 |
+ * | `3d` | 506.8–594.7 | 506.8–594.7 | 655 → 1280 |
+ * | `tts` | 1268.4–1408.3 | 1268.4–1408.3 | 2320 |
+ * | `stt` | 982.2–1102.1 | 982.2–1102.2 | 2450 |
+ * | `music` | 637.4–732.0 | 637.4–732.1 | 1360 |
+ * | `sfx` | 445.6–544.0 | 445.6–544.0 | 590 |
+ * | `sts` | 366.2–366.4 | 366.2–366.4 | 420 |
+ * | `voice-clone` | 479.3–503.8 | 479.4–503.8 | 1690 |
+ * | `voice-design` | 437.7–505.3 | 437.7–505.3 | 1470 |
+ *
+ * What higgsfield adds for certain, read off the build, is about 200 KiB to
+ * each pack it joins: one chunk holding its route-id lists and BOTH wire-type
+ * files (143.5 — rolldown-plugin-dts keeps the image and the video interfaces
+ * together, so `unmodel/image` reads the video routes' types too), the
+ * validator's own types (32.4), and the adapter's declaration, which is the
+ * generated row table spelled out as types: 14.2 for image, 7.3 for
+ * image-edit, 70.7 for video's 86 rows.
+ *
+ * The eleven packs higgsfield cannot reach do not move on the usual layouts,
+ * to a tenth of a KiB. What moves for four of them is the co-locating layout
+ * recorded above: a small pack whose entry declaration shares a chunk with
+ * `unmodel/image-edit`'s is counted with the whole image-edit graph, and that
+ * graph is now about 200 KiB larger. It was drawn for `lipsync`, `avatar` and
+ * `upscale` on eighteen of these builds, each time within a KiB of what
+ * `image-edit` measures on that build (`lipsync` 1149.4 beside 1150.0,
+ * `avatar` 1159.6 beside 1160.4, `upscale` 1138.1 beside 1138.7), and each of
+ * the three is re-pinned from its own figure.
+ *
+ * `3d` was not drawn on that layout in these 226 builds, and is re-pinned as
+ * if it had been: it was drawn there once on ten Linux builds of this change
+ * before `photoroom` and `stability` were in image-edit's graph (1095.1), so
+ * the layout is open to it and 655 would not survive it. Its pin is the
+ * highest co-locating figure any entry drew on this tree, `avatar`'s 1159.6,
+ * x 1.1. `sfx` has never been recorded on that layout and keeps its pin;
+ * nothing about it rules the layout out, and the figure to re-pin from if CI
+ * shows it is the same ~1160.
+ *
+ * ### On the November model wave (rebased 2026-11-25)
+ *
+ * The 226 builds above were of this change on the tree before the November
+ * model wave, and were not repeated. Fourteen Linux builds of this change on
+ * that wave measured `image` 1651.7–1784.6, `image-edit` 1050.9–1193.4 and
+ * `video` 1639.8–1813.5; the eleven other packs sat inside the ranges tabled
+ * above to within 8 KiB, except that `lipsync` drew the co-locating layout on
+ * three builds, at 1163.1 beside image-edit's 1163.7.
+ *
+ * Fourteen builds do not find a high. The low ends moved by 13.6 (`image`),
+ * 31.1 (`image-edit`) and 46.4 (`video`), taken as what the wave's routes add
+ * to each graph, so the highs carried over are 1831.1, 1258.1 and 1877.0,
+ * and the pins are those x 1.1: `image` 2015, `video` 2065, and 1385 for the
+ * four small packs the co-locating layout is open to (`lipsync`, `avatar`,
+ * `upscale`, `3d`). Those four are pinned from image-edit's high, not from the
+ * figure each happened to draw: on that layout an entry measures what
+ * `image-edit` does on that build, whichever build it is. `image-edit` keeps
+ * 1660.
  */
 const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Bumped 1260 → 1490 by the revana wave: 1354.7 at the highest (see "These
@@ -1815,9 +1978,18 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Linux builds (see "Re-measured on Linux" above), which left the old pin
   // 2.5% of headroom; 1775 is that x 1.1. 1805 with the November model wave's
   // routes in the graph (see "On the November model wave" above).
-  image: 1805,
+  //
+  // Bumped 1805 → 2015 by higgsfield: 1817.5 at the highest of 226 linux/amd64
+  // builds (see "With higgsfield in three packs" above), 1831.1 with the
+  // November model wave's routes. 2015 is that x 1.1.
+  image: 2015,
+  // 1227.0 at the highest of the same 226 builds, up from 1010.4. Under the
+  // 1660 this entry already carried, which is left where it is.
   "image-edit": 1660,
-  video: 1880,
+  // Bumped 1880 → 2065 by higgsfield: 1830.6 at the highest of the same 226
+  // builds, which the old pin cleared by 2.7%, and 1877.0 with the November
+  // model wave's routes. 2065 is that x 1.1.
+  video: 2065,
   // The three fal-only packs, and the cheapest declarations in the table.
   // Each category is five canonical words with one or two narrowed fields, so
   // there is very little for `tsc` to instantiate: no `SizingArms` XOR, no
@@ -1866,7 +2038,13 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Linux" above). That layout counts image-edit's graph for this entry, and
   // the graph grew. 1200 is the bound "On the November model wave" derives
   // for the three packs that draw it.
-  lipsync: 1200,
+  //
+  // Bumped 1200 → 1385 by higgsfield, which this pack cannot reach:
+  // 594.2–682.1 on 212 of 226 linux/amd64 builds, unmoved, and 1149.4 on the
+  // fourteen that co-locate this entry with image-edit's — whose graph
+  // higgsfield did join (see "With higgsfield in three packs" above). 1385
+  // is the bound "On the November model wave" derives there.
+  lipsync: 1385,
   // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
   // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
   // components — the 3D roster added `ModelUrls`, `BasicAnimations` and their
@@ -1915,7 +2093,11 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // usual layouts, and 965.4 on the co-locating one, drawn on two of sixty-four
   // Linux builds before the November model wave (see "Re-measured on Linux"
   // above). 1200 is the bound "On the November model wave" derives.
-  avatar: 1200,
+  //
+  // Bumped 1200 → 1385 by higgsfield, for lipsync's reason: 600.9–688.7 on
+  // 225 of 226 linux/amd64 builds, unmoved, and 1159.6 on the one that drew
+  // the co-locating layout. 1385 is lipsync's bound.
+  avatar: 1385,
   // Bumped 450 → 560 by the Topaz wave: 508.8 measured, the largest jump of the
   // three and the one with a real cause rather than a chunking artefact. Topaz
   // brings FIFTEEN rows whose `extras` are hand-transcribed per-model settings
@@ -1941,7 +2123,12 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // drawn on one of sixty-four Linux builds before the November model wave
   // (see "Re-measured on Linux" above). 1200 is the bound "On the November
   // model wave" derives.
-  upscale: 1200,
+  //
+  // Bumped 1200 → 1385 by higgsfield, for lipsync's reason: 582.9–670.8 on 223
+  // of 226 linux/amd64 builds, unmoved, and 1138.1 on the three that drew the
+  // co-locating layout (see "With higgsfield in three packs" above). 1385 is
+  // lipsync's bound.
+  upscale: 1385,
   // `unmodel/3d`: 534.1 measured. The most expensive of the four small packs
   // and the only one with two providers, which is most of the difference — the
   // `tripo3d` half brings four literal model ids, two quality ladders and its
@@ -1955,7 +2142,15 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // 1060 → 1200 for `imageEdit.operation`: 594.7 at the highest of sixty-four
   // Linux builds on the usual layouts (559.6 of three before), and 1200 the
   // bound "On the November model wave" derives for the co-locating one.
-  "3d": 1200,
+  //
+  // Bumped 1200 → 1385 by higgsfield, which this pack cannot reach, and not
+  // from a figure of its own: 506.8–594.7 on all 226 linux/amd64 builds,
+  // unmoved. The pin is for the layout that co-locates this entry with
+  // image-edit's, which this entry has drawn once (1095.1, on a tree without
+  // `photoroom` and `stability` in that graph) and which measured 1159.6 at
+  // the highest for the entries that drew it here (see "With higgsfield in
+  // three packs" above). 1385 is lipsync's bound, for the same layout.
+  "3d": 1385,
   tts: 2320,
   stt: 2450,
   music: 1360,
@@ -2763,7 +2958,7 @@ describe("unmodel/image (the second ready-made pack)", () => {
    * someone imported `providers/<p>/index.ts` instead of the adapter leaf,
    * fails here in the diff that causes it.
    */
-  test("it reaches exactly the eighteen image providers, through their adapters", () => {
+  test("it reaches exactly the nineteen image providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("image"));
     expect(modules).toContain("src/unified/image.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -2812,6 +3007,16 @@ describe("unmodel/image (the second ready-made pack)", () => {
       expect(modules).not.toContain(`src/providers/revana/gen/shapes-${slice}.gen.ts`);
     }
     expect(modules).not.toContain("src/providers/revana/models.ts");
+
+    // higgsfield's split is by OUTPUT TYPE, and then by pack: the image rows
+    // and this pack's own unified rows, never the video half, the editing
+    // pack's rows, or the merged catalog.
+    expect(modules).toContain("src/providers/higgsfield/gen/image-params.gen.ts");
+    for (const file of HIGGSFIELD_VIDEO_HALF) {
+      expect(modules).not.toContain(`src/providers/higgsfield/${file}`);
+    }
+    expect(modules).not.toContain("src/providers/higgsfield/gen/image-edit-params.gen.ts");
+    expect(modules).not.toContain("src/providers/higgsfield/models.ts");
   });
 
   test("its graph carries exactly two catalogs, and no availability or retarget layer", () => {
@@ -2848,12 +3053,12 @@ describe("unmodel/image (the second ready-made pack)", () => {
 describe("unmodel/video (the third ready-made pack)", () => {
   /**
    * The composition assertion. This pack is the one where "exactly these
-   * providers" is doing the most work: seven of the fifteen also serve an image
+   * providers" is doing the most work: seven of the sixteen also serve an image
    * or speech surface, so an adapter that imported its provider's barrel instead
    * of the video leaf would drag a second category's validators and catalogs in
    * without changing a single import in `src/unified/video.ts`.
    */
-  test("it reaches exactly the fifteen video providers, through their adapters", () => {
+  test("it reaches exactly the sixteen video providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("video"));
     expect(modules).toContain("src/unified/video.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -2868,7 +3073,7 @@ describe("unmodel/video (the third ready-made pack)", () => {
     expect(providers).toEqual(VIDEO_PACK_PROVIDERS);
 
     // pixverse and lightricks serve video only, so their adapter is the
-    // unsuffixed leaf; the other thirteen split per category. fal is the sharpest
+    // unsuffixed leaf; the other fourteen split per category. fal is the sharpest
     // case for the split in this pack: it serves FIVE categories, so a barrel
     // import here would drag its image, image-edit, lipsync and avatar
     // surfaces — validators, union schemas and generated rows — into a video
@@ -2904,6 +3109,14 @@ describe("unmodel/video (the third ready-made pack)", () => {
       expect(modules).not.toContain(`src/providers/revana/gen/shapes-${slice}.gen.ts`);
     }
     expect(modules).not.toContain("src/providers/revana/models.ts");
+
+    // higgsfield's split is by OUTPUT TYPE: the video rows, and none of the
+    // image half the same URL template also serves.
+    expect(modules).toContain("src/providers/higgsfield/gen/video-params.gen.ts");
+    for (const file of HIGGSFIELD_IMAGE_HALF) {
+      expect(modules).not.toContain(`src/providers/higgsfield/${file}`);
+    }
+    expect(modules).not.toContain("src/providers/higgsfield/models.ts");
   });
 
   /**
@@ -3588,7 +3801,7 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
    * that can never call it, without changing a single import in
    * `src/unified/image-edit.ts`.
    */
-  test("it reaches exactly the eight image-edit providers, through their adapters", () => {
+  test("it reaches exactly the nine image-edit providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("image-edit"));
     expect(modules).toContain("src/unified/image-edit.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -3602,7 +3815,7 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
     ].sort();
     expect(providers).toEqual(IMAGE_EDIT_PACK_PROVIDERS);
 
-    // Seven of the eight serve more than one category, so their adapters are
+    // Eight of the nine serve more than one category, so their adapters are
     // suffixed leaves and the barrel is never in this graph. Photoroom serves
     // this category alone, so its `unified.ts` IS the adapter. Which is which
     // is read off disk by {@link splitProviders}, so a provider that grows a
@@ -3621,6 +3834,17 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
       // onto one.
       expect(modules).toContain(`src/providers/${provider}/image-edit.ts`);
     }
+
+    // higgsfield's editing address is a VIEW over its image routes
+    // (decisions.md §4), so this pack carries the image half's catalog and
+    // shape rows — and never the video half, the generation pack's unified
+    // rows, or the merged catalog.
+    expect(modules).toContain("src/providers/higgsfield/gen/image-edit-params.gen.ts");
+    for (const file of HIGGSFIELD_VIDEO_HALF) {
+      expect(modules).not.toContain(`src/providers/higgsfield/${file}`);
+    }
+    expect(modules).not.toContain("src/providers/higgsfield/gen/image-params.gen.ts");
+    expect(modules).not.toContain("src/providers/higgsfield/models.ts");
   });
 
   /**

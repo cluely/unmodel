@@ -1,0 +1,9 @@
+{
+  "ref": "higgsfield/higgsfield-ai/soul/standard",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "batch_size": 4,
+    "aspect_ratio": "16:9"
+  },
+  "url": "https://api.higgsfield.ai/higgsfield-ai/soul/standard"
+}

@@ -21,7 +21,8 @@
  * **The generator emits DATA and TYPES-AS-DATA; hand code owns BEHAVIOUR.**
  * `generate()` returns the id lists, one wire interface per route, one shape
  * gate for every route, the per-route shape rows a check battery reads, the
- * catalog rows and the rates. It emits no check, no message and no validator.
+ * catalog rows, the rates, and the rows the three unified adapters compile by.
+ * It emits no check, no message, no validator and no adapter.
  *
  * Routes are grouped by what they answer — `image` or `video` — and by nothing
  * finer: the route is one URL template with a variable path, and the path's
@@ -103,7 +104,11 @@
 
 import { z } from "zod";
 import {
+  assertRatiosComplete,
   canonical,
+  canonicalRatios,
+  canonicalTier,
+  canonicalVideoTier,
   hash6,
   irType,
   jsdocText,
@@ -1547,6 +1552,421 @@ function pricingComment(model: RouteModel, indent: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// The unified rows
+//
+// What `unmodel/image`, `unmodel/image-edit` and `unmodel/video` read to
+// compile a canonical request into one route's own body. Higgsfield's wire
+// spellings are uniform across the vendors it hosts, so every canonical word
+// is a TABLE of wire names here and there is no shape classifier.
+// ---------------------------------------------------------------------------
+
+const PACKS = ["image", "image-edit", "video"] as const;
+type Pack = (typeof PACKS)[number];
+
+/**
+ * Each pack's canonical vocabulary, as the caller types it.
+ *
+ * An extra whose wire name is one of these would land in the same object type
+ * as the canonical word and reduce the whole call to `never` (the `model`
+ * collision `scripts/codegen-fal.ts` documents at `NEVER_AN_EXTRA`), so a route
+ * that declares one stops the run. `scripts/codegen-higgsfield.test.ts` holds
+ * these lists to `CANONICAL_KEY_LISTS`.
+ */
+export const PACK_VOCABULARY: Readonly<Record<Pack, readonly string[]>> = {
+  image: ["model", "prompt", "size", "aspectRatio", "dimensions", "resolution", "n", "seed", "negativePrompt", "outputFormat", "outputDelivery", "providerOptions"],
+  "image-edit": ["model", "operation", "prompt", "image", "strength", "size", "aspectRatio", "dimensions", "n", "seed", "outputFormat", "providerOptions"],
+  video: ["model", "prompt", "image", "video", "negativePrompt", "seed", "n", "duration", "resolution", "aspectRatio", "providerOptions"],
+};
+
+/**
+ * The wire parameters each pack's adapter writes from a canonical word, where
+ * the route declares them. Everything else a route declares is an `extras`
+ * entry, typed from the route's own wire interface.
+ *
+ * `image-edit` lists fewer than `image` because `ImageEditParams` has fewer
+ * words: no `resolution` and no `negativePrompt`. Those two are extras there,
+ * which is how Soul 2's `720p | 1080p` is reachable when editing.
+ */
+const PACK_SCALAR_WIRE: Readonly<Record<Pack, readonly string[]>> = {
+  image: ["prompt", "negative_prompt", "seed", "aspect_ratio", "resolution"],
+  "image-edit": ["prompt", "seed", "aspect_ratio"],
+  video: ["prompt", "negative_prompt", "seed", "aspect_ratio", "resolution", "duration"],
+};
+
+/** Where `n` lands on a picture route. A video route that declares one stops the run: `unmodel/video` says none does. */
+const COUNT_WIRE: readonly string[] = ["batch_size", "series_amount"];
+
+/** Where the picture to edit lands: one URL, or a list of them. */
+const EDIT_SOURCE_WIRE: readonly string[] = ["image_url", "image_urls"];
+
+/** Where each `VideoImageRole` lands. A route that declares two spellings of one role stops the run. */
+const VIDEO_ROLE_WIRE: ReadonlyArray<readonly [role: string, names: readonly string[]]> = [
+  ["first", ["image_url", "first_frame_url"]],
+  ["last", ["end_image_url", "last_image_url", "last_frame_url"]],
+  ["reference", ["image_urls"]],
+];
+
+/**
+ * Where the canonical source clip lands, in preference order: one URL, or a
+ * list of them.
+ *
+ * A route with both (Seedance 2.5 video-edit) takes the clip being edited in
+ * `video_url`, and its `video_urls` are further references: an extra. A route
+ * with only the list (Cinema Studio, the reference-to-video routes) takes the
+ * clip there, which is what fal's row for the same Seedance route does.
+ */
+const VIDEO_CLIP_WIRE: readonly string[] = ["video_url", "video_urls"];
+
+/** A picture `output_format` member onto the canonical `ImageOutputFormat`. */
+const IMAGE_FORMATS: Readonly<Record<string, string>> = { jpg: "jpeg", jpeg: "jpeg", png: "png", webp: "webp" };
+
+interface UnifiedRow {
+  /** The wire parameters the adapter writes that this route declares. */
+  keys: string[];
+  ratios?: string[];
+  tiers?: string[];
+  tierWire?: Record<string, string>;
+  countWire?: string;
+  counts?: number[];
+  countRequired?: true;
+  formatWire?: Record<string, string>;
+  imageWire?: string;
+  durations?: number[];
+  resolutions?: string[];
+  resolutionWire?: Record<string, string>;
+  roles?: string[];
+  roleWire?: Record<string, string>;
+  videoWire?: string;
+  bounds?: Record<string, { min?: number; max?: number }>;
+  extras: string[];
+}
+
+/** A parameter's vocabulary: its closed `enum`, or `undefined` for a parameter that has none. */
+function vocabulary(model: RouteModel, name: string): readonly (string | number)[] | undefined {
+  const node = model.props[name]?.node;
+  return node?.k === "prim" ? node.enum : undefined;
+}
+
+function numericBounds(model: RouteModel, name: string): { min?: number; max?: number } | undefined {
+  const node = model.props[name]?.node;
+  if (node?.k !== "prim" || (node.min === undefined && node.max === undefined)) return undefined;
+  return { ...(node.min !== undefined && { min: node.min }), ...(node.max !== undefined && { max: node.max }) };
+}
+
+/** The one name of `names` the route declares. Two is a route this table cannot answer for. */
+function declaredOne(model: RouteModel, names: readonly string[], what: string): string | undefined {
+  const found = names.filter((name) => model.props[name] !== undefined);
+  if (found.length > 1) {
+    throw new Error(`${model.id}: declares ${found.map((name) => `\`${name}\``).join(" and ")}, two spellings of ${what}. File which one the canonical word means.`);
+  }
+  return found[0];
+}
+
+/**
+ * Why a route is not addressed by a pack, or `undefined` when it is.
+ *
+ * Rules and not a list, for the reason the roster has no allow-list: a route
+ * the next refresh adds is filed without anyone editing a file. Every route
+ * stays reachable by id at its `higgsfield.*` address either way.
+ */
+function packOptOut(pack: Pack, model: RouteModel): string | undefined {
+  if (pack === "image-edit") return model.imageEdit ? undefined : "not in the picture-editing view";
+  if (pack === "image") {
+    if (model.props["prompt"] === undefined) return "it declares no `prompt`, the one word every `unmodel/image` request has";
+    const source = model.order.find((name) => MEDIA_PARAMS[name] === "image" && (model.props[name] as Prop).required);
+    if (source !== undefined) return `it requires a source picture (\`${source}\`), which \`unmodel/image\` has no word for; \`unmodel/image-edit\` addresses it`;
+    return undefined;
+  }
+  const words = ["prompt", ...VIDEO_ROLE_WIRE.flatMap(([, names]) => names), ...VIDEO_CLIP_WIRE];
+  if (!words.some((name) => model.props[name] !== undefined)) {
+    return "it declares no `prompt`, no picture and no clip, so no canonical word says what to make";
+  }
+  return undefined;
+}
+
+function unifiedRow(pack: Pack, model: RouteModel): UnifiedRow {
+  const written = new Set(PACK_SCALAR_WIRE[pack].filter((name) => model.props[name] !== undefined));
+  const row: UnifiedRow = { keys: [], extras: [] };
+  const bounds: Record<string, { min?: number; max?: number }> = {};
+
+  if (model.props["aspect_ratio"] === undefined) {
+    row.ratios = [];
+  } else {
+    const members = vocabulary(model, "aspect_ratio");
+    if (members === undefined) throw new Error(`${model.id}: \`aspect_ratio\` is not a closed vocabulary, which the unified rows do not model`);
+    row.ratios = canonicalRatios(members);
+    assertRatiosComplete("Higgsfield", model.id, members, row.ratios);
+  }
+
+  const seed = numericBounds(model, "seed");
+  if (seed !== undefined) bounds["seed"] = seed;
+
+  if (pack !== "video") {
+    const count = declaredOne(model, COUNT_WIRE, "the image count");
+    if (count !== undefined) {
+      written.add(count);
+      row.countWire = count;
+      const members = vocabulary(model, count);
+      if (members !== undefined) {
+        if (!members.every((member) => typeof member === "number")) throw new Error(`${model.id}: \`${count}\` lists a count that is not a number`);
+        row.counts = (members as number[]).slice().sort((a, b) => a - b);
+      }
+      if ((model.props[count] as Prop).required) row.countRequired = true;
+      const range = numericBounds(model, count);
+      if (range !== undefined) bounds["n"] = range;
+    }
+    const formats = vocabulary(model, "output_format");
+    if (formats !== undefined) {
+      written.add("output_format");
+      row.formatWire = {};
+      for (const member of formats) {
+        const codec = IMAGE_FORMATS[String(member)];
+        if (codec === undefined) throw new Error(`${model.id}: \`output_format\` member ${literal(member)} is not a picture format IMAGE_FORMATS knows`);
+        row.formatWire[codec] ??= String(member);
+      }
+    }
+  }
+
+  if (pack === "image") {
+    row.tiers = [];
+    const members = vocabulary(model, "resolution");
+    if (model.props["resolution"] !== undefined && members === undefined) {
+      throw new Error(`${model.id}: \`resolution\` is not a closed vocabulary, which the unified rows do not model`);
+    }
+    const wire: Record<string, string> = {};
+    for (const member of members ?? []) {
+      const tier = canonicalTier(String(member));
+      if (tier === undefined || wire[tier] !== undefined) continue;
+      row.tiers.push(tier);
+      wire[tier] = String(member);
+    }
+    if (row.tiers.length > 0) row.tierWire = wire;
+  }
+
+  if (pack === "image-edit") {
+    const source = declaredOne(model, EDIT_SOURCE_WIRE, "the picture to edit");
+    if (source === undefined) throw new Error(`${model.id}: is in the picture-editing view and declares neither \`image_url\` nor \`image_urls\``);
+    written.add(source);
+    row.imageWire = source;
+  }
+
+  if (pack === "video") {
+    if (model.props["duration"] === undefined) {
+      row.durations = [];
+    } else {
+      const members = vocabulary(model, "duration");
+      if (members !== undefined) {
+        if (!members.every((member) => typeof member === "number")) throw new Error(`${model.id}: \`duration\` lists a length that is not a number of seconds`);
+        row.durations = (members as number[]).slice().sort((a, b) => a - b);
+      } else {
+        const range = numericBounds(model, "duration");
+        if (range !== undefined) bounds["duration"] = range;
+      }
+    }
+
+    row.resolutions = [];
+    const members = vocabulary(model, "resolution");
+    if (model.props["resolution"] !== undefined && members === undefined) {
+      throw new Error(`${model.id}: \`resolution\` is not a closed vocabulary, which the unified rows do not model`);
+    }
+    const wire: Record<string, string> = {};
+    for (const member of members ?? []) {
+      const tier = canonicalVideoTier(String(member));
+      if (tier === undefined || wire[tier] !== undefined) continue;
+      row.resolutions.push(tier);
+      wire[tier] = String(member);
+    }
+    if (row.resolutions.length > 0) row.resolutionWire = wire;
+
+    row.roles = [];
+    const roleWire: Record<string, string> = {};
+    for (const [role, names] of VIDEO_ROLE_WIRE) {
+      const found = declaredOne(model, names, `the \`${role}\` picture`);
+      if (found === undefined) continue;
+      written.add(found);
+      row.roles.push(role);
+      roleWire[role] = found;
+    }
+    if (row.roles.length > 0) row.roleWire = roleWire;
+
+    const clip = VIDEO_CLIP_WIRE.find((name) => model.props[name] !== undefined);
+    if (clip !== undefined) {
+      written.add(clip);
+      row.videoWire = clip;
+    }
+    const count = COUNT_WIRE.find((name) => model.props[name] !== undefined);
+    if (count !== undefined) {
+      throw new Error(`${model.id}: a video route declares \`${count}\`. \`unmodel/video\` says no Higgsfield video route takes a count; map it in the unified rows.`);
+    }
+  }
+
+  if (Object.keys(bounds).length > 0) row.bounds = bounds;
+  row.keys = model.order.filter((name) => written.has(name));
+  row.extras = model.order.filter((name) => !written.has(name));
+  for (const name of row.extras) {
+    if (PACK_VOCABULARY[pack].includes(name)) {
+      throw new Error(
+        `${model.id}: declares \`${name}\`, which is also a canonical word of unmodel/${pack}. As an extra it would collide with that word ` +
+          "in the caller's own object type. Map it in the unified rows, or keep it out of them.",
+      );
+    }
+  }
+  return row;
+}
+
+function mapLiteral(map: Readonly<Record<string, string>>): string {
+  return `{ ${sorted(Object.keys(map))
+    .map((key) => `${propKey(key)}: ${quote(map[key] as string)}`)
+    .join(", ")} }`;
+}
+
+const PACK_PROSE: Readonly<Record<Pack, { address: string; type: string; constant: string; wire: Verb }>> = {
+  image: { address: "higgsfield.image", type: "HiggsfieldImageParamRow", constant: "IMAGE", wire: "image" },
+  "image-edit": { address: "higgsfield.imageEdit", type: "HiggsfieldImageEditParamRow", constant: "IMAGE_EDIT", wire: "image" },
+  video: { address: "higgsfield.video", type: "HiggsfieldVideoParamRow", constant: "VIDEO", wire: "video" },
+};
+
+function renderParamsFile(pack: Pack, candidates: readonly RouteModel[]): string {
+  const { address, type, constant, wire } = PACK_PROSE[pack];
+  const models = candidates.filter((model) => packOptOut(pack, model) === undefined);
+  // The picture-editing view is a list of ids, so a route outside it is not an opt-out to explain.
+  const optedOut = pack === "image-edit" ? [] : candidates.filter((model) => packOptOut(pack, model) !== undefined);
+
+  function extraType(model: RouteModel, name: string): string {
+    const prop = model.props[name] as Prop;
+    return tsType(typeNode(prop.node), noComponents) + (prop.nullable ? " | null" : "") + (prop.required ? "" : " | undefined");
+  }
+
+  // Routes with the same row share one frozen object. The key includes each
+  // extra's TYPE: the row names one route's wire interface for all of them,
+  // and two routes whose `mode` lists differ must not share it.
+  const rows = new Map<string, { row: UnifiedRow; owner: RouteModel; ids: string[] }>();
+  const rowName = new Map<string, string>();
+  for (const model of models) {
+    const row = unifiedRow(pack, model);
+    const key = hash6(canonical({ ...row, extras: row.extras.map((name) => [name, extraType(model, name)]) }));
+    const shared = rows.get(key);
+    if (shared === undefined) rows.set(key, { row, owner: model, ids: [model.id] });
+    else shared.ids.push(model.id);
+    rowName.set(model.id, `ROW_${key}`);
+  }
+
+  // Lists and maps are hoisted and shared by content, as the shape rows next
+  // door share their vocabularies: eighty-six rows spell nine shape lists and
+  // eight role maps between them, and a `values` import pays for every copy.
+  // An empty list stays inline; it is shorter than a name.
+  const shared = new Map<string, string>();
+  function share(prefix: string, value: string): string {
+    if (value === "[]") return value;
+    const name = `${prefix}_${hash6(value)}`;
+    shared.set(name, value);
+    return name;
+  }
+  function list(prefix: string, values: readonly string[]): string {
+    return share(prefix, renderStringArray(values));
+  }
+
+  const wireTypes = new Set<string>();
+  const rowBlock = sorted(rows.keys())
+    .map((key) => {
+      const { row, owner, ids } = rows.get(key) as { row: UnifiedRow; owner: RouteModel; ids: string[] };
+      const fields: string[] = [`  keys: ${list("K", row.keys)},`];
+      if (row.ratios !== undefined) fields.push(`  ratios: ${list("A", row.ratios)},`);
+      if (row.tiers !== undefined) fields.push(`  tiers: ${list("T", row.tiers)},`);
+      if (row.tierWire !== undefined) fields.push(`  tierWire: ${share("W", mapLiteral(row.tierWire))},`);
+      if (row.countWire !== undefined) fields.push(`  countWire: ${quote(row.countWire)},`);
+      if (row.counts !== undefined) fields.push(`  counts: [${row.counts.map(num).join(", ")}],`);
+      if (row.countRequired === true) fields.push("  countRequired: true,");
+      if (row.formatWire !== undefined) fields.push(`  formatWire: ${share("F", mapLiteral(row.formatWire))},`);
+      if (row.imageWire !== undefined) fields.push(`  imageWire: ${quote(row.imageWire)},`);
+      if (row.durations !== undefined) fields.push(`  durations: [${row.durations.map(num).join(", ")}],`);
+      if (row.resolutions !== undefined) fields.push(`  resolutions: ${list("T", row.resolutions)},`);
+      if (row.resolutionWire !== undefined) fields.push(`  resolutionWire: ${share("W", mapLiteral(row.resolutionWire))},`);
+      if (row.roles !== undefined) fields.push(`  roles: ${list("O", row.roles)},`);
+      if (row.roleWire !== undefined) fields.push(`  roleWire: ${share("P", mapLiteral(row.roleWire))},`);
+      if (row.videoWire !== undefined) fields.push(`  videoWire: ${quote(row.videoWire)},`);
+      if (row.bounds !== undefined) {
+        const entries = sorted(Object.keys(row.bounds)).map((name) => `${propKey(name)}: ${tsLiteral((row.bounds as Record<string, object>)[name])}`);
+        fields.push(`  bounds: ${share("B", `{ ${entries.join(", ")} }`)},`);
+      }
+      if (row.extras.length === 0) {
+        fields.push("  extras: {},");
+      } else {
+        wireTypes.add(owner.typeName);
+        fields.push("  extras: {", ...row.extras.map((name) => `    ${propKey(name)}: EXTRA as ${owner.typeName}[${quote(name)}],`), "  },");
+      }
+      const doc = ids.length === 1 ? [`${ids[0]}.`] : [`Shared by ${ids.length} routes with an identical surface: ${ids.join(", ")}.`];
+      return `${renderDoc(doc, "")}const ROW_${key} = {
+${fields.join("\n")}
+} as const;`;
+    })
+    .join("\n\n");
+
+  const importLine =
+    wireTypes.size === 0
+      ? ""
+      : `import type {\n${sorted(wireTypes)
+          .map((name) => `  ${name},`)
+          .join("\n")}\n} from "./${wire}-wire.gen";\n`;
+
+  const notAddressed =
+    optedOut.length === 0
+      ? []
+      : [
+          "",
+          `Not addressed here, and reachable by id at \`${address}\`:`,
+          ...optedOut.map((model) => `- \`${model.id}\`: ${packOptOut(pack, model) as string}.`),
+        ];
+
+  return `${HEADER}
+${renderDoc(
+  [
+    `What \`unmodel/${pack}\` reads to compile a canonical request into one Higgsfield route's own body, for the`,
+    `${models.length} routes it addresses as \`higgsfield/<id>\`. Every one finishes in \`${address}\`.`,
+    "",
+    "`keys` are the wire parameters the adapter writes from a canonical word that this route declares; a word",
+    "whose parameter is not among them is refused by name. `extras` is everything else the route declares,",
+    "typed from that route's own wire interface. The row types in `../param-types` document each field.",
+    ...notAddressed,
+  ],
+  "",
+)}
+import type { ${type} } from "../param-types";
+${importLine}
+/**
+ * The value half of an \`extras\` entry: \`undefined\` at run time, the cast's type
+ * at compile time. Declared here rather than imported from
+ * \`core/unified/derive\`: a generated module is data, and a value import from
+ * the kernel would put it behind every \`unmodel/higgsfield/values\` import.
+ */
+const EXTRA: never = undefined as never;
+
+// Lists and maps, hoisted and deduplicated by content: K a row's keys, A its shapes, T its
+// tiers, W a tier's wire spelling, F an encoding's, O its picture roles, P a role's parameter,
+// B its bounds.
+${sorted(shared.keys())
+  .map((name) => `const ${name} = ${shared.get(name) as string} as const;`)
+  .join("\n")}
+
+${rowBlock}
+
+${renderDoc([`Route id → its row. The keys are the ids \`unmodel/${pack}\` addresses as \`higgsfield/<id>\`.`], "")}export const HIGGSFIELD_${constant}_UNIFIED_PARAMS = {
+${models.map((model) => `  ${quote(model.id)}: ${rowName.get(model.id)},`).join("\n")}
+} as const satisfies Record<string, ${type}>;
+
+${renderDoc(
+  [
+    "The same ids as a list, here and not read from `endpoints.gen.ts` so the import-free `*-params` leaf",
+    "reaches exactly one generated module (A10b in test/import-graph.test.ts).",
+  ],
+  "",
+)}export const HIGGSFIELD_${constant}_UNIFIED_MODELS = [
+${models.map((model) => `  ${quote(model.id)},`).join("\n")}
+] as const;
+`;
+}
+
+// ---------------------------------------------------------------------------
 // generate()
 // ---------------------------------------------------------------------------
 
@@ -1623,6 +2043,10 @@ export function generate(input: GenerateInput): Map<string, string> {
     files.set(`${verb}-wire.gen.ts`, renderWireFile(verb, slice));
     files.set(`${verb}-narrow.gen.ts`, renderNarrowFile(verb, slice));
     files.set(`models-${verb}.gen.ts`, renderModelsFile(verb, slice));
+  }
+  for (const pack of PACKS) {
+    const slice = models.filter((model) => model.verb === PACK_PROSE[pack].wire);
+    if (slice.length > 0) files.set(`${pack}-params.gen.ts`, renderParamsFile(pack, slice));
   }
   return new Map(sorted(files.keys()).map((name) => [name, files.get(name) as string]));
 }

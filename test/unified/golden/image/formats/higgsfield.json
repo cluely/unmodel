@@ -1,0 +1,9 @@
+{
+  "ref": "higgsfield/recraft/v4.1/text-to-image",
+  "params": {
+    "prompt": "a lighthouse in fog",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "url": "https://api.higgsfield.ai/recraft/v4.1/text-to-image"
+}

@@ -25,6 +25,7 @@
  */
 import { createVideo, video } from "../../src/unified/video";
 import { video as googleVideo } from "../../src/providers/google/unified-video";
+import { video as higgsfieldVideo } from "../../src/providers/higgsfield/unified-video";
 import type { GoogleVeoInstance } from "../../src/providers/google/video";
 import { video as klingVideo } from "../../src/providers/kling/unified-video";
 import { video as lumaVideo } from "../../src/providers/luma/unified-video";
@@ -491,7 +492,103 @@ function revanaNarrowingTests(): void {
   });
 }
 
+// ---------------------------------------------------------------------------
+// higgsfield — a route for a ref, over the largest roster in the pack
+// ---------------------------------------------------------------------------
+
+/**
+ * Eighty-six refs behind one adapter, each narrowed by its own generated row.
+ * The four shapes a row can take are all here: a duration LIST, a duration
+ * RANGE (the wide `number`), no duration at all (`never`), and a tier list
+ * that is the route's own words lowered to the canonical ones.
+ */
+function higgsfieldNarrowingTests(): void {
+  const clip = { url: "https://example.com/clip.mp4" };
+  const frame = { url: "https://example.com/frame.png" };
+
+  // Kling 2.6 Pro: `durations: [5, 10]`, three shapes, no `resolution` parameter.
+  video({ model: "higgsfield/kling-video/v2.6/pro/text-to-video", prompt: "hi", duration: 10, aspectRatio: "9:16" });
+  // @ts-expect-error — 7 is not one of the route's two lengths.
+  video({ model: "higgsfield/kling-video/v2.6/pro/text-to-video", prompt: "hi", duration: 7 });
+  // @ts-expect-error — nor is 4:3 one of its shapes.
+  video({ model: "higgsfield/kling-video/v2.6/pro/text-to-video", prompt: "hi", aspectRatio: "4:3" });
+  // @ts-expect-error — the route has no `resolution` parameter.
+  video({ model: "higgsfield/kling-video/v2.6/pro/text-to-video", prompt: "hi", resolution: "720p" });
+
+  // Seedance 2.5: a RANGE, so any number compiles and `higgsfield.video` holds the ends.
+  video({ model: "higgsfield/bytedance/seedance-2.5/text-to-video", prompt: "hi", duration: 17 });
+  // @ts-expect-error — Seedance 2.5 lists no 4k.
+  video({ model: "higgsfield/bytedance/seedance-2.5/text-to-video", prompt: "hi", resolution: "4k" });
+  // Its image-to-video route follows the picture's shape.
+  // @ts-expect-error — the route has no `aspect_ratio` parameter.
+  video({ model: "higgsfield/bytedance/seedance-2.5/image-to-video", image: frame, aspectRatio: "16:9" });
+
+  // Motion control keeps the clip's length.
+  video({
+    model: "higgsfield/kling-video/v3/motion-control/pro",
+    video: clip,
+    image: frame,
+    // @ts-expect-error — the route has no `duration` parameter.
+    duration: 5,
+  });
+
+  // MiniMax H3 Lite lists `480P | 768P`: one canonical tier. H3 lists `2K` alone: none.
+  video({ model: "higgsfield/minimax/h3-lite/text-to-video", prompt: "hi", resolution: "480p" });
+  // @ts-expect-error — 768P is the route's own size, not 720p.
+  video({ model: "higgsfield/minimax/h3-lite/text-to-video", prompt: "hi", resolution: "720p" });
+  // @ts-expect-error — `2K` is not a canonical video tier; it is `providerOptions.higgsfield.resolution`.
+  video({ model: "higgsfield/minimax/h3/text-to-video", prompt: "hi", resolution: "1080p" });
+  video({
+    model: "higgsfield/minimax/h3/text-to-video",
+    prompt: "hi",
+    providerOptions: { higgsfield: { resolution: "2K" } },
+  });
+
+  // The extras are each route's own parameters, typed from its wire interface.
+  video({ model: "higgsfield/higgsfield/cinema-studio/4.0", prompt: "hi", camera_movement: "dolly-zoom", genre: "noir" });
+  // @ts-expect-error — `dolly_in` is LTX's spelling, not Cinema Studio's.
+  video({ model: "higgsfield/higgsfield/cinema-studio/4.0", prompt: "hi", camera_movement: "dolly_in" });
+  // @ts-expect-error — Seedance 2.5 has no camera parameter.
+  video({ model: "higgsfield/bytedance/seedance-2.5/text-to-video", prompt: "hi", camera_movement: "dolly-zoom" });
+  // Genjutsu Restyle's required preset has no canonical word.
+  video({
+    model: "higgsfield/higgsfield/genjutsu/restyle/v1.0",
+    video: clip,
+    preset_id: "229b2a75-05e4-4580-85f9-b47ee521a00d",
+  });
+  // Where a route has both, `video_url` is the canonical clip and `video_urls` its extra.
+  video({
+    model: "higgsfield/bytedance/seedance-2.5/video-edit",
+    prompt: "hi",
+    video: clip,
+    video_urls: ["https://example.com/reference.mp4"],
+  });
+
+  // `finalize-draft` takes no canonical word: not a ref, and an image route is `unmodel/image`'s.
+  // @ts-expect-error — its only input is a prior request's id.
+  expectAssignable<UnifiedRef<typeof higgsfieldVideo>>("higgsfield/bytedance/seedance-2.5/finalize-draft");
+  // @ts-expect-error — not a video route.
+  expectAssignable<UnifiedRef<typeof higgsfieldVideo>>("higgsfield/z-image/turbo");
+  expectAssignable<UnifiedRef<typeof higgsfieldVideo>>("higgsfield/higgsfield/genjutsu/motion-transfer/v1.0");
+
+  // The result is `higgsfield.video`'s Validated: the flat body, without the route id.
+  const result = video({ model: "higgsfield/bytedance/seedance-2.5/text-to-video", prompt: "hi" });
+  expectAssignable<string | undefined>(result.prompt);
+  expectTrue<IsNever<KeyIn<typeof result, "endpoint">>>();
+  expectAssignable<{ input: { prompt?: string }; webhook?: { url: string } }>(result.toSdk("higgsfield"));
+  // @ts-expect-error — Higgsfield's own client is the one SDK target.
+  result.toSdk("openai");
+
+  video({
+    model: "higgsfield/bytedance/seedance-2.5/text-to-video",
+    prompt: "hi",
+    // @ts-expect-error — `duration` is a number of seconds.
+    providerOptions: { higgsfield: { duration: "5" } },
+  });
+}
+
 export {
+  higgsfieldNarrowingTests,
   revanaNarrowingTests,
   crossProviderBranchTypeTests,
   refUnionTests,

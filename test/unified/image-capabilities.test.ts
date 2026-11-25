@@ -53,6 +53,7 @@ import { image as bria } from "../../src/providers/bria/unified";
 import { image as bytedance } from "../../src/providers/bytedance/unified-image";
 import { image as fal } from "../../src/providers/fal/unified-image";
 import { image as google } from "../../src/providers/google/unified-image";
+import { image as higgsfield } from "../../src/providers/higgsfield/unified-image";
 import { image as ideogram } from "../../src/providers/ideogram/unified-image";
 import { image as kling } from "../../src/providers/kling/unified-image";
 import { image as krea } from "../../src/providers/krea/unified";
@@ -542,6 +543,40 @@ const TABLE: Readonly<Record<string, Capability>> = {
     deliveryUrl: "declared",
     deliveryBase64: "declared",
     warns: ["dimensions"],
+  },
+  /**
+   * A route for a ref, and a row with no `declared` cell at all: nothing a
+   * route's schema can carry is a provider-wide gap behind one URL template,
+   * so every gap here is `refused`, by the route's own row, naming the route.
+   *
+   * Qwen Image 3 is profiled because it is the one text-to-image route with a
+   * `negative_prompt`, and it has a `seed` and canonical tiers beside it. It
+   * renders one image and has no `output_format`; the routes that do have a
+   * count (Soul, Ads Studio, the Kling Image series) or an encoding (Recraft)
+   * are in the golden tree and in `image-e2e`.
+   */
+  higgsfield: {
+    ref: "higgsfield/alibaba/qwen-image-3/text-to-image",
+    adapter: higgsfield,
+    size: { class: "ratio-enum", at: "aspect_ratio" },
+    tier: "resolution",
+    sizeString: null,
+    extra: { prompt_extend_mode: "agent" },
+    aspectRatio: "native",
+    dimensions: "derived",
+    resolution: "native",
+    n: "refused",
+    seed: "native",
+    negativePrompt: "native",
+    outputFormat: "refused",
+    deliveryUrl: "implicit",
+    deliveryBase64: "refused",
+    warns: ["dimensions"],
+    why: {
+      deliveryUrl:
+        "a Higgsfield request is queued and its completed status lists `images[].url`; no route has a " +
+        "delivery parameter, so a URL is already what happens",
+    },
   },
 };
 

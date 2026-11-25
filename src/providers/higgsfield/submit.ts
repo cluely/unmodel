@@ -144,6 +144,18 @@ export interface SubmitValidator<Own extends string, BodyById> {
   constraintsFor(modelId: string): EndpointConstraints[];
 }
 
+/**
+ * What an address returns for a body a unified adapter compiled: the same
+ * `Validated`, at a route id the type does not narrow by. `Wire` is the
+ * adapter's body, `endpoint` included.
+ *
+ * Stated here and not taken as `ReturnType` of the validator, which a generic
+ * call signature collapses. `webhook` is optional on `.toSdk("higgsfield")`
+ * because a unified call can carry `hf_webhook` only through
+ * `providerOptions.higgsfield`, which no type sees.
+ */
+export type HiggsfieldCompiledResult<Wire> = Validated<HiggsfieldBody<Wire>, HiggsfieldSdkTargets<Wire, string>>;
+
 type AnyParams = { endpoint: string; hf_webhook?: string } & Record<string, unknown>;
 
 const GATE_KEYS: ReadonlySet<string> = new Set(Object.keys(higgsfieldInputSchema.shape));

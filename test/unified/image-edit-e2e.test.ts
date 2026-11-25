@@ -53,6 +53,9 @@ import {
   imageEditOutpaint,
   imageEditReplaceBackground,
 } from "../../src/providers/recraft";
+import { imageEdit as higgsfieldAdapter } from "../../src/providers/higgsfield/unified-image-edit";
+import { imageEditOperations } from "../../src/core/unified/image-edit-operations";
+import type { ImageEditModelParamTable } from "../../src/core/unified/vocabulary/image-edit";
 import { imageEdit } from "../../src/unified/image-edit";
 
 const PROMPT = "make the sky a thunderstorm";
@@ -60,7 +63,7 @@ const png = (bytes = 64): Blob => new Blob([new Uint8Array(bytes)], { type: "ima
 const URL_IMAGE = "https://example.com/street.png";
 
 describe("the pack", () => {
-  test("registers exactly the eight image-edit providers, sorted", () => {
+  test("registers exactly the nine image-edit providers, sorted", () => {
     expect([...imageEdit.providers]).toEqual([
       "black-forest-labs",
       // fal contributes 17 editing endpoints — more than the other four
@@ -68,6 +71,7 @@ describe("the pack", () => {
       // Its mask-driven routes are still excluded, on the same rule that keeps
       // Stability's out: `mask_url` is not a word this vocabulary has.
       "fal",
+      "higgsfield",
       "ideogram",
       "openai",
       // Two refs, one per operation: `photoroom/edit-with-ai`, the single mode
@@ -1311,6 +1315,159 @@ describe("removeBackground: photoroom", () => {
     expect(result.warnings.map((issue) => [issue.code, issue.path])).toEqual([
       ["unknown_param", ["padding"]],
     ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// higgsfield — the picture-editing view: one picture or a list, by URL
+// ---------------------------------------------------------------------------
+
+describe("higgsfield: the row says where the picture lands", () => {
+  const base = { operation: "edit", prompt: PROMPT } as const;
+
+  test("a removal is refused with what Higgsfield does not have and where to look", () => {
+    const result = imageEdit.safe({
+      operation: "removeBackground",
+      model: "higgsfield/higgsfield-ai/soul/v2/image-to-image",
+      image: { url: URL_IMAGE },
+    } as never);
+    if (result.ok) throw new Error("expected a refusal");
+    expect(result.errors[0]?.message).toBe(
+      '`operation` must be "edit" on this model; got "removeBackground". No Higgsfield route removes a background. ' +
+        "Which operation a model serves is `IMAGE_EDIT_MODEL_PARAMS[model].operations` at `unmodel/<provider>/values`.",
+    );
+  });
+
+  test("Soul 2 image-to-image takes one `image_url`; its own `resolution` is an extra", () => {
+    const params = imageEdit({
+      ...base,
+      model: "higgsfield/higgsfield-ai/soul/v2/image-to-image",
+      image: { url: URL_IMAGE },
+      aspectRatio: "3:4",
+      n: 4,
+      resolution: "1080p",
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({
+      prompt: PROMPT,
+      image_url: URL_IMAGE,
+      batch_size: 4,
+      aspect_ratio: "3:4",
+      resolution: "1080p",
+    });
+    expect(params.request.url).toBe("https://api.higgsfield.ai/higgsfield-ai/soul/v2/image-to-image");
+    expect(params.toSdk("higgsfield")).toEqual({ input: JSON.parse(JSON.stringify(params)) });
+  });
+
+  test("Qwen Image 3 takes a list: one picture is a one-element `image_urls`", () => {
+    const params = imageEdit({
+      ...base,
+      model: "higgsfield/alibaba/qwen-image-3/edit",
+      image: { url: URL_IMAGE },
+      seed: 3,
+    });
+    expect(JSON.parse(JSON.stringify(params))).toEqual({ prompt: PROMPT, image_urls: [URL_IMAGE], seed: 3 });
+  });
+
+  test("further pictures ride `providerOptions.higgsfield.image_urls`", () => {
+    const params = imageEdit({
+      ...base,
+      model: "higgsfield/alibaba/qwen-image-3/edit",
+      image: { url: URL_IMAGE },
+      providerOptions: { higgsfield: { image_urls: [URL_IMAGE, "https://example.com/second.png"] } },
+    });
+    expect((params as unknown as { image_urls: string[] }).image_urls).toEqual([
+      URL_IMAGE,
+      "https://example.com/second.png",
+    ]);
+  });
+
+  test.each([
+    ["{ file }", { file: png() }],
+    ["{ data }", { data: "aVZCT1J3MEtHZ28=" }],
+  ])("%s is refused with the upload route that makes a URL", (_label, image) => {
+    const result = imageEdit.safe({
+      ...base,
+      model: "higgsfield/alibaba/qwen-image-3/edit",
+      image,
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([["unsupported_param", ["image"]]]);
+    expect(result.errors[0]!.message).toContain("POST https://api.higgsfield.ai/files/generate-upload-url");
+  });
+
+  test("`strength` has no parameter on any route, and the adapter declares it", () => {
+    const result = imageEdit.safe({
+      ...base,
+      model: "higgsfield/ideogram/v4.0",
+      image: { url: URL_IMAGE },
+      strength: 0.4,
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([["unsupported_param", ["strength"]]]);
+    expect(result.errors[0]!.message).toContain("`image_weight`");
+  });
+
+  test("`n` and `seed` are refused by the routes that have no parameter for them", () => {
+    const result = imageEdit.safe({
+      ...base,
+      model: "higgsfield/marketing-studio/image",
+      image: { url: URL_IMAGE },
+      n: 2,
+      seed: 3,
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["unsupported_param", ["seed"]],
+      ["unsupported_param", ["n"]],
+    ]);
+    expect(result.errors[0]!.message).toContain("`marketing-studio/image` declares no `seed` parameter");
+  });
+
+  test("a route outside the view is not a ref; `higgsfield.imageEdit` says which address has it", () => {
+    const result = imageEdit.safe({
+      ...base,
+      model: "higgsfield/z-image/turbo",
+      image: { url: URL_IMAGE },
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.warnings.map((issue) => issue.code)).toContain("unknown_model");
+    // No row, so the adapter cannot tell `image_url` from `image_urls`.
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([["unsupported_param", ["image"]]]);
+  });
+
+  test("a missing picture is the view's own finding, at `image`", () => {
+    const result = imageEdit.safe({ ...base, model: "higgsfield/marketing-studio/image" } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.every((issue) => issue.path[0] === "image")).toBe(true);
+  });
+
+  test("every route's row leaves `operations` unsaid, so each one serves \"edit\" and only that", () => {
+    const rows: ImageEditModelParamTable = higgsfieldAdapter.modelParams;
+    expect(Object.keys(rows).length).toBeGreaterThan(0);
+    for (const [route, row] of Object.entries(rows)) {
+      expect(row.operations, route).toBeUndefined();
+      expect(imageEditOperations(rows, route), route).toEqual(["edit"]);
+    }
+  });
+
+  test("`operation: \"removeBackground\"` is refused at `operation`, naming what the route serves", () => {
+    // Written the way the removal arm is typed: no prompt.
+    const result = imageEdit.safe({
+      operation: "removeBackground",
+      model: "higgsfield/alibaba/qwen-image-3/edit",
+      image: { url: URL_IMAGE },
+    } as never);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.map((issue) => [issue.code, issue.path])).toEqual([
+      ["invalid_enum_value", ["operation"]],
+    ]);
+    expect(result.errors[0]!.meta).toMatchObject({ allowed: ["edit"], value: "removeBackground" });
   });
 });
 

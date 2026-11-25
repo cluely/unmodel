@@ -1,0 +1,9 @@
+{
+  "ref": "higgsfield/kling-video/v3.0/pro/image-to-video",
+  "params": {
+    "prompt": "the fox turns and walks into the snow",
+    "duration": 8,
+    "image_url": "https://example.com/frame.png"
+  },
+  "url": "https://api.higgsfield.ai/kling-video/v3.0/pro/image-to-video"
+}

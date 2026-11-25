@@ -944,6 +944,64 @@ image({ endpoint: chosen, prompt: "x", whatever: 1 });`),
   });
 });
 
+describe("higgsfield: the generated route rows reach the editor", () => {
+  test("a Cinema Studio extra completes that route's own vocabulary", () => {
+    // `camera_movement` is typed from the route's generated wire interface, so
+    // the list an editor offers is the one `higgsfield.video` validates.
+    const entries = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "higgsfield/higgsfield/cinema-studio/4.0", prompt: "x", camera_movement: "¦" });`);
+    expect(entries).toHaveLength(33);
+    expect(entries).toContain("dolly-zoom");
+    // LTX has a parameter of the same name with a different, shorter list.
+    const ltx = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "higgsfield/lightricks/ltx-2.5/text-to-video/pro", prompt: "x", duration: 6, camera_movement: "¦" });`);
+    expect(ltx.sort()).toEqual([
+      "dolly_in",
+      "dolly_left",
+      "dolly_out",
+      "dolly_right",
+      "focus_shift",
+      "jib_down",
+      "jib_up",
+      "static",
+    ]);
+  });
+
+  test("`resolution` completes a route's canonical tiers, and is `never` where it has none", () => {
+    const tiers = completionsAt(`import { image } from "./src/unified/image";
+image({ model: "higgsfield/marketing-studio/image", prompt: "x", resolution: "¦" });`);
+    expect(tiers.sort()).toEqual(["1k", "2k", "4k"]);
+    // Soul sizes in `720p | 1080p`, which is not a tier this vocabulary has.
+    expect(
+      semanticErrorsIn(`import { image } from "./src/unified/image";
+image({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "x", resolution: "1k" });`).length,
+    ).toBeGreaterThan(0);
+    // …and on the editing surface, where there is no canonical tier word at
+    // all, the same route family's own `resolution` is an extra that completes.
+    const own = completionsAt(`import { imageEdit } from "./src/unified/image-edit";
+imageEdit({ model: "higgsfield/higgsfield-ai/soul/v2/image-to-image", operation: "edit", prompt: "x", image: { url: "https://e.com/a.png" }, resolution: "¦" });`);
+    expect(own.sort()).toEqual(["1080p", "720p"]);
+  });
+
+  test("a video tier completes in the canonical spelling, whatever the route's capitals", () => {
+    // `minimax/h3-lite` lists `480P | 768P`: one canonical tier, sent as `480P`.
+    const entries = completionsAt(`import { video } from "./src/unified/video";
+video({ model: "higgsfield/minimax/h3-lite/text-to-video", prompt: "x", resolution: "¦" });`);
+    expect(entries).toEqual(["480p"]);
+  });
+
+  test("a sibling route's extra is an error, not a widened `unknown`", () => {
+    expect(
+      semanticErrorsIn(`import { image } from "./src/unified/image";
+image({ model: "higgsfield/higgsfield-ai/soul/standard", prompt: "x", n: 4, style_strength: 0.5 });`),
+    ).toEqual([]);
+    expect(
+      semanticErrorsIn(`import { image } from "./src/unified/image";
+image({ model: "higgsfield/z-image/turbo", prompt: "x", style_strength: 0.5 });`).length,
+    ).toBeGreaterThan(0);
+  });
+});
+
 describe("unified imageEdit: same guarantees on the edit surface", () => {
   test("size completes the edit model's presets", () => {
     const entries = completionsAt(`import { imageEdit } from "./src/unified/image-edit";

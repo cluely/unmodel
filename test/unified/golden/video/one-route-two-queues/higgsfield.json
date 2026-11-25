@@ -1,0 +1,10 @@
+{
+  "ref": "higgsfield/bytedance/seedance-2.5/text-to-video",
+  "params": {
+    "prompt": "a drone shot over a fjord at sunrise",
+    "duration": 5,
+    "aspect_ratio": "9:16",
+    "resolution": "720p"
+  },
+  "url": "https://api.higgsfield.ai/bytedance/seedance-2.5/text-to-video"
+}

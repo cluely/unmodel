@@ -1,0 +1,9 @@
+{
+  "prompt": "the character in the picture performs the clip's motion",
+  "video": {
+    "url": "https://example.com/clip.mp4"
+  },
+  "image": {
+    "url": "https://example.com/frame.png"
+  }
+}

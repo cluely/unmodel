@@ -52,6 +52,7 @@ import { image as bria } from "../../src/providers/bria/unified";
 import { image as bytedance } from "../../src/providers/bytedance/unified-image";
 import { image as fal } from "../../src/providers/fal/unified-image";
 import { image as google } from "../../src/providers/google/unified-image";
+import { image as higgsfield } from "../../src/providers/higgsfield/unified-image";
 import { image as ideogram } from "../../src/providers/ideogram/unified-image";
 import { image as kling } from "../../src/providers/kling/unified-image";
 import { image as krea } from "../../src/providers/krea/unified";
@@ -66,6 +67,7 @@ import { image as stability } from "../../src/providers/stability/unified-image"
 import { image as vidu } from "../../src/providers/vidu/unified-image";
 import { imageEdit as blackForestLabsEdit } from "../../src/providers/black-forest-labs/unified-image-edit";
 import { imageEdit as falEdit } from "../../src/providers/fal/unified-image-edit";
+import { imageEdit as higgsfieldEdit } from "../../src/providers/higgsfield/unified-image-edit";
 import { imageEdit as ideogramEdit } from "../../src/providers/ideogram/unified-image-edit";
 import { imageEdit as openaiEdit } from "../../src/providers/openai/unified-image-edit";
 import { imageEdit as photoroomEdit } from "../../src/providers/photoroom/unified";
@@ -99,6 +101,7 @@ const IMAGE_ADAPTERS: readonly Adapter[] = [
   krea,
   reve,
   revana,
+  higgsfield,
 ];
 
 const EDIT_ADAPTERS: readonly (Omit<Adapter, "modelParams"> & {
@@ -113,6 +116,7 @@ const EDIT_ADAPTERS: readonly (Omit<Adapter, "modelParams"> & {
   revanaEdit,
   photoroomEdit,
   stabilityEdit,
+  higgsfieldEdit,
 ];
 
 /**
@@ -177,6 +181,18 @@ const BASE: Readonly<Record<string, Record<string, unknown>>> = {
   // sweep already sends) and the source image (which `EDIT_ADAPTERS` sends), so
   // no fal ref needs an entry here — and if a future roster adds one that does,
   // the sweep fails naming it rather than passing quietly.
+  //
+  // Higgsfield's are derived the same way, from the rows: a route whose count
+  // is REQUIRED (the two Kling Image series routes, 2 to 10 related images)
+  // gets the smallest count its row allows. `n` is a canonical word, but it is
+  // not one this sweep measures.
+  ...Object.fromEntries(
+    [higgsfield, higgsfieldEdit].flatMap((adapter) =>
+      Object.entries(adapter.modelParams).flatMap(([model, row]) =>
+        "countRequired" in row ? [[`higgsfield/${model}`, { n: row.bounds.n.min }] as const] : [],
+      ),
+    ),
+  ),
 };
 
 /**
@@ -285,7 +301,7 @@ describe("every declared preset is a value the provider accepts", () => {
         : { data: "AAAA" };
     for (const [model, row] of Object.entries(adapter.modelParams ?? {})) {
       const ref = `${adapter.provider}/${model}`;
-      const base = editBase(adapter, model, source);
+      const base = { ...(BASE[ref] ?? {}), ...editBase(adapter, model, source) };
       for (const size of row.sizes ?? []) {
         editCells.push([ref, "size", size, { ...base, size }]);
       }
@@ -337,6 +353,7 @@ describe("every declared preset is a value the provider accepts", () => {
       // Recraft's `strength` is required with no documented default, so a
       // request without one is refused before anything else can be observed.
       const base = {
+        ...(BASE[ref] ?? {}),
         ...editBase(adapter, model, source),
         ...(adapter.provider === "recraft" && { strength: 0.4 }),
       };

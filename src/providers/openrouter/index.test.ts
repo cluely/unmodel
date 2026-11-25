@@ -60,4 +60,18 @@ describe("unmodel/openrouter", () => {
     expect(report.finishReason).toBe("stop");
     expect(report.warnings).toEqual([]);
   });
+
+  test("checkChat prices prompt_tokens_details.audio_tokens at the inputAudio rate", () => {
+    // google/gemini-3-flash-preview: $0.50 text, $1.00 audio per 1M input tokens.
+    const report = checkChat({
+      model: "google/gemini-3-flash-preview",
+      choices: [{ finish_reason: "stop" }],
+      usage: {
+        prompt_tokens: 1_000_000,
+        completion_tokens: 0,
+        prompt_tokens_details: { cached_tokens: 0, audio_tokens: 800_000 },
+      },
+    });
+    expect(report.costUSD).toBeCloseTo(0.9, 10);
+  });
 });

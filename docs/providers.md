@@ -216,14 +216,45 @@ picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
 endpoints — Nano Banana 1/2/Pro edit, GPT Image 1.5/2 edit, FLUX Kontext / Kontext Max /
 Kontext Multi, FLUX.2 pro/dev edit, FLUX fill and i2i, Seedream 4.5 / 5 Pro edit,
 Qwen-Image-Edit 2511, Qwen Image 3 edit, and the prompt-less FIBO Relight route).
-Six of the ten — openai, black-forest-labs, ideogram, recraft, photoroom, fal — ship a
+Seven of the ten — openai, black-forest-labs, ideogram, recraft, photoroom, stability, fal — ship a
 unified adapter, and `unmodel/image-edit` carries the ready-made pack over
 them (and over revana, the router). fal's adapter contains the 17 prompt-based rows; FIBO Relight is exact on
-the provider-native substrate and marked `unified: false`, because the canonical
-image-edit request requires a prompt the route does not accept. No background-removal route is curated at fal: it is an operation
-with no prompt, and this vocabulary has no word for it yet — seventeen of those routes now
-carry the reason by name in `data/fal/curation.json`'s `excluded.endpoints`, which ships as
-`FAL_EXCLUDED`.
+the provider-native substrate and marked `unified: false`, because a canonical
+`operation: "edit"` requires a prompt the route does not accept.
+
+**`operation: "removeBackground"`.** `unmodel/image-edit` speaks two operations, and which one
+a model serves is a fact of its row (`docs/decisions.md` §10). Two refs serve the removal, both
+native multipart routes: `stability/stable-image-remove-background`
+(`stability.imageEditRemoveBackground`; `image` → `image`, `outputFormat` → `output_format`,
+`jpeg` refused because the route returns an alpha channel) and `photoroom/remove-background`
+(`photoroom.imageEditRemoveBackground`; `image` → `image_file`, `outputFormat` → `format` with
+`jpeg` written `jpg`, and `bg_color` / `channels` / `crop` / `despill` as extras). Stability's
+other five edit routes are mask- or search-driven and stay wire-only.
+
+Background-removal routes that exist at a vendor and are **not** behind the operation yet —
+follow-ups, each needing its substrate address first:
+
+- **recraft** — `POST https://external.api.recraft.ai/v1/images/removeBackground`
+  (`operationId: RemoveBackground`; multipart `image` or JSON `image_url`, plus `image_format`,
+  `response_format`, `upscale`, `zdr`; no `model` and no prompt). Verified 2026-11-24 against
+  https://www.recraft.ai/docs/api-reference/openapi.json. Not modeled: `src/providers/recraft/`
+  has no validator for the route, and it needs a catalog row priced from Recraft's pricing page.
+- **bria** — `POST https://engine.prod.bria-api.com/v2/image/edit/remove_background` (JSON;
+  `image` required, a URL or base64; `model: "RMBG2" | "RMBG3"`, an optional `prompt` that
+  narrows what the cut keeps and "cannot be combined with" `RMBG3`, `preserve_alpha`, async by
+  default). Verified 2026-11-24 against https://docs.bria.ai/_bundle/image-editing.yaml. Not
+  modeled: it is one of the ~20 task routes `src/providers/bria/image-edit.ts` names as outside
+  `bria.imageEdit`, each with its own schema and price.
+- **fal** — seven still-image routes (`fal-ai/imageutils/rembg`, `fal-ai/birefnet`,
+  `fal-ai/birefnet/v2`, `fal-ai/ben/v2/image`, `fal-ai/bria/background/remove`,
+  `fal-ai/ideogram/remove-background`, `pixelcut/background-removal`), all `image_url` and
+  prompt-less (probed 2026-08-26). Excluded by name in `data/fal/curation.json` with the reason,
+  which ships as `FAL_EXCLUDED`: promoting them is generator work (`scripts/codegen-fal.ts` must
+  emit `operations` on the unified rows and the fal adapter must branch on it). fal's nine
+  **video** background-removal routes are excluded under their own reason and never join this
+  category — its one content word is `image`.
+- **photoroom `GET /v2/edit`** — the URL-input variant of the Image Editing API; not addressed
+  (see below), so both Photoroom refs take `{ file }` only.
 
 **Photoroom — `photoroom.imageEdit` and `photoroom.imageEditRemoveBackground`.** Tier:
 **native**, with one generated part. Two routes on two hosts, both `x-api-key: <PHOTOROOM_API_KEY>`
@@ -298,10 +329,10 @@ Not served, each for a stated reason:
 - The Video API, the Visual Agent API and Perspective Correction — no endpoint or parameter is
   documented for any of them.
 
-**In `unmodel/image-edit`: one ref, `photoroom/edit-with-ai`.** Of everything `/v2/edit` does,
-Edit With AI is the one mode that is a picture and a sentence with no mask, so it is the one
-the canonical vocabulary names (`unmodel/photoroom/unified`, with the tables at
-`unmodel/photoroom/values`):
+**In `unmodel/image-edit`: two refs, one per operation** (`unmodel/photoroom/unified`, with the
+tables at `unmodel/photoroom/values`). `photoroom/edit-with-ai` serves `operation: "edit"`: of
+everything `/v2/edit` does, Edit With AI is the one mode that is a picture and a sentence with
+no mask:
 
 | Canonical | `POST /v2/edit` form field |
 |---|---|
@@ -325,8 +356,26 @@ needs one `sandbox_` call — so the adapter sends the form the docs send most, 
 Reference pictures (`editWithAI.additionalImages.<name>.imageFile`, up to four) ride in
 `providerOptions.photoroom` as well, which is typed from the whole `/v2/edit` form.
 
-`photoroom.imageEditRemoveBackground` is not in the pack: it takes no prompt, and
-`ImageEditParams` requires one. Research: `docs/research/photoroom-api-2026-11-24.md`.
+`photoroom/remove-background` serves `operation: "removeBackground"` and compiles to
+`photoroom.imageEditRemoveBackground` — `POST /v1/segment`, not `/v2/edit`, although a bare
+`/v2/edit` call is also a background removal. `/v1/segment` is the route Photoroom names for
+the job and a fifth of the price ("each API call is priced at $0.02" against $0.10; "you'll be
+charged the Basic price per image of $0.02" whichever plan the key is on —
+https://docs.photoroom.com/remove-background-api-basic-plan/pricing.md and
+https://www.photoroom.com/api/pricing, read 2026-11-24).
+
+| Canonical | `POST /v1/segment` form field |
+|---|---|
+| `image: { file }` | `image_file` |
+| `outputFormat` | `format` — `png`, `webp`, and `jpeg` written `jpg` |
+| extras `bg_color`, `channels`, `crop`, `despill` | the same names, verbatim |
+| `providerOptions.photoroom.size` | `size` (`preview` / `medium` / `hd` / `full`) — not an extra, because the name is the canonical word for a shape |
+| `image: { url }`, `image: { data }` | refused: "The Remove Background API requires you to upload the content of your image file"; the base64 form is a separate JSON body (`image_file_b64`) that is not addressed |
+| `prompt`, `seed` | refused, naming `photoroom/edit-with-ai` as the ref that reads them |
+| `strength`, `n`, `size`, `aspectRatio`, `dimensions` | refused: no such field on either route |
+
+Each ref refuses the other's operation at `operation`, and at compile time the wrong pairing
+does not type-check. Research: `docs/research/photoroom-api-2026-11-24.md`.
 Remaining: alibaba (Qwen-Image), baidu, tencent (HunyuanImage), minimax, z-ai, nvidia,
 amazon (Titan/Nova); azure MAI `imageEdit` sends up to five JPEG or PNG references as repeated `image` parts to `/mai/v1/images/edits`.
 **Excluded (no public API):** midjourney, hidream, pruna, playground, sapiens-ai, eigen-ai,
@@ -1303,7 +1352,7 @@ leaves rather than whole validators.
 | `unmodel/tts` | `tts`, `createTts` | 20 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume (API retired 2026-11-13; every route answers 404), inworld, lmnt, minimax, murf, openai, resemble, revana, rime, smallest-ai, speechify, stepfun |
 | `unmodel/stt` | `stt`, `createStt` | 13 | assemblyai, cartesia, deepgram, elevenlabs, fal, gladia, google, inworld, mistral, openai, revai, soniox, speechmatics |
 | `unmodel/video` | `video`, `createVideo` | 15 | alibaba, atlascloud, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, revana, runway, vidu, xai |
-| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 7 | black-forest-labs, fal, ideogram, openai, photoroom (one ref, `photoroom/edit-with-ai` — the one mode of `POST /v2/edit` with this shape), recraft, revana — the seven with a route that is *image + prompt, no mask* |
+| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 8 | black-forest-labs, fal, ideogram, openai, photoroom (two refs: `photoroom/edit-with-ai`, the one mode of `POST /v2/edit` that is a picture and a sentence, and `photoroom/remove-background`), recraft, revana, stability (one ref, `stability/stable-image-remove-background`, `operation: "removeBackground"` only) — the eight with a route that is *image + prompt, no mask* or *image, background removed* |
 | `unmodel/music` | `music`, `createMusic` | 6 | elevenlabs, fal, google, mureka, revana, stability |
 | `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (2 models, `POST /v1/sound-generation`), fal (7 endpoints from five vendors, ElevenLabs' v2 and v3 among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 5 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), revana (1 curated model on the one route it serves every media model from), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |

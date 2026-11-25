@@ -38,11 +38,7 @@ import type {
   ProviderOptions,
   UrlRef,
 } from "./common";
-import type {
-  ModelExtras,
-  ModelParamTable,
-  ModelShape,
-} from "./model-params";
+import type { ModelExtras, ModelParams, ModelParamsFor, ModelShape } from "./model-params";
 
 export type {
   AspectRatio,
@@ -115,37 +111,54 @@ export type ImageEditInputFor<K extends ImageEditInputKind> =
   | ("url" extends K ? ImageEditUrlInput : never)
   | ("data" extends K ? ImageEditDataInput : never);
 
-interface ImageEditParamsBase {
-  /**
-   * Discriminant, so a future `"inpaint"` / `"upscale"` can join this category
-   * without either widening `ImageEditParams` into a shape where half the
-   * fields are conditional, or minting a seventh entry point.
-   */
-  operation: "edit";
-  /** What to change. */
-  prompt: string;
+/**
+ * The two things an image-edit route can be asked to do through this
+ * vocabulary.
+ *
+ * `"edit"` changes a picture the way a sentence says; `"removeBackground"` cuts
+ * the subject out and takes no sentence at all. Which one a **model** serves is
+ * a fact of its `modelParams` row (`operations`, absent = `["edit"]`), not of
+ * its provider: Photoroom serves one at `photoroom/edit-with-ai` and the other
+ * at `photoroom/remove-background`. See `docs/decisions.md` §10.
+ */
+export type ImageEditOperation = "edit" | "removeBackground";
+
+/** The words every operation shares. */
+export interface ImageEditParamsCommon {
   image: ImageEditInput;
   /** `"provider/model"`, split on the **first** slash. */
   model: string;
-  /** 0 = keep the source, 1 = ignore it. Providers spell this a dozen ways. */
-  strength?: number;
-  n?: number;
-  seed?: number;
   outputFormat?: ImageOutputFormat;
   providerOptions?: ProviderOptions;
 }
 
 /**
- * An image-edit request. `size` / `aspectRatio` / `dimensions` are XOR for the
- * same reason as in `ImageParams`; all three are optional here because the
- * common case is "same shape as the input", which is what omitting them means.
+ * The words of a prompted edit, before the sizing XOR. Exported because the
+ * declaration of an adapter whose `compile` takes both operations names it;
+ * callers want {@link ImageEditEditParams}.
+ */
+export interface ImageEditEditBase extends ImageEditParamsCommon {
+  /** Discriminant: change the picture the way `prompt` says. */
+  operation: "edit";
+  /** What to change. */
+  prompt: string;
+  /** 0 = keep the source, 1 = ignore it. Providers spell this a dozen ways. */
+  strength?: number;
+  n?: number;
+  seed?: number;
+}
+
+/**
+ * A prompted edit. `size` / `aspectRatio` / `dimensions` are XOR for the same
+ * reason as in `ImageParams`; all three are optional here because the common
+ * case is "same shape as the input", which is what omitting them means.
  *
  * A union of three complete object types, not `Base & (ArmA | ArmB | ArmC)` —
  * see the note on `ImageParams` for the distributive-`Omit` trap the shorter
  * spelling walks into.
  */
-export type ImageEditParams =
-  | (ImageEditParamsBase & {
+export type ImageEditEditParams =
+  | (ImageEditEditBase & {
       /**
        * The provider's own spelling of size — `"1024x1536"`, or the literal a
        * model takes instead (`"auto"`). Narrows to *this model's* presets when
@@ -155,26 +168,136 @@ export type ImageEditParams =
       aspectRatio?: never;
       dimensions?: never;
     })
-  | (ImageEditParamsBase & { size?: never; aspectRatio?: AspectRatio; dimensions?: never })
-  | (ImageEditParamsBase & { size?: never; aspectRatio?: never; dimensions?: Dimensions });
+  | (ImageEditEditBase & { size?: never; aspectRatio?: AspectRatio; dimensions?: never })
+  | (ImageEditEditBase & { size?: never; aspectRatio?: never; dimensions?: Dimensions });
+
+/**
+ * Cut the subject out. No prompt: the operation is the instruction.
+ *
+ * The seven `?: never` keys are load-bearing twice over. `ExactKeys` reads
+ * `keyof` the vocabulary, and `keyof` a union is only the keys every member
+ * declares — so an arm that simply left `prompt` out would stop it being a
+ * known key on the edit arm too. And they are what makes `prompt` on a removal
+ * a compile error rather than a field that is silently dropped.
+ *
+ * One arm, not three: a removal has no shape to choose, so it does not cross
+ * the sizing XOR.
+ */
+export interface ImageEditRemoveBackgroundParams extends ImageEditParamsCommon {
+  /** Discriminant: return the subject on a transparent background. */
+  operation: "removeBackground";
+  prompt?: never;
+  strength?: never;
+  n?: never;
+  seed?: never;
+  size?: never;
+  aspectRatio?: never;
+  dimensions?: never;
+}
+
+/** An image-edit request: one of the {@link ImageEditOperation}s. */
+export type ImageEditParams = ImageEditEditParams | ImageEditRemoveBackgroundParams;
+
+// ---------------------------------------------------------------------------
+// The per-model row, and the operation it decides
+//
+// Declared here and not beside the other categories' rows in
+// `./model-params.ts`, which every pack's declaration reaches: that module
+// would have to name this one's operation arms, and this whole vocabulary
+// would then ride in the declaration graph of `unmodel/tts` and the twelve
+// other packs that never edit a picture (13.6 KiB each, measured). This module
+// already imports that one, so the row sits on the side of the edge that
+// exists.
+// ---------------------------------------------------------------------------
+
+/**
+ * An image-edit model's row: the image row, plus which operations the model
+ * serves.
+ */
+export interface ImageEditModelParams extends ModelParams {
+  /**
+   * The operations this model serves, `as const`.
+   *
+   * **Absent means `["edit"]`**: a prompted edit is what an image-edit model
+   * does unless its row says otherwise. A row that lists only
+   * `"removeBackground"` types `prompt`, `strength`, `n`, `seed` and the three
+   * shape words as `never` at that ref.
+   *
+   * On the row and not on the adapter, because one provider can serve the two
+   * operations at two different models, and an adapter-wide list would let the
+   * wrong pairing compile.
+   */
+  readonly operations?: readonly ImageEditOperation[];
+}
+
+/** An image-edit adapter's per-model table, keyed by **bare** model id. */
+export type ImageEditModelParamTable = Readonly<Record<string, ImageEditModelParams>>;
+
+/** `operations` → the operation union; absent is `"edit"`. */
+export type ImageEditOperationOf<Row> = Row extends {
+  readonly operations: readonly (infer O extends ImageEditOperation)[];
+}
+  ? O
+  : "edit";
+
+/**
+ * The words each operation owns, read off the arms above so the two cannot
+ * drift: everything an arm declares beyond the shared words and the sizing
+ * trio, which `ModelShape` supplies per model.
+ */
+type EditWords = Pick<ImageEditEditParams, "operation" | "prompt" | "strength" | "n" | "seed">;
+type RemoveBackgroundWords = Omit<ImageEditRemoveBackgroundParams, keyof ImageEditParamsCommon>;
+
+/**
+ * The operation one ref admits, with that operation's words — a complete
+ * **replacement** for the arms above, for the reason `SizingArms` in
+ * `./model-params.ts` states and one more: an intersection cannot make the
+ * required `prompt` of an edit `never` on a removal, so the narrowed words
+ * (`operation`, `prompt`, `strength`, `n`, `seed`, the sizing trio) are absent
+ * from the base this is intersected with and supplied only here.
+ *
+ * Degraded — dynamic ref, unknown provider, unknown model — both operations are
+ * offered, the edit with the wide sizing arms `ModelShape` restates, and the
+ * adapter answers at run time. A UNION of refs degrades the same way: it is
+ * offered every operation any of its members serves (a picker typed over a
+ * list of models is this case), and the wrong pairing is refused at run time
+ * from the same row.
+ */
+export type ImageEditOperationArms<A, R extends string> = [ModelParamsFor<A, R>] extends [never]
+  ? (EditWords & ModelShape<A, R>) | RemoveBackgroundWords
+  :
+      | ("edit" extends ImageEditOperationOf<ModelParamsFor<A, R>>
+          ? EditWords & ModelShape<A, R>
+          : never)
+      | ("removeBackground" extends ImageEditOperationOf<ModelParamsFor<A, R>>
+          ? RemoveBackgroundWords
+          : never);
 
 // ---------------------------------------------------------------------------
 // The narrowing, in the two places it has to be declared
 // ---------------------------------------------------------------------------
 
 /**
- * `ImageEditParams` narrowed to the input kinds one route accepts.
+ * `ImageEditParams` narrowed to the input kinds one route accepts, and to the
+ * operations it serves.
+ *
+ * `O` defaults to `"edit"`, so an adapter that only edits writes
+ * `ImageEditParamsFor<"file">` and reads `input.prompt` as a `string`. An
+ * adapter that serves both names `ImageEditOperation` and narrows on
+ * `input.operation` itself.
  *
  * `DistributiveOmit` rather than `Omit`, for the reason stated on
- * {@link ImageEditParams}: this is a union, and plain `Omit` would collapse the
- * two arms into one object with neither `aspectRatio` nor `dimensions`
+ * {@link ImageEditEditParams}: this is a union, and plain `Omit` would collapse
+ * its arms into one object with neither `aspectRatio` nor `dimensions`
  * exclusive — quietly deleting the invariant the type exists to state. The
- * intersection then distributes back over both arms, so each keeps its XOR.
+ * intersection then distributes back over the arms, so each keeps its XOR.
  */
-export type ImageEditParamsFor<K extends ImageEditInputKind> = DistributiveOmit<
-  ImageEditParams,
-  "image"
-> & { image: ImageEditInputFor<K> };
+export type ImageEditParamsFor<
+  K extends ImageEditInputKind,
+  O extends ImageEditOperation = "edit",
+> = DistributiveOmit<Extract<ImageEditParams, { operation: O }>, "image"> & {
+  image: ImageEditInputFor<K>;
+};
 
 /**
  * An image-edit adapter, parameterized by the image shapes its route accepts.
@@ -197,16 +320,18 @@ export interface ImageEditAdapterFor<
   K extends ImageEditInputKind,
   Wire extends object = object,
   Out extends object = object,
-  T extends ModelParamTable = ModelParamTable,
-> extends UnifiedAdapter<ImageEditParamsFor<K>, Wire, Out> {
+  T extends ImageEditModelParamTable = ImageEditModelParamTable,
+  O extends ImageEditOperation = "edit",
+> extends UnifiedAdapter<ImageEditParamsFor<K, O>, Wire, Out> {
   readonly category: "imageEdit";
   /** The image shapes this route accepts, `as const`. */
   readonly imageInputs: readonly K[];
   /**
-   * The per-**model** surface: this route's `size` presets and the extras each
-   * model takes. Optional on the type and present on all four adapters — a
-   * route with nothing model-dependent to say would leave it off and degrade
-   * to the wide vocabulary, which is what an unknown model already does.
+   * The per-**model** surface: this route's `size` presets, the extras each
+   * model takes, and the `operations` it serves (absent = `["edit"]`).
+   * Optional on the type and present on every shipped adapter — a route with
+   * nothing model-dependent to say would leave it off and degrade to the wide
+   * vocabulary, which is what an unknown model already does.
    */
   readonly modelParams?: T;
 }
@@ -233,8 +358,8 @@ export interface ImageEditAdapterFor<
 export interface ImageEditValidator<A> extends SafeUnknown<UnifiedResult<A, string>> {
   <
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<ImageEditParamsBase, UnifiedRef<A>, A> &
-      ModelShape<A, M> &
+    T extends UnifiedInput<ImageEditParamsCommon, UnifiedRef<A>, A> &
+      ImageEditOperationArms<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
@@ -245,8 +370,8 @@ export interface ImageEditValidator<A> extends SafeUnknown<UnifiedResult<A, stri
   ): UnifiedResult<A, M>;
   safe<
     M extends UnifiedRef<A> | (string & {}),
-    T extends UnifiedInput<ImageEditParamsBase, UnifiedRef<A>, A> &
-      ModelShape<A, M> &
+    T extends UnifiedInput<ImageEditParamsCommon, UnifiedRef<A>, A> &
+      ImageEditOperationArms<A, M> &
       ModelExtras<A, M>,
   >(
     params: T &
@@ -273,5 +398,5 @@ export type ImageNarrowing<A, R extends string> = {
 export type AnyImageEditAdapter = AnyUnifiedAdapter<ImageEditParams> & {
   readonly category: "imageEdit";
   readonly imageInputs: readonly ImageEditInputKind[];
-  readonly modelParams?: ModelParamTable;
+  readonly modelParams?: ImageEditModelParamTable;
 };

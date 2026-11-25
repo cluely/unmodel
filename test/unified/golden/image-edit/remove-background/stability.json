@@ -1,0 +1,9 @@
+{
+  "ref": "stability/stable-image-remove-background",
+  "image": { "file": "@blob" },
+  "params": {
+    "image": { "@blob": { "size": 64, "type": "image/png" } }
+  },
+  "url": "https://api.stability.ai/v2beta/stable-image/edit/remove-background",
+  "headers": {}
+}

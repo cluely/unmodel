@@ -1,6 +1,6 @@
 /**
  * `unmodel/stability/values` — the **runtime** lists behind this provider's
- * unified surfaces (image, music).
+ * unified surfaces (image, image-edit, music).
  *
  * Every export here is a readonly (`as const`) array or table a browser can
  * render: the model ids, the per-model narrowing rows (allowed sizes, ratios,
@@ -21,6 +21,11 @@ export {
   STABILITY_IMAGE_MODEL_PARAMS as IMAGE_MODEL_PARAMS,
   MODELS as IMAGE_MODELS,
 } from "./image-params";
+
+export {
+  STABILITY_IMAGE_EDIT_MODEL_PARAMS as IMAGE_EDIT_MODEL_PARAMS,
+  MODELS as IMAGE_EDIT_MODELS,
+} from "./image-edit-params";
 
 export {
   STABILITY_MUSIC_MODEL_PARAMS as MUSIC_MODEL_PARAMS,

@@ -32,6 +32,7 @@ import {
   AUDIO_CONTAINERS,
   AUDIO_FORMAT_CODECS,
   AUDIO_INPUT_KINDS,
+  IMAGE_EDIT_OPERATIONS,
   IMAGE_OUTPUT_FORMATS,
   OUTPUT_DELIVERIES,
   RESOLUTION_TIERS,
@@ -50,6 +51,7 @@ import type {
   TtsDeliveryKind,
   VideoResolution,
 } from "../../src/core/unified/vocabulary/common";
+import type { ImageEditOperation } from "../../src/core/unified/vocabulary/image-edit";
 import type {
   AudioInputKind,
   TimestampGranularity,
@@ -99,6 +101,16 @@ expectTrue<IsNever<Missing<typeof AUDIO_INPUT_KINDS, AudioInputKind>>>();
 // sixth arm with no member here is a picker that cannot name it.
 expectTrue<IsNever<Extra<typeof TTS_DELIVERY_KINDS, TtsDeliveryKind>>>();
 expectTrue<IsNever<Missing<typeof TTS_DELIVERY_KINDS, TtsDeliveryKind>>>();
+
+// ---------------------------------------------------------------------------
+// The image-edit operations
+// ---------------------------------------------------------------------------
+
+// An operation the union gains and this array does not is a picker that cannot
+// offer it; `imageEditOperations` in `image-edit-operations.ts` answers per model from the
+// rows, so this array is the only list of the vocabulary's own members.
+expectTrue<IsNever<Extra<typeof IMAGE_EDIT_OPERATIONS, ImageEditOperation>>>();
+expectTrue<IsNever<Missing<typeof IMAGE_EDIT_OPERATIONS, ImageEditOperation>>>();
 
 // ---------------------------------------------------------------------------
 // The two key-set declarations in derive.ts

@@ -16,7 +16,7 @@
  * everywhere, with its own model list and its own params — see the note in
  * `core/unified/vocabulary/image-edit.ts`.
  *
- * That `imageEdit` is the ready-made pack: seven providers, and therefore seven
+ * That `imageEdit` is the ready-made pack: eight providers, and therefore eight
  * providers' catalogs and validators, in one bundle. To pay for only the ones
  * you call, build your own from the adapter leaves:
  *
@@ -75,16 +75,39 @@
  * `test/unified/image-edit-capabilities.test.ts` asserts the direction by
  * compiling two requests and checking which way the wire value moves.
  *
- * ## Masked operations are wire-only in v1
+ * ## Two operations, and the model decides which
  *
- * `operation` is `"edit"` and only `"edit"`. Inpainting, outpainting, erase,
- * background replacement and virtual try-on all need a second image or a set of
- * pixels that this vocabulary has no word for — so they stay reachable by name
- * at `unmodel/<provider>` (`recraft.imageEditInpaint`,
- * `stability.imageEditSearchAndReplace`, `black-forest-labs.imageEditFill`, …).
- * The discriminant exists so they can join later without either widening
- * `ImageEditParams` into a shape where half the fields are conditional, or
- * minting a seventh entry point.
+ * `operation` is `"edit"` — change the picture the way `prompt` says — or
+ * `"removeBackground"`, which cuts the subject out and takes no prompt at all:
+ *
+ * ```ts
+ * imageEdit({
+ *   operation: "removeBackground",
+ *   model: "stability/stable-image-remove-background",
+ *   image: { file: png },
+ *   outputFormat: "webp",
+ * });
+ * ```
+ *
+ * Which one a model serves is a fact of its `modelParams` row (`operations`,
+ * absent meaning `["edit"]`), so the type follows the ref: at a removal ref
+ * `prompt`, `strength`, `n`, `seed` and the three shape words are compile
+ * errors, and at an edit ref `operation: "removeBackground"` is. One provider
+ * can serve both at different models — `photoroom/edit-with-ai` edits,
+ * `photoroom/remove-background` removes. At run time the same row answers for
+ * JavaScript callers and runtime-built refs, as `invalid_enum_value` at
+ * `operation` naming what the model does serve. `docs/decisions.md` §10 records
+ * why the arm exists and what it may never grow.
+ *
+ * ## Masked operations are wire-only
+ *
+ * Inpainting, outpainting, erase, background replacement and virtual try-on all
+ * need a second image or a set of pixels that this vocabulary has no word for —
+ * so they stay reachable by name at `unmodel/<provider>`
+ * (`recraft.imageEditInpaint`, `stability.imageEditSearchAndReplace`,
+ * `black-forest-labs.imageEditFill`, …). The discriminant exists so an
+ * operation can join without either widening `ImageEditParams` into a shape
+ * where half the fields are conditional, or minting another entry point.
  *
  * The result is the provider's own `Validated` (see `unmodel/image` for the
  * full explanation of what that means and why the pack is assembled by hand).
@@ -107,6 +130,9 @@ import { imageEdit as openai } from "../providers/openai/unified-image-edit";
 import { imageEdit as photoroom } from "../providers/photoroom/unified";
 import { imageEdit as recraft } from "../providers/recraft/unified-image-edit";
 import { imageEdit as revana } from "../providers/revana/unified-image-edit";
+// The LEAF, never `../providers/stability/unified` — that barrel also carries
+// the generation and music adapters and their validators.
+import { imageEdit as stability } from "../providers/stability/unified-image-edit";
 
 /** An adapter for this category; they live at `src/providers/<p>/unified.ts`. */
 export type ImageEditAdapter = AnyImageEditAdapter;
@@ -139,12 +165,13 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * `stt`, the per-ref `image` narrowing. A generated or
  * dynamically-loaded registry would keep the first and lose the other three.
  *
- * Seven providers rather than the eleven that ship an editing route, and the
- * seven are exactly the ones with a route this vocabulary can express: image,
- * prompt, no mask. Stability's six routes, Luma's reframe and BFL's FLUX Tools
- * family are all mask- or geometry-driven; Bria's `imageEdit` and Reve's are
- * neither (they are prompt-driven), and they are the obvious next adapters —
- * they are out of this wave rather than out of the category.
+ * Eight providers rather than the eleven that ship an editing route, and the
+ * eight are exactly the ones with a route this vocabulary can express: an
+ * image and a prompt with no mask, or an image whose background is to be
+ * removed. Luma's reframe and BFL's FLUX Tools family are mask- or
+ * geometry-driven, as are five of Stability's six routes; Bria's `imageEdit`
+ * and Reve's are neither (they are prompt-driven), and they are the obvious
+ * next adapters — they are out of this wave rather than out of the category.
  *
  * fal is the newest and contributes the most refs by a wide margin — 17
  * editing endpoints against the other four providers' handful — because it is
@@ -158,17 +185,22 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * so `{ file }` and `{ data }` are refused naming the upload route that turns a
  * local file into one.
  *
- * Photoroom is one route that does forty things, and the pack names exactly
- * one of them: `photoroom/edit-with-ai`, the mode of `POST /v2/edit` that takes
- * a picture and a sentence. Its source is a multipart file and nothing else.
- * The adapter writes `removeBackground: false` for the caller, because the
- * route's default would hand back a cut-out of the edit; everything else the
- * route does stays at `unmodel/photoroom`.
+ * Photoroom is the one provider here that serves both operations, at two refs
+ * over two routes. `photoroom/edit-with-ai` is the single mode of the
+ * forty-feature `POST /v2/edit` that takes a picture and a sentence; the
+ * adapter writes `removeBackground: false` for the caller, because the route's
+ * default would hand back a cut-out of the edit. `photoroom/remove-background`
+ * is `POST /v1/segment`, the route Photoroom names for the job and a fifth of
+ * the price. Both read a multipart file and nothing else; everything else
+ * `/v2/edit` does stays at `unmodel/photoroom`.
  *
- * The cost is honest and measured: importing this pulls in seven provider
+ * Stability serves `"removeBackground"` only, at one ref: its other five edit
+ * routes are the mask- and search-driven ones above.
+ *
+ * The cost is honest and measured: importing this pulls in eight provider
  * validators, their schemas and their catalogs, pinned in
  * `test/bundle-budget.test.ts`. `createImageEdit([…])` above is the way to pay
- * for two providers instead of seven.
+ * for two providers instead of eight.
  */
 export const imageEdit = createImageEdit([
   openai,
@@ -178,6 +210,7 @@ export const imageEdit = createImageEdit([
   recraft,
   revana,
   photoroom,
+  stability,
 ]);
 
 export type {
@@ -187,12 +220,21 @@ export type {
   Dimensions,
   ImageEditAdapterFor,
   ImageEditDataInput,
+  ImageEditEditBase,
+  ImageEditEditParams,
   ImageEditFileInput,
   ImageEditInput,
   ImageEditInputFor,
   ImageEditInputKind,
+  ImageEditModelParams,
+  ImageEditModelParamTable,
+  ImageEditOperation,
+  ImageEditOperationArms,
+  ImageEditOperationOf,
   ImageEditParams,
+  ImageEditParamsCommon,
   ImageEditParamsFor,
+  ImageEditRemoveBackgroundParams,
   ImageEditUrlInput,
   ImageEditValidator,
   ImageNarrowing,

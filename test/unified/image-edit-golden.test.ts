@@ -56,6 +56,12 @@
  * | shape as free-form pixels / a ratio string / a ratio enum | openai / bfl / ideogram | `sized-16x9` |
  * | a strength between two whole numbers | ideogram (warns) + recraft (exact) | `lossy-strength-third` |
  * | a ratio no pixel grid hits exactly | openai (warns) + bfl (reduces, exact) | `lossy-ultrawide` |
+ * | `operation: "removeBackground"`, a picture and nothing else | stability, photoroom | `remove-background` |
+ * | the same, with an encoding | stability, photoroom | `remove-background-webp` |
+ *
+ * Every case here compiles. A refusal is not a golden — the route's answer to
+ * `outputFormat: "jpeg"` on a removal (refused at Stability, re-spelled at
+ * Photoroom) is in `image-edit-e2e.test.ts`.
  */
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
@@ -125,7 +131,7 @@ const caseDirs = readdirSync(GOLDEN, { withFileTypes: true })
 
 test("the image-edit golden tree is present", () => {
   // A vacuous suite passes by asserting nothing; this is the guard against it.
-  expect(caseDirs.length).toBeGreaterThanOrEqual(6);
+  expect(caseDirs.length).toBeGreaterThanOrEqual(8);
 });
 
 describe.each(caseDirs)("golden image-edit/%s", (name) => {
@@ -291,6 +297,40 @@ describe("the matrix itself", () => {
     // …and the one field Photoroom's body carries that nobody asked for: the
     // route defaults to returning a cut-out, which an edit does not want.
     expect(dotted?.["removeBackground"]).toBe(false);
+  });
+
+  /**
+   * One removal, two forms that share no key: the picture is `image` on
+   * Stability's form and `image_file` on Photoroom's remove.bg-compatible one,
+   * and the encoding is `output_format` against `format`. Neither body carries
+   * a word of the edit arm — there is nothing for one to become.
+   */
+  test("the same removal lands on two forms with no key in common", () => {
+    const bodies = new Map(
+      all
+        .filter(({ name }) => name === "remove-background-webp")
+        .map(({ fixture }) => [
+          fixture.ref.slice(0, fixture.ref.indexOf("/")),
+          fixture.params as Record<string, unknown>,
+        ]),
+    );
+    expect(Object.keys(bodies.get("stability") ?? {}).sort()).toEqual(["image", "output_format"]);
+    expect(Object.keys(bodies.get("photoroom") ?? {}).sort()).toEqual(["format", "image_file"]);
+    expect(bodies.get("stability")?.["output_format"]).toBe("webp");
+    expect(bodies.get("photoroom")?.["format"]).toBe("webp");
+  });
+
+  test("both operations are committed, and a removal case carries no edit word", () => {
+    const operations = new Set<unknown>();
+    for (const name of caseDirs) {
+      const canonical = readJson<Record<string, unknown>>(join(GOLDEN, name, "canonical.json"));
+      operations.add(canonical["operation"]);
+      if (canonical["operation"] !== "removeBackground") continue;
+      for (const word of ["prompt", "strength", "n", "seed", "size", "aspectRatio", "dimensions"]) {
+        expect(Object.keys(canonical), name).not.toContain(word);
+      }
+    }
+    expect([...operations].sort()).toEqual(["edit", "removeBackground"]);
   });
 
   /** And the three size vocabularies, the same way. */

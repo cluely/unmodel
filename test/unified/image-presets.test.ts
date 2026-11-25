@@ -71,6 +71,9 @@ import { imageEdit as openaiEdit } from "../../src/providers/openai/unified-imag
 import { imageEdit as photoroomEdit } from "../../src/providers/photoroom/unified";
 import { imageEdit as recraftEdit } from "../../src/providers/recraft/unified-image-edit";
 import { imageEdit as revanaEdit } from "../../src/providers/revana/unified-image-edit";
+import { imageEdit as stabilityEdit } from "../../src/providers/stability/unified-image-edit";
+import { imageEditOperations } from "../../src/core/unified/image-edit-operations";
+import type { ImageEditModelParamTable } from "../../src/core/unified/vocabulary/image-edit";
 
 interface Adapter {
   readonly provider: string;
@@ -98,7 +101,10 @@ const IMAGE_ADAPTERS: readonly Adapter[] = [
   revana,
 ];
 
-const EDIT_ADAPTERS: readonly (Adapter & { readonly imageInputs: readonly string[] })[] = [
+const EDIT_ADAPTERS: readonly (Omit<Adapter, "modelParams"> & {
+  readonly imageInputs: readonly string[];
+  readonly modelParams?: ImageEditModelParamTable;
+})[] = [
   openaiEdit,
   blackForestLabsEdit,
   falEdit,
@@ -106,7 +112,28 @@ const EDIT_ADAPTERS: readonly (Adapter & { readonly imageInputs: readonly string
   recraftEdit,
   revanaEdit,
   photoroomEdit,
+  stabilityEdit,
 ];
+
+/**
+ * The request a model's own operation calls for, read from its row: an edit
+ * carries a prompt, a removal must not. Without this a removal model would be
+ * swept as an edit, refused at `operation`, and every probe at it would pass
+ * for the wrong reason.
+ */
+function editBase(
+  adapter: (typeof EDIT_ADAPTERS)[number],
+  model: string,
+  image: Record<string, unknown>,
+): Record<string, unknown> {
+  const operation = imageEditOperations(adapter.modelParams ?? {}, model)[0];
+  return {
+    operation,
+    model: `${adapter.provider}/${model}`,
+    image,
+    ...(operation === "edit" && { prompt: "Make it night." }),
+  };
+}
 
 /** A route's own required params, none of which has a canonical word. */
 const BASE: Readonly<Record<string, Record<string, unknown>>> = {
@@ -258,7 +285,7 @@ describe("every declared preset is a value the provider accepts", () => {
         : { data: "AAAA" };
     for (const [model, row] of Object.entries(adapter.modelParams ?? {})) {
       const ref = `${adapter.provider}/${model}`;
-      const base = { operation: "edit", model: ref, prompt: "Make it night.", image: source };
+      const base = editBase(adapter, model, source);
       for (const size of row.sizes ?? []) {
         editCells.push([ref, "size", size, { ...base, size }]);
       }
@@ -310,17 +337,19 @@ describe("every declared preset is a value the provider accepts", () => {
       // Recraft's `strength` is required with no documented default, so a
       // request without one is refused before anything else can be observed.
       const base = {
-        operation: "edit",
-        model: ref,
-        prompt: "Make it night.",
-        image: source,
+        ...editBase(adapter, model, source),
         ...(adapter.provider === "recraft" && { strength: 0.4 }),
       };
       dropCells.push([
         ref,
         () => {
           const withSize = imageEdit.safe({ ...base, size: "1280x720" } as never);
-          if (!withSize.ok) return "";
+          if (!withSize.ok) {
+            // Refused — but not for asking the model for the wrong operation,
+            // which would say nothing about `size`.
+            const misasked = withSize.errors.some((issue) => issue.path[0] === "operation");
+            return misasked ? "the probe named an operation this model does not serve" : "";
+          }
           const without = imageEdit.safe(base as never);
           return serialize(withSize) === serialize(without) ? "unchanged" : "";
         },

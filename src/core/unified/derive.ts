@@ -1686,12 +1686,13 @@ function resolveAudioSampleShape(
 /**
  * The `operation` discriminant, checked against what this route serves.
  *
- * The type already makes `operation: "inpaint"` a compile error while `"edit"`
- * is the only member — but a discriminant that is *only* a type is a silent
- * drop waiting for a JavaScript caller: the field would compile to nothing and
- * the request would quietly be an edit. It is checked here for the same reason
- * every other canonical field is, and it is generic in the set because the next
- * operation to land will land at some providers and not others.
+ * The type already makes `operation: "inpaint"` a compile error, and
+ * `"removeBackground"` one at a model that only edits — but a discriminant that
+ * is *only* a type is a silent drop waiting for a JavaScript caller: the field
+ * would compile to nothing and the request would quietly be an edit. It is
+ * checked here for the same reason every other canonical field is, and it is
+ * generic in the set because an operation is served at some models and not
+ * others.
  *
  * Reported as `invalid_enum_value` naming what the route does serve, with the
  * adapter's hint pointing at the wire-only sibling that does the job today.

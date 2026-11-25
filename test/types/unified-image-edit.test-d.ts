@@ -5,9 +5,10 @@
  * Two of this category's claims are **compile-time** ones, so they carry more
  * weight here than in the four categories that have neither:
  *
- * 1. `operation` is a literal, not a string. It is the discriminant that lets
- *    the masked operations join later without widening `ImageEditParams`, and it
- *    only does that job if `"inpaint"` is a red squiggle *today*.
+ * 1. `operation` is a literal, not a string, and which literal is decided by
+ *    the model: `"edit"` at an edit ref, `"removeBackground"` at a removal ref,
+ *    and each operation's words are errors on the other (section 8). It only
+ *    does that job if `"inpaint"` is a red squiggle too.
  * 2. `image` narrows per **route**, exactly as `audio` does at
  *    `unmodel/stt`:
  *
@@ -17,6 +18,7 @@
  * | black-forest-labs | data, url | error | ok | ok |
  * | recraft | file, url | ok | ok | error |
  * | photoroom | file | ok | error | error |
+ * | stability | file | ok | error | error |
  *
  * Sections 3–6 are the same four properties every category entry has: the ref
  * union, the provider's own result type, `providerOptions` keyed by the pack,
@@ -36,9 +38,20 @@ import {
 import { imageEdit as recraftImageEdit } from "../../src/providers/recraft/unified";
 import { imageEdit as revanaImageEdit } from "../../src/providers/revana/unified-image-edit";
 import type { UnifiedRef } from "../../src/core/unified/types";
+import {
+  imageEdit as stabilityImageEdit,
+  type StabilityImageEditResult,
+} from "../../src/providers/stability/unified-image-edit";
+import { imageEditRemoveBackground as photoroomSegmentValidator } from "../../src/providers/photoroom";
+import { imageEditRemoveBackground as stabilityValidator } from "../../src/providers/stability";
 import type {
+  ImageEditEditParams,
   ImageEditInputFor,
+  ImageEditOperation,
+  ImageEditOperationOf,
   ImageEditParams,
+  ImageEditParamsFor,
+  ImageEditRemoveBackgroundParams,
 } from "../../src/core/unified/vocabulary/image-edit";
 import { expectAssignable, expectTrue, type IsNever, type KeyIn } from "./helpers";
 
@@ -168,7 +181,7 @@ function refUnionTests(): void {
   // and draws a runtime `unknown_model` warning.
   imageEdit({ operation: "edit", model: "openai/gpt-image-9", prompt, image: { file } });
   // A provider with no adapter is a runtime structural error, not a type error.
-  imageEdit({ operation: "edit", model: "stability/stable-image-erase", prompt, image: { file } });
+  imageEdit({ operation: "edit", model: "luma/photon-1", prompt, image: { file } });
 
   // @ts-expect-error — `image` is not optional; there is nothing to edit.
   imageEdit({ operation: "edit", model: "openai/gpt-image-1.5", prompt });
@@ -254,7 +267,7 @@ function providerOptionsTests(): void {
     prompt,
     image: { file },
     // @ts-expect-error — nor for one that ships an editing route but no adapter.
-    providerOptions: { stability: {} },
+    providerOptions: { luma: {} },
   });
 
   const pair = createImageEdit([openaiImageEdit, bflImageEdit]);
@@ -406,12 +419,11 @@ function photoroomNarrowingTests(): void {
   const url = "https://example.com/street.png";
 
   expectAssignable<UnifiedRef<typeof photoroomImageEdit>>("photoroom/edit-with-ai");
-  // The route's other catalog rows are not refs here: `image-editing` names
-  // forty features and `remove-background` takes no prompt.
+  expectAssignable<UnifiedRef<typeof photoroomImageEdit>>("photoroom/remove-background");
+  // The route's third catalog row is not a ref here: `image-editing` names
+  // forty features, not an operation.
   // @ts-expect-error
   expectAssignable<UnifiedRef<typeof photoroomImageEdit>>("photoroom/image-editing");
-  // @ts-expect-error
-  expectAssignable<UnifiedRef<typeof photoroomImageEdit>>("photoroom/remove-background");
   expectAssignable<readonly ["file"]>(photoroomImageEdit.imageInputs);
 
   imageEdit({ ...base, model: "photoroom/edit-with-ai", image: { file }, seed: 7, outputFormat: "jpeg" });
@@ -428,9 +440,9 @@ function photoroomNarrowingTests(): void {
   // @ts-expect-error — the row declares no extras; a wire key is not a canonical one.
   imageEdit({ ...base, model: "photoroom/edit-with-ai", image: { file }, referenceBox: "originalImage" });
 
-  // The bucket is the whole `/v2/edit` form: dotted keys, the caller-named
-  // reference pictures (a `Blob`, which a bucket must take as a leaf), and the
-  // `pr-*` header params.
+  // The bucket is the whole of both forms: dotted keys, the caller-named
+  // reference pictures (a `Blob`, which a bucket must take as a leaf), the
+  // `pr-*` header params, and `/v1/segment`'s own fields.
   imageEdit({
     ...base,
     model: "photoroom/edit-with-ai",
@@ -460,21 +472,185 @@ function photoroomNarrowingTests(): void {
     providerOptions: { photoroom: { "editWithAI.additionalImages.styleRef.imageFile": url } },
   });
 
-  // The result is `photoroom.imageEdit`'s own `ValidatedForm`.
+  // The result is one of the two routes' own `ValidatedForm`s. The result type
+  // is read per PROVIDER, so a field of one form is reached by narrowing.
   const result = imageEdit({ ...base, model: "photoroom/edit-with-ai", image: { file } });
   expectAssignable<"form">(result.request.body);
-  expectAssignable<Blob | undefined>(result.imageFile);
+  if ("imageFile" in result) expectAssignable<Blob | undefined>(result.imageFile);
+  // @ts-expect-error — not without narrowing: `/v1/segment`'s form has no `imageFile`.
+  void result.imageFile;
   result.toSdk("photoroom");
   // @ts-expect-error — "openai" is not one of photoroom.imageEdit's targets.
   result.toSdk("openai");
 }
 
-// The adapter spells its result out instead of reading it off the validator
-// (see `PhotoroomImageEditResult`); it must stay the validator's own type.
+// The adapter spells its edit arm out instead of reading it off the validator
+// (see `PhotoroomImageEditResult`); the two arms must stay the two validators'
+// own types, each in both directions.
+type PhotoroomEditArm = Exclude<
+  PhotoroomImageEditResult,
+  ReturnType<typeof photoroomSegmentValidator>
+>;
+type PhotoroomSegmentArm = Extract<
+  PhotoroomImageEditResult,
+  ReturnType<typeof photoroomSegmentValidator>
+>;
 declare const photoroomFromValidator: ReturnType<typeof photoroomValidator>;
-declare const photoroomFromAdapter: PhotoroomImageEditResult;
-expectAssignable<PhotoroomImageEditResult>(photoroomFromValidator);
-expectAssignable<ReturnType<typeof photoroomValidator>>(photoroomFromAdapter);
+declare const photoroomEditArm: PhotoroomEditArm;
+expectAssignable<PhotoroomEditArm>(photoroomFromValidator);
+expectAssignable<ReturnType<typeof photoroomValidator>>(photoroomEditArm);
+declare const photoroomSegmentFromValidator: ReturnType<typeof photoroomSegmentValidator>;
+declare const photoroomSegmentArm: PhotoroomSegmentArm;
+expectAssignable<PhotoroomSegmentArm>(photoroomSegmentFromValidator);
+expectAssignable<ReturnType<typeof photoroomSegmentValidator>>(photoroomSegmentArm);
+
+// ---------------------------------------------------------------------------
+// 8 · the operation follows the model
+// ---------------------------------------------------------------------------
+
+function removeBackgroundTests(runtimeRef: string): void {
+  const removal = { operation: "removeBackground" } as const;
+  const edit = { operation: "edit", prompt } as const;
+  const stability = "stability/stable-image-remove-background";
+
+  // --- an edit ref edits, and only edits ------------------------------------
+  imageEdit({ ...edit, model: "openai/gpt-image-1.5", image: { file } });
+  // @ts-expect-error — this ref edits; its row declares no `operations`.
+  imageEdit({ ...removal, model: "openai/gpt-image-1.5", image: { file } });
+  // @ts-expect-error — and an edit still needs its sentence.
+  imageEdit({ operation: "edit", model: "openai/gpt-image-1.5", image: { file } });
+
+  // --- a removal ref removes, and takes none of the edit words --------------
+  imageEdit({ ...removal, model: stability, image: { file } });
+  imageEdit({ ...removal, model: stability, image: { file }, outputFormat: "webp" });
+  // @ts-expect-error — no prompt: the operation is the instruction.
+  imageEdit({ ...removal, model: stability, image: { file }, prompt });
+  // @ts-expect-error
+  imageEdit({ ...removal, model: stability, image: { file }, seed: 1 });
+  // @ts-expect-error
+  imageEdit({ ...removal, model: stability, image: { file }, strength: 0.5 });
+  // @ts-expect-error
+  imageEdit({ ...removal, model: stability, image: { file }, n: 2 });
+  // @ts-expect-error — a removal has no shape to choose, in any spelling.
+  imageEdit({ ...removal, model: stability, image: { file }, aspectRatio: "1:1" });
+  // @ts-expect-error
+  imageEdit({ ...removal, model: stability, image: { file }, size: "1024x1024" });
+  // @ts-expect-error
+  imageEdit({ ...removal, model: stability, image: { file }, dimensions: { width: 512, height: 512 } });
+  // @ts-expect-error — this ref removes; Stability's prompted edits are wire-only.
+  imageEdit({ ...edit, model: stability, image: { file } });
+  // @ts-expect-error — the route is multipart.
+  imageEdit({ ...removal, model: stability, image: { url } });
+  // @ts-expect-error
+  imageEdit({ ...removal, model: stability, image: { data } });
+
+  // --- one provider, two models, one operation each -------------------------
+  imageEdit({ ...edit, model: "photoroom/edit-with-ai", image: { file } });
+  imageEdit({ ...removal, model: "photoroom/remove-background", image: { file } });
+  imageEdit({
+    ...removal,
+    model: "photoroom/remove-background",
+    image: { file },
+    outputFormat: "jpeg",
+    bg_color: "red",
+    channels: "alpha",
+    crop: "true",
+    despill: "false",
+  });
+  // The four lines of docs/surfaces.md "Removing a background", verbatim in what they assert.
+  imageEdit({ operation: "removeBackground", model: "photoroom/remove-background", image: { file }, bg_color: "white" });
+  // @ts-expect-error — an edit-only provider has no removal ref.
+  imageEdit({ operation: "removeBackground", model: "openai/gpt-image-1.5", image: { file } });
+
+  // A union of refs degrades like a dynamic one: either operation compiles, and
+  // the adapter refuses the wrong pairing at run time from the same row.
+  function picker(model: "photoroom/remove-background" | "photoroom/edit-with-ai"): void {
+    imageEdit({ operation: "edit", prompt, model, image: { file } });
+    imageEdit({ operation: "removeBackground", model, image: { file } });
+  }
+  void picker;
+
+  // @ts-expect-error — the operation is a fact of the MODEL, not of the provider.
+  imageEdit({ ...removal, model: "photoroom/edit-with-ai", image: { file } });
+  // @ts-expect-error
+  imageEdit({ ...edit, model: "photoroom/remove-background", image: { file } });
+  // @ts-expect-error — extras are per model: `bg_color` is `/v1/segment`'s.
+  imageEdit({ ...edit, model: "photoroom/edit-with-ai", image: { file }, bg_color: "red" });
+  imageEdit({ ...removal, model: "photoroom/remove-background", image: { file }, crop: true });
+  // @ts-expect-error — `crop` is a boolean or its text, and nothing else.
+  imageEdit({ ...removal, model: "photoroom/remove-background", image: { file }, crop: "yes" });
+  // @ts-expect-error — nor a sentence.
+  imageEdit({ ...removal, model: "photoroom/remove-background", image: { file }, prompt });
+  // @ts-expect-error — and a seed is Edit With AI's.
+  imageEdit({ ...removal, model: "photoroom/remove-background", image: { file }, seed: 7 });
+  // `/v1/segment`'s `size` collides with the canonical word, so it is not an
+  // extra: it rides in the bucket, typed.
+  imageEdit({
+    ...removal,
+    model: "photoroom/remove-background",
+    image: { file },
+    providerOptions: { photoroom: { size: "hd" } },
+  });
+  // @ts-expect-error — the canonical `size` is a shape, and a removal has none.
+  imageEdit({ ...removal, model: "photoroom/remove-background", image: { file }, size: "hd" });
+
+  // --- a ref the types cannot read gets both arms, each still exact ---------
+  imageEdit({ ...removal, model: runtimeRef, image: { file } });
+  imageEdit({ ...edit, model: runtimeRef, image: { file }, aspectRatio: "1:1" });
+  // @ts-expect-error — the removal arm has no prompt whatever the ref is.
+  imageEdit({ ...removal, model: runtimeRef, image: { file }, prompt });
+  // @ts-expect-error — and the edit arm still requires one.
+  imageEdit({ operation: "edit", model: runtimeRef, image: { file } });
+  // @ts-expect-error
+  imageEdit({ operation: "inpaint", model: runtimeRef, prompt, image: { file } });
+  // A model newer than this snapshot at a known provider degrades the same way,
+  // and the adapter answers at run time.
+  imageEdit({ ...removal, model: "openai/gpt-image-9", image: { file } });
+
+  // --- the result is the removal route's own `ValidatedForm` ----------------
+  const result = imageEdit({ ...removal, model: stability, image: { file } });
+  expectAssignable<"form">(result.request.body);
+  expectAssignable<Blob>(result.image);
+  expectAssignable<"png" | "webp" | undefined>(result.output_format);
+  result.toSdk("stability");
+}
+
+declare const stabilityFromValidator: ReturnType<typeof stabilityValidator>;
+declare const stabilityFromAdapter: StabilityImageEditResult;
+expectAssignable<StabilityImageEditResult>(stabilityFromValidator);
+expectAssignable<ReturnType<typeof stabilityValidator>>(stabilityFromAdapter);
+expectAssignable<UnifiedRef<typeof stabilityImageEdit>>("stability/stable-image-remove-background");
+// @ts-expect-error — the five mask- and search-driven routes are not refs here.
+expectAssignable<UnifiedRef<typeof stabilityImageEdit>>("stability/stable-image-inpaint");
+expectAssignable<readonly ["file"]>(stabilityImageEdit.imageInputs);
+
+// `operations` on a row → the operation union; absent is `"edit"`.
+type Equal<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+expectTrue<Equal<ImageEditOperationOf<{ readonly ratios: readonly [] }>, "edit">>();
+expectTrue<
+  Equal<ImageEditOperationOf<{ readonly operations: readonly ["removeBackground"] }>, "removeBackground">
+>();
+expectTrue<
+  Equal<
+    ImageEditOperationOf<{ readonly operations: readonly ["edit", "removeBackground"] }>,
+    ImageEditOperation
+  >
+>();
+
+// The vocabulary is the union of the two operations' arms, and every arm
+// declares the same keys — which is what lets `ExactKeys` see `prompt` at all.
+expectTrue<Equal<ImageEditParams, ImageEditEditParams | ImageEditRemoveBackgroundParams>>();
+expectTrue<Equal<keyof ImageEditEditParams, keyof ImageEditRemoveBackgroundParams>>();
+expectTrue<Equal<ImageEditParams["operation"], ImageEditOperation>>();
+
+// `ImageEditParamsFor<K>` is the edit arm by default — what every edit-only
+// adapter's `compile` reads `input.prompt` off — and the full union on request.
+expectTrue<Equal<ImageEditParamsFor<"file">["operation"], "edit">>();
+expectTrue<Equal<ImageEditParamsFor<"file">["prompt"], string>>();
+expectTrue<Equal<ImageEditParamsFor<"file", "removeBackground">["operation"], "removeBackground">>();
+expectTrue<
+  Equal<ImageEditParamsFor<"file", ImageEditOperation>["operation"], ImageEditOperation>
+>();
 
 // A `Blob` in a typed bucket is a leaf at every multipart adapter, not only
 // Photoroom's: OpenAI's wire declares `image: Blob`.
@@ -487,6 +663,7 @@ imageEdit({
 });
 
 export {
+  removeBackgroundTests,
   photoroomNarrowingTests,
   revanaNarrowingTests,
   operationTests,

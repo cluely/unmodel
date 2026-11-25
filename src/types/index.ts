@@ -128,11 +128,16 @@ export type {
 export type { ImageParams } from "../core/unified/vocabulary/image";
 
 export type {
+  ImageEditEditParams,
   ImageEditInput,
   ImageEditInputKind,
   ImageEditInputFor,
+  ImageEditModelParams,
+  ImageEditModelParamTable,
+  ImageEditOperation,
   ImageEditParams,
   ImageEditParamsFor,
+  ImageEditRemoveBackgroundParams,
 } from "../core/unified/vocabulary/image-edit";
 
 export type {

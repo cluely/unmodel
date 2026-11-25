@@ -57,10 +57,12 @@
  *
  * ## From `unmodel/image-edit`
  *
- * One mode of `/v2/edit` has the shape the canonical image-edit vocabulary
- * names — a picture and a sentence — and that is Edit With AI. It is the ref
- * `photoroom/edit-with-ai` there (`unmodel/photoroom/unified`), and it ends in
- * `imageEdit` below. Everything else on the route is reachable here only.
+ * Two refs, one per operation (`unmodel/photoroom/unified`). One mode of
+ * `/v2/edit` has the shape `operation: "edit"` names — a picture and a
+ * sentence — and that is Edit With AI: the ref `photoroom/edit-with-ai`, which
+ * ends in `imageEdit` below. `operation: "removeBackground"` is the ref
+ * `photoroom/remove-background`, which ends in `imageEditRemoveBackground`.
+ * Everything else on `/v2/edit` is reachable here only.
  *
  * ## What is deliberately NOT here
  *

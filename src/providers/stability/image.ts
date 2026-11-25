@@ -36,8 +36,19 @@ import { models, type StabilitySd3ModelId } from "./models";
 // Declared in `./constraints` — an import-free leaf — so that `unmodel/stability/values`
 // and the `*-params` table can read these without this validator, its zod schema
 // and its catalog. Re-exported here so every existing caller is unchanged.
-export { STABILITY_ASPECT_RATIOS } from "./constraints";
-import { STABILITY_ASPECT_RATIOS } from "./constraints";
+export {
+  STABILITY_ASPECT_RATIOS,
+  STABILITY_OUTPUT_FORMATS,
+  STABILITY_STYLE_PRESETS,
+} from "./constraints";
+export type { StabilityOutputFormat, StabilityStylePreset } from "./constraints";
+import {
+  STABILITY_ASPECT_RATIOS,
+  STABILITY_OUTPUT_FORMATS,
+  STABILITY_STYLE_PRESETS,
+  type StabilityOutputFormat,
+  type StabilityStylePreset,
+} from "./constraints";
 
 const GENERATE_BASE_URL = "https://api.stability.ai/v2beta/stable-image/generate";
 
@@ -58,31 +69,6 @@ const API_REFERENCE_URL = "https://api.stability.ai/v2alpha/openapi";
  */
 export const DEFAULT_SD3_MODEL_ID = "sd3.5-large";
 export type StabilityAspectRatio = (typeof STABILITY_ASPECT_RATIOS)[number];
-
-/** `style_preset` values accepted by all three generate routes. */
-export const STABILITY_STYLE_PRESETS = [
-  "enhance",
-  "anime",
-  "photographic",
-  "digital-art",
-  "comic-book",
-  "fantasy-art",
-  "line-art",
-  "analog-film",
-  "neon-punk",
-  "isometric",
-  "low-poly",
-  "origami",
-  "modeling-compound",
-  "cinematic",
-  "3d-model",
-  "pixel-art",
-  "tile-texture",
-] as const;
-export type StabilityStylePreset = (typeof STABILITY_STYLE_PRESETS)[number];
-
-export const STABILITY_OUTPUT_FORMATS = ["png", "jpeg", "webp"] as const;
-export type StabilityOutputFormat = (typeof STABILITY_OUTPUT_FORMATS)[number];
 
 // ---------------------------------------------------------------------------
 // Wire types — mirror the multipart form fields exactly.

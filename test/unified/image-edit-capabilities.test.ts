@@ -32,10 +32,17 @@
  * `extra` (one extra the model declares, asserted to be declared *and* to
  * reach the wire verbatim — the no-silent-drop sweep, extended to the half of
  * the request the canonical vocabulary has no words for).
+ *
+ * `TABLE` is the `operation: "edit"` table — one row per provider that serves
+ * an edit. `REMOVE_BACKGROUND`, at the end of the file, is the second
+ * operation's: a removal carries two canonical words (`image`, `outputFormat`),
+ * so its table has two columns, and its probes are mostly about what the arm
+ * refuses.
  */
 import { describe, expect, test } from "bun:test";
 import type {
   ImageEditInputKind,
+  ImageEditModelParamTable,
   ImageEditParams,
 } from "../../src/core/unified/vocabulary/image-edit";
 import { imageEdit } from "../../src/unified/image-edit";
@@ -46,6 +53,7 @@ import { imageEdit as openai } from "../../src/providers/openai/unified-image-ed
 import { imageEdit as photoroom } from "../../src/providers/photoroom/unified";
 import { imageEdit as recraft } from "../../src/providers/recraft/unified-image-edit";
 import { imageEdit as revana } from "../../src/providers/revana/unified-image-edit";
+import { imageEdit as stability } from "../../src/providers/stability/unified-image-edit";
 
 type Support = "native" | "derived" | "declared" | "refused";
 
@@ -114,7 +122,10 @@ interface Capability {
   warns?: readonly string[];
 }
 
-/** One row per provider, ordered as `src/unified/image-edit.ts` registers them. */
+/**
+ * One row per provider that serves `operation: "edit"`, ordered as
+ * `src/unified/image-edit.ts` registers them.
+ */
 const TABLE: Readonly<Record<string, Capability>> = {
   openai: {
     // The free-form family, so the size column is the interesting one. The
@@ -244,7 +255,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
   },
   /**
    * One mode of a forty-feature route, and the only row with no extras and no
-   * shape word of any kind.
+   * shape word of any kind. Photoroom's second ref is a removal, and is a row
+   * of `REMOVE_BACKGROUND` below.
    *
    * `extra: null` because what accompanies an Edit With AI call is a family of
    * reference pictures under names the CALLER picks
@@ -252,8 +264,8 @@ const TABLE: Readonly<Record<string, Capability>> = {
    * key — so they ride in `providerOptions.photoroom`, which
    * `image-edit-e2e.test.ts` exercises.
    *
-   * All three shape columns are `declared` rather than `refused`: this adapter
-   * serves one model, so there is no sibling that has the field.
+   * All three shape columns are `declared` rather than `refused`: neither of
+   * this adapter's two models has the field, so there is no sibling that does.
    */
   photoroom: {
     ref: "photoroom/edit-with-ai",
@@ -393,8 +405,9 @@ function warningsOf(row: Capability, extra: Partial<ImageEditParams>): readonly 
 
 const rows = Object.entries(TABLE);
 
-test("the table covers exactly the providers in the pack", () => {
-  expect(rows.map(([provider]) => provider).sort()).toEqual([...imageEdit.providers]);
+test("the two tables cover exactly the providers in the pack", () => {
+  const covered = new Set([...Object.keys(TABLE), ...Object.keys(REMOVE_BACKGROUND)]);
+  expect([...covered].sort()).toEqual([...imageEdit.providers]);
 });
 
 describe.each(rows)("%s", (provider, row) => {
@@ -493,12 +506,23 @@ describe.each(rows)("%s", (provider, row) => {
     // callers. A discriminant that is only a type is a silent drop waiting to
     // happen — the field would compile to nothing and the request would quietly
     // be an edit.
-    for (const operation of ["inpaint", "outpaint", "upscale", "", 7, undefined]) {
+    for (const operation of ["inpaint", "outpaint", "upscale", "removeBackground", "", 7, undefined]) {
       const compiled = compile(row, { operation } as Partial<ImageEditParams>);
       expect(compiled, `${provider} accepted operation ${JSON.stringify(operation)}`).toEqual([
         "invalid_enum_value @ operation",
       ]);
     }
+  });
+
+  test("a removal written the way the removal arm is typed is refused the same way", () => {
+    // No `prompt`: that is what a caller who means `removeBackground` writes,
+    // and every edit adapter reads `input.prompt`. The refusal has to be the
+    // operation, not a crash and not a complaint about the missing sentence.
+    const compiled = compile(row, {
+      operation: "removeBackground",
+      prompt: undefined,
+    } as unknown as Partial<ImageEditParams>);
+    expect(compiled).toEqual(["invalid_enum_value @ operation"]);
   });
 
   // -------------------------------------------------------------------------
@@ -758,4 +782,277 @@ describe("no silent drops, over every canonical field", () => {
     expect(accepted, `${provider} accepted nothing at all`).toBeGreaterThan(0);
     expect(dropped, `${provider} accepted and ignored a param`).toEqual([]);
   });
+});
+
+// ---------------------------------------------------------------------------
+// operation: "removeBackground" — the second table
+// ---------------------------------------------------------------------------
+
+/** How one canonical `outputFormat` lands: the wire value, or a refusal. */
+type FormatCell = string | "refused";
+
+interface RemovalCapability {
+  ref: string;
+  adapter: Readonly<{
+    provider: string;
+    imageInputs: readonly ImageEditInputKind[];
+    unsupported?: Readonly<Partial<Record<string, string>>>;
+    modelParams?: ImageEditModelParamTable;
+  }>;
+  /** The wire field the picture lands in. */
+  at: string;
+  /** The wire field the encoding lands in. */
+  formatAt: string;
+  /** Each canonical encoding → the wire value it becomes, or `"refused"`. */
+  format: Readonly<Record<"png" | "jpeg" | "webp", FormatCell>>;
+  /**
+   * How each word of the edit arm is refused: `declared` on the adapter's
+   * `unsupported` record (no model of this provider has it), `refused` by hand
+   * in `compile` (a sibling model does).
+   */
+  editWords: Readonly<Record<(typeof EDIT_ONLY_WORDS)[number], "declared" | "refused">>;
+  /** The extras this model declares, each with a legal value; `null` claims none. */
+  extras: Readonly<Record<string, unknown>> | null;
+  /** The route the request must be addressed to. */
+  url: string;
+}
+
+/** The seven words `ImageEditRemoveBackgroundParams` types as `never`. */
+const EDIT_ONLY_WORDS = [
+  "prompt",
+  "strength",
+  "n",
+  "seed",
+  "size",
+  "aspectRatio",
+  "dimensions",
+] as const;
+
+const EDIT_ONLY_PROBE: Readonly<Record<(typeof EDIT_ONLY_WORDS)[number], unknown>> = {
+  prompt: "A probe.",
+  strength: 0.25,
+  n: 2,
+  seed: 7,
+  size: "1024x1024",
+  aspectRatio: "1:1",
+  dimensions: { width: 1024, height: 1024 },
+};
+
+const ALL_DECLARED = {
+  prompt: "declared",
+  strength: "declared",
+  n: "declared",
+  seed: "declared",
+  size: "declared",
+  aspectRatio: "declared",
+  dimensions: "declared",
+} as const;
+
+/** One row per provider that serves `operation: "removeBackground"`. */
+const REMOVE_BACKGROUND: Readonly<Record<string, RemovalCapability>> = {
+  /**
+   * The whole adapter is this one operation, so every edit word is a declared
+   * gap. `jpeg` is refused: the route returns an alpha channel and offers
+   * `png` and `webp`.
+   */
+  stability: {
+    ref: "stability/stable-image-remove-background",
+    adapter: stability,
+    at: "image",
+    formatAt: "output_format",
+    format: { png: "png", jpeg: "refused", webp: "webp" },
+    editWords: ALL_DECLARED,
+    extras: null,
+    url: "https://api.stability.ai/v2beta/stable-image/edit/remove-background",
+  },
+  /**
+   * The mixed adapter. `prompt` and `seed` are `refused`, not `declared`:
+   * `photoroom/edit-with-ai` takes both. `jpeg` is re-spelled, not refused —
+   * `/v1/segment` encodes JPEG and calls it `jpg`.
+   */
+  photoroom: {
+    ref: "photoroom/remove-background",
+    adapter: photoroom,
+    at: "image_file",
+    formatAt: "format",
+    format: { png: "png", jpeg: "jpg", webp: "webp" },
+    editWords: { ...ALL_DECLARED, prompt: "refused", seed: "refused" },
+    extras: { bg_color: "#FF00FF", channels: "alpha", crop: "true", despill: "true" },
+    url: "https://sdk.photoroom.com/v1/segment",
+  },
+};
+
+function compileRemoval(
+  row: RemovalCapability,
+  extra: Readonly<Record<string, unknown>> = {},
+): Compiled | string[] {
+  const result = imageEdit.safe({
+    operation: "removeBackground",
+    model: row.ref,
+    image: IMAGE_FOR.file(),
+    ...extra,
+  } as never);
+  if (!result.ok) return result.errors.map((issue) => `${issue.code} @ ${issue.path.join(".")}`);
+  const request = result.params as unknown as { request: { url: string } };
+  const body = JSON.parse(
+    JSON.stringify(result.params, (_key, value: unknown) =>
+      value instanceof Blob ? `blob:${value.size}:${value.type}` : value,
+    ),
+  ) as Record<string, unknown>;
+  return { body, url: request.request.url };
+}
+
+describe.each(Object.entries(REMOVE_BACKGROUND))("removeBackground · %s", (provider, row) => {
+  const model = row.ref.slice(row.ref.indexOf("/") + 1);
+
+  test("the model's row is what says it removes", () => {
+    expect(row.adapter.modelParams?.[model]?.operations).toEqual(["removeBackground"]);
+  });
+
+  test("a picture and nothing else compiles, to the removal route", () => {
+    const compiled = compileRemoval(row);
+    expect(compiled).not.toBeInstanceOf(Array);
+    if (Array.isArray(compiled)) return;
+    expect(compiled.url).toBe(row.url);
+    expect(compiled.body).toEqual({ [row.at]: "blob:64:image/png" });
+  });
+
+  test("accepts exactly the image kinds it declares", () => {
+    for (const kind of IMAGE_KINDS) {
+      const compiled = compileRemoval(row, { image: IMAGE_FOR[kind]() });
+      if (row.adapter.imageInputs.includes(kind)) {
+        expect(compiled, `${provider} refused a declared \`${kind}\``).not.toBeInstanceOf(Array);
+      } else {
+        expect(compiled, `${provider} accepted an undeclared \`${kind}\``).toEqual([
+          "unsupported_param @ image",
+        ]);
+      }
+    }
+  });
+
+  test.each(Object.entries(row.format))("outputFormat %s → %s", (format, cell) => {
+    const compiled = compileRemoval(row, { outputFormat: format });
+    if (cell === "refused") {
+      expect(compiled).toEqual(["invalid_enum_value @ outputFormat"]);
+      return;
+    }
+    expect(compiled).not.toBeInstanceOf(Array);
+    if (Array.isArray(compiled)) return;
+    expect(compiled.body[row.formatAt]).toBe(cell);
+  });
+
+  test.each([...EDIT_ONLY_WORDS])("%s belongs to an edit, and is refused at its own name", (word) => {
+    const declared = row.adapter.unsupported?.[word];
+    if (row.editWords[word] === "declared") {
+      expect(declared, `${provider}.unsupported.${word}`).toBeDefined();
+    } else {
+      expect(declared, `${provider} must NOT declare ${word}: a sibling model takes it`)
+        .toBeUndefined();
+    }
+    expect(compileRemoval(row, { [word]: EDIT_ONLY_PROBE[word] })).toEqual([
+      `unsupported_param @ ${word}`,
+    ]);
+  });
+
+  test("`operation: \"edit\"` is refused at `operation`, and so is everything else", () => {
+    for (const operation of ["edit", "inpaint", "", 7, undefined]) {
+      expect(
+        compileRemoval(row, { operation }),
+        `${provider} accepted operation ${JSON.stringify(operation)}`,
+      ).toEqual(["invalid_enum_value @ operation"]);
+    }
+    // Written the way the edit arm is typed, the sentence is refused as well:
+    // the route has nowhere to put it, whatever the operation is called. Sorted,
+    // because a declared gap is reported by the kernel before `compile` runs and
+    // a model-dependent one from inside it.
+    const both = compileRemoval(row, { operation: "edit", prompt: "A probe." });
+    expect(Array.isArray(both) && [...both].sort()).toEqual([
+      "invalid_enum_value @ operation",
+      "unsupported_param @ prompt",
+    ]);
+  });
+
+  test(
+    row.extras === null
+      ? "declares no extras, and says so"
+      : "every extra is declared and reaches the wire verbatim",
+    () => {
+      const declared = row.adapter.modelParams?.[model]?.extras;
+      if (row.extras === null) {
+        expect(declared).toBeUndefined();
+        return;
+      }
+      expect(Object.keys(declared ?? {}).sort()).toEqual(Object.keys(row.extras).sort());
+      const compiled = compileRemoval(row, row.extras);
+      expect(compiled).not.toBeInstanceOf(Array);
+      if (Array.isArray(compiled)) return;
+      for (const [key, value] of Object.entries(row.extras)) {
+        expect(compiled.body[key], `${provider} ${key} verbatim`).toEqual(value);
+      }
+    },
+  );
+
+  test("no silent drops: every accepted probe changes the request", () => {
+    const bare = compileRemoval(row);
+    expect(bare).not.toBeInstanceOf(Array);
+    if (Array.isArray(bare)) return;
+    const probes: Array<Readonly<Record<string, unknown>>> = [
+      ...ALL_FORMATS.map((outputFormat) => ({ outputFormat })),
+      ...EDIT_ONLY_WORDS.map((word) => ({ [word]: EDIT_ONLY_PROBE[word] })),
+      ...Object.entries(row.extras ?? {}).map(([key, value]) => ({ [key]: value })),
+    ];
+    const dropped: string[] = [];
+    let accepted = 0;
+    for (const probe of probes) {
+      const compiled = compileRemoval(row, probe);
+      if (Array.isArray(compiled)) continue;
+      accepted += 1;
+      if (serialize(compiled) === serialize(bare)) dropped.push(JSON.stringify(probe));
+    }
+    expect(accepted).toBeGreaterThan(0);
+    expect(dropped, `${provider} accepted and ignored a param`).toEqual([]);
+  });
+});
+
+test("an extra of the removal model is refused at the edit model of the same adapter", () => {
+  const result = imageEdit.safe({
+    operation: "edit",
+    model: "photoroom/edit-with-ai",
+    prompt: "A probe.",
+    image: IMAGE_FOR.file(),
+    bg_color: "red",
+  } as never);
+  expect(result.ok).toBe(false);
+  if (result.ok) return;
+  expect(result.errors.map((issue) => `${issue.code} @ ${issue.path.join(".")}`)).toEqual([
+    "unsupported_param @ bg_color",
+  ]);
+  expect(result.errors[0]?.message).toContain("remove-background");
+});
+
+test("an id outside Photoroom's two handles is refused; overruled, it is served whichever operation the caller names", () => {
+  // Photoroom's ids are unmodel's names for routes, so no newer model can
+  // appear under one: an unlisted id is a typo, refused at `model`. A caller
+  // who demotes that gets the operation they wrote, compiled by the adapter
+  // that serves both.
+  for (const [operation, url] of [
+    ["edit", "https://image-api.photoroom.com/v2/edit"],
+    ["removeBackground", "https://sdk.photoroom.com/v1/segment"],
+  ] as const) {
+    const params = {
+      operation,
+      model: "photoroom/not-in-this-snapshot",
+      ...(operation === "edit" && { prompt: "A probe." }),
+      image: IMAGE_FOR.file(),
+    } as never;
+    const refused = imageEdit.safe(params);
+    expect(!refused.ok && refused.errors.map((issue) => `${issue.code} @ ${issue.path.join(".")}`), operation).toEqual([
+      "invalid_enum_value @ model",
+    ]);
+    const result = imageEdit.safe(params, { severity: { invalid_enum_value: "warning" } });
+    expect(result.ok, operation).toBe(true);
+    if (!result.ok) continue;
+    expect((result.params as unknown as { request: { url: string } }).request.url).toBe(url);
+    expect(result.warnings.map((issue) => issue.code)).toContain("unknown_model");
+  }
 });

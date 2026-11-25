@@ -33,6 +33,10 @@
  *   (`/v2/image/edit/erase`, `/v2/image/edit/expand`,
  *   `/v2/image/edit/gen_fill`, `/v2/image/edit/remove_background`,
  *   `/v2/image/edit/relight`, …), each with its own schema and price.
+ *   `/remove_background` (`image` required; `model: "RMBG2" | "RMBG3"`, an
+ *   optional `prompt`, `preserve_alpha`; re-read 2026-11-24) is the route
+ *   `unmodel/image-edit`'s `operation: "removeBackground"` would compile to,
+ *   and is recorded as a follow-up in docs/providers.md.
  * - Auth is an `api_token` header — unmodel never touches keys.
  */
 

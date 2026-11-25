@@ -44,6 +44,12 @@
  * - `response_format` is `url`, `b64_json` or `multipart` ("`url`,
  *   `b64_json`, or `multipart`" on every route page); `multipart` answers
  *   with `multipart/form-data`, which the OpenAI SDK path cannot read.
+ * - NOT modeled here: `POST /v1/images/removeBackground` (multipart `image`
+ *   or JSON `image_url`, plus `image_format`, `response_format`, `upscale`,
+ *   `zdr`; no `model` and no prompt — read 2026-11-24 in
+ *   https://www.recraft.ai/docs/api-reference/openapi.json). It is the route
+ *   `unmodel/image-edit`'s `operation: "removeBackground"` would compile to,
+ *   and is recorded as a follow-up in docs/providers.md.
  * - Auth is `Authorization: Bearer <token>` — unmodel never touches keys.
  * - Billing is per generated image; the pricing page itemizes the V3 rows for
  *   these operations at exactly the V3 generation rates ($0.04 raster /

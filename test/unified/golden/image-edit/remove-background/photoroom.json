@@ -1,0 +1,9 @@
+{
+  "ref": "photoroom/remove-background",
+  "image": { "file": "@blob" },
+  "params": {
+    "image_file": { "@blob": { "size": 64, "type": "image/png" } }
+  },
+  "url": "https://sdk.photoroom.com/v1/segment",
+  "headers": {}
+}

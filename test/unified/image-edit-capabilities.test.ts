@@ -43,6 +43,7 @@ import { imageEdit as blackForestLabs } from "../../src/providers/black-forest-l
 import { imageEdit as fal } from "../../src/providers/fal/unified-image-edit";
 import { imageEdit as ideogram } from "../../src/providers/ideogram/unified-image-edit";
 import { imageEdit as openai } from "../../src/providers/openai/unified-image-edit";
+import { imageEdit as photoroom } from "../../src/providers/photoroom/unified";
 import { imageEdit as recraft } from "../../src/providers/recraft/unified-image-edit";
 import { imageEdit as revana } from "../../src/providers/revana/unified-image-edit";
 
@@ -95,8 +96,12 @@ interface Capability {
   /**
    * One extra this ref's model declares, and a legal value — asserted to be
    * declared *and* to reach the wire verbatim. Identity is the whole contract.
+   *
+   * `null` claims the model declares NO extras, and the probe checks that
+   * against the adapter's own row — so the cell cannot be used to skip a model
+   * that has one.
    */
-  extra: Readonly<Record<string, unknown>>;
+  extra: Readonly<Record<string, unknown>> | null;
   /** Where that extra lands, when the route nests its params. */
   extraAt?: string;
   strength: StrengthCell | "declared";
@@ -236,6 +241,32 @@ const TABLE: Readonly<Record<string, Capability>> = {
     aspectRatio: "native",
     dimensions: "derived",
     warns: ["dimensions"],
+  },
+  /**
+   * One mode of a forty-feature route, and the only row with no extras and no
+   * shape word of any kind.
+   *
+   * `extra: null` because what accompanies an Edit With AI call is a family of
+   * reference pictures under names the CALLER picks
+   * (`editWithAI.additionalImages.<name>.imageFile`), and an extra is one exact
+   * key — so they ride in `providerOptions.photoroom`, which
+   * `image-edit-e2e.test.ts` exercises.
+   *
+   * All three shape columns are `declared` rather than `refused`: this adapter
+   * serves one model, so there is no sibling that has the field.
+   */
+  photoroom: {
+    ref: "photoroom/edit-with-ai",
+    adapter: photoroom,
+    size: null,
+    sizeString: null,
+    extra: null,
+    strength: "declared",
+    n: "declared",
+    seed: "native",
+    outputFormat: "native",
+    aspectRatio: "declared",
+    dimensions: "declared",
   },
 };
 
@@ -391,13 +422,22 @@ describe.each(rows)("%s", (provider, row) => {
     expect(carries(compiled, preset), `${provider} size verbatim`).toBe(row.sizeString === "native");
   });
 
-  test("the extra is declared and reaches the wire verbatim", () => {
+  const extraTitle =
+    row.extra === null
+      ? "declares no extras, and says so"
+      : "the extra is declared and reaches the wire verbatim";
+  test(extraTitle, () => {
     const model = row.ref.slice(row.ref.indexOf("/") + 1);
     const extras = (
       row.adapter as {
         modelParams?: Readonly<Record<string, { extras?: Readonly<Record<string, unknown>> }>>;
       }
     ).modelParams?.[model]?.extras;
+    if (row.extra === null) {
+      expect(extras, `${provider} ${model} declares extras but the table says it has none`)
+        .toBeUndefined();
+      return;
+    }
     for (const key of Object.keys(row.extra)) {
       expect(Object.hasOwn(extras ?? {}, key), `${provider} ${model} does not declare ${key}`)
         .toBe(true);

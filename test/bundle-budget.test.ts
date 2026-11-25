@@ -1300,8 +1300,23 @@ const TTS_PACK_PROVIDERS: string[] = [
  * **Bumped to 755 where the two land together** (2026-11-13 merge): 684.3 KiB
  * measured on macOS — revana's picture slice on top of the wave's GPT-Image,
  * FLUX.2 and Recraft rows, 0.7 KiB under revana's own pin. 755 is that × 1.1.
+ *
+ * **Bumped 755 → 850 by photoroom**: 771.3 KiB measured, 2026-11-25, identical
+ * on macOS and on linux/amd64 Docker (oven/bun:1.3.14), up from
+ * 700.8. The new provider is 68.1 of it, read off the `//#region
+ * src/providers/photoroom/*` blocks in this pack's own chunks, and one ref
+ * joins for them — the most expensive ref in the pack, for a reason that is a
+ * property of the ROUTE: `photoroom/edit-with-ai` is one mode of a
+ * forty-feature form, and the adapter ends in that route's whole validator.
+ * So the pack carries `image-edit.ts` with its eleven cross-field checks
+ * (25.0), the generated field table as data (12.6) and as zod leaves (12.6),
+ * the non-`ZodObject` wrapper that routes a key to its leaf (5.1), the feature
+ * headers and limits (5.1), the three-row catalog (1.8) — and, of its own, the
+ * adapter (5.5) and its params leaf (0.4). No generation module and no second
+ * catalog joined; the composition assertions below still hold. 850 is the
+ * measurement × 1.1.
  */
-const IMAGE_EDIT_PACK_BUDGET_KIB = 755;
+const IMAGE_EDIT_PACK_BUDGET_KIB = 850;
 
 /**
  * The one generated catalog this pack legitimately reaches.
@@ -1313,12 +1328,13 @@ const IMAGE_EDIT_PACK_BUDGET_KIB = 755;
  */
 const IMAGE_EDIT_PACK_CATALOGS: string[] = ["src/catalog/openai.gen.ts"];
 
-/** The six providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
+/** The seven providers `unmodel/image-edit`'s ready-made pack is allowed to reach. */
 const IMAGE_EDIT_PACK_PROVIDERS: string[] = [
   "black-forest-labs",
   "fal",
   "ideogram",
   "openai",
+  "photoroom",
   "recraft",
   "revana",
 ];
@@ -1711,7 +1727,13 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // stays — the higher of the two spike-derived pins — because that layout is
   // recorded by both sides and a merged graph can only make it larger.
   // With the seven new fal routes the co-locating layout measures 899.9 KiB on Linux.
-  lipsync: 915,
+  //
+  // 915 → 1060 with photoroom in `unmodel/image-edit`, which this pack cannot
+  // reach: on the co-locating layout this entry measures what image-edit's
+  // declaration graph does on that build, and ten Linux builds of this tree
+  // put that graph at 812.4–963.0 (2026-11-25). 1060 is the high x 1.1.
+  // `avatar`, `upscale` and `3d` draw the same layout and carry the same bound.
+  lipsync: 1060,
   // Bumped 425 → 475 by wave 3: 428.7 measured, and the pack acquired no module
   // of its own. What grew is `fal/gen/shared.gen.ts`, the deduplicated $ref
   // components — the 3D roster added `ModelUrls`, `BasicAnimations` and their
@@ -1752,7 +1774,10 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Where the two land together (2026-11-13 merge): five builds of the merged
   // tree measured 600.6–686.0 on macOS, within 2% of the lipsync twin on each,
   // none on the co-locating layout. 905 stays, for the reason lipsync's does.
-  avatar: 905,
+  //
+  // 905 → 1060 with photoroom in `unmodel/image-edit`: lipsync's bound, for
+  // the layout that counts image-edit's graph for this entry.
+  avatar: 1060,
   // Bumped 450 → 560 by the Topaz wave: 508.8 measured, the largest jump of the
   // three and the one with a real cause rather than a chunking artefact. Topaz
   // brings FIFTEEN rows whose `extras` are hand-transcribed per-model settings
@@ -1769,13 +1794,20 @@ const PACK_DECLARATION_BUDGET_KIB: Readonly<Record<string, number>> = {
   // Where the two land together (2026-11-13 merge): five builds of the merged
   // tree measured 582.5–668.1 on macOS. 830 stays — the wave's spike-derived
   // pin, the higher of the two — for the reason lipsync's does.
-  upscale: 830,
+  //
+  // 830 → 1060 with photoroom in `unmodel/image-edit`: lipsync's bound, for
+  // the layout that counts image-edit's graph for this entry.
+  upscale: 1060,
   // `unmodel/3d`: 534.1 measured. The most expensive of the four small packs
   // and the only one with two providers, which is most of the difference — the
   // `tripo3d` half brings four literal model ids, two quality ladders and its
   // own wire interfaces. The other part is fal's nineteen endpoint interfaces,
   // where Trellis 2's thirty parameters are one declaration.
-  "3d": 650,
+  //
+  // 650 → 1060 with photoroom in `unmodel/image-edit`: lipsync's bound. This
+  // entry draws the co-locating layout too — 913.3 on a Linux build of the
+  // commit before this one, over the 650 it had.
+  "3d": 1060,
   tts: 2320,
   stt: 2450,
   music: 1360,
@@ -3408,7 +3440,7 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
    * that can never call it, without changing a single import in
    * `src/unified/image-edit.ts`.
    */
-  test("it reaches exactly the six image-edit providers, through their adapters", () => {
+  test("it reaches exactly the seven image-edit providers, through their adapters", () => {
     const modules = sourceModulesOf(unifiedEntry("image-edit"));
     expect(modules).toContain("src/unified/image-edit.ts");
     expect(modules).toContain("src/core/unified/kernel.ts");
@@ -3422,11 +3454,18 @@ describe("unmodel/image-edit (the sixth and last ready-made pack)", () => {
     ].sort();
     expect(providers).toEqual(IMAGE_EDIT_PACK_PROVIDERS);
 
+    // Six of the seven serve more than one category, so their adapters are
+    // suffixed leaves and the barrel is never in this graph. Photoroom serves
+    // this category alone, so its `unified.ts` IS the adapter. Which is which
+    // is read off disk by {@link splitProviders}, so a provider that grows a
+    // second category cannot go on being checked against its barrel.
+    const SPLIT = splitProviders();
     for (const provider of IMAGE_EDIT_PACK_PROVIDERS) {
-      // All six serve more than one category, so all six adapters are
-      // suffixed leaves and the barrel is never in this graph.
-      expect(modules).toContain(`src/providers/${provider}/unified-image-edit.ts`);
-      expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
+      const leaf = SPLIT.has(provider) ? "unified-image-edit" : "unified";
+      expect(modules).toContain(`src/providers/${provider}/${leaf}.ts`);
+      if (SPLIT.has(provider)) {
+        expect(modules).not.toContain(`src/providers/${provider}/unified.ts`);
+      }
       // Every provider's editing endpoint module is addressed as
       // `image-edit.ts`, which is the rename made structural: the pack cannot
       // reach a provider except through a file with the uniform name. Four wire

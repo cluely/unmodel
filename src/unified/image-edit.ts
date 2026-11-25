@@ -16,7 +16,7 @@
  * everywhere, with its own model list and its own params — see the note in
  * `core/unified/vocabulary/image-edit.ts`.
  *
- * That `imageEdit` is the ready-made pack: four providers, and therefore four
+ * That `imageEdit` is the ready-made pack: seven providers, and therefore seven
  * providers' catalogs and validators, in one bundle. To pay for only the ones
  * you call, build your own from the adapter leaves:
  *
@@ -102,6 +102,9 @@ import { imageEdit as blackForestLabs } from "../providers/black-forest-labs/uni
 import { imageEdit as fal } from "../providers/fal/unified-image-edit";
 import { imageEdit as ideogram } from "../providers/ideogram/unified-image-edit";
 import { imageEdit as openai } from "../providers/openai/unified-image-edit";
+// `unified`, not `unified-image-edit`: Photoroom serves this one category, so
+// its adapter IS the module and there is no sibling leaf to keep out.
+import { imageEdit as photoroom } from "../providers/photoroom/unified";
 import { imageEdit as recraft } from "../providers/recraft/unified-image-edit";
 import { imageEdit as revana } from "../providers/revana/unified-image-edit";
 
@@ -136,12 +139,12 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * `stt`, the per-ref `image` narrowing. A generated or
  * dynamically-loaded registry would keep the first and lose the other three.
  *
- * Six providers rather than the ten that ship an editing route, and the six
- * are exactly the ones with a route this vocabulary can express: image, prompt,
- * no mask. Stability's six routes, Luma's reframe and BFL's FLUX Tools family
- * are all mask- or geometry-driven; Bria's `imageEdit` and Reve's are neither
- * (they are prompt-driven), and they are the obvious next adapters — they are
- * out of this wave rather than out of the category.
+ * Seven providers rather than the eleven that ship an editing route, and the
+ * seven are exactly the ones with a route this vocabulary can express: image,
+ * prompt, no mask. Stability's six routes, Luma's reframe and BFL's FLUX Tools
+ * family are all mask- or geometry-driven; Bria's `imageEdit` and Reve's are
+ * neither (they are prompt-driven), and they are the obvious next adapters —
+ * they are out of this wave rather than out of the category.
  *
  * fal is the newest and contributes the most refs by a wide margin — 17
  * editing endpoints against the other four providers' handful — because it is
@@ -155,10 +158,17 @@ export function createImageEdit<A extends ImageEditAdapter>(
  * so `{ file }` and `{ data }` are refused naming the upload route that turns a
  * local file into one.
  *
- * The cost is honest and measured: importing this pulls in six provider
+ * Photoroom is one route that does forty things, and the pack names exactly
+ * one of them: `photoroom/edit-with-ai`, the mode of `POST /v2/edit` that takes
+ * a picture and a sentence. Its source is a multipart file and nothing else.
+ * The adapter writes `removeBackground: false` for the caller, because the
+ * route's default would hand back a cut-out of the edit; everything else the
+ * route does stays at `unmodel/photoroom`.
+ *
+ * The cost is honest and measured: importing this pulls in seven provider
  * validators, their schemas and their catalogs, pinned in
  * `test/bundle-budget.test.ts`. `createImageEdit([…])` above is the way to pay
- * for two providers instead of six.
+ * for two providers instead of seven.
  */
 export const imageEdit = createImageEdit([
   openai,
@@ -167,6 +177,7 @@ export const imageEdit = createImageEdit([
   ideogram,
   recraft,
   revana,
+  photoroom,
 ]);
 
 export type {

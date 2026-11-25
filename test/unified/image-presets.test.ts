@@ -68,6 +68,7 @@ import { imageEdit as blackForestLabsEdit } from "../../src/providers/black-fore
 import { imageEdit as falEdit } from "../../src/providers/fal/unified-image-edit";
 import { imageEdit as ideogramEdit } from "../../src/providers/ideogram/unified-image-edit";
 import { imageEdit as openaiEdit } from "../../src/providers/openai/unified-image-edit";
+import { imageEdit as photoroomEdit } from "../../src/providers/photoroom/unified";
 import { imageEdit as recraftEdit } from "../../src/providers/recraft/unified-image-edit";
 import { imageEdit as revanaEdit } from "../../src/providers/revana/unified-image-edit";
 
@@ -104,6 +105,7 @@ const EDIT_ADAPTERS: readonly (Adapter & { readonly imageInputs: readonly string
   ideogramEdit,
   recraftEdit,
   revanaEdit,
+  photoroomEdit,
 ];
 
 /** A route's own required params, none of which has a canonical word. */

@@ -760,6 +760,18 @@ const validator = createValidator<EditParams, unknown>({
 /** The validated body: the params without the five keys that became headers. */
 type EditBody<T> = Omit<T, PhotoroomRequestHeader>;
 
+/** The form's fields alone — `EditParams` without the five header params. */
+export interface EditFields extends PhotoroomEditFixedFields, PhotoroomEditFamilyFields {}
+
+/**
+ * What `imageEdit` returns for a request typed as the whole form:
+ * `ReturnType<typeof imageEdit>`, over an interface instead of an `Omit` of
+ * more than a hundred keys. The same type, named for the callers that have to
+ * state it — the unified adapter beside this module is one — and cheaper for
+ * the compiler to carry than the mapped spelling.
+ */
+export type EditValidated = ValidatedForm<EditFields, PhotoroomSdkTargets<EditFields>>;
+
 /**
  * Validates params for `POST https://image-api.photoroom.com/v2/edit` — $0.10
  * per successful call on the self-serve plans, whatever the call combines

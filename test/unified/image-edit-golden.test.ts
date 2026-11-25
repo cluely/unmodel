@@ -50,7 +50,8 @@
  *
  * | shape | providers | case |
  * |---|---|---|
- * | image as a Blob / base64 / URL | openai, ideogram / bfl / bfl | `minimal` |
+ * | image as a Blob / base64 / URL | openai, ideogram, photoroom / bfl / bfl | `minimal` |
+ * | `seed` and an encoding, as flat fields / as dotted form keys | bfl, fal / photoroom | `seeded-jpeg` |
  * | `strength`, native and **inverted** | recraft / ideogram | `strength-half` |
  * | shape as free-form pixels / a ratio string / a ratio enum | openai / bfl / ideogram | `sized-16x9` |
  * | a strength between two whole numbers | ideogram (warns) + recraft (exact) | `lossy-strength-third` |
@@ -124,7 +125,7 @@ const caseDirs = readdirSync(GOLDEN, { withFileTypes: true })
 
 test("the image-edit golden tree is present", () => {
   // A vacuous suite passes by asserting nothing; this is the guard against it.
-  expect(caseDirs.length).toBeGreaterThanOrEqual(5);
+  expect(caseDirs.length).toBeGreaterThanOrEqual(6);
 });
 
 describe.each(caseDirs)("golden image-edit/%s", (name) => {
@@ -261,6 +262,35 @@ describe("the matrix itself", () => {
       if (body["image_weight"] !== undefined) expect(body["image_weight"]).toBe(50);
       if (body["strength"] !== undefined) expect(body["strength"]).toBe(0.5);
     }
+  });
+
+  /**
+   * One request, two bodies that share no key. `seed: 7` and
+   * `outputFormat: "jpeg"` are `seed` / `output_format` on a JSON route and
+   * `editWithAI.seed` / `export.format` on Photoroom's flat form, whose
+   * structure is spelled in the field NAME — a dotted key is one form part,
+   * not a path, and a body that nested it would send a part the route does not
+   * read (and, on this route, bill the call anyway).
+   */
+  test("the same seed and encoding land as flat fields and as dotted form keys", () => {
+    const bodies = new Map(
+      all
+        .filter(({ name }) => name === "seeded-jpeg")
+        .map(({ fixture }) => [
+          fixture.ref.slice(0, fixture.ref.indexOf("/")),
+          fixture.params as Record<string, unknown>,
+        ]),
+    );
+    const flat = bodies.get("black-forest-labs");
+    const dotted = bodies.get("photoroom");
+    expect(flat).toMatchObject({ seed: 7, output_format: "jpeg" });
+    expect(dotted).toMatchObject({ "editWithAI.seed": 7, "export.format": "jpeg" });
+    // Dotted KEYS, not nested objects.
+    expect(dotted?.["editWithAI"]).toBeUndefined();
+    expect(dotted?.["export"]).toBeUndefined();
+    // …and the one field Photoroom's body carries that nobody asked for: the
+    // route defaults to returning a cut-out, which an edit does not want.
+    expect(dotted?.["removeBackground"]).toBe(false);
   });
 
   /** And the three size vocabularies, the same way. */

@@ -216,9 +216,9 @@ picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
 endpoints — Nano Banana 1/2/Pro edit, GPT Image 1.5/2 edit, FLUX Kontext / Kontext Max /
 Kontext Multi, FLUX.2 pro/dev edit, FLUX fill and i2i, Seedream 4.5 / 5 Pro edit,
 Qwen-Image-Edit 2511, Qwen Image 3 edit, and the prompt-less FIBO Relight route).
-Five of the ten — openai, black-forest-labs, ideogram, recraft, fal — ship a
+Six of the ten — openai, black-forest-labs, ideogram, recraft, photoroom, fal — ship a
 unified adapter, and `unmodel/image-edit` carries the ready-made pack over
-them. fal's adapter contains the 17 prompt-based rows; FIBO Relight is exact on
+them (and over revana, the router). fal's adapter contains the 17 prompt-based rows; FIBO Relight is exact on
 the provider-native substrate and marked `unified: false`, because the canonical
 image-edit request requires a prompt the route does not accept. No background-removal route is curated at fal: it is an operation
 with no prompt, and this vocabulary has no word for it yet — seventeen of those routes now
@@ -298,8 +298,35 @@ Not served, each for a stated reason:
 - The Video API, the Visual Agent API and Perspective Correction — no endpoint or parameter is
   documented for any of them.
 
-Neither Photoroom route is registered in `unmodel/image-edit`. Research:
-`docs/research/photoroom-api-2026-11-24.md`.
+**In `unmodel/image-edit`: one ref, `photoroom/edit-with-ai`.** Of everything `/v2/edit` does,
+Edit With AI is the one mode that is a picture and a sentence with no mask, so it is the one
+the canonical vocabulary names (`unmodel/photoroom/unified`, with the tables at
+`unmodel/photoroom/values`):
+
+| Canonical | `POST /v2/edit` form field |
+|---|---|
+| `prompt` | `editWithAI.prompt`, with `editWithAI.mode: "ai.auto"` |
+| `image: { file }` | `imageFile` |
+| `seed` | `editWithAI.seed` |
+| `outputFormat` | `export.format` (`png`, `jpeg`, `webp`) |
+| — | `removeBackground: false`, written by the adapter |
+| `image: { url }`, `image: { data }` | refused: "The POST endpoint accepts `imageFile` only", and the route has no base64 field |
+| `strength`, `n` | refused: no such field |
+| `size`, `aspectRatio`, `dimensions` | refused: output is "1K (`1024x1024`)"; `outputSize` is the canvas a result is positioned in, not a generation size |
+
+`removeBackground: false` is written because the route's default (`true`) would return a
+cut-out of the edit; all five examples on
+https://docs.photoroom.com/image-editing-api-plus-plan/edit-with-ai.md send it (read
+2026-11-24). `referenceBox` is NOT written: one of those five examples adds
+`referenceBox=originalImage`, four do not, and the OpenAPI document says it "Can't be provided
+if `removeBackground` is set to `false`". Whether it changes the picture is unconfirmed — it
+needs one `sandbox_` call — so the adapter sends the form the docs send most, and
+`providerOptions: { photoroom: { referenceBox: "originalImage" } }` reproduces the other.
+Reference pictures (`editWithAI.additionalImages.<name>.imageFile`, up to four) ride in
+`providerOptions.photoroom` as well, which is typed from the whole `/v2/edit` form.
+
+`photoroom.imageEditRemoveBackground` is not in the pack: it takes no prompt, and
+`ImageEditParams` requires one. Research: `docs/research/photoroom-api-2026-11-24.md`.
 Remaining: alibaba (Qwen-Image), baidu, tencent (HunyuanImage), minimax, z-ai, nvidia,
 amazon (Titan/Nova); azure MAI `imageEdit` sends up to five JPEG or PNG references as repeated `image` parts to `/mai/v1/images/edits`.
 **Excluded (no public API):** midjourney, hidream, pruna, playground, sapiens-ai, eigen-ai,
@@ -1276,7 +1303,7 @@ leaves rather than whole validators.
 | `unmodel/tts` | `tts`, `createTts` | 20 | alibaba, breezeblue, cartesia, deepgram, elevenlabs, fal, fish-audio, google, hume (API retired 2026-11-13; every route answers 404), inworld, lmnt, minimax, murf, openai, resemble, revana, rime, smallest-ai, speechify, stepfun |
 | `unmodel/stt` | `stt`, `createStt` | 13 | assemblyai, cartesia, deepgram, elevenlabs, fal, gladia, google, inworld, mistral, openai, revai, soniox, speechmatics |
 | `unmodel/video` | `video`, `createVideo` | 15 | alibaba, atlascloud, bytedance, fal, google, kling, lightricks, luma, minimax, openai, pixverse, revana, runway, vidu, xai |
-| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 6 | black-forest-labs, fal, ideogram, openai, recraft, revana — the six whose primary editing route is *image + prompt, no mask* |
+| `unmodel/image-edit` | `imageEdit`, `createImageEdit` | 7 | black-forest-labs, fal, ideogram, openai, photoroom (one ref, `photoroom/edit-with-ai` — the one mode of `POST /v2/edit` with this shape), recraft, revana — the seven with a route that is *image + prompt, no mask* |
 | `unmodel/music` | `music`, `createMusic` | 6 | elevenlabs, fal, google, mureka, revana, stability |
 | `unmodel/sfx` | `sfx`, `createSfx` | 2 | elevenlabs (2 models, `POST /v1/sound-generation`), fal (7 endpoints from five vendors, ElevenLabs' v2 and v3 among them) — the smallest vocabulary in the library, and the one whose `durationSeconds` requiredness is a per-model fact |
 | `unmodel/lipsync` | `lipsync`, `createLipsync` | 5 | fal (10 endpoints behind one adapter, because at fal the route is a parameter rather than a provider), heygen (2 ids that are one wire field, `mode`), revana (1 curated model on the one route it serves every media model from), sync (5 models on one url — four of fal's ten are these same weights resold), veed (1 model, and the smallest request surface in the library: two required URLs and no dials) |
@@ -1289,7 +1316,7 @@ leaves rather than whole validators.
 
 **Layout.** Each adapter lives in the provider's own directory as
 `unified-<category>.ts`, re-exported from a single `unified.ts` barrel published as
-`unmodel/<provider>/unified` (49 such subpaths). A provider serving more than one category
+`unmodel/<provider>/unified` (50 such subpaths). A provider serving more than one category
 therefore splits per category, so no pack pays for another category's schemas or catalogs.
 `test/bundle-budget.test.ts` asserts a pack can only reach a provider through that
 provider's uniformly-named endpoint module — which is what makes the address-vs-wire
@@ -1306,7 +1333,7 @@ no aggregate of provider wire types. All 76 entries emit an empty JavaScript mod
 `test/types-entries.test.ts` asserts against a real build alongside the completeness drift
 guard keyed on `src/cli-registry.ts`.
 
-**Values without a validator.** The 49 providers with a unified adapter also publish
+**Values without a validator.** The 50 providers with a unified adapter also publish
 `unmodel/<provider>/values`: the runtime twin of those types — `<CATEGORY>_MODEL_PARAMS`,
 `<CATEGORY>_MODELS` and `<CATEGORY>_FORMAT_SPEC` per category served, plus that provider's own
 published enums (voices, sizes, ratios, durations, codecs, languages) under their own names.

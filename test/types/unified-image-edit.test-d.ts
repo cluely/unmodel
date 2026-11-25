@@ -16,6 +16,7 @@
  * | openai, ideogram | file | ok | error | error |
  * | black-forest-labs | data, url | error | ok | ok |
  * | recraft | file, url | ok | ok | error |
+ * | photoroom | file | ok | error | error |
  *
  * Sections 3–6 are the same four properties every category entry has: the ref
  * union, the provider's own result type, `providerOptions` keyed by the pack,
@@ -27,6 +28,11 @@ import { createImageEdit, imageEdit } from "../../src/unified/image-edit";
 import { imageEdit as bflImageEdit } from "../../src/providers/black-forest-labs/unified";
 import { imageEdit as ideogramImageEdit } from "../../src/providers/ideogram/unified";
 import { imageEdit as openaiImageEdit } from "../../src/providers/openai/unified";
+import { imageEdit as photoroomValidator } from "../../src/providers/photoroom";
+import {
+  imageEdit as photoroomImageEdit,
+  type PhotoroomImageEditResult,
+} from "../../src/providers/photoroom/unified";
 import { imageEdit as recraftImageEdit } from "../../src/providers/recraft/unified";
 import { imageEdit as revanaImageEdit } from "../../src/providers/revana/unified-image-edit";
 import type { UnifiedRef } from "../../src/core/unified/types";
@@ -391,7 +397,97 @@ function revanaNarrowingTests(): void {
   result.toSdk("revana");
 }
 
+// ---------------------------------------------------------------------------
+// photoroom — one mode of a flat multipart form
+// ---------------------------------------------------------------------------
+
+function photoroomNarrowingTests(): void {
+  const base = { operation: "edit", prompt: "make it winter" } as const;
+  const url = "https://example.com/street.png";
+
+  expectAssignable<UnifiedRef<typeof photoroomImageEdit>>("photoroom/edit-with-ai");
+  // The route's other catalog rows are not refs here: `image-editing` names
+  // forty features and `remove-background` takes no prompt.
+  // @ts-expect-error
+  expectAssignable<UnifiedRef<typeof photoroomImageEdit>>("photoroom/image-editing");
+  // @ts-expect-error
+  expectAssignable<UnifiedRef<typeof photoroomImageEdit>>("photoroom/remove-background");
+  expectAssignable<readonly ["file"]>(photoroomImageEdit.imageInputs);
+
+  imageEdit({ ...base, model: "photoroom/edit-with-ai", image: { file }, seed: 7, outputFormat: "jpeg" });
+  // @ts-expect-error — "The POST endpoint accepts `imageFile` only."
+  imageEdit({ ...base, model: "photoroom/edit-with-ai", image: { url } });
+  // @ts-expect-error — and the route has no base64 field.
+  imageEdit({ ...base, model: "photoroom/edit-with-ai", image: { data: "AAAA" } });
+
+  // Edit With AI has no field for the shape of its output, in any spelling.
+  // @ts-expect-error
+  imageEdit({ ...base, model: "photoroom/edit-with-ai", image: { file }, aspectRatio: "1:1" });
+  // @ts-expect-error
+  imageEdit({ ...base, model: "photoroom/edit-with-ai", image: { file }, size: "1024x1024" });
+  // @ts-expect-error — the row declares no extras; a wire key is not a canonical one.
+  imageEdit({ ...base, model: "photoroom/edit-with-ai", image: { file }, referenceBox: "originalImage" });
+
+  // The bucket is the whole `/v2/edit` form: dotted keys, the caller-named
+  // reference pictures (a `Blob`, which a bucket must take as a leaf), and the
+  // `pr-*` header params.
+  imageEdit({
+    ...base,
+    model: "photoroom/edit-with-ai",
+    image: { file },
+    providerOptions: {
+      photoroom: {
+        referenceBox: "originalImage",
+        "editWithAI.additionalImages.styleRef.imageFile": file,
+        "editWithAI.additionalImages[0].imageUrl": url,
+        "pr-hd-background-removal": "auto",
+        padding: "10%",
+      },
+    },
+  });
+  imageEdit({
+    ...base,
+    model: "photoroom/edit-with-ai",
+    image: { file },
+    // @ts-expect-error — `editWithAI.seed` is a number, or a number written as text, on that form.
+    providerOptions: { photoroom: { "editWithAI.seed": true } },
+  });
+  imageEdit({
+    ...base,
+    model: "photoroom/edit-with-ai",
+    image: { file },
+    // @ts-expect-error — a reference picture's `imageFile` is bytes, not a URL.
+    providerOptions: { photoroom: { "editWithAI.additionalImages.styleRef.imageFile": url } },
+  });
+
+  // The result is `photoroom.imageEdit`'s own `ValidatedForm`.
+  const result = imageEdit({ ...base, model: "photoroom/edit-with-ai", image: { file } });
+  expectAssignable<"form">(result.request.body);
+  expectAssignable<Blob | undefined>(result.imageFile);
+  result.toSdk("photoroom");
+  // @ts-expect-error — "openai" is not one of photoroom.imageEdit's targets.
+  result.toSdk("openai");
+}
+
+// The adapter spells its result out instead of reading it off the validator
+// (see `PhotoroomImageEditResult`); it must stay the validator's own type.
+declare const photoroomFromValidator: ReturnType<typeof photoroomValidator>;
+declare const photoroomFromAdapter: PhotoroomImageEditResult;
+expectAssignable<PhotoroomImageEditResult>(photoroomFromValidator);
+expectAssignable<ReturnType<typeof photoroomValidator>>(photoroomFromAdapter);
+
+// A `Blob` in a typed bucket is a leaf at every multipart adapter, not only
+// Photoroom's: OpenAI's wire declares `image: Blob`.
+imageEdit({
+  operation: "edit",
+  model: "openai/gpt-image-1.5",
+  prompt,
+  image: { file },
+  providerOptions: { openai: { image: file } },
+});
+
 export {
+  photoroomNarrowingTests,
   revanaNarrowingTests,
   operationTests,
   imageNarrowingTests,

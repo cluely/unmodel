@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { chat, checkChat, CHAT_COMPLETIONS_URL } from "./index";
+import { chat, checkChat, CHAT_COMPLETIONS_URL, models } from "./index";
 
 describe("unmodel/openrouter", () => {
   test("chat URL comes from the catalog's api field", () => {
@@ -62,7 +62,9 @@ describe("unmodel/openrouter", () => {
   });
 
   test("checkChat prices prompt_tokens_details.audio_tokens at the inputAudio rate", () => {
-    // google/gemini-3-flash-preview: $0.50 text, $1.00 audio per 1M input tokens.
+    const cost = models["google/gemini-3-flash-preview"].cost!;
+    expect(cost.inputAudio).toBeDefined();
+    expect(cost.inputAudio).not.toBe(cost.input);
     const report = checkChat({
       model: "google/gemini-3-flash-preview",
       choices: [{ finish_reason: "stop" }],
@@ -72,6 +74,7 @@ describe("unmodel/openrouter", () => {
         prompt_tokens_details: { cached_tokens: 0, audio_tokens: 800_000 },
       },
     });
-    expect(report.costUSD).toBeCloseTo(0.9, 10);
+    const expected = (200_000 * cost.input! + 800_000 * cost.inputAudio!) / 1_000_000;
+    expect(report.costUSD).toBeCloseTo(expected, 10);
   });
 });

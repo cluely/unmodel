@@ -69,6 +69,39 @@ describe("computeCostUSD", () => {
     ).toBe(3);
   });
 
+  test("audio output tokens are re-rated at outputAudio", () => {
+    const cost = computeCostUSD(
+      { output: 10, outputAudio: 64 },
+      { outputTokens: 1_000_000, audioOutputTokens: 250_000 },
+    );
+    // 750k text output at $10/M + 250k audio output at $64/M
+    expect(cost).toBeCloseTo(7.5 + 16, 10);
+  });
+
+  test("audio output tokens fall back to the text output rate when no outputAudio is published", () => {
+    const withFallback = computeCostUSD(
+      { output: 10 },
+      { outputTokens: 1_000_000, audioOutputTokens: 250_000 },
+    );
+    const ignoringTheSlice = computeCostUSD({ output: 10 }, { outputTokens: 1_000_000 });
+    expect(withFallback).toBeCloseTo(10, 10);
+    expect(withFallback).toBe(ignoringTheSlice);
+  });
+
+  test("audio output tokens exceeding outputTokens floor the text output bill at zero", () => {
+    const cost = computeCostUSD(
+      { output: 10, outputAudio: 64 },
+      { outputTokens: 100, audioOutputTokens: 400 },
+    );
+    expect(cost).toBeCloseTo((400 * 64) / 1_000_000, 12);
+  });
+
+  test("zero audio output tokens leaves the arithmetic unchanged", () => {
+    expect(
+      computeCostUSD({ output: 10, outputAudio: 64 }, { outputTokens: 1_000_000, audioOutputTokens: 0 }),
+    ).toBe(10);
+  });
+
   test("cache write tokens billed at cacheWrite rate", () => {
     expect(computeCostUSD({ cacheWrite: 3.75 }, { cacheWriteTokens: 1_000_000 })).toBe(3.75);
   });

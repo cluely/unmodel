@@ -30,6 +30,7 @@ export interface ChatCompletionLike {
     } | null;
     completion_tokens_details?: {
       reasoning_tokens?: number;
+      audio_tokens?: number;
     } | null;
   } | null;
 }
@@ -158,9 +159,8 @@ export function createCheckChat(
       outputTokens: usage.outputTokens,
       cachedInputTokens: usage.cachedInputTokens,
       cacheWriteTokens: usage.cacheWriteTokens,
-      // Part of prompt_tokens like cached_tokens, so it is re-rated at the
-      // model's inputAudio rate rather than added.
       audioInputTokens: rawUsage?.prompt_tokens_details?.audio_tokens,
+      audioOutputTokens: rawUsage?.completion_tokens_details?.audio_tokens,
     });
 
     const finishReason = res.choices?.[0]?.finish_reason;

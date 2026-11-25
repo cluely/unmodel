@@ -25,6 +25,13 @@ export interface TokenBreakdown {
    * between re-rating and ignoring it is not a rounding error.
    */
   audioInputTokens?: number;
+  /**
+   * Output tokens that were AUDIO (billed at the `outputAudio` rate).
+   *
+   * Included in `outputTokens` and re-rated rather than added — subtracted
+   * from the text output bill and charged at `cost.outputAudio ?? cost.output`.
+   */
+  audioOutputTokens?: number;
   /** Input tokens in the separate cache-write billing bucket, excluded from inputTokens. */
   cacheWriteTokens?: number;
   /**
@@ -39,11 +46,11 @@ const PER_MILLION = 1_000_000;
 /**
  * Costs a token breakdown against catalog pricing (USD per 1M tokens).
  *
- * Two slices of `inputTokens` are **re-rated rather than added**, because that
- * is how the providers report them: cached tokens are subtracted from the text
- * bill and charged at the cacheRead rate, and audio tokens likewise at the
- * inputAudio rate. `freshInput` is what is left. Returns undefined when no
- * rate is known.
+ * Slices reported inside their totals are **re-rated rather than added**,
+ * because that is how the providers report them: `cachedInputTokens` and
+ * `audioInputTokens` come out of `inputTokens` (charged at `cacheRead` and
+ * `inputAudio`), and `audioOutputTokens` comes out of `outputTokens` (charged
+ * at `outputAudio`). Returns undefined when no rate is known.
  */
 export function computeCostUSD(cost: ModelCost | undefined, tokens: TokenBreakdown): number | undefined {
   if (!cost) return undefined;
@@ -57,9 +64,8 @@ export function computeCostUSD(cost: ModelCost | undefined, tokens: TokenBreakdo
 
   const cached = tokens.cachedInputTokens ?? 0;
   const audio = tokens.audioInputTokens ?? 0;
-  // Both slices come out of the same total, so a response that is entirely
-  // cached audio bills once, not twice — and `Math.max` keeps a provider that
-  // reports slices summing to more than the total from producing a credit.
+  // Both slices are subtracted from `inputTokens` as disjoint buckets;
+  // `Math.max` floors `freshInput` at zero if reported slices exceed the total.
   const freshInput = Math.max(0, (tokens.inputTokens ?? 0) - cached - audio);
 
   if (cost.input !== undefined && tokens.inputTokens !== undefined) {
@@ -87,9 +93,18 @@ export function computeCostUSD(cost: ModelCost | undefined, tokens: TokenBreakdo
     total += (tokens.cacheWriteTokens * cost.cacheWrite) / PER_MILLION;
     priced = true;
   }
+  const audioOut = tokens.audioOutputTokens ?? 0;
+  const textOutput = Math.max(0, (tokens.outputTokens ?? 0) - audioOut);
   if (cost.output !== undefined && tokens.outputTokens !== undefined) {
-    total += (tokens.outputTokens * cost.output) / PER_MILLION;
+    total += (textOutput * cost.output) / PER_MILLION;
     priced = true;
+  }
+  if (audioOut > 0) {
+    const rate = cost.outputAudio ?? cost.output;
+    if (rate !== undefined) {
+      total += (audioOut * rate) / PER_MILLION;
+      priced = true;
+    }
   }
   if (tokens.reasoningTokens && cost.reasoning !== undefined) {
     total += (tokens.reasoningTokens * cost.reasoning) / PER_MILLION;

@@ -1,0 +1,614 @@
+{
+  "$comment": [
+    "Every multipart curl example on Photoroom's Image Editing and Remove Background docs pages, as published.",
+    "Extracted mechanically on 2026-11-24 from the `.md` rendering of each page listed in https://docs.photoroom.com/llms.txt under image-editing-api-plus-plan/ and remove-background-api-basic-plan/: one entry per fenced `curl` block that posts form fields to a photoroom.com URL.",
+    "`fields` are the `--form` / `-F` arguments as curl sends them: shell quoting removed, and the double quotes curl itself strips from a quoted value (`--form 'referenceBox=\"originalImage\"'`) removed too. Form values are text on the wire. A file argument (`name=@/path`) is recorded as \"@file\". `headers` are the `--header` lines other than `x-api-key` and `accept`.",
+    "Read by src/providers/photoroom/*.test.ts, which asserts that every one of these validates with no error and no warning: a validator that objects to the provider's own documentation is wrong."
+  ],
+  "examples": [
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-backgrounds.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "referenceBox": "originalImage",
+        "background.prompt": "the image displays a pair of blue sneakers on a tropical beach on a bright day with a slightly blurred background of the ocean"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-backgrounds.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "referenceBox": "originalImage",
+        "background.prompt": "on a beach",
+        "background.expandPrompt.mode": "ai.never"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-backgrounds.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "referenceBox": "originalImage",
+        "background.guidance.imageFile": "@file"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-beautifier.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "beautify.mode": "ai.auto"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-beautifier.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "beautify.mode": "ai.food"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-beautifier.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "beautify.mode": "ai.car"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-expand.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "outputSize": "1920x1080",
+        "referenceBox": "originalImage",
+        "removeBackground": "false",
+        "expand.mode": "ai.auto"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-ironing.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "ironing.mode": "ai.auto",
+        "removeBackground": "false",
+        "referenceBox": "originalImage"
+      },
+      "headers": {
+        "pr-ironing-model-version": "v2"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-relight.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "referenceBox": "originalImage",
+        "maxWidth": "2000",
+        "maxHeight": "2000",
+        "removeBackground": "false",
+        "lighting.mode": "ai.auto"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-shadows.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1920x1080",
+        "padding": "0.15",
+        "shadow.mode": "ai.auto-with-overrides"
+      },
+      "headers": {
+        "pr-ai-shadows-model-version": "2026-04-15"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-shadows.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1920x1080",
+        "padding": "0.15",
+        "shadow.mode": "ai.auto-with-overrides",
+        "shadow.softnessOverride": "0.3",
+        "shadow.intensityOverride": "0.8",
+        "shadow.spreadOverride": "medium",
+        "shadow.directionOverride": "behindLeft",
+        "shadow.subjectPoseOverride": "upright"
+      },
+      "headers": {
+        "pr-ai-shadows-model-version": "2026-04-15"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-shadows.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1920x1080",
+        "padding": "0.15",
+        "shadow.mode": "ai.auto-with-overrides",
+        "shadow.softnessOverride": "0.3"
+      },
+      "headers": {
+        "pr-ai-shadows-model-version": "2026-04-15"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-shadows.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1920x1080",
+        "padding": "0.15",
+        "shadow.mode": "ai.auto-with-overrides",
+        "shadow.intensityOverride": "0.3"
+      },
+      "headers": {
+        "pr-ai-shadows-model-version": "2026-04-15"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-shadows.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1920x1080",
+        "padding": "0.15",
+        "shadow.mode": "ai.auto-with-overrides",
+        "shadow.spreadOverride": "medium"
+      },
+      "headers": {
+        "pr-ai-shadows-model-version": "2026-04-15"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-shadows.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1920x1080",
+        "padding": "0.15",
+        "shadow.mode": "ai.auto-with-overrides",
+        "shadow.directionOverride": "frontLeft"
+      },
+      "headers": {
+        "pr-ai-shadows-model-version": "2026-04-15"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-shadows.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1920x1080",
+        "padding": "0.15",
+        "shadow.mode": "ai.auto-with-overrides",
+        "shadow.subjectPoseOverride": "flatlay"
+      },
+      "headers": {
+        "pr-ai-shadows-model-version": "2026-04-15"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-shadows.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1000x1000",
+        "padding": "0.1",
+        "shadow.mode": "ai.soft"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-text-removal.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "false",
+        "referenceBox": "originalImage",
+        "textRemoval.mode": "ai.all"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ai-uncrop.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "uncrop.mode": "ai.auto",
+        "removeBackground": "true"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/background-blur.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.blur.mode": "bokeh",
+        "removeBackground": "false"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/create-any-image.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "removeBackground": "false",
+        "imageFromPrompt.prompt": "three mugs on a table in a rustic coffee shop in a realistic style",
+        "imageFromPrompt.seed": "12345"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/edit-with-ai.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "false",
+        "referenceBox": "originalImage",
+        "editWithAI.mode": "ai.auto",
+        "editWithAI.prompt": "Change the shoes color to red"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/edit-with-ai.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "false",
+        "editWithAI.mode": "ai.auto",
+        "editWithAI.prompt": "Make it a professional lifestyle photoshoot with the provided object or subject as the focus of the scene. Ensure the image highlights what is unique about the object, with the goal of advertising it and showing how it impacts everyday life. The lighting should be perfectly set to create a natural and elegant atmosphere. The image should feature excellent composition and a refined mood, achieving the look of high-end lifestyle photography. Integrate a human presence or a subtle interaction with the object to enhance authenticity and visual appeal.",
+        "editWithAI.seed": "2016886668"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/edit-with-ai.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "false",
+        "editWithAI.mode": "ai.auto",
+        "editWithAI.prompt": "Create a new photograph of this exact same scene or setting with creative variations. Change the camera angle and viewpoint (e.g., frontal to 3/4 view or side view, high to low angle, wide to tight), adjust composition and framing, and optionally vary the lighting or time of day (morning, golden hour, blue hour, overcast, or dramatic shadows). Try creative approaches such as closer details, wider establishing shots, or alternative focal points. Keep the exact same physical location and environment so it remains clearly recognizable, with the same main subjects, key elements, style, and overall mood. If there's a person, change their pose, position, or activity. If there's a product, show it from a different angle or in different use. The result should feel like a fresh, creative variation taken in the same location during the same shoot, offering a distinctly different perspective while maintaining scene continuity.",
+        "editWithAI.seed": "2016886668"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/edit-with-ai.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "false",
+        "editWithAI.mode": "ai.auto",
+        "editWithAI.prompt": "Place the product from the main image into the scene shown in the reference image, matching the lighting and perspective of the reference.",
+        "editWithAI.additionalImages.Scene.imageFile": "@file",
+        "editWithAI.seed": "2016886668"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/edit-with-ai.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "false",
+        "editWithAI.mode": "ai.auto",
+        "editWithAI.prompt": "Combine the style of the first reference with the subject of the main image.",
+        "editWithAI.additionalImages.styleRef.imageUrl": "https://example.com/style-reference.jpg",
+        "editWithAI.additionalImages.moodRef.imageUrl": "https://example.com/mood-reference.jpg"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/file-size-resolution-and-format.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1000x1000",
+        "padding": "0.1",
+        "export.format": "jpeg"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/file-size-resolution-and-format.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1000x1000",
+        "padding": "0.1",
+        "export.format": "webp"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/file-size-resolution-and-format.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "background.color": "FFFFFF",
+        "outputSize": "1000x1000",
+        "padding": "0.1",
+        "export.format": "avif"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/file-size-resolution-and-format.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "true",
+        "colorSpace": "original",
+        "export.format": "png"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/flat-lay.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "flatLay.mode": "ai.auto"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/ghost-mannequin.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "ghostMannequin.mode": "ai.auto"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/hd-background-removal.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "referenceBox": "originalImage"
+      },
+      "headers": {
+        "pr-hd-background-removal": "auto"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/pixel-density-dpi.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "export.dpi": "300"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/preview-ai-upscale.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "referenceBox": "originalImage",
+        "removeBackground": "false",
+        "upscale.mode": "ai.fast"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/preview-ai-upscale.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "referenceBox": "originalImage",
+        "removeBackground": "false",
+        "upscale.mode": "ai.slow"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/preview-ai-upscale.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "referenceBox": "originalImage",
+        "removeBackground": "false",
+        "upscale.mode": "ai.fast"
+      },
+      "headers": {
+        "pr-ai-upscale-model-version": "ai-upscale-2025-07-29"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/preview-templating-mode.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "templateId": "YOUR_TEMPLATE_ID",
+        "layers.author.text.content": "Tom C.",
+        "layers.review.text.content": "”Nice product, I love it“",
+        "layers.product.image.imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=1200&auto=format&fit=crop"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/preview-templating-mode.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "templateId": "YOUR_TEMPLATE_ID",
+        "layers.author.text.content": "Tom C.",
+        "layers.author.text.foregroundColor": "DC143C",
+        "layers.author.text.backgroundColor": "fe9167",
+        "layers.review.text.font": "Permanent Marker",
+        "layers.rating.text.content": "★ ★ ★ ★ ☆",
+        "layers.review.text.content": "”Nice product, I love it“",
+        "layers.cta.text.content": "BUY NOW",
+        "layers.product.image.imageUrl": "https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=1200&auto=format&fit=crop",
+        "layers.product.image.removeBackground": "auto",
+        "layers.product.image.useForAIBackground": "auto",
+        "layers.product.image.horizontalAlignment": "center",
+        "layers.product.image.verticalAlignment": "center",
+        "layers.product.image.margin": "0.1"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/preview-text-guided-segmentation.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "referenceBox": "originalImage",
+        "segmentation.prompt": "laptop, hand, arm"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/preview-text-guided-segmentation.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "referenceBox": "originalImage",
+        "segmentation.prompt": "tee-shirt",
+        "segmentation.negativePrompt": "hanger"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/quickstart-guide.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "true",
+        "background.color": "FFFFFF",
+        "padding": "0.15",
+        "shadow.mode": "ai.soft"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/sandbox-mode.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "shadow.mode": "ai.soft",
+        "background.color": "FFFFFF",
+        "padding": "0.1"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/smart-cropping.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "false",
+        "outputSize": "2000x2000",
+        "padding": "10%",
+        "segmentation.prompt": "product"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/smart-cropping.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "false",
+        "referenceBox": "subjectBox",
+        "segmentation.mode": "ignoreSalientObject",
+        "segmentation.prompt": "garment,chin,lip,mouth",
+        "segmentation.negativePrompt": "head,nose,eye,forehead",
+        "padding": "25px"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/static-background.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "padding": "0.1",
+        "background.color": "D3D3D3"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/static-background.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "padding": "0.1",
+        "background.imageFile": "@file"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/subject-outline.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "outline.color": "white",
+        "referenceBox": "originalImage",
+        "removeBackground": "false"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/image-editing-api-plus-plan/virtual-model.md",
+      "url": "https://image-api.photoroom.com/v2/edit",
+      "fields": {
+        "imageFile": "@file",
+        "removeBackground": "false",
+        "referenceBox": "originalImage",
+        "virtualModel.mode": "ai.auto",
+        "virtualModel.model.preset.name": "avery",
+        "virtualModel.scene.preset.name": "street",
+        "virtualModel.pose": "standing"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/remove-background-api-basic-plan/download-the-segmentation-mask.md",
+      "url": "https://sdk.photoroom.com/v1/segment",
+      "fields": {
+        "image_file": "@file",
+        "channels": "alpha"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/remove-background-api-basic-plan/file-size-resolution-and-format.md",
+      "url": "https://sdk.photoroom.com/v1/segment",
+      "fields": {
+        "image_file": "@file",
+        "format": "jpg"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/remove-background-api-basic-plan/file-size-resolution-and-format.md",
+      "url": "https://sdk.photoroom.com/v1/segment",
+      "fields": {
+        "image_file": "@file",
+        "format": "webp"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/remove-background-api-basic-plan/green-screen-despill.md",
+      "url": "https://sdk.photoroom.com/v1/segment",
+      "fields": {
+        "image_file": "@file",
+        "despill": "true"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/remove-background-api-basic-plan/quickstart-guide.md",
+      "url": "https://sdk.photoroom.com/v1/segment",
+      "fields": {
+        "image_file": "@file"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/remove-background-api-basic-plan/remove.bg-compatibility.md",
+      "url": "https://sdk.photoroom.com/v1/segment",
+      "fields": {
+        "image_file": "@file",
+        "crop": "true",
+        "bg_color": "FFFFFF",
+        "format": "jpg",
+        "size": "hd"
+      }
+    },
+    {
+      "page": "https://docs.photoroom.com/remove-background-api-basic-plan/sandbox-mode.md",
+      "url": "https://sdk.photoroom.com/v1/segment",
+      "fields": {
+        "image_file": "@file"
+      }
+    }
+  ]
+}

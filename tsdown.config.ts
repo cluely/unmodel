@@ -202,6 +202,8 @@ export default defineConfig({
     "providers/openrouter/types": "src/providers/openrouter/types.ts",
     "providers/perplexity/index": "src/providers/perplexity/index.ts",
     "providers/perplexity/types": "src/providers/perplexity/types.ts",
+    "providers/photoroom/index": "src/providers/photoroom/index.ts",
+    "providers/photoroom/types": "src/providers/photoroom/types.ts",
     "providers/pixverse/index": "src/providers/pixverse/index.ts",
     "providers/pixverse/unified": "src/providers/pixverse/unified.ts",
     "providers/pixverse/types": "src/providers/pixverse/types.ts",

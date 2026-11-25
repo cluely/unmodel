@@ -249,6 +249,24 @@ const BUDGET_KIB: Readonly<Record<string, number>> = {
    */
   topaz: 70,
   /**
+   * The native Photoroom provider: two validators on two hosts. 91.6 KiB
+   * measured, 2026-11-24, identical on macOS and linux/amd64 Docker
+   * (oven/bun:1.3.14), and almost all of it is ONE route. `POST /v2/edit` has
+   * 90 fixed form fields and 30 open-keyed family members, and each ships twice
+   * by design: once as a row of `PHOTOROOM_EDIT_FIELDS` /
+   * `PHOTOROOM_EDIT_FAMILIES` (the data a caller can read, 12.6 KiB) and once
+   * as a zod leaf (what validates it, 12.7 KiB). The rest is `image-edit.ts` —
+   * the cross-field checks, whose messages quote the sentence each one enforces
+   * (25.0 KiB) — and the two shared chunks every validator pays for. 101 is
+   * 91.6 × 1.1.
+   *
+   * No models.dev catalog, no codec and no second provider is in this graph
+   * (the three-row hand table `models` is). If it grows, the cause is the field
+   * table: check `data/photoroom/openapi.json`'s diff before raising the
+   * number.
+   */
+  photoroom: 101,
+  /**
    * Atlas Cloud: ONE validator on ONE url, and the heaviest hand provider in
    * the tree at 72.2 KiB measured — heavier than sync.'s two validators and two
    * long catalogs, from a single endpoint.

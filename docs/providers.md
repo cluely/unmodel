@@ -211,11 +211,12 @@ picture. openai (`imageEdit`), black-forest-labs (Kontext `imageEdit`, FLUX.1
 `imageEditReplaceBackground`), reve (`imageEdit`, `imageEditRemix`), stability
 (`imageEditErase`, `imageEditInpaint`, `imageEditOutpaint`,
 `imageEditSearchAndReplace`, `imageEditSearchAndRecolor`,
-`imageEditRemoveBackground`), luma (`imageEditReframe`), fal (`imageEdit`, 20 hosted
+`imageEditRemoveBackground`), luma (`imageEditReframe`), photoroom (`imageEdit`,
+`imageEditRemoveBackground` — see below), fal (`imageEdit`, 20 hosted
 endpoints — Nano Banana 1/2/Pro edit, GPT Image 1.5/2 edit, FLUX Kontext / Kontext Max /
 Kontext Multi, FLUX.2 pro/dev edit, FLUX fill and i2i, Seedream 4.5 / 5 Pro edit,
 Qwen-Image-Edit 2511, Qwen Image 3 edit, and the prompt-less FIBO Relight route).
-Five of the nine — openai, black-forest-labs, ideogram, recraft, fal — ship a
+Five of the ten — openai, black-forest-labs, ideogram, recraft, fal — ship a
 unified adapter, and `unmodel/image-edit` carries the ready-made pack over
 them. fal's adapter contains the 17 prompt-based rows; FIBO Relight is exact on
 the provider-native substrate and marked `unified: false`, because the canonical
@@ -223,6 +224,82 @@ image-edit request requires a prompt the route does not accept. No background-re
 with no prompt, and this vocabulary has no word for it yet — seventeen of those routes now
 carry the reason by name in `data/fal/curation.json`'s `excluded.endpoints`, which ships as
 `FAL_EXCLUDED`.
+
+**Photoroom — `photoroom.imageEdit` and `photoroom.imageEditRemoveBackground`.** Tier:
+**native**, with one generated part. Two routes on two hosts, both `x-api-key: <PHOTOROOM_API_KEY>`
+and both **multipart/form-data** (`.request.body` is `"form"`; post `photoroom.toFormData(req)`):
+
+- `imageEdit` — `POST https://image-api.photoroom.com/v2/edit`, the Image Editing API. One
+  route for background removal, AI backgrounds, shadows, relighting, text removal, expand,
+  uncrop, upscale, beautify, ironing, flat lay, ghost mannequin, virtual model, templating and
+  prompt-driven edits ("Edit With AI"). 90 fixed form fields plus three open-keyed families
+  (`editWithAI.additionalImages.<name>.…`, `layers.<id>.…`,
+  `virtualModel.additionalProductImages….…`), every key a dotted name written flat —
+  `"background.blur.radius": 0.02` — because that is the wire.
+- `imageEditRemoveBackground` — `POST https://sdk.photoroom.com/v1/segment`, the Remove
+  Background API: seven snake_case fields, remove.bg-compatible by design.
+
+The field tables are **generated** from Photoroom's own OpenAPI document — snapshot at
+`data/photoroom/openapi.json`, hand corrections with a reason, a source and a date each in
+`data/photoroom/overlays.json`, `bun run codegen:photoroom` — because the document types the
+POST body with names and descriptions only and keeps every enum, range and default on the
+query parameters of `GET /v2/edit`: typing the form is a join of two lists, and three of its
+features ship under "breaking changes with a 2-week notice period". The catalog, the checks and
+the messages are hand-written, which is why the tier is native and not generated.
+
+Four things a caller would otherwise have to find out:
+
+- **A form part is text, so a field takes either spelling of its value.** The OpenAPI document
+  types `maxWidth` as a number and gives `"200"` as its example (ten number-typed parameters carry
+  a quoted example), and every docs cURL sends text, so a numeric field takes `200` and `"200"`,
+  with its bounds applied to the number the text spells. Booleans take `true` and `"true"` on both
+  routes. Nothing is converted, and `toFormData` writes a number in plain decimal digits.
+
+- **Five features are switched by a request header** that appears in no schema
+  (`pr-ai-shadows-model-version`, `pr-ai-background-model-version`, `pr-hd-background-removal`,
+  `pr-ai-upscale-model-version`, `pr-ironing-model-version`). `imageEdit` takes them as params
+  under their own names and returns them on `.request.headers`.
+- **An unknown field on `/v2/edit` is billed and ignored.** The server answers 200 and names the
+  field in the `pr-unsupported-attributes` response header ("[Temporary] … Soon to be replaced
+  by a 400 Bad Request response", OpenAPI, read 2026-11-24). unmodel reports it as an
+  `unknown_param` warning before the send.
+- **Most cross-field rules are warnings.** The spec says `referenceBox` "Can't be provided if
+  `removeBackground` is set to `false`" and nine of Photoroom's own feature pages send exactly
+  that pair, so a "can only be provided if" sentence is treated as evidence a combination is
+  pointless, not that it is refused. A rule is an error only where a source states the rejection:
+  `background.prompt` with a background image, a background image with `removeBackground: false`,
+  `colorSpace: "original"` with the operations the spec names, `beautify.onSubjectMismatch: "error"`
+  off `ai.food`, more than four Edit With AI reference images, a file over the byte limit.
+  `test/fixtures/photoroom/docs-examples.json` holds all 56 multipart examples from the docs, and
+  every one validates with no error and no warning.
+
+Pricing is flat per successful call on the self-serve plans: "each API call is priced at $0.10"
+for the Image Editing API, whatever it combines, and "$0.02" for the Remove Background API; the
+rate follows the endpoint, not the plan. Those are unit prices of a prepaid monthly block.
+Enterprise usage wallets have no published rate, and neither does `virtualModel.quality` above
+`standard` — `imageEdit` returns no estimate for those two values. The caveat ships as
+`PHOTOROOM_PRICING_CAVEAT`. Catalog ids are synthetic (neither wire has a model field):
+`image-editing`, `edit-with-ai` (the same route with `editWithAI.mode` set) and
+`remove-background`.
+
+Not served, each for a stated reason:
+
+- `GET /v2/edit` — the same parameters as a query string, and the only Photoroom route that
+  takes the picture as a URL (`imageUrl`). `.request.method` is `"POST"` for every HTTP endpoint
+  in unmodel, so a body-less GET has no request shape to be expressed in, and `imageUrl` is
+  therefore not a field of `imageEdit`. Recorded as a follow-up, 2026-11-24.
+- The JSON body on `/v1/segment` (`{"image_file_b64": "…"}`) — documented in prose, absent from
+  the OpenAPI document, with no statement of which other fields may accompany it
+  (https://docs.photoroom.com/tutorials/how-to-migrate-from-remove.bg-api-before-it-shuts-down.md:
+  "`image_file_b64` — Supported, but only when the request is sent as JSON rather than as a form",
+  2026-11-24).
+- `GET /v2/account` / `/v1/account` (a balance read), `POST /v3/visual-qa` and `/v2/visual-qa`
+  (Enterprise-only JSON analysis), `/v1/render` ("[LEGACY] Image Editing v1").
+- The Video API, the Visual Agent API and Perspective Correction — no endpoint or parameter is
+  documented for any of them.
+
+Neither Photoroom route is registered in `unmodel/image-edit`. Research:
+`docs/research/photoroom-api-2026-11-24.md`.
 Remaining: alibaba (Qwen-Image), baidu, tencent (HunyuanImage), minimax, z-ai, nvidia,
 amazon (Titan/Nova); azure MAI `imageEdit` sends up to five JPEG or PNG references as repeated `image` parts to `/mai/v1/images/edits`.
 **Excluded (no public API):** midjourney, hidream, pruna, playground, sapiens-ai, eigen-ai,

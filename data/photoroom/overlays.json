@@ -1,0 +1,118 @@
+{
+  "$comment": [
+    "HAND-MAINTAINED. Everything scripts/codegen-photoroom.ts needs that Photoroom's OpenAPI document does not say,",
+    "or says wrongly. Every entry carries `reason` + `source` + `date`; the generator refuses an entry without them.",
+    "",
+    "Why this file exists at all: POST /v2/edit and GET /v2/edit are documented as taking 'the same parameters',",
+    "but the spec lists them asymmetrically, types the multipart booleans as JSON booleans, and never says how an",
+    "array or a caller-keyed map is spelled as a flat form field. Those are the things recorded here.",
+    "",
+    "  getOnly           one decision per parameter the spec lists on GET /v2/edit and not on POST: is it typed on POST?",
+    "  families          how a caller-keyed or indexed family writes its key, where the spec does not settle it",
+    "  booleans          the multipart spelling of a boolean",
+    "  deprecated        fields Photoroom has retired in prose",
+    "  deprecatedValues  single values of an otherwise live field that Photoroom has retired",
+    "  preview           fields Photoroom ships under a breaking-change notice",
+    "",
+    "A key ending `.*` names a whole dotted group; any other key names exactly one field.",
+    "",
+    "ANTI-ROT: an entry that matches no field in the snapshot FAILS codegen, and so does a GET-only parameter with",
+    "no decision. An exception that has outlived the thing it excepted is a claim about a wire that no longer exists."
+  ],
+  "getOnly": {
+    "imageUrl": {
+      "typed": false,
+      "reason": "The spec refuses it on POST in so many words: `imageFile` — 'The POST endpoint accepts `imageFile` only. … If you want to send the URL of an image, please instead use the GET endpoint with the argument `imageUrl`.' No docs example sends a top-level `imageUrl` in a form.",
+      "source": "https://image-api.photoroom.com/openapi",
+      "date": "2026-11-24"
+    },
+    "background.imageUrl": {
+      "typed": true,
+      "unverified": "Listed on GET only; not confirmed against a live key that POST reads it.",
+      "reason": "The docs restrict only the FILE variant to POST: 'set the either the argument `background.imageFile` (available only when using the `POST` endpoint) or `background.imageUrl`'. Typing it risks at worst a no-op field reported in `pr-unsupported-attributes`; omitting it would refuse a request the API may fulfil.",
+      "source": "https://docs.photoroom.com/image-editing-api-plus-plan/static-background.md",
+      "date": "2026-11-24"
+    },
+    "background.guidance.imageUrl": {
+      "typed": true,
+      "unverified": "Listed on GET only; not confirmed against a live key that POST reads it.",
+      "reason": "Same shape as `background.imageUrl`: the spec marks only `background.guidance.imageFile` as 'Only available in the POST request', and says nothing against the URL sibling in a form.",
+      "source": "https://image-api.photoroom.com/openapi",
+      "date": "2026-11-24"
+    },
+    "editWithAI.additionalImages.{key}.imageUrl": {
+      "typed": true,
+      "reason": "The Edit With AI page sends it in a multipart POST: `--form editWithAI.additionalImages.styleRef.imageUrl=https://example.com/style-reference.jpg`.",
+      "source": "https://docs.photoroom.com/image-editing-api-plus-plan/edit-with-ai.md",
+      "date": "2026-11-24"
+    }
+  },
+  "families": {
+    "editWithAI.additionalImages": {
+      "notations": ["map", "index"],
+      "reason": "'Each reference image is given a name of your choice' and 'Array-style notation is also supported: `editWithAI.additionalImages[0].imageFile` or `editWithAI.additionalImages.0.imageUrl`.'",
+      "source": "https://docs.photoroom.com/image-editing-api-plus-plan/edit-with-ai.md",
+      "date": "2026-11-24"
+    },
+    "virtualModel.additionalProductImages": {
+      "notations": ["any"],
+      "unverified": "The index syntax in a multipart form is not documented.",
+      "reason": "The spec types it as an array and the docs write 'use either the parameter `virtualModel.additionalProductImages[].imageFile` or `virtualModel.additionalProductImages[].imageUrl`' with no worked example, so `[0]`, `.0` and a literal `[]` are all plausible. `any` takes every slot that opens with `[` or `.` — all three — and nothing that runs straight on from the name, so a typo (`additionalProductImagesX.imageFile`) is still an unknown field on the route where one is billed and ignored.",
+      "source": "https://docs.photoroom.com/image-editing-api-plus-plan/virtual-model.md",
+      "date": "2026-11-24"
+    }
+  },
+  "booleans": {
+    "acceptStrings": true,
+    "reason": "The spec types `removeBackground` and `ignorePaddingAndSnapOnCroppedSides` as JSON booleans, but the body is a form: 'Send them as form fields (POST) or query parameters (GET). Booleans are the strings `true`/`false`.' Two sources write two spellings, so both are typed. (Numbers take both spellings too, and need no entry here: the spec itself gives quoted `examples` for ten number-typed parameters — `maxWidth: [\"200\"]` — which codegen reads off the type.)",
+    "source": "https://docs.photoroom.com/getting-started/integrating-with-claude-code-codex-or-cursor.md",
+    "date": "2026-11-24"
+  },
+  "deprecated": {
+    "describeAnyChange.*": {
+      "reason": "'(DEPRECATED) Use `editWithAI.*` instead.' — the three `editWithAI` fields of the same name.",
+      "source": "https://image-api.photoroom.com/openapi",
+      "date": "2026-11-24"
+    },
+    "background.negativePrompt": {
+      "reason": "'(LEGACY) This parameter will only have an effect when using the previous AI Backgrounds model, which is used when setting the header: `pr-ai-background-model-version: 2`'.",
+      "source": "https://image-api.photoroom.com/openapi",
+      "date": "2026-11-24"
+    },
+    "background.expandPrompt": {
+      "reason": "'`auto` and `never` are legacy values that will be removed in the next major version.' Send `background.expandPrompt.mode` instead.",
+      "source": "https://image-api.photoroom.com/openapi",
+      "date": "2026-11-24"
+    }
+  },
+  "deprecatedValues": {
+    "preserveMetadata": {
+      "values": ["exifSubset"],
+      "reason": "'**Deprecated** — use `exifSubsetWithXmpCompatibility` instead. Will be removed in a future release.'",
+      "source": "https://image-api.photoroom.com/openapi",
+      "date": "2026-11-24"
+    }
+  },
+  "preview": {
+    "upscale.*": {
+      "reason": "'Warning: AI Upscale is available as a preview feature. As such, please be aware that there could be breaking changes with a 2-week notice period.'",
+      "source": "https://image-api.photoroom.com/openapi",
+      "date": "2026-11-24"
+    },
+    "segmentation.*": {
+      "reason": "'Warning: Text-Guided Segmentation is available as a preview feature. As such, please be aware that there could be breaking changes with a 2-week notice period.'",
+      "source": "https://image-api.photoroom.com/openapi",
+      "date": "2026-11-24"
+    },
+    "templateId": {
+      "reason": "'Warning: Templating mode is available as a preview feature. As such, please be aware that there could be breaking changes with a 2-week notice period.'",
+      "source": "https://docs.photoroom.com/image-editing-api-plus-plan/preview-templating-mode.md",
+      "date": "2026-11-24"
+    },
+    "layers.*": {
+      "reason": "'Warning: Templating mode is available as a preview feature. As such, please be aware that there could be breaking changes with a 2-week notice period.'",
+      "source": "https://docs.photoroom.com/image-editing-api-plus-plan/preview-templating-mode.md",
+      "date": "2026-11-24"
+    }
+  }
+}

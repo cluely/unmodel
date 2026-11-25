@@ -158,6 +158,8 @@ const EXPECTED_IDS: readonly string[] = [
   "openai.video",
   "openrouter.chat",
   "perplexity.chat",
+  "photoroom.imageEdit",
+  "photoroom.imageEditRemoveBackground",
   "pixverse.video",
   "pixverse.videoFromImage",
   "recraft.image",
@@ -1110,6 +1112,8 @@ const IMAGE_EDIT_IDS: readonly string[] = [
   "ideogram.imageEditReplaceBackground",
   "luma.imageEditReframe",
   "openai.imageEdit",
+  "photoroom.imageEdit",
+  "photoroom.imageEditRemoveBackground",
   "recraft.imageEdit",
   "recraft.imageEditGenerateBackground",
   "recraft.imageEditInpaint",
@@ -1139,15 +1143,16 @@ test("the image-edit endpoints all use the uniform `imageEdit` verb", () => {
     "ideogram",
     "luma",
     "openai",
+    "photoroom",
     "recraft",
     "revana",
     "reve",
     "stability",
   ]);
-  // The eight whose primary route is "prompt + one image, no mask" address it
+  // The nine whose primary route is "prompt + one image, no mask" address it
   // as bare `imageEdit` — which is the ref `unmodel/image-edit` reaches for,
   // and therefore the half of the law with teeth.
-  for (const provider of ["black-forest-labs", "bria", "fal", "ideogram", "openai", "recraft", "revana", "reve"]) {
+  for (const provider of ["black-forest-labs", "bria", "fal", "ideogram", "openai", "photoroom", "recraft", "revana", "reve"]) {
     expect(IMAGE_EDIT_IDS).toContain(`${provider}.imageEdit`);
   }
 
@@ -1183,6 +1188,11 @@ test("the image-edit endpoints all use the uniform `imageEdit` verb", () => {
     "stability.stableImageSearchAndReplace",
     "stability.stableImageSearchAndRecolor",
     "stability.stableImageRemoveBackground",
+    // Photoroom's wire words: the path fragments `/v2/edit` and `/v1/segment`,
+    // and the bare operation name, which would be a second verb for the category.
+    "photoroom.edit",
+    "photoroom.segment",
+    "photoroom.removeBackground",
   ];
   for (const id of retired) expect(EXPECTED_IDS).not.toContain(id);
 });

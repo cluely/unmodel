@@ -27,6 +27,11 @@ jobs:
           # committed data/revana/ snapshot, offline. Roster drift is caught
           # weekly by codegen-revana-refresh.yml.
           bun run codegen:revana
+          # And for src/providers/photoroom/gen/**: the form-field tables,
+          # regenerated from the committed data/photoroom/ OpenAPI snapshot,
+          # offline. Spec drift is caught weekly by
+          # codegen-photoroom-refresh.yml.
+          bun run codegen:photoroom
           # `git diff --exit-code` alone misses newly created untracked files
           # (e.g. a snapshot update that adds a new provider's .gen.ts).
           git add -A
